@@ -11,14 +11,19 @@ export default function Home() {
   const { colors, scaledFont, fontSize } = useSettings();
   const [liturgy, setLiturgy] = useState<Liturgy | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
       try {
         const data = await api.liturgyToday();
         setLiturgy(data);
-      } catch (e) {
+        setLoadError(null);
+      } catch (e: any) {
         console.log("Errore caricamento liturgia:", e);
+        setLoadError(
+          "Nessuna connessione a Internet e nessuna lettura scaricata per oggi. Collegati a Internet o usa 'Scarica letture'."
+        );
       } finally {
         setLoading(false);
       }
@@ -61,6 +66,20 @@ export default function Home() {
           </View>
         </View>
 
+        {liturgy?.fromLocalCache ? (
+          <View style={styles.offlineBanner} testID="offline-banner">
+            <Ionicons name="cloud-done" size={scaledFont(28)} color={colors.liturgicalGreen} />
+            <Text style={styles.offlineText}>Modalità offline: stai usando le letture scaricate.</Text>
+          </View>
+        ) : null}
+
+        {loadError ? (
+          <View style={styles.errorBanner} testID="error-banner">
+            <Ionicons name="warning" size={scaledFont(28)} color={colors.rubrics} />
+            <Text style={styles.errorText}>{loadError}</Text>
+          </View>
+        ) : null}
+
         {loading ? (
           <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
         ) : null}
@@ -87,6 +106,21 @@ export default function Home() {
           <View style={{ flex: 1 }}>
             <Text style={styles.secondaryCardTitle}>Calendario Liturgico</Text>
             <Text style={styles.secondaryCardSubtitle}>Santi, feste e messe votive</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={scaledFont(40)} color={colors.textSecondary} />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.secondaryCard}
+          onPress={() => router.push("/scarica")}
+          testID="btn-download"
+          accessibilityRole="button"
+          accessibilityLabel="Scarica letture per uso offline"
+        >
+          <Ionicons name="cloud-download" size={scaledFont(44)} color={colors.textPrimary} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.secondaryCardTitle}>Scarica letture</Text>
+            <Text style={styles.secondaryCardSubtitle}>Uso offline · Pre-download più giorni</Text>
           </View>
           <Ionicons name="chevron-forward" size={scaledFont(40)} color={colors.textSecondary} />
         </TouchableOpacity>
@@ -193,4 +227,26 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
   saintsTitle: { fontSize: Math.round(fontSize * 0.75), fontWeight: "700", color: colors.textPrimary, marginBottom: 10 },
   saintItem: { fontSize: Math.round(fontSize * 0.7), color: colors.textPrimary, marginVertical: 4 },
   footer: { fontSize: Math.round(fontSize * 0.55), color: colors.textSecondary, textAlign: "center", marginTop: 20 },
+  offlineBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 16,
+    backgroundColor: colors.surface,
+    borderWidth: 2,
+    borderColor: colors.liturgicalGreen,
+    borderRadius: 12,
+  },
+  offlineText: { flex: 1, fontSize: Math.round(fontSize * 0.65), color: colors.textPrimary, fontWeight: "600" },
+  errorBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 16,
+    backgroundColor: colors.surface,
+    borderWidth: 2,
+    borderColor: colors.rubrics,
+    borderRadius: 12,
+  },
+  errorText: { flex: 1, fontSize: Math.round(fontSize * 0.65), color: colors.textPrimary },
 });

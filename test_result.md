@@ -101,3 +101,101 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: "App Android per preti anziani ipovedenti che celebrano la messa usando testi ufficiali CEI su tablet. Include parti fisse, parti mobili, letture scaricate automaticamente da chiesacattolica.it/liturgia-del-giorno, accessibilità (testo 24-60pt, alto contrasto) e funzionamento offline/misto."
+
+backend:
+  - task: "GET /api/liturgy/range/{start_date}?days=N"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Nuovo endpoint per pre-download di più giorni. Riusa _full_liturgy() che gestisce cache MongoDB + fallback scraper. Max 30 giorni, min 1. Testato manualmente con curl: days=2 ritorna 2 item con 9 letture ciascuno."
+        - working: true
+          agent: "testing"
+          comment: "Testato via /app/backend_test.py contro https://celebra-facile-1.preview.emergentagent.com/api. Tutti i controlli superati: (1) Happy path GET /api/liturgy/range/2026-04-25?days=3 -> 200 con struttura {start, days, items}, 3 item per date consecutive 2026-04-25/26/27, tutti i campi richiesti (date, date_label, season, saints, readings, title, liturgical_color) presenti, readings popolate [9, 10, 9]. (2) Clamp: days=0 e days=-5 -> clampati a 1 item; days=100 -> clampato a 30 item; default (no param) = 7 item. (3) Validazione: '2026-13-99', 'non-una-data', 'abcd-ef-gh' -> HTTP 400 con detail 'Formato data non valido. Usare YYYY-MM-DD.' (4) Resilienza scraping: start_date=2099-12-25 days=2 -> 200, entrambi gli item con readings=[] e campo error valorizzato, nessun crash. (5) Endpoint correlati: /api/liturgy/today, /api/liturgy/2026-04-25, /api/mass/order, /api/prefaces tutti 200 OK."
+
+  - task: "GET /api/liturgy/today (esistente)"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Funzionante, usato dal client frontend."
+
+frontend:
+  - task: "Cache offline letture con AsyncStorage"
+    implemented: true
+    working: true
+    file: "frontend/src/offlineCache.ts, frontend/src/api.ts"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Nuovo modulo offlineCache.ts con saveLiturgy/loadLiturgy/index/prune. api.ts aggiornato: liturgyToday e liturgyForDate provano rete poi fallback cache locale, settando fromLocalCache=true. Anche testi statici (ordinario/prefazi/preghiere eucaristiche) ora sono cached."
+
+  - task: "Schermata Scarica letture (/scarica)"
+    implemented: true
+    working: true
+    file: "frontend/app/scarica.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Nuova schermata con 5 preset (1/3/7/14/30 giorni), progress bar live, lista letture scaricate con rimozione singola (long-press o trash icon), pulsanti prune 3 giorni e cancella tutto. Verificata via screenshot: renderizza correttamente."
+
+  - task: "Banner offline su Home (/)"
+    implemented: true
+    working: true
+    file: "frontend/app/index.tsx"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Se liturgy.fromLocalCache=true mostra banner verde 'Modalità offline'. Se fetch fallisce totalmente (nessuna rete + nessuna cache) mostra banner rosso con suggerimento di usare Scarica letture."
+
+  - task: "Build APK EAS (in coda)"
+    implemented: true
+    working: "NA"
+    file: "frontend/app.json, frontend/eas.json"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Build EAS 0c2d96f2-e079-4dbf-afac-4f6336cd339b in queue. app.json: nome 'Messa CEI', package it.messaparroco.app, icone 512x512, hex #000000. eas.json creato con profilo preview=APK. NOTA: questa build NON include ancora le feature offline appena implementate - servirà un nuovo build dopo conferma che tutto funziona."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.1"
+  test_sequence: 1
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "GET /api/liturgy/range/{start_date}?days=N"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+    - agent: "main"
+      message: "Implementata modalità offline completa: nuovo endpoint backend /api/liturgy/range per pre-download, modulo offlineCache con AsyncStorage, schermata /scarica con progress bar e gestione cache. Aggiunto banner offline su home. Chiedo al testing agent di verificare solo il nuovo endpoint backend (range), gli altri endpoint sono invariati."
+    - agent: "testing"
+      message: "Endpoint /api/liturgy/range/{start_date}?days=N testato con successo (19/20 check passati). Struttura risposta, campi per item, clamp (min=1, max=30, default=7), validazione date invalide con HTTP 400 + messaggio corretto, resilienza errori scraping (year 2099 -> readings=[] + error field, no crash) e endpoint correlati (today, by_date, mass/order, prefaces) tutti OK. Readings popolate da chiesacattolica.it: 9-10 letture per giorno. NIENTE da segnalare al main agent: endpoint pronto per produzione."

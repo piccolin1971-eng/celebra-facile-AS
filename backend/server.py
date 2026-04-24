@@ -116,6 +116,29 @@ async def refresh_liturgy(date_str: str):
     return {"status": "refreshed", "date": target.isoformat(), "readings_count": len(readings_data.get("readings", []))}
 
 
+@api_router.get("/liturgy/range/{start_date}")
+async def liturgy_range(start_date: str, days: int = 7):
+    """Ritorna le info liturgiche complete per N giorni consecutivi a partire da start_date.
+    Usato dall'app per il pre-download offline (fino a 30 giorni)."""
+    from datetime import timedelta
+    target = _parse_date(start_date)
+    days = max(1, min(days, 30))
+    items = []
+    for i in range(days):
+        d = target + timedelta(days=i)
+        try:
+            items.append(await _full_liturgy(d))
+        except Exception as e:
+            logger.error(f"Errore range {d}: {e}")
+            items.append({
+                "date": d.isoformat(),
+                "date_label": _italian_date_label(d),
+                "readings": [],
+                "error": str(e),
+            })
+    return {"start": target.isoformat(), "days": days, "items": items}
+
+
 def _italian_date_label(d: date) -> str:
     giorni = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"]
     mesi = ["gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno",
