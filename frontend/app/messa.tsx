@@ -576,41 +576,56 @@ export default function MessaScreen() {
             <Ionicons name="swap-horizontal" size={scaledFont(28)} color={colors.primary} />
             <Text style={styles.selectorBtnText}>Scegli Preghiera Eucaristica</Text>
           </TouchableOpacity>
-          {selectedPrayer && (
-            <View style={styles.block}>
-              <R kind="subtitle">{selectedPrayer.title}</R>
-              <R kind="rubric">{selectedPrayer.description}</R>
-              <R>{selectedPrayer.text}</R>
-            </View>
-          )}
+          {selectedPrayer && (() => {
+            // Splitta il testo della PE sul "Mistero della fede." per inserire il selettore
+            // nel punto liturgico corretto (dopo la consacrazione del calice).
+            const marker = "Mistero della fede.";
+            const text = selectedPrayer.text;
+            const idx = text.indexOf(marker);
+            let beforePart = text;
+            let afterPart = "";
+            if (idx >= 0) {
+              beforePart = text.substring(0, idx).trimEnd();
+              const rest = text.substring(idx + marker.length);
+              const nextBreak = rest.indexOf("\n\n");
+              afterPart = nextBreak > 0 ? rest.substring(nextBreak + 2).trimStart() : rest.trimStart();
+            }
+            const selAcc = acclamations.find(x => x.id === acclamationId);
+            return (
+              <View style={styles.block}>
+                <R kind="subtitle">{selectedPrayer.title}</R>
+                <R kind="rubric">{selectedPrayer.description}</R>
+                <R>{beforePart}</R>
 
-          {/* Acclamazione "Mistero della fede" */}
-          {acclamations.length > 0 && (
-            <View style={styles.block} testID="part-acclamazione">
-              <R kind="subtitle">Acclamazione dopo la Consacrazione</R>
-              <View style={styles.choiceRow}>
-                {acclamations.map(a => (
-                  <TouchableOpacity
-                    key={a.id}
-                    style={[styles.choiceBtn, acclamationId === a.id && styles.choiceBtnActive]}
-                    onPress={() => setAcclamationId(a.id)}
-                    testID={`btn-acclamation-${a.id}`}
-                  >
-                    <Text style={[styles.choiceBtnText, acclamationId === a.id && { color: "#FFFFFF" }]}>{a.label}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-              {(() => {
-                const acc = acclamations.find(x => x.id === acclamationId);
-                return acc && (
-                  <View style={styles.block}>
-                    <R kind="celebrante">C. {acc.celebrante}</R>
-                    <R kind="assemblea">A. {acc.assemblea}</R>
+                {/* === Acclamazione "Mistero della fede" - dopo la consacrazione del calice === */}
+                {acclamations.length > 0 && idx >= 0 && (
+                  <View style={styles.acclamationBox} testID="part-acclamazione">
+                    <R kind="subtitle">Acclamazione dopo la Consacrazione</R>
+                    <View style={styles.choiceRow}>
+                      {acclamations.map(a => (
+                        <TouchableOpacity
+                          key={a.id}
+                          style={[styles.choiceBtn, acclamationId === a.id && styles.choiceBtnActive]}
+                          onPress={() => setAcclamationId(a.id)}
+                          testID={`btn-acclamation-${a.id}`}
+                        >
+                          <Text style={[styles.choiceBtnText, acclamationId === a.id && { color: "#FFFFFF" }]}>Forma {a.id}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                    {selAcc && (
+                      <View style={styles.block}>
+                        <R kind="celebrante">C. {selAcc.celebrante}</R>
+                        <R kind="assemblea">A. {selAcc.assemblea}</R>
+                      </View>
+                    )}
                   </View>
-                );
-              })()}
-            </View>
-          )}
+                )}
+
+                {afterPart ? <R>{afterPart}</R> : null}
+              </View>
+            );
+          })()}
         </View>
 
         {/* ============ RITI DI COMUNIONE ============ */}
@@ -843,4 +858,12 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
   listItemSub: { fontSize: Math.round(fontSize * 0.6), color: colors.textSecondary, marginTop: 6 },
   badgeSeasonal: { fontSize: Math.round(fontSize * 0.5), color: colors.primary, fontWeight: "800", marginBottom: 6, letterSpacing: 1 },
   solemnToggle: { borderWidth: 2, borderColor: colors.border, borderRadius: 10, padding: 16, backgroundColor: colors.surface },
+  acclamationBox: {
+    marginVertical: 18,
+    padding: 18,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.primary,
+    backgroundColor: colors.surface,
+    borderRadius: 8,
+  },
 });
