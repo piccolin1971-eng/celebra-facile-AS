@@ -38,6 +38,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "2f4ef96c-7894-40f1-a528-586ea410a5b4"
+      }
+    },
+    "owner": "agedon"
   }
 }
