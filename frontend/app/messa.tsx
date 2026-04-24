@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSettings } from "../src/SettingsContext";
-import { api, Liturgy, Preface, EucharisticPrayer } from "../src/api";
+import { api, Liturgy, Preface, EucharisticPrayer, MysteryAcclamation, SolemnBlessing } from "../src/api";
 
 type ReadingType =
   | "antifona_ingresso" | "colletta"
@@ -18,6 +18,10 @@ export default function MessaScreen() {
   const [fixedParts, setFixedParts] = useState<Record<string, any> | null>(null);
   const [prefaces, setPrefaces] = useState<Preface[]>([]);
   const [prayers, setPrayers] = useState<EucharisticPrayer[]>([]);
+  const [acclamations, setAcclamations] = useState<MysteryAcclamation[]>([]);
+  const [solemnBlessings, setSolemnBlessings] = useState<SolemnBlessing[]>([]);
+  const [pasquaDismissal, setPasquaDismissal] = useState<any>(null);
+  const [currentSeasonKey, setCurrentSeasonKey] = useState<string>("ordinario");
   const [loading, setLoading] = useState(true);
 
   // selezioni utente
@@ -28,6 +32,9 @@ export default function MessaScreen() {
   const [selectedCredoId, setSelectedCredoId] = useState<"niceno" | "apostolico">("niceno");
   const [orateFratresId, setOrateFratresId] = useState<string>("A");
   const [padreNostroIntroId, setPadreNostroIntroId] = useState<string>("A");
+  const [acclamationId, setAcclamationId] = useState<string>("A");
+  const [useSolemnBlessing, setUseSolemnBlessing] = useState<boolean>(false);
+  const [solemnBlessingId, setSolemnBlessingId] = useState<string>("");
   const [showGloria, setShowGloria] = useState<boolean>(true);
   const [showCredo, setShowCredo] = useState<boolean>(true);
   const [congedoId, setCongedoId] = useState("A");
@@ -41,27 +48,37 @@ export default function MessaScreen() {
   useEffect(() => {
     (async () => {
       try {
-        const [lit, parts, pr, pe] = await Promise.all([
+        const [lit, parts, pr, pe, acc, bless] = await Promise.all([
           api.liturgyToday(),
           api.fixedParts(),
           api.prefaces(),
           api.eucharisticPrayers(),
+          api.mysteryAcclamations(),
+          api.solemnBlessings(),
         ]);
         setLiturgy(lit);
         setFixedParts(parts.parts);
         setPrefaces(pr.prefaces);
         setPrayers(pe.prayers);
+        setAcclamations(acc.acclamations);
+        setSolemnBlessings(bless.blessings);
+        setPasquaDismissal(bless.pasqua_dismissal);
         const seasonName = (lit?.season?.season || "").toLowerCase();
         const seasonKey = seasonName.includes("avvento") ? "avvento"
           : seasonName.includes("natale") ? "natale"
           : seasonName.includes("quaresima") ? "quaresima"
           : seasonName.includes("pasqua") ? "pasqua"
           : "ordinario";
+        setCurrentSeasonKey(seasonKey);
         const match = pr.prefaces.find(p => p.season === seasonKey) || pr.prefaces[0];
         if (match) setSelectedPrefaceId(match.id);
         setPenitentialSeason(seasonKey);
-        // Gloria: off in Avvento e Quaresima
         if (seasonKey === "avvento" || seasonKey === "quaresima") setShowGloria(false);
+        // Benedizione solenne: preseleziona quella della stagione se disponibile
+        const seasBless = bless.blessings.find(b => b.id === seasonKey) || bless.blessings.find(b => b.season === seasonKey);
+        if (seasBless) setSolemnBlessingId(seasBless.id);
+        // Congedo di Pasqua automatico
+        if (seasonKey === "pasqua") setCongedoId("pasqua_alleluia");
       } catch (e) {
         console.log("Errore:", e);
       } finally {
@@ -321,48 +338,118 @@ export default function MessaScreen() {
     const congedoChoice = rc.sections[2];
     const bened = benedChoice.options.find((o: any) => o.id === benedizioneId);
     const congedo = congedoChoice.options.find((o: any) => o.id === congedoId);
+    // Lista congedi: i 4 standard + eventualmente quello pasquale
+    const congedoOptions = [...congedoChoice.options];
+    if (pasquaDismissal && currentSeasonKey === "pasqua") {
+      congedoOptions.push({
+        id: pasquaDismissal.id,
+        label: "Pasqua",
+        celebrante: pasquaDismissal.celebrante,
+        assemblea: pasquaDismissal.assemblea,
+      });
+    }
+    const selectedCongedo = congedoOptions.find((o: any) => o.id === congedoId) || congedo;
+    const selectedSolemn = solemnBlessings.find(b => b.id === solemnBlessingId);
+
     return (
       <View testID="section-conclusione">
         <R kind="title">Riti di Conclusione</R>
         {renderSection(dialogue, 0)}
 
-        <R kind="subtitle">Benedizione</R>
-        <View style={styles.choiceRow}>
-          {benedChoice.options.map((o: any) => (
-            <TouchableOpacity
-              key={o.id}
-              style={[styles.choiceBtn, benedizioneId === o.id && styles.choiceBtnActive]}
-              onPress={() => setBenedizioneId(o.id)}
-              testID={`btn-bened-${o.id}`}
-            >
-              <Text style={[styles.choiceBtnText, benedizioneId === o.id && { color: "#FFFFFF" }]}>{o.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-        {bened && (
-          <View style={styles.block}>
-            <R kind="celebrante">C. {bened.celebrante}</R>
-            <R kind="assemblea">A. {bened.assemblea}</R>
+        {/* Toggle benedizione solenne */}
+        {solemnBlessings.length > 0 && (
+          <View style={[styles.block, styles.solemnToggle]} testID="solemn-toggle">
+            <View style={styles.toggleRow}>
+              <Text style={styles.toggleLabel}>Usa benedizione solenne</Text>
+              <Switch
+                value={useSolemnBlessing}
+                onValueChange={setUseSolemnBlessing}
+                trackColor={{ false: colors.border, true: colors.primary }}
+                thumbColor="#FFFFFF"
+                style={{ transform: [{ scaleX: 1.4 }, { scaleY: 1.4 }], marginLeft: 16 }}
+                testID="switch-solemn-blessing"
+              />
+            </View>
+          </View>
+        )}
+
+        {useSolemnBlessing ? (
+          <View testID="section-solemn-blessing">
+            <R kind="subtitle">Benedizione Solenne</R>
+            <View style={styles.choiceRow}>
+              {solemnBlessings.map(b => (
+                <TouchableOpacity
+                  key={b.id}
+                  style={[styles.choiceBtn, solemnBlessingId === b.id && styles.choiceBtnActive]}
+                  onPress={() => setSolemnBlessingId(b.id)}
+                  testID={`btn-solemn-${b.id}`}
+                >
+                  <Text style={[styles.choiceBtnText, solemnBlessingId === b.id && { color: "#FFFFFF" }]}>
+                    {b.id.charAt(0).toUpperCase() + b.id.slice(1)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {selectedSolemn && (
+              <View style={styles.block}>
+                <R kind="subtitle">{selectedSolemn.title}</R>
+                {selectedSolemn.rubric && <R kind="rubric">{selectedSolemn.rubric}</R>}
+                {selectedSolemn.invocations.map((inv, i) => (
+                  <View key={i} style={styles.dialogBlock}>
+                    <R kind="celebrante">C. {inv.c}</R>
+                    <R kind="assemblea">A. {inv.a}</R>
+                  </View>
+                ))}
+                <View style={styles.dialogBlock}>
+                  <R kind="celebrante">C. {selectedSolemn.final.c}</R>
+                  <R kind="assemblea">A. {selectedSolemn.final.a}</R>
+                </View>
+              </View>
+            )}
+          </View>
+        ) : (
+          <View>
+            <R kind="subtitle">Benedizione</R>
+            <View style={styles.choiceRow}>
+              {benedChoice.options.map((o: any) => (
+                <TouchableOpacity
+                  key={o.id}
+                  style={[styles.choiceBtn, benedizioneId === o.id && styles.choiceBtnActive]}
+                  onPress={() => setBenedizioneId(o.id)}
+                  testID={`btn-bened-${o.id}`}
+                >
+                  <Text style={[styles.choiceBtnText, benedizioneId === o.id && { color: "#FFFFFF" }]}>{o.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {bened && (
+              <View style={styles.block}>
+                <R kind="celebrante">C. {bened.celebrante}</R>
+                <R kind="assemblea">A. {bened.assemblea}</R>
+              </View>
+            )}
           </View>
         )}
 
         <R kind="subtitle">Congedo</R>
         <View style={styles.choiceRow}>
-          {congedoChoice.options.map((o: any) => (
+          {congedoOptions.map((o: any) => (
             <TouchableOpacity
               key={o.id}
               style={[styles.choiceBtn, congedoId === o.id && styles.choiceBtnActive]}
               onPress={() => setCongedoId(o.id)}
               testID={`btn-congedo-${o.id}`}
             >
-              <Text style={[styles.choiceBtnText, congedoId === o.id && { color: "#FFFFFF" }]}>{o.id}</Text>
+              <Text style={[styles.choiceBtnText, congedoId === o.id && { color: "#FFFFFF" }]}>
+                {o.label || o.id}
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
-        {congedo && (
+        {selectedCongedo && (
           <View style={styles.block}>
-            <R kind="celebrante">C. {congedo.celebrante}</R>
-            <R kind="assemblea">A. {congedo.assemblea}</R>
+            <R kind="celebrante">C. {selectedCongedo.celebrante}</R>
+            <R kind="assemblea">A. {selectedCongedo.assemblea}</R>
           </View>
         )}
       </View>
@@ -496,6 +583,34 @@ export default function MessaScreen() {
               <R>{selectedPrayer.text}</R>
             </View>
           )}
+
+          {/* Acclamazione "Mistero della fede" */}
+          {acclamations.length > 0 && (
+            <View style={styles.block} testID="part-acclamazione">
+              <R kind="subtitle">Acclamazione dopo la Consacrazione</R>
+              <View style={styles.choiceRow}>
+                {acclamations.map(a => (
+                  <TouchableOpacity
+                    key={a.id}
+                    style={[styles.choiceBtn, acclamationId === a.id && styles.choiceBtnActive]}
+                    onPress={() => setAcclamationId(a.id)}
+                    testID={`btn-acclamation-${a.id}`}
+                  >
+                    <Text style={[styles.choiceBtnText, acclamationId === a.id && { color: "#FFFFFF" }]}>{a.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              {(() => {
+                const acc = acclamations.find(x => x.id === acclamationId);
+                return acc && (
+                  <View style={styles.block}>
+                    <R kind="celebrante">C. {acc.celebrante}</R>
+                    <R kind="assemblea">A. {acc.assemblea}</R>
+                  </View>
+                );
+              })()}
+            </View>
+          )}
         </View>
 
         {/* ============ RITI DI COMUNIONE ============ */}
@@ -537,17 +652,31 @@ export default function MessaScreen() {
             <View style={{ width: 100 }} />
           </View>
           <ScrollView contentContainerStyle={styles.content}>
-            {prefaces.map(p => (
-              <TouchableOpacity
-                key={p.id}
-                style={[styles.listItem, selectedPrefaceId === p.id && styles.listItemActive]}
-                onPress={() => { setSelectedPrefaceId(p.id); setShowPrefaces(false); }}
-                testID={`preface-item-${p.id}`}
-              >
-                <Text style={styles.listItemText}>{p.title}</Text>
-                <Text style={styles.listItemSub}>Tempo: {p.season}</Text>
-              </TouchableOpacity>
-            ))}
+            {(() => {
+              // Ordina prefazi: tempo corrente in cima, poi comune, poi gli altri
+              const sorted = [...prefaces].sort((a, b) => {
+                const rank = (p: Preface) => p.season === currentSeasonKey ? 0
+                  : p.season === "comune" ? 1
+                  : 2;
+                const ra = rank(a), rb = rank(b);
+                if (ra !== rb) return ra - rb;
+                return 0;
+              });
+              return sorted.map(p => (
+                <TouchableOpacity
+                  key={p.id}
+                  style={[styles.listItem, selectedPrefaceId === p.id && styles.listItemActive]}
+                  onPress={() => { setSelectedPrefaceId(p.id); setShowPrefaces(false); }}
+                  testID={`preface-item-${p.id}`}
+                >
+                  {p.season === currentSeasonKey && (
+                    <Text style={styles.badgeSeasonal}>▸ TEMPO CORRENTE</Text>
+                  )}
+                  <Text style={styles.listItemText}>{p.title}</Text>
+                  <Text style={styles.listItemSub}>Tempo: {p.season}</Text>
+                </TouchableOpacity>
+              ));
+            })()}
           </ScrollView>
         </SafeAreaView>
       </Modal>
@@ -712,4 +841,6 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
   listItemActive: { borderColor: colors.primary, borderWidth: 4 },
   listItemText: { fontSize: Math.round(fontSize * 0.8), color: colors.textPrimary, fontWeight: "700" },
   listItemSub: { fontSize: Math.round(fontSize * 0.6), color: colors.textSecondary, marginTop: 6 },
+  badgeSeasonal: { fontSize: Math.round(fontSize * 0.5), color: colors.primary, fontWeight: "800", marginBottom: 6, letterSpacing: 1 },
+  solemnToggle: { borderWidth: 2, borderColor: colors.border, borderRadius: 10, padding: 16, backgroundColor: colors.surface },
 });

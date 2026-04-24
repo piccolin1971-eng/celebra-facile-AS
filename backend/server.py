@@ -8,6 +8,7 @@ from pathlib import Path
 from datetime import datetime, date, timezone
 
 from liturgy_data import FIXED_PARTS, MASS_ORDER, EUCHARISTIC_PRAYERS
+from liturgy_extras import EUCHARISTIC_PRAYERS_CHILDREN, MYSTERY_ACCLAMATIONS, SOLEMN_BLESSINGS, PASQUA_DISMISSAL
 from prefaces_data import PREFACES
 from liturgy_scraper import fetch_liturgy, get_liturgical_season
 from saints_calendar import get_saints_for_date, VOTIVE_MASSES, SAINTS_CALENDAR
@@ -167,17 +168,36 @@ async def preface(preface_id: str):
 # ===== PREGHIERE EUCARISTICHE =====
 
 @api_router.get("/eucharistic-prayers")
-async def eucharistic_prayers():
-    """Elenco preghiere eucaristiche."""
-    return {"prayers": EUCHARISTIC_PRAYERS}
+async def eucharistic_prayers(include_children: bool = True):
+    """Elenco preghiere eucaristiche. include_children=True aggiunge quelle per i fanciulli."""
+    prayers = list(EUCHARISTIC_PRAYERS)
+    if include_children:
+        prayers = prayers + EUCHARISTIC_PRAYERS_CHILDREN
+    return {"prayers": prayers}
 
 
 @api_router.get("/eucharistic-prayers/{prayer_id}")
 async def eucharistic_prayer(prayer_id: str):
-    for p in EUCHARISTIC_PRAYERS:
+    for p in EUCHARISTIC_PRAYERS + EUCHARISTIC_PRAYERS_CHILDREN:
         if p["id"] == prayer_id:
             return p
     raise HTTPException(status_code=404, detail="Preghiera eucaristica non trovata")
+
+
+# ===== ACCLAMAZIONI "MISTERO DELLA FEDE" =====
+
+@api_router.get("/mystery-acclamations")
+async def mystery_acclamations():
+    """Tre acclamazioni dopo la consacrazione (Mistero della fede)."""
+    return {"acclamations": MYSTERY_ACCLAMATIONS}
+
+
+# ===== BENEDIZIONI SOLENNI STAGIONALI =====
+
+@api_router.get("/solemn-blessings")
+async def solemn_blessings():
+    """Benedizioni solenni per i tempi forti."""
+    return {"blessings": SOLEMN_BLESSINGS, "pasqua_dismissal": PASQUA_DISMISSAL}
 
 
 # ===== CALENDARIO SANTI E MESSE VOTIVE =====

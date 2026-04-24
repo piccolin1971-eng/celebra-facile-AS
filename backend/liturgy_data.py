@@ -218,6 +218,24 @@ FIXED_PARTS = {
                         "label": "Formula standard",
                         "celebrante": "Pregate, fratelli e sorelle, perché il mio e vostro sacrificio sia gradito a Dio, Padre onnipotente.",
                         "assemblea": "Il Signore riceva dalle tue mani questo sacrificio a lode e gloria del suo nome, per il bene nostro e di tutta la sua santa Chiesa."
+                    },
+                    {
+                        "id": "B",
+                        "label": "Per la comunità",
+                        "celebrante": "Pregate, fratelli e sorelle, perché questa nostra famiglia, radunata nel nome di Cristo, possa offrire il sacrificio gradito a Dio Padre onnipotente.",
+                        "assemblea": "Il Signore riceva dalle tue mani questo sacrificio a lode e gloria del suo nome, per il bene nostro e di tutta la sua santa Chiesa."
+                    },
+                    {
+                        "id": "C",
+                        "label": "Per la vita quotidiana",
+                        "celebrante": "Pregate, fratelli e sorelle, perché portando all'altare la gioia e la fatica di ogni giorno, ci disponiamo a offrire il sacrificio gradito a Dio Padre onnipotente.",
+                        "assemblea": "Il Signore riceva dalle tue mani questo sacrificio a lode e gloria del suo nome, per il bene nostro e di tutta la sua santa Chiesa."
+                    },
+                    {
+                        "id": "D",
+                        "label": "Per il cammino ecclesiale",
+                        "celebrante": "Pregate, fratelli e sorelle, perché il sacrificio della Chiesa, in questa sosta che la rinfranca nel suo cammino verso la patria, sia gradito a Dio Padre onnipotente.",
+                        "assemblea": "Il Signore riceva dalle tue mani questo sacrificio a lode e gloria del suo nome, per il bene nostro e di tutta la sua santa Chiesa."
                     }
                 ]
             }

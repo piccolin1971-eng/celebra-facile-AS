@@ -33,6 +33,12 @@ export type Liturgy = {
 export type Preface = { id: string; title: string; season: string; text: string };
 export type EucharisticPrayer = { id: string; title: string; description: string; text: string };
 export type VotiveMass = { id: string; title: string; color: string };
+export type MysteryAcclamation = { id: string; label: string; celebrante: string; assemblea: string };
+export type SolemnBlessing = {
+  id: string; season: string; title: string; rubric: string;
+  invocations: { c: string; a: string }[];
+  final: { c: string; a: string };
+};
 
 export const api = {
   liturgyToday: () => fetchJson<Liturgy>(`/liturgy/today`),
@@ -42,6 +48,8 @@ export const api = {
   fixedParts: () => fetchJson<{ parts: Record<string, any> }>(`/mass/fixed-parts`),
   prefaces: (season?: string) => fetchJson<{ prefaces: Preface[] }>(`/prefaces${season ? `?season=${season}` : ""}`),
   eucharisticPrayers: () => fetchJson<{ prayers: EucharisticPrayer[] }>(`/eucharistic-prayers`),
+  mysteryAcclamations: () => fetchJson<{ acclamations: MysteryAcclamation[] }>(`/mystery-acclamations`),
+  solemnBlessings: () => fetchJson<{ blessings: SolemnBlessing[]; pasqua_dismissal: any }>(`/solemn-blessings`),
   votiveMasses: () => fetchJson<{ masses: VotiveMass[] }>(`/votive-masses`),
   saintsForDate: (date: string) => fetchJson<{ date: string; celebrations: any[] }>(`/calendar/saints/${date}`),
   allSaints: () => fetchJson<{ calendar: { date: string; celebrations: any[] }[] }>(`/calendar/saints`),
