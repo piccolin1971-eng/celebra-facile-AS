@@ -1,0 +1,94 @@
+{
+  "theme_and_archetype": "Archetype 4 (Swiss & High-Contrast) adapted for Sacred Accessibility. Light Theme default, full Dark Mode support.",
+  "app_context": "Tablet-first hybrid app (React Native Expo) for elderly, visually-impaired Catholic priests.",
+  "colors": {
+    "light_mode": {
+      "background": "#FDFBF7",
+      "surface": "#FFFFFF",
+      "text_primary": "#111111",
+      "text_secondary": "#333333",
+      "border": "#D7D3C8",
+      "rubrics": "#B71C1C"
+    },
+    "dark_mode": {
+      "background": "#000000",
+      "surface": "#1A1A1A",
+      "text_primary": "#F5F5F5",
+      "text_secondary": "#CCCCCC",
+      "border": "#333333",
+      "rubrics": "#FF5252"
+    },
+    "liturgical_accents": {
+      "green": "#1B5E20",
+      "red": "#B71C1C",
+      "purple": "#4A148C",
+      "white_gold": "#D4AF37",
+      "rose": "#AD1457"
+    },
+    "interactive": {
+      "primary_action": "#0056B3",
+      "primary_action_dark": "#4DA8DA",
+      "focus_ring": "#FFC107"
+    }
+  },
+  "typography": {
+    "fonts": {
+      "reading": "Merriweather, serif (or similar high-legibility serif for Missal text)",
+      "ui_controls": "Inter, sans-serif (for buttons, menus, and navigation)"
+    },
+    "scales": {
+      "h1": "text-5xl md:text-6xl font-bold tracking-tight",
+      "h2": "text-4xl md:text-5xl font-bold",
+      "h3": "text-3xl md:text-4xl font-semibold",
+      "body_reading": "text-[24px] md:text-[32px] leading-loose",
+      "body_ui": "text-2xl md:text-3xl font-medium",
+      "rubrics": "text-[20px] md:text-[28px] italic text-red-700 dark:text-red-400"
+    },
+    "accessibility": {
+      "adjustable_range": "24pt to 60pt via global slider",
+      "line_height": "1.6 to 1.8 for reading text",
+      "contrast_ratio": "Minimum 7:1 (WCAG AAA) for all reading text"
+    }
+  },
+  "spacing_and_layout": {
+    "touch_targets": "Minimum 64x64px padding for all interactive elements. NO small buttons.",
+    "margins": "Generous margins (p-6 md:p-12) to prevent accidental edge touches.",
+    "layout_mode": "Single-column continuous reading view. Max-width 800px on tablet landscape for optimal line tracking.",
+    "navigation": "Sticky bottom or top navigation bar with massive icons (32px+) and bold text labels."
+  },
+  "components_instructions": {
+    "buttons": "Large blocks, solid high-contrast backgrounds, rounded-lg (8px), thick 2px borders. Must have distinct active/pressed states.",
+    "cards": "Flat design, thick 2px border (border-border), no soft shadows or glassmorphism. High visual clarity.",
+    "segmented_controls": "Used for choosing A/B/C options (e.g., Atto Penitenziale). Massive tap areas, distinct selected state (e.g., solid fill vs outline).",
+    "text_slider": "Prominent 'A-' and 'A+' buttons in the reading view header or settings modal.",
+    "liturgical_indicator": "A colored bar or large dot indicating the current liturgical season (Green, Purple, etc.)."
+  },
+  "motion_and_interactions": {
+    "animations": "Extremely minimal. Simple fade-ins. Pre-fers reduced motion by default. No complex gestures.",
+    "scrolling": "Continuous vertical scroll for the Missal text. Avoid horizontal swiping for page turns to prevent confusion for elderly users with shaky hands."
+  },
+  "media": {
+    "images": [
+      {
+        "category": "splash_screen_background",
+        "url": "https://images.pexels.com/photos/2294880/pexels-photo-2294880.jpeg",
+        "description": "Black leather Bible texture for the loading/splash screen"
+      }
+    ],
+    "icons": "Lucide React (must use stroke-width 2.5 or 3 for high visibility)"
+  },
+  "testing_attributes": {
+    "requirement": "All interactive and key informational elements MUST include a data-testid attribute.",
+    "examples": [
+      "data-testid='btn-mass-of-the-day'",
+      "data-testid='slider-font-size'",
+      "data-testid='tab-offertory'",
+      "data-testid='theme-toggle'"
+    ]
+  },
+  "specific_app_flow": {
+    "home": "Top bar: Settings (Theme, Font Size), Current Liturgical Date. Content: Huge cards for 'Messa di Oggi' (Mass of the Day) and 'Calendario Liturgico'.",
+    "reading_view": "Top sticky header with current section (e.g., 'Gloria'). Main body: continuous scroll of fixed parts + dynamic daily readings. Dropdowns or segmented controls inline for selecting Prefaces/Eucharistic Prayers.",
+    "rubrics": "Liturgical instructions (rubrics) MUST be visually distinct—typically smaller, italicized, and red (hence 'rubrics')."
+  }
+}
