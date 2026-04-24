@@ -4,6 +4,7 @@
  * e le letture del giorno vengono scaricate direttamente da chiesacattolica.it.
  */
 import { scrapeLiturgy } from "./liturgyScraper";
+import { localDateStr, italianDateLabel as italianDateLabelUtil, parseLocalDate } from "./dateUtils";
 
 // Import dati statici bundlati nell'APK
 import fixedParts from "./data/fixedParts.json";

@@ -1,38 +1,81 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSettings } from "../src/SettingsContext";
 import { api, Liturgy } from "../src/api";
+import { localDateStr, italianDateLabel, addDays, parseLocalDate } from "../src/dateUtils";
+
+type DayChoice = "yesterday" | "today" | "tomorrow" | "dayAfter";
+
+const DAY_OFFSETS: Record<DayChoice, number> = {
+  yesterday: -1,
+  today: 0,
+  tomorrow: 1,
+  dayAfter: 2,
+};
+
+const DAY_LABELS: Record<DayChoice, string> = {
+  yesterday: "Ieri",
+  today: "Oggi",
+  tomorrow: "Domani",
+  dayAfter: "Dopodomani",
+};
 
 export default function Home() {
   const router = useRouter();
   const { colors, scaledFont, fontSize } = useSettings();
+  const [selectedDay, setSelectedDay] = useState<DayChoice>("today");
   const [liturgy, setLiturgy] = useState<Liturgy | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const data = await api.liturgyToday();
-        setLiturgy(data);
-        setLoadError(null);
-      } catch (e: any) {
-        console.log("Errore caricamento liturgia:", e);
-        setLoadError(
-          "Nessuna connessione a Internet e nessuna lettura scaricata per oggi. Collegati a Internet o usa 'Scarica letture'."
-        );
-      } finally {
-        setLoading(false);
-      }
-    })();
+  const loadLiturgy = useCallback(async (day: DayChoice) => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const target = addDays(new Date(), DAY_OFFSETS[day]);
+      const dateStr = localDateStr(target);
+      const data = await api.liturgyForDate(dateStr);
+      setLiturgy(data);
+    } catch (e: any) {
+      console.log("Errore caricamento liturgia:", e);
+      setLoadError(
+        "Nessuna connessione a Internet e nessuna lettura scaricata per questa data. Collegati a Internet o usa 'Scarica letture'.",
+      );
+      setLiturgy(null);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const seasonColor = liturgy?.season?.color_hex || colors.liturgicalGreen;
+  // Ricarica quando cambia il giorno selezionato
+  useEffect(() => {
+    loadLiturgy(selectedDay);
+  }, [selectedDay, loadLiturgy]);
 
+  // Resetta sempre su "Oggi" e ricarica quando si torna sulla home (es. dopo mezzanotte)
+  useFocusEffect(
+    useCallback(() => {
+      setSelectedDay("today");
+    }, []),
+  );
+
+  const seasonColor = liturgy?.season?.color_hex || colors.liturgicalGreen;
   const styles = makeStyles(colors, fontSize);
+
+  const selectedDate = addDays(new Date(), DAY_OFFSETS[selectedDay]);
+  const selectedDateStr = localDateStr(selectedDate);
+  const selectedDateLabel = liturgy?.date_label || italianDateLabel(selectedDate);
+
+  const openMessa = () => {
+    if (selectedDay === "today") {
+      router.push("/messa");
+    } else {
+      router.push({ pathname: "/messa", params: { date: selectedDateStr } });
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container} testID="home-screen">
@@ -54,7 +97,7 @@ export default function Home() {
           <View style={[styles.seasonDot, { backgroundColor: seasonColor }]} />
           <View style={{ flex: 1 }}>
             <Text style={styles.dateLabel} testID="date-label">
-              {liturgy?.date_label || "Caricamento..."}
+              {selectedDateLabel}
             </Text>
             <Text style={styles.seasonLabel} testID="season-label">
               {liturgy?.season?.season || ""}
@@ -63,6 +106,36 @@ export default function Home() {
             {liturgy?.title ? (
               <Text style={styles.celebrationTitle} testID="celebration-title">{liturgy.title}</Text>
             ) : null}
+          </View>
+        </View>
+
+        {/* Selettore giorno */}
+        <View style={styles.daySelector} testID="day-selector">
+          <Text style={styles.daySelectorLabel}>Giorno da celebrare</Text>
+          <View style={styles.dayButtonsRow}>
+            {(Object.keys(DAY_OFFSETS) as DayChoice[]).map((day) => {
+              const isActive = selectedDay === day;
+              const d = addDays(new Date(), DAY_OFFSETS[day]);
+              const dayNum = d.getDate();
+              return (
+                <TouchableOpacity
+                  key={day}
+                  style={[styles.dayButton, isActive && styles.dayButtonActive]}
+                  onPress={() => setSelectedDay(day)}
+                  testID={`btn-day-${day}`}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isActive }}
+                  accessibilityLabel={`${DAY_LABELS[day]}, ${dayNum}`}
+                >
+                  <Text style={[styles.dayButtonLabel, isActive && styles.dayButtonLabelActive]}>
+                    {DAY_LABELS[day]}
+                  </Text>
+                  <Text style={[styles.dayButtonNum, isActive && styles.dayButtonNumActive]}>
+                    {dayNum}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
 
@@ -86,14 +159,18 @@ export default function Home() {
 
         <TouchableOpacity
           style={[styles.bigCard, { backgroundColor: colors.primary }]}
-          onPress={() => router.push("/messa")}
+          onPress={openMessa}
           testID="btn-mass-of-the-day"
           accessibilityRole="button"
-          accessibilityLabel="Celebra Messa di oggi"
+          accessibilityLabel={`Celebra la Messa di ${DAY_LABELS[selectedDay].toLowerCase()}`}
         >
           <Ionicons name="book" size={scaledFont(56)} color="#FFFFFF" />
           <Text style={styles.bigCardTitle}>Celebra la Messa</Text>
-          <Text style={styles.bigCardSubtitle}>Ordinario + Letture del giorno</Text>
+          <Text style={styles.bigCardSubtitle}>
+            {selectedDay === "today"
+              ? "Ordinario + Letture del giorno"
+              : `Ordinario + Letture di ${DAY_LABELS[selectedDay]}`}
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -141,7 +218,7 @@ export default function Home() {
 
         {liturgy?.saints && liturgy.saints.length > 0 ? (
           <View style={styles.saintsBox} testID="saints-box">
-            <Text style={styles.saintsTitle}>Oggi si celebra:</Text>
+            <Text style={styles.saintsTitle}>{selectedDay === "today" ? "Oggi si celebra:" : "Si celebra:"}</Text>
             {liturgy.saints.map((s, i) => (
               <Text key={i} style={styles.saintItem} testID={`saint-${i}`}>• {s.title}</Text>
             ))}
@@ -194,6 +271,48 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
   dateLabel: { fontSize: Math.round(fontSize * 0.85), fontWeight: "700", color: colors.textPrimary },
   seasonLabel: { fontSize: Math.round(fontSize * 0.7), color: colors.textSecondary, marginTop: 4 },
   celebrationTitle: { fontSize: Math.round(fontSize * 0.75), color: colors.textPrimary, marginTop: 8, fontStyle: "italic" },
+  daySelector: {
+    padding: 16,
+    borderWidth: 2,
+    borderColor: colors.border,
+    borderRadius: 12,
+    backgroundColor: colors.surface,
+    gap: 12,
+  },
+  daySelectorLabel: { fontSize: Math.round(fontSize * 0.7), fontWeight: "600", color: colors.textSecondary },
+  dayButtonsRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  dayButton: {
+    flex: 1,
+    paddingVertical: 14,
+    paddingHorizontal: 6,
+    borderWidth: 2,
+    borderColor: colors.border,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 88,
+    gap: 4,
+  },
+  dayButtonActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  dayButtonLabel: {
+    fontSize: Math.round(fontSize * 0.58),
+    fontWeight: "700",
+    color: colors.textPrimary,
+    textAlign: "center",
+  },
+  dayButtonLabelActive: { color: "#FFFFFF" },
+  dayButtonNum: {
+    fontSize: Math.round(fontSize * 0.85),
+    fontWeight: "800",
+    color: colors.textSecondary,
+  },
+  dayButtonNumActive: { color: "#FFFFFF" },
   bigCard: {
     padding: 32,
     borderRadius: 16,
@@ -203,7 +322,7 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     justifyContent: "center",
   },
   bigCardTitle: { fontSize: Math.round(fontSize * 1.1), fontWeight: "700", color: "#FFFFFF" },
-  bigCardSubtitle: { fontSize: Math.round(fontSize * 0.7), color: "#FFFFFF", opacity: 0.9 },
+  bigCardSubtitle: { fontSize: Math.round(fontSize * 0.7), color: "#FFFFFF", opacity: 0.9, textAlign: "center" },
   secondaryCard: {
     flexDirection: "row",
     alignItems: "center",

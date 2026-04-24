@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Modal, Switch } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSettings } from "../src/SettingsContext";
 import { api, Liturgy, Preface, EucharisticPrayer, MysteryAcclamation, SolemnBlessing } from "../src/api";
@@ -13,6 +13,7 @@ type ReadingType =
 
 export default function MessaScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ date?: string }>();
   const { colors, fontSize, scaledFont } = useSettings();
   const [liturgy, setLiturgy] = useState<Liturgy | null>(null);
   const [fixedParts, setFixedParts] = useState<Record<string, any> | null>(null);
@@ -48,8 +49,9 @@ export default function MessaScreen() {
   useEffect(() => {
     (async () => {
       try {
+        const dateParam = typeof params.date === "string" ? params.date : undefined;
         const [lit, parts, pr, pe, acc, bless] = await Promise.all([
-          api.liturgyToday(),
+          dateParam ? api.liturgyForDate(dateParam) : api.liturgyToday(),
           api.fixedParts(),
           api.prefaces(),
           api.eucharisticPrayers(),
@@ -85,7 +87,7 @@ export default function MessaScreen() {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [params.date]);
 
   if (loading || !fixedParts) {
     return (

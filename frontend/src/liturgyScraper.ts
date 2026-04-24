@@ -187,7 +187,10 @@ export async function scrapeLiturgy(targetDate: Date): Promise<{
   error?: string;
 }> {
   const url = buildUrl(targetDate);
-  const iso = targetDate.toISOString().slice(0, 10);
+  const y = targetDate.getFullYear();
+  const mo = String(targetDate.getMonth() + 1).padStart(2, "0");
+  const da = String(targetDate.getDate()).padStart(2, "0");
+  const iso = `${y}-${mo}-${da}`;
   const result = {
     date: iso,
     title: "",

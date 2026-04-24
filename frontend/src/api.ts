@@ -25,6 +25,7 @@ import {
   getLiturgyIndex,
   nextDates,
 } from "./offlineCache";
+import { todayStr } from "./dateUtils";
 
 // ===== Types (compatibili con versione precedente) =====
 
@@ -51,12 +52,7 @@ export type SolemnBlessing = {
 };
 
 // ===== Utility =====
-
-function todayStr(): string {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString().slice(0, 10);
-}
+// La funzione todayStr è ora importata da dateUtils.ts (fix timezone Italia)
 
 // ===== Liturgia (con cache + fallback offline) =====
 

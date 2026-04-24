@@ -9,6 +9,7 @@
  *                                          mysteryAcclamations, solemnBlessings, votiveMasses, timestamp }
  */
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { localDateStr, todayStr as getTodayStr } from "./dateUtils";
 
 const LITURGY_PREFIX = "messale_liturgy_";
 const INDEX_KEY = "messale_liturgy_index";
@@ -90,7 +91,7 @@ export async function pruneOldLiturgies(keepDaysBack = 3): Promise<number> {
   today.setHours(0, 0, 0, 0);
   const threshold = new Date(today);
   threshold.setDate(threshold.getDate() - keepDaysBack);
-  const thresholdStr = threshold.toISOString().slice(0, 10);
+  const thresholdStr = localDateStr(threshold);
 
   let removed = 0;
   const next: CachedLiturgyIndexEntry[] = [];
@@ -146,7 +147,7 @@ export function nextDates(days: number, startDate?: Date): string[] {
   for (let i = 0; i < days; i++) {
     const c = new Date(d);
     c.setDate(c.getDate() + i);
-    out.push(c.toISOString().slice(0, 10));
+    out.push(localDateStr(c));
   }
   return out;
 }
