@@ -1,10 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Modal } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Modal, Switch } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSettings } from "../src/SettingsContext";
 import { api, Liturgy, Preface, EucharisticPrayer } from "../src/api";
+
+type ReadingType =
+  | "antifona_ingresso" | "colletta"
+  | "prima_lettura" | "salmo" | "seconda_lettura" | "sequenza" | "acclamazione" | "vangelo"
+  | "sulle_offerte" | "antifona_comunione" | "dopo_comunione";
 
 export default function MessaScreen() {
   const router = useRouter();
@@ -15,16 +20,21 @@ export default function MessaScreen() {
   const [prayers, setPrayers] = useState<EucharisticPrayer[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // user selections
+  // selezioni utente
   const [penitentialForm, setPenitentialForm] = useState<"A" | "B" | "C">("A");
+  const [penitentialSeason, setPenitentialSeason] = useState<string>("ordinario");
   const [selectedPrefaceId, setSelectedPrefaceId] = useState<string>("");
   const [selectedPrayerId, setSelectedPrayerId] = useState<string>("pe2");
   const [selectedCredoId, setSelectedCredoId] = useState<"niceno" | "apostolico">("niceno");
+  const [orateFratresId, setOrateFratresId] = useState<string>("A");
+  const [padreNostroIntroId, setPadreNostroIntroId] = useState<string>("A");
+  const [showGloria, setShowGloria] = useState<boolean>(true);
+  const [showCredo, setShowCredo] = useState<boolean>(true);
+  const [congedoId, setCongedoId] = useState("A");
+  const [benedizioneId, setBenedizioneId] = useState("A");
 
   const [showPrefaces, setShowPrefaces] = useState(false);
   const [showPrayers, setShowPrayers] = useState(false);
-  const [congedoId, setCongedoId] = useState("A");
-  const [benedizioneId, setBenedizioneId] = useState("A");
 
   const styles = makeStyles(colors, fontSize);
 
@@ -41,7 +51,6 @@ export default function MessaScreen() {
         setFixedParts(parts.parts);
         setPrefaces(pr.prefaces);
         setPrayers(pe.prayers);
-        // pre-select a preface matching the season
         const seasonName = (lit?.season?.season || "").toLowerCase();
         const seasonKey = seasonName.includes("avvento") ? "avvento"
           : seasonName.includes("natale") ? "natale"
@@ -50,6 +59,9 @@ export default function MessaScreen() {
           : "ordinario";
         const match = pr.prefaces.find(p => p.season === seasonKey) || pr.prefaces[0];
         if (match) setSelectedPrefaceId(match.id);
+        setPenitentialSeason(seasonKey);
+        // Gloria: off in Avvento e Quaresima
+        if (seasonKey === "avvento" || seasonKey === "quaresima") setShowGloria(false);
       } catch (e) {
         console.log("Errore:", e);
       } finally {
@@ -68,8 +80,9 @@ export default function MessaScreen() {
 
   const selectedPreface = prefaces.find(p => p.id === selectedPrefaceId);
   const selectedPrayer = prayers.find(p => p.id === selectedPrayerId);
+  const getReading = (type: ReadingType) => liturgy?.readings?.find(r => r.type === type);
 
-  // Renderers
+  // Basic text renderers
   const R = ({ children, kind = "normal" }: { children: React.ReactNode; kind?: "normal" | "rubric" | "celebrante" | "assemblea" | "title" | "subtitle" }) => {
     const s = kind === "rubric" ? styles.rubric
       : kind === "celebrante" ? styles.celebrante
@@ -81,9 +94,7 @@ export default function MessaScreen() {
   };
 
   const renderSection = (section: any, idx: number) => {
-    if (section.type === "rubric") {
-      return <R key={idx} kind="rubric">{section.text}</R>;
-    }
+    if (section.type === "rubric") return <R key={idx} kind="rubric">{section.text}</R>;
     if (section.type === "dialogue") {
       return (
         <View key={idx} style={styles.block}>
@@ -92,9 +103,7 @@ export default function MessaScreen() {
         </View>
       );
     }
-    if (section.type === "monologue") {
-      return <R key={idx} kind="celebrante">{section.celebrante}</R>;
-    }
+    if (section.type === "monologue") return <R key={idx} kind="celebrante">{section.celebrante}</R>;
     if (section.type === "prayer") {
       return (
         <View key={idx} style={styles.block}>
@@ -121,17 +130,32 @@ export default function MessaScreen() {
     return null;
   };
 
-  // Special rendering for Atto Penitenziale choice
+  // === Reading renderer (daily) ===
+  const renderReading = (type: ReadingType, titleOverride?: string) => {
+    const r = getReading(type);
+    if (!r || !r.text) return null;
+    return (
+      <View style={styles.readingBlock} testID={`reading-${type}`}>
+        <R kind="subtitle">{titleOverride || r.title}</R>
+        {r.reference ? <R kind="rubric">{r.reference}</R> : null}
+        <R>{r.text}</R>
+      </View>
+    );
+  };
+
+  // === Atto Penitenziale ===
   const renderAttoPenitenziale = () => {
     const atto = fixedParts["atto_penitenziale"];
     const choice = atto.sections.find((s: any) => s.type === "choice");
     const selectedOpt = choice?.options.find((o: any) => o.id === penitentialForm);
+    const seasonVariant = selectedOpt?.season_variants?.[penitentialSeason];
 
     return (
       <View testID="section-atto-penitenziale">
         <R kind="title">Atto Penitenziale</R>
         {atto.sections.filter((s: any) => s.type !== "choice" && s.type !== "kyrie").map(renderSection)}
 
+        <R kind="subtitle">Scegli formula</R>
         <View style={styles.choiceRow}>
           {(["A", "B", "C"] as const).map(id => (
             <TouchableOpacity
@@ -145,12 +169,37 @@ export default function MessaScreen() {
           ))}
         </View>
 
+        {/* Formula C: sub-selettore tempo liturgico */}
+        {selectedOpt?.season_variants && (
+          <View>
+            <R kind="subtitle">Tempo liturgico (tropari)</R>
+            <View style={styles.choiceRow}>
+              {Object.entries(selectedOpt.season_variants).map(([key, v]: [string, any]) => (
+                <TouchableOpacity
+                  key={key}
+                  style={[styles.choiceBtn, penitentialSeason === key && styles.choiceBtnActive]}
+                  onPress={() => setPenitentialSeason(key)}
+                  testID={`btn-pen-season-${key}`}
+                >
+                  <Text style={[styles.choiceBtnText, penitentialSeason === key && { color: "#FFFFFF" }]}>{v.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
+
         {selectedOpt && (
           <View style={styles.block}>
             <R kind="subtitle">{selectedOpt.label}</R>
             {selectedOpt.assemblea && <R kind="assemblea">A. {selectedOpt.assemblea}</R>}
             {selectedOpt.dialogue && selectedOpt.dialogue.map((d: any, i: number) => (
               <View key={i} style={styles.dialogBlock}>
+                <R kind="celebrante">C. {d.c}</R>
+                <R kind="assemblea">A. {d.a}</R>
+              </View>
+            ))}
+            {seasonVariant?.dialogue && seasonVariant.dialogue.map((d: any, i: number) => (
+              <View key={`sv-${i}`} style={styles.dialogBlock}>
                 <R kind="celebrante">C. {d.c}</R>
                 <R kind="assemblea">A. {d.a}</R>
               </View>
@@ -166,6 +215,7 @@ export default function MessaScreen() {
     );
   };
 
+  // === Credo ===
   const renderCredo = () => {
     const credo = fixedParts["credo"];
     const choice = credo.sections[0];
@@ -192,7 +242,78 @@ export default function MessaScreen() {
     );
   };
 
-  // Riti di conclusione with choices
+  // === Offertorio ===
+  const renderOffertorio = () => {
+    const off = fixedParts["offertorio"];
+    const orateChoice = off.sections.find((s: any) => s.type === "choice_orate");
+    const selectedOrate = orateChoice?.options.find((o: any) => o.id === orateFratresId);
+    return (
+      <View testID="part-offertorio">
+        <R kind="title">Liturgia Eucaristica – Presentazione dei doni</R>
+        {off.sections.filter((s: any) => s.type !== "choice_orate").map(renderSection)}
+
+        {orateChoice && (
+          <View style={styles.block}>
+            {orateChoice.rubric && <R kind="rubric">{orateChoice.rubric}</R>}
+            <R kind="subtitle">Invito e risposta</R>
+            <View style={styles.choiceRow}>
+              {orateChoice.options.map((o: any) => (
+                <TouchableOpacity
+                  key={o.id}
+                  style={[styles.choiceBtn, orateFratresId === o.id && styles.choiceBtnActive]}
+                  onPress={() => setOrateFratresId(o.id)}
+                  testID={`btn-orate-${o.id}`}
+                >
+                  <Text style={[styles.choiceBtnText, orateFratresId === o.id && { color: "#FFFFFF" }]}>{o.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {selectedOrate && (
+              <View style={styles.block}>
+                <R kind="celebrante">C. {selectedOrate.celebrante}</R>
+                <R kind="assemblea">A. {selectedOrate.assemblea}</R>
+              </View>
+            )}
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  // === Padre Nostro (con 4 introduzioni) ===
+  const renderPadreNostro = () => {
+    const pn = fixedParts["padre_nostro"];
+    const introChoice = pn.sections.find((s: any) => s.type === "choice_intro");
+    const selectedIntro = introChoice?.options.find((o: any) => o.id === padreNostroIntroId);
+    return (
+      <View testID="part-padre-nostro">
+        <R kind="title">Riti di Comunione</R>
+
+        {introChoice && (
+          <View style={styles.block}>
+            <R kind="subtitle">Monizione d'introduzione</R>
+            <View style={styles.choiceRow}>
+              {introChoice.options.map((o: any) => (
+                <TouchableOpacity
+                  key={o.id}
+                  style={[styles.choiceBtn, padreNostroIntroId === o.id && styles.choiceBtnActive]}
+                  onPress={() => setPadreNostroIntroId(o.id)}
+                  testID={`btn-pn-intro-${o.id}`}
+                >
+                  <Text style={[styles.choiceBtnText, padreNostroIntroId === o.id && { color: "#FFFFFF" }]}>Forma {o.id}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {selectedIntro && <R kind="celebrante">C. {selectedIntro.text}</R>}
+          </View>
+        )}
+
+        {pn.sections.filter((s: any) => s.type !== "choice_intro").map(renderSection)}
+      </View>
+    );
+  };
+
+  // === Riti di Conclusione ===
   const renderConclusione = () => {
     const rc = fixedParts["riti_conclusione"];
     const dialogue = rc.sections[0];
@@ -251,22 +372,12 @@ export default function MessaScreen() {
   return (
     <SafeAreaView style={styles.container} testID="mass-screen">
       <View style={styles.topBar}>
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={() => router.back()}
-          testID="btn-back"
-          accessibilityLabel="Torna alla home"
-        >
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} testID="btn-back">
           <Ionicons name="arrow-back" size={scaledFont(36)} color={colors.textPrimary} />
           <Text style={styles.backBtnText}>Home</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Santa Messa</Text>
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={() => router.push("/impostazioni")}
-          testID="btn-settings-mass"
-          accessibilityLabel="Impostazioni"
-        >
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.push("/impostazioni")} testID="btn-settings-mass">
           <Ionicons name="settings-outline" size={scaledFont(36)} color={colors.textPrimary} />
         </TouchableOpacity>
       </View>
@@ -279,58 +390,85 @@ export default function MessaScreen() {
           <Text style={styles.daySeason}>{liturgy?.season?.season} · Colore liturgico: {liturgy?.liturgical_color || liturgy?.season?.color}</Text>
         </View>
 
-        {/* 1. Riti Iniziali */}
+        {/* Toggle Gloria / Credo */}
+        <View style={styles.togglesBox} testID="toggles-box">
+          <View style={styles.toggleRow}>
+            <Text style={styles.toggleLabel}>Mostra Gloria</Text>
+            <Switch
+              value={showGloria}
+              onValueChange={setShowGloria}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor="#FFFFFF"
+              style={{ transform: [{ scaleX: 1.4 }, { scaleY: 1.4 }], marginLeft: 16 }}
+              testID="switch-show-gloria"
+            />
+          </View>
+          <View style={styles.toggleRow}>
+            <Text style={styles.toggleLabel}>Mostra Credo</Text>
+            <Switch
+              value={showCredo}
+              onValueChange={setShowCredo}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor="#FFFFFF"
+              style={{ transform: [{ scaleX: 1.4 }, { scaleY: 1.4 }], marginLeft: 16 }}
+              testID="switch-show-credo"
+            />
+          </View>
+        </View>
+
+        {/* ============ RITI DI INTRODUZIONE ============ */}
         <View style={styles.partBox} testID="part-riti-iniziali">
+          {renderReading("antifona_ingresso", "Antifona d'ingresso")}
           <R kind="title">Riti di Introduzione</R>
           {fixedParts["riti_iniziali"].sections.map(renderSection)}
         </View>
 
-        {/* 2. Atto Penitenziale */}
         <View style={styles.partBox}>
           {renderAttoPenitenziale()}
         </View>
 
-        {/* 3. Gloria */}
-        <View style={styles.partBox} testID="part-gloria">
-          <R kind="title">Gloria</R>
-          {fixedParts["gloria"].sections.map(renderSection)}
+        {showGloria && (
+          <View style={styles.partBox} testID="part-gloria">
+            <R kind="title">Gloria</R>
+            {fixedParts["gloria"].sections.map(renderSection)}
+          </View>
+        )}
+
+        {/* Colletta del giorno - chiude i riti di introduzione */}
+        <View style={styles.partBox} testID="part-colletta">
+          {renderReading("colletta", "Colletta (Orazione del giorno)")}
         </View>
 
-        {/* 4. Liturgia della Parola - letture */}
+        {/* ============ LITURGIA DELLA PAROLA ============ */}
         <View style={styles.partBox} testID="part-letture">
           <R kind="title">Liturgia della Parola</R>
-          {liturgy?.readings && liturgy.readings.length > 0 ? (
-            liturgy.readings.map((r, i) => (
-              <View key={i} style={styles.readingBlock}>
-                <R kind="subtitle">{r.title}</R>
-                {r.reference ? <R kind="rubric">{r.reference}</R> : null}
-                <R>{r.text || "(Testo non disponibile)"}</R>
-              </View>
-            ))
-          ) : (
+          {renderReading("prima_lettura")}
+          {renderReading("salmo")}
+          {renderReading("seconda_lettura")}
+          {renderReading("sequenza")}
+          {renderReading("acclamazione")}
+          {renderReading("vangelo")}
+          {!liturgy?.readings?.length && (
             <R kind="rubric">Letture non disponibili. Verifica connessione internet.</R>
           )}
         </View>
 
-        {/* 5. Credo */}
+        {showCredo && (
+          <View style={styles.partBox}>
+            {renderCredo()}
+          </View>
+        )}
+
+        {/* ============ LITURGIA EUCARISTICA ============ */}
         <View style={styles.partBox}>
-          {renderCredo()}
+          {renderOffertorio()}
+          {/* Sulle offerte (variabile del giorno) - dopo l'Orate Fratres */}
+          {renderReading("sulle_offerte", "Sulle offerte")}
         </View>
 
-        {/* 6. Offertorio */}
-        <View style={styles.partBox} testID="part-offertorio">
-          <R kind="title">Liturgia Eucaristica – Presentazione dei doni</R>
-          {fixedParts["offertorio"].sections.map(renderSection)}
-        </View>
-
-        {/* 7. Prefazio - scelta */}
         <View style={styles.partBox} testID="part-prefazio">
           <R kind="title">Prefazio</R>
-          <TouchableOpacity
-            style={styles.selectorBtn}
-            onPress={() => setShowPrefaces(true)}
-            testID="btn-select-preface"
-          >
+          <TouchableOpacity style={styles.selectorBtn} onPress={() => setShowPrefaces(true)} testID="btn-select-preface">
             <Ionicons name="swap-horizontal" size={scaledFont(28)} color={colors.primary} />
             <Text style={styles.selectorBtnText}>Scegli Prefazio</Text>
           </TouchableOpacity>
@@ -345,14 +483,9 @@ export default function MessaScreen() {
           )}
         </View>
 
-        {/* 8. Preghiera Eucaristica */}
         <View style={styles.partBox} testID="part-preghiera-eucaristica">
           <R kind="title">Preghiera Eucaristica</R>
-          <TouchableOpacity
-            style={styles.selectorBtn}
-            onPress={() => setShowPrayers(true)}
-            testID="btn-select-prayer"
-          >
+          <TouchableOpacity style={styles.selectorBtn} onPress={() => setShowPrayers(true)} testID="btn-select-prayer">
             <Ionicons name="swap-horizontal" size={scaledFont(28)} color={colors.primary} />
             <Text style={styles.selectorBtnText}>Scegli Preghiera Eucaristica</Text>
           </TouchableOpacity>
@@ -365,21 +498,26 @@ export default function MessaScreen() {
           )}
         </View>
 
-        {/* 9. Padre Nostro */}
-        <View style={styles.partBox} testID="part-padre-nostro">
-          <R kind="title">Riti di Comunione</R>
-          {fixedParts["padre_nostro"].sections.map(renderSection)}
+        {/* ============ RITI DI COMUNIONE ============ */}
+        <View style={styles.partBox}>
+          {renderPadreNostro()}
         </View>
 
-        {/* 10. Comunione */}
         <View style={styles.partBox} testID="part-comunione">
           {fixedParts["comunione"].sections.map((s: any, i: number) => {
             if (i === 0 && s.type === "rubric") return <View key="title"><R kind="title">Frazione del Pane e Comunione</R>{renderSection(s, i)}</View>;
             return renderSection(s, i);
           })}
+          {/* Antifona alla Comunione - durante la distribuzione */}
+          {renderReading("antifona_comunione", "Antifona alla Comunione")}
         </View>
 
-        {/* 11. Riti di Conclusione */}
+        {/* Preghiera dopo la Comunione - chiude i riti di comunione */}
+        <View style={styles.partBox} testID="part-dopo-comunione">
+          {renderReading("dopo_comunione", "Dopo la Comunione")}
+        </View>
+
+        {/* ============ RITI DI CONCLUSIONE ============ */}
         <View style={styles.partBox}>
           {renderConclusione()}
         </View>
@@ -472,11 +610,22 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     borderWidth: 3,
     borderRadius: 12,
     backgroundColor: colors.surface,
-    marginBottom: 24,
+    marginBottom: 16,
   },
   dayDate: { fontSize: Math.round(fontSize * 0.85), fontWeight: "700", color: colors.textPrimary },
   dayTitle: { fontSize: Math.round(fontSize * 0.8), color: colors.textPrimary, fontStyle: "italic", marginTop: 8 },
   daySeason: { fontSize: Math.round(fontSize * 0.65), color: colors.textSecondary, marginTop: 6 },
+  togglesBox: {
+    padding: 20,
+    borderWidth: 2,
+    borderColor: colors.border,
+    borderRadius: 12,
+    backgroundColor: colors.surface,
+    marginBottom: 24,
+    gap: 14,
+  },
+  toggleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  toggleLabel: { fontSize: Math.round(fontSize * 0.75), color: colors.textPrimary, fontWeight: "600" },
   partBox: {
     marginBottom: 28,
     paddingBottom: 20,

@@ -89,12 +89,49 @@ FIXED_PARTS = {
                     },
                     {
                         "id": "C",
-                        "label": "Formula C - Invocazioni",
-                        "dialogue": [
-                            {"c": "Signore, mandato dal Padre a salvare i contriti di cuore, abbi pietà di noi.", "a": "Signore, pietà."},
-                            {"c": "Cristo, che sei venuto a chiamare i peccatori, abbi pietà di noi.", "a": "Cristo, pietà."},
-                            {"c": "Signore, che siedi alla destra del Padre e intercedi per noi, abbi pietà di noi.", "a": "Signore, pietà."}
-                        ],
+                        "label": "Formula C - Invocazioni (tropari)",
+                        "season_variants": {
+                            "ordinario": {
+                                "label": "Tempo Ordinario",
+                                "dialogue": [
+                                    {"c": "Signore, mandato dal Padre a salvare i contriti di cuore, abbi pietà di noi.", "a": "Signore, pietà."},
+                                    {"c": "Cristo, che sei venuto a chiamare i peccatori, abbi pietà di noi.", "a": "Cristo, pietà."},
+                                    {"c": "Signore, che siedi alla destra del Padre e intercedi per noi, abbi pietà di noi.", "a": "Signore, pietà."}
+                                ]
+                            },
+                            "avvento": {
+                                "label": "Avvento",
+                                "dialogue": [
+                                    {"c": "Signore, che vieni a visitare il tuo popolo nella pace, abbi pietà di noi.", "a": "Signore, pietà."},
+                                    {"c": "Cristo, che vieni a salvare ciò che era perduto, abbi pietà di noi.", "a": "Cristo, pietà."},
+                                    {"c": "Signore, che vieni nella gloria a giudicare il mondo, abbi pietà di noi.", "a": "Signore, pietà."}
+                                ]
+                            },
+                            "natale": {
+                                "label": "Natale",
+                                "dialogue": [
+                                    {"c": "Signore, Figlio dell'eterno Padre, nato dalla Vergine Maria, abbi pietà di noi.", "a": "Signore, pietà."},
+                                    {"c": "Cristo, Verbo fatto carne in mezzo a noi, abbi pietà di noi.", "a": "Cristo, pietà."},
+                                    {"c": "Signore, principe della pace, luce che illumina ogni uomo, abbi pietà di noi.", "a": "Signore, pietà."}
+                                ]
+                            },
+                            "quaresima": {
+                                "label": "Quaresima",
+                                "dialogue": [
+                                    {"c": "Signore, che sei stato mandato a sanare i contriti di cuore, abbi pietà di noi.", "a": "Signore, pietà."},
+                                    {"c": "Cristo, che sei venuto a chiamare i peccatori, abbi pietà di noi.", "a": "Cristo, pietà."},
+                                    {"c": "Signore, che rimetti le colpe e sani le ferite del peccato, abbi pietà di noi.", "a": "Signore, pietà."}
+                                ]
+                            },
+                            "pasqua": {
+                                "label": "Tempo di Pasqua",
+                                "dialogue": [
+                                    {"c": "Signore, morto e risorto per noi, abbi pietà di noi.", "a": "Signore, pietà."},
+                                    {"c": "Cristo, vivente alla destra del Padre dove intercedi per noi, abbi pietà di noi.", "a": "Cristo, pietà."},
+                                    {"c": "Signore, che ci doni lo Spirito consolatore, abbi pietà di noi.", "a": "Signore, pietà."}
+                                ]
+                            }
+                        },
                         "celebrante": "Dio onnipotente abbia misericordia di noi, perdoni i nostri peccati e ci conduca alla vita eterna.",
                         "risposta": "Amen."
                     }
@@ -172,10 +209,29 @@ FIXED_PARTS = {
                 "celebrante": "Umili e pentiti accoglici, o Signore: ti sia gradito il nostro sacrificio che oggi si compie dinanzi a te."
             },
             {
-                "type": "prayer",
+                "type": "choice_orate",
+                "label": "Invito e risposta (Orate Fratres)",
                 "rubric": "Il sacerdote si lava le mani dicendo sottovoce: «Lavami, Signore, da ogni colpa, purificami da ogni peccato». Poi, in piedi al centro dell'altare, rivolto al popolo, allargando e ricongiungendo le mani, dice:",
-                "celebrante": "Pregate, fratelli e sorelle, perché il mio e vostro sacrificio sia gradito a Dio, Padre onnipotente.",
-                "assemblea": "Il Signore riceva dalle tue mani questo sacrificio a lode e gloria del suo nome, per il bene nostro e di tutta la sua santa Chiesa."
+                "options": [
+                    {
+                        "id": "A",
+                        "label": "Forma A - Standard",
+                        "celebrante": "Pregate, fratelli e sorelle, perché il mio e vostro sacrificio sia gradito a Dio, Padre onnipotente.",
+                        "assemblea": "Il Signore riceva dalle tue mani questo sacrificio a lode e gloria del suo nome, per il bene nostro e di tutta la sua santa Chiesa."
+                    },
+                    {
+                        "id": "B",
+                        "label": "Forma B - Sacrificio di lode",
+                        "celebrante": "Pregate, fratelli e sorelle, perché, portando all'altare le gioie e le fatiche di ogni giorno, ci disponiamo ad offrire il sacrificio gradito a Dio, Padre onnipotente.",
+                        "assemblea": "Il Signore riceva dalle tue mani questo sacrificio a lode e gloria del suo nome, per il bene nostro e di tutta la sua santa Chiesa."
+                    },
+                    {
+                        "id": "C",
+                        "label": "Forma C - Defunti",
+                        "celebrante": "Pregate, fratelli e sorelle, perché il sacrificio della Chiesa, in questo memoriale della Pasqua del Signore, sia gradito a Dio Padre onnipotente.",
+                        "assemblea": "Il Signore riceva dalle tue mani questo sacrificio a lode e gloria del suo nome, per il bene nostro e di tutta la sua santa Chiesa."
+                    }
+                ]
             }
         ]
     },
@@ -183,8 +239,30 @@ FIXED_PARTS = {
         "title": "Riti di Comunione - Padre Nostro",
         "sections": [
             {
-                "type": "monologue",
-                "celebrante": "Obbedienti alla parola del Salvatore e formati al suo divino insegnamento, osiamo dire:"
+                "type": "choice_intro",
+                "label": "Monizione d'introduzione al Padre Nostro",
+                "options": [
+                    {
+                        "id": "A",
+                        "label": "Forma A - Obbedienti alla parola",
+                        "text": "Obbedienti alla parola del Salvatore e formati al suo divino insegnamento, osiamo dire:"
+                    },
+                    {
+                        "id": "B",
+                        "label": "Forma B - Guidati dallo Spirito",
+                        "text": "Guidati dallo Spirito di Gesù e illuminati dalla sapienza del Vangelo, osiamo dire:"
+                    },
+                    {
+                        "id": "C",
+                        "label": "Forma C - Fedeli alla parola di Cristo",
+                        "text": "Fedeli alla parola di Cristo e prendendo forza dal suo amore, osiamo dire:"
+                    },
+                    {
+                        "id": "D",
+                        "label": "Forma D - Prima del banchetto",
+                        "text": "Prima di partecipare al banchetto dell'Eucaristia, segno di riconciliazione e vincolo di unione fraterna, preghiamo insieme come il Signore ci ha insegnato:"
+                    }
+                ]
             },
             {
                 "type": "prayer",
