@@ -51,6 +51,12 @@ def _clean_text(text: str) -> str:
         return ""
     text = re.sub(r"[ \t]+", " ", text)
     text = re.sub(r"\n{3,}", "\n\n", text)
+    # Ricompone parentesi spezzate su più righe: "...(\nRef\n)" -> "...(Ref)"
+    # Esempi: "Alleluia. (\nAp 5,12\n)" oppure "(\nGv 6,52-59\n)"
+    text = re.sub(r"\(\s*\n\s*([^()\n]+?)\s*\n\s*\)", r"(\1)", text)
+    # Caso: apertura a fine riga, chiusura a inizio riga successiva
+    text = re.sub(r"\(\s*\n+\s*", "(", text)
+    text = re.sub(r"\s*\n+\s*\)", ")", text)
     return text.strip()
 
 
