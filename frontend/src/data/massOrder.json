@@ -1,0 +1,50 @@
+[
+  {
+    "id": "riti_iniziali",
+    "title": "Riti di Introduzione"
+  },
+  {
+    "id": "atto_penitenziale",
+    "title": "Atto Penitenziale"
+  },
+  {
+    "id": "gloria",
+    "title": "Gloria"
+  },
+  {
+    "id": "colletta",
+    "title": "Colletta (Orazione del giorno)"
+  },
+  {
+    "id": "liturgia_parola",
+    "title": "Liturgia della Parola"
+  },
+  {
+    "id": "credo",
+    "title": "Professione di Fede (Credo)"
+  },
+  {
+    "id": "preghiera_fedeli",
+    "title": "Preghiera dei Fedeli"
+  },
+  {
+    "id": "offertorio",
+    "title": "Liturgia Eucaristica - Offertorio"
+  },
+  {
+    "id": "preghiera_eucaristica",
+    "title": "Preghiera Eucaristica"
+  },
+  {
+    "id": "padre_nostro",
+    "title": "Riti di Comunione - Padre Nostro"
+  },
+  {
+    "id": "comunione",
+    "title": "Frazione del Pane e Comunione"
+  },
+  {
+    "id": "riti_conclusione",
+    "title": "Riti di Conclusione"
+  }
+]

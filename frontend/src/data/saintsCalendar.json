@@ -1,0 +1,722 @@
+[
+  {
+    "date": "01-01",
+    "celebrations": [
+      {
+        "title": "Maria Santissima Madre di Dio",
+        "rank": "solennita",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "01-06",
+    "celebrations": [
+      {
+        "title": "Epifania del Signore",
+        "rank": "solennita",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "01-17",
+    "celebrations": [
+      {
+        "title": "Sant'Antonio abate",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "01-20",
+    "celebrations": [
+      {
+        "title": "San Sebastiano, martire",
+        "rank": "memoria_facoltativa",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "01-21",
+    "celebrations": [
+      {
+        "title": "Sant'Agnese, vergine e martire",
+        "rank": "memoria_obbligatoria",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "01-25",
+    "celebrations": [
+      {
+        "title": "Conversione di San Paolo apostolo",
+        "rank": "festa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "01-28",
+    "celebrations": [
+      {
+        "title": "San Tommaso d'Aquino, sacerdote e dottore della Chiesa",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "01-31",
+    "celebrations": [
+      {
+        "title": "San Giovanni Bosco, sacerdote",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "02-02",
+    "celebrations": [
+      {
+        "title": "Presentazione del Signore",
+        "rank": "festa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "02-05",
+    "celebrations": [
+      {
+        "title": "Sant'Agata, vergine e martire",
+        "rank": "memoria_obbligatoria",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "02-10",
+    "celebrations": [
+      {
+        "title": "Santa Scolastica, vergine",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "02-11",
+    "celebrations": [
+      {
+        "title": "Beata Vergine Maria di Lourdes",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "02-14",
+    "celebrations": [
+      {
+        "title": "Santi Cirillo e Metodio, patroni d'Europa",
+        "rank": "festa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "02-22",
+    "celebrations": [
+      {
+        "title": "Cattedra di San Pietro apostolo",
+        "rank": "festa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "03-19",
+    "celebrations": [
+      {
+        "title": "San Giuseppe, sposo della Beata Vergine Maria",
+        "rank": "solennita",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "03-25",
+    "celebrations": [
+      {
+        "title": "Annunciazione del Signore",
+        "rank": "solennita",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "04-25",
+    "celebrations": [
+      {
+        "title": "San Marco, evangelista",
+        "rank": "festa",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "04-29",
+    "celebrations": [
+      {
+        "title": "Santa Caterina da Siena, patrona d'Italia e d'Europa",
+        "rank": "festa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "05-01",
+    "celebrations": [
+      {
+        "title": "San Giuseppe lavoratore",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "05-03",
+    "celebrations": [
+      {
+        "title": "Santi Filippo e Giacomo, apostoli",
+        "rank": "festa",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "05-13",
+    "celebrations": [
+      {
+        "title": "Beata Vergine Maria di Fatima",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "05-14",
+    "celebrations": [
+      {
+        "title": "San Mattia, apostolo",
+        "rank": "festa",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "05-31",
+    "celebrations": [
+      {
+        "title": "Visitazione della Beata Vergine Maria",
+        "rank": "festa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "06-13",
+    "celebrations": [
+      {
+        "title": "Sant'Antonio di Padova, sacerdote e dottore della Chiesa",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "06-21",
+    "celebrations": [
+      {
+        "title": "San Luigi Gonzaga, religioso",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "06-24",
+    "celebrations": [
+      {
+        "title": "Natività di San Giovanni Battista",
+        "rank": "solennita",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "06-29",
+    "celebrations": [
+      {
+        "title": "Santi Pietro e Paolo, apostoli",
+        "rank": "solennita",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "07-03",
+    "celebrations": [
+      {
+        "title": "San Tommaso, apostolo",
+        "rank": "festa",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "07-11",
+    "celebrations": [
+      {
+        "title": "San Benedetto, abate, patrono d'Europa",
+        "rank": "festa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "07-22",
+    "celebrations": [
+      {
+        "title": "Santa Maria Maddalena",
+        "rank": "festa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "07-23",
+    "celebrations": [
+      {
+        "title": "Santa Brigida, patrona d'Europa",
+        "rank": "festa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "07-25",
+    "celebrations": [
+      {
+        "title": "San Giacomo, apostolo",
+        "rank": "festa",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "07-26",
+    "celebrations": [
+      {
+        "title": "Santi Gioacchino e Anna, genitori della Beata Vergine Maria",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "07-29",
+    "celebrations": [
+      {
+        "title": "Santi Marta, Maria e Lazzaro",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "08-06",
+    "celebrations": [
+      {
+        "title": "Trasfigurazione del Signore",
+        "rank": "festa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "08-08",
+    "celebrations": [
+      {
+        "title": "San Domenico, sacerdote",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "08-10",
+    "celebrations": [
+      {
+        "title": "San Lorenzo, diacono e martire",
+        "rank": "festa",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "08-11",
+    "celebrations": [
+      {
+        "title": "Santa Chiara, vergine",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "08-14",
+    "celebrations": [
+      {
+        "title": "San Massimiliano Maria Kolbe, sacerdote e martire",
+        "rank": "memoria_obbligatoria",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "08-15",
+    "celebrations": [
+      {
+        "title": "Assunzione della Beata Vergine Maria",
+        "rank": "solennita",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "08-24",
+    "celebrations": [
+      {
+        "title": "San Bartolomeo, apostolo",
+        "rank": "festa",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "08-27",
+    "celebrations": [
+      {
+        "title": "Santa Monica",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "08-28",
+    "celebrations": [
+      {
+        "title": "Sant'Agostino, vescovo e dottore della Chiesa",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "08-29",
+    "celebrations": [
+      {
+        "title": "Martirio di San Giovanni Battista",
+        "rank": "memoria_obbligatoria",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "09-08",
+    "celebrations": [
+      {
+        "title": "Natività della Beata Vergine Maria",
+        "rank": "festa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "09-14",
+    "celebrations": [
+      {
+        "title": "Esaltazione della Santa Croce",
+        "rank": "festa",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "09-15",
+    "celebrations": [
+      {
+        "title": "Beata Vergine Maria Addolorata",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "09-21",
+    "celebrations": [
+      {
+        "title": "San Matteo, apostolo ed evangelista",
+        "rank": "festa",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "09-23",
+    "celebrations": [
+      {
+        "title": "San Pio da Pietrelcina, sacerdote",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "09-29",
+    "celebrations": [
+      {
+        "title": "Santi Arcangeli Michele, Gabriele e Raffaele",
+        "rank": "festa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "10-02",
+    "celebrations": [
+      {
+        "title": "Santi Angeli Custodi",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "10-04",
+    "celebrations": [
+      {
+        "title": "San Francesco d'Assisi, patrono d'Italia",
+        "rank": "festa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "10-07",
+    "celebrations": [
+      {
+        "title": "Beata Vergine Maria del Rosario",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "10-15",
+    "celebrations": [
+      {
+        "title": "Santa Teresa di Gesù, vergine e dottore della Chiesa",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "10-18",
+    "celebrations": [
+      {
+        "title": "San Luca, evangelista",
+        "rank": "festa",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "10-28",
+    "celebrations": [
+      {
+        "title": "Santi Simone e Giuda, apostoli",
+        "rank": "festa",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "11-01",
+    "celebrations": [
+      {
+        "title": "Tutti i Santi",
+        "rank": "solennita",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "11-02",
+    "celebrations": [
+      {
+        "title": "Commemorazione di tutti i fedeli defunti",
+        "rank": "solennita",
+        "color": "viola"
+      }
+    ]
+  },
+  {
+    "date": "11-09",
+    "celebrations": [
+      {
+        "title": "Dedicazione della Basilica Lateranense",
+        "rank": "festa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "11-11",
+    "celebrations": [
+      {
+        "title": "San Martino di Tours, vescovo",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "11-21",
+    "celebrations": [
+      {
+        "title": "Presentazione della Beata Vergine Maria",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "11-22",
+    "celebrations": [
+      {
+        "title": "Santa Cecilia, vergine e martire",
+        "rank": "memoria_obbligatoria",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "11-30",
+    "celebrations": [
+      {
+        "title": "Sant'Andrea, apostolo",
+        "rank": "festa",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "12-03",
+    "celebrations": [
+      {
+        "title": "San Francesco Saverio, sacerdote",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "12-07",
+    "celebrations": [
+      {
+        "title": "Sant'Ambrogio, vescovo e dottore della Chiesa",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "12-08",
+    "celebrations": [
+      {
+        "title": "Immacolata Concezione della Beata Vergine Maria",
+        "rank": "solennita",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "12-12",
+    "celebrations": [
+      {
+        "title": "Beata Vergine Maria di Guadalupe",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "12-13",
+    "celebrations": [
+      {
+        "title": "Santa Lucia, vergine e martire",
+        "rank": "memoria_obbligatoria",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "12-25",
+    "celebrations": [
+      {
+        "title": "Natività del Signore",
+        "rank": "solennita",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "12-26",
+    "celebrations": [
+      {
+        "title": "Santo Stefano, primo martire",
+        "rank": "festa",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "12-27",
+    "celebrations": [
+      {
+        "title": "San Giovanni, apostolo ed evangelista",
+        "rank": "festa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "12-28",
+    "celebrations": [
+      {
+        "title": "Santi Innocenti, martiri",
+        "rank": "festa",
+        "color": "rosso"
+      }
+    ]
+  }
+]

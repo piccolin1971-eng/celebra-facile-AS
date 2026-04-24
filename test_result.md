@@ -197,5 +197,7 @@ test_plan:
 agent_communication:
     - agent: "main"
       message: "Implementata modalità offline completa: nuovo endpoint backend /api/liturgy/range per pre-download, modulo offlineCache con AsyncStorage, schermata /scarica con progress bar e gestione cache. Aggiunto banner offline su home. Chiedo al testing agent di verificare solo il nuovo endpoint backend (range), gli altri endpoint sono invariati."
+    - agent: "main"
+      message: "REFATTORIZZAZIONE v1.1.0 — App standalone, zero backend. Tutti i testi statici esportati da Python a JSON (127 KB totali) e bundlati nell'APK in /app/frontend/src/data/. Creato liturgyScraper.ts che fa fetch diretto a chiesacattolica.it e parsing HTML con regex (testato con Node: 18 sezioni estratte correttamente). api.ts ora usa localLiturgy.ts invece di chiamare il backend. Build APK v1.1.0 lanciato (ID 085164f0-5fb6-4b41-ba15-bd953fcc3967). Il backend FastAPI esiste ancora in /app/backend ma non è più necessario per l'APK — può restare solo per dev/test."
     - agent: "testing"
       message: "Endpoint /api/liturgy/range/{start_date}?days=N testato con successo (19/20 check passati). Struttura risposta, campi per item, clamp (min=1, max=30, default=7), validazione date invalide con HTTP 400 + messaggio corretto, resilienza errori scraping (year 2099 -> readings=[] + error field, no crash) e endpoint correlati (today, by_date, mass/order, prefaces) tutti OK. Readings popolate da chiesacattolica.it: 9-10 letture per giorno. NIENTE da segnalare al main agent: endpoint pronto per produzione."

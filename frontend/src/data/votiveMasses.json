@@ -1,0 +1,72 @@
+[
+  {
+    "id": "ss_trinita",
+    "title": "Santissima Trinità",
+    "color": "bianco"
+  },
+  {
+    "id": "spirito_santo",
+    "title": "Dello Spirito Santo",
+    "color": "rosso"
+  },
+  {
+    "id": "ss_sacramento",
+    "title": "Del Santissimo Sacramento",
+    "color": "bianco"
+  },
+  {
+    "id": "ss_nome_gesu",
+    "title": "Del Santissimo Nome di Gesù",
+    "color": "bianco"
+  },
+  {
+    "id": "preziosissimo_sangue",
+    "title": "Del Preziosissimo Sangue di Cristo",
+    "color": "rosso"
+  },
+  {
+    "id": "sacro_cuore",
+    "title": "Del Sacro Cuore di Gesù",
+    "color": "bianco"
+  },
+  {
+    "id": "bvm",
+    "title": "Della Beata Vergine Maria",
+    "color": "bianco"
+  },
+  {
+    "id": "angeli",
+    "title": "Degli Angeli",
+    "color": "bianco"
+  },
+  {
+    "id": "ss_apostoli",
+    "title": "Dei Santi Apostoli Pietro e Paolo",
+    "color": "rosso"
+  },
+  {
+    "id": "tutti_santi",
+    "title": "Di Tutti i Santi",
+    "color": "bianco"
+  },
+  {
+    "id": "defunti",
+    "title": "Per i fedeli defunti",
+    "color": "viola"
+  },
+  {
+    "id": "sposi",
+    "title": "Per gli sposi",
+    "color": "bianco"
+  },
+  {
+    "id": "malati",
+    "title": "Per gli infermi",
+    "color": "viola"
+  },
+  {
+    "id": "pace",
+    "title": "Per la pace e la giustizia",
+    "color": "viola"
+  }
+]

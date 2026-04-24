@@ -1,0 +1,155 @@
+{
+  "blessings": [
+    {
+      "id": "avvento",
+      "season": "avvento",
+      "title": "Benedizione Solenne dell'Avvento",
+      "rubric": "Nelle domeniche e nelle celebrazioni più solenni dell'Avvento.",
+      "invocations": [
+        {
+          "c": "Il Dio della fedeltà che ha mantenuto le sue promesse con l'invio del suo Figlio unigenito, vi conceda la gioia della sua venuta e vi renda forti nella fede.",
+          "a": "Amen."
+        },
+        {
+          "c": "La sua parola, che si è fatta carne per la nostra salvezza, guidi i vostri passi e illumini il vostro cammino nella luce del Vangelo.",
+          "a": "Amen."
+        },
+        {
+          "c": "Cristo, che vive in mezzo a noi, vi aiuti a riconoscerlo nel volto del prossimo e a vivere con speranza l'attesa della sua venuta nella gloria.",
+          "a": "Amen."
+        }
+      ],
+      "final": {
+        "c": "E la benedizione di Dio onnipotente, Padre e Figlio ✠ e Spirito Santo, discenda su di voi e con voi rimanga sempre.",
+        "a": "Amen."
+      }
+    },
+    {
+      "id": "natale",
+      "season": "natale",
+      "title": "Benedizione Solenne del Natale",
+      "rubric": "Nella Messa del giorno e nelle domeniche del tempo di Natale.",
+      "invocations": [
+        {
+          "c": "Dio, Padre infinitamente buono, che nell'incarnazione del suo Figlio ha dissipato le tenebre del mondo e con la sua nascita gloriosa ha illuminato questa notte santissima (questo giorno santissimo), dissipi da voi le tenebre del peccato e vi irradi con la luce della sua santità.",
+          "a": "Amen."
+        },
+        {
+          "c": "Dio, che ha voluto con il mistero del Natale iniziare la riconciliazione del cielo con la terra, vi colmi della sua pace e del suo amore, e vi renda partecipi della comunione della Chiesa.",
+          "a": "Amen."
+        },
+        {
+          "c": "Cristo, Figlio di Dio fatto uomo, che si è posto nell'umiltà di un bambino per noi, vi conceda la gioia che viene dalla pace profonda del cuore, e vi faccia servi della giustizia nella vita di ogni giorno.",
+          "a": "Amen."
+        }
+      ],
+      "final": {
+        "c": "E la benedizione di Dio onnipotente, Padre e Figlio ✠ e Spirito Santo, discenda su di voi e con voi rimanga sempre.",
+        "a": "Amen."
+      }
+    },
+    {
+      "id": "quaresima",
+      "season": "quaresima",
+      "title": "Benedizione Solenne della Quaresima",
+      "rubric": "Nelle domeniche di Quaresima e nelle celebrazioni più solenni.",
+      "invocations": [
+        {
+          "c": "Dio, Padre di misericordia, che nel suo Figlio ci ha dato l'esempio di un amore senza misura, vi conceda, con il dono della sua benedizione, di perseverare con gioia nelle opere della penitenza.",
+          "a": "Amen."
+        },
+        {
+          "c": "Coloro che si dispongono con cuore sincero alla Pasqua possano rinnovare sé stessi in questo tempo di grazia, e perseverare nel bene.",
+          "a": "Amen."
+        },
+        {
+          "c": "A tutti voi, pellegrini sulla terra, che camminate verso la Pasqua eterna, Dio conceda la pace del cuore, la gioia dello Spirito e la partecipazione piena al mistero della redenzione.",
+          "a": "Amen."
+        }
+      ],
+      "final": {
+        "c": "E la benedizione di Dio onnipotente, Padre e Figlio ✠ e Spirito Santo, discenda su di voi e con voi rimanga sempre.",
+        "a": "Amen."
+      }
+    },
+    {
+      "id": "pasqua",
+      "season": "pasqua",
+      "title": "Benedizione Solenne di Pasqua",
+      "rubric": "Nella Veglia Pasquale, nel giorno di Pasqua e in tutta l'ottava.",
+      "invocations": [
+        {
+          "c": "Dio, che con la risurrezione del suo unico Figlio vi ha aperto la porta della vita eterna, vi conceda il dono della sua benedizione pasquale.",
+          "a": "Amen."
+        },
+        {
+          "c": "Dio, che nella risurrezione del suo Figlio ci ha ridato la vera libertà e la gioia dello Spirito, vi conceda di vivere pienamente la Pasqua di Cristo nell'attesa della vita eterna.",
+          "a": "Amen."
+        },
+        {
+          "c": "Voi, che per la celebrazione del mistero pasquale avete concluso i giorni della passione, partecipiate alla gioia della Pasqua e giungiate con esultanza alla festa senza fine.",
+          "a": "Amen."
+        }
+      ],
+      "final": {
+        "c": "E la benedizione di Dio onnipotente, Padre e Figlio ✠ e Spirito Santo, discenda su di voi e con voi rimanga sempre.",
+        "a": "Amen."
+      }
+    },
+    {
+      "id": "ascensione",
+      "season": "pasqua",
+      "title": "Benedizione Solenne dell'Ascensione",
+      "rubric": "Nella solennità dell'Ascensione del Signore.",
+      "invocations": [
+        {
+          "c": "Dio, Re della gloria, Signore di potenza, che oggi ha innalzato al cielo nella gloria del trionfo il Cristo suo Figlio vincitore del peccato e della morte, vi conceda la gioia di seguirlo nel suo regno di vita.",
+          "a": "Amen."
+        },
+        {
+          "c": "Cristo, che dopo la sua risurrezione si è manifestato ai discepoli, oggi sale al cielo, dove vi attende nel giorno della promessa: egli vi conceda, con i suoi doni spirituali, di essere nel mondo testimoni fedeli della sua vita nuova.",
+          "a": "Amen."
+        },
+        {
+          "c": "Il Signore, che è asceso sopra tutti i cieli, a tutti e a ciascuno di voi doni il suo Spirito, perché possiate conseguire la dimora eterna, dove egli è andato a prepararvi un posto.",
+          "a": "Amen."
+        }
+      ],
+      "final": {
+        "c": "E la benedizione di Dio onnipotente, Padre e Figlio ✠ e Spirito Santo, discenda su di voi e con voi rimanga sempre.",
+        "a": "Amen."
+      }
+    },
+    {
+      "id": "pentecoste",
+      "season": "pasqua",
+      "title": "Benedizione Solenne di Pentecoste",
+      "rubric": "Nella solennità di Pentecoste.",
+      "invocations": [
+        {
+          "c": "Dio, Padre della luce, che ha illuminato le menti dei discepoli con l'effusione dello Spirito Paraclito, vi conceda la gioia della sua benedizione e vi renda sempre ricolmi dei suoi doni.",
+          "a": "Amen."
+        },
+        {
+          "c": "Il fuoco che apparve sopra i discepoli purifichi i vostri cuori da ogni male e li riempia del suo ardore di luce.",
+          "a": "Amen."
+        },
+        {
+          "c": "Lo Spirito Santo, che ha riunito i popoli diversi nell'unica fede, vi renda perseveranti nella fede stessa e vi faccia passare, nella speranza, dalla fede alla visione.",
+          "a": "Amen."
+        }
+      ],
+      "final": {
+        "c": "E la benedizione di Dio onnipotente, Padre e Figlio ✠ e Spirito Santo, discenda su di voi e con voi rimanga sempre.",
+        "a": "Amen."
+      }
+    }
+  ],
+  "pasqua_dismissal": {
+    "id": "pasqua_alleluia",
+    "label": "Congedo pasquale (con Alleluia)",
+    "rubric": "Nella Veglia Pasquale e in tutta l'ottava di Pasqua.",
+    "celebrante": "Andate in pace. Alleluia, alleluia.",
+    "assemblea": "Rendiamo grazie a Dio. Alleluia, alleluia."
+  }
+}

@@ -1,31 +1,32 @@
 /**
- * API client per comunicare con il backend Messale Digitale.
- * Con fallback automatico alla cache locale (AsyncStorage) quando la rete non è disponibile.
+ * API locale standalone per Messale Digitale.
+ * Tutti i dati statici (ordinario, prefazi, preghiere eucaristiche, santi, benedizioni)
+ * sono bundlati nell'APK. Le letture del giorno vengono scaricate direttamente
+ * da chiesacattolica.it. Nessun backend intermedio richiesto.
  */
+import {
+  getFullLiturgy,
+  getFullLiturgyByDateStr,
+  getFixedParts,
+  getMassOrder,
+  getEucharisticPrayers,
+  getMysteryAcclamations,
+  getSolemnBlessings,
+  getPrefaces,
+  getVotiveMasses,
+  getAllSaints,
+  getSaintsForDateStr,
+  Liturgy as LocalLiturgy,
+} from "./localLiturgy";
+
 import {
   saveLiturgy,
   loadLiturgy,
-  loadStaticCache,
-  saveStaticCache,
   getLiturgyIndex,
   nextDates,
-  StaticCacheBundle,
 } from "./offlineCache";
 
-const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
-
-async function fetchJson<T>(path: string, opts?: RequestInit, timeoutMs = 15000): Promise<T> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const res = await fetch(`${API}${path}`, { ...opts, signal: controller.signal });
-    if (!res.ok) throw new Error(`API ${path} error ${res.status}`);
-    return (await res.json()) as T;
-  } finally {
-    clearTimeout(timer);
-  }
-}
+// ===== Types (compatibili con versione precedente) =====
 
 export type Reading = {
   type: string;
@@ -34,32 +35,22 @@ export type Reading = {
   text: string;
 };
 
-export type Liturgy = {
-  date: string;
-  date_label: string;
-  season: { season: string; color: string; color_hex: string };
-  saints: { title: string; rank: string; color: string }[];
-  readings: Reading[];
-  title: string;
-  liturgical_color: string;
-  source_url?: string;
-  cached?: boolean;
-  error?: string | null;
-  // Flag aggiunto dal client quando la risposta proviene dalla cache locale
-  fromLocalCache?: boolean;
-};
+export type Liturgy = LocalLiturgy;
 
 export type Preface = { id: string; title: string; season: string; text: string };
 export type EucharisticPrayer = { id: string; title: string; description: string; text: string };
 export type VotiveMass = { id: string; title: string; color: string };
 export type MysteryAcclamation = { id: string; label: string; celebrante: string; assemblea: string };
 export type SolemnBlessing = {
-  id: string; season: string; title: string; rubric: string;
+  id: string;
+  season: string;
+  title: string;
+  rubric: string;
   invocations: { c: string; a: string }[];
   final: { c: string; a: string };
 };
 
-// ===== Liturgia con cache offline =====
+// ===== Utility =====
 
 function todayStr(): string {
   const d = new Date();
@@ -67,39 +58,25 @@ function todayStr(): string {
   return d.toISOString().slice(0, 10);
 }
 
+// ===== Liturgia (con cache + fallback offline) =====
+
 async function liturgyForDateCached(date: string): Promise<Liturgy> {
-  // 1) prova rete
+  // 1) Prova scraping live da chiesacattolica.it
   try {
-    const data = await fetchJson<Liturgy>(`/liturgy/${date}`);
-    // salva in cache se ci sono letture vere
+    const data = await getFullLiturgyByDateStr(date);
     if (data && Array.isArray(data.readings) && data.readings.length > 0) {
       await saveLiturgy(date, data);
+      return { ...data, fromLocalCache: false };
     }
-    return { ...data, fromLocalCache: false };
-  } catch (netErr) {
-    // 2) fallback su cache locale
+    // readings vuote (errore di rete o scraping fallito) → fallback cache
     const local = await loadLiturgy(date);
-    if (local) {
-      return { ...local, fromLocalCache: true };
-    }
-    throw netErr;
-  }
-}
-
-// ===== Cache testi statici =====
-
-async function getStaticCached<K extends keyof StaticCacheBundle>(
-  key: K,
-  fetcher: () => Promise<any>
-): Promise<any> {
-  try {
-    const data = await fetcher();
-    await saveStaticCache({ [key]: data } as any);
-    return data;
-  } catch (e) {
-    const cache = await loadStaticCache();
-    if (cache && cache[key]) return cache[key];
-    throw e;
+    if (local) return { ...local, fromLocalCache: true };
+    return { ...data, fromLocalCache: false };
+  } catch (err) {
+    // Errore fatale → fallback cache
+    const local = await loadLiturgy(date);
+    if (local) return { ...local, fromLocalCache: true };
+    throw err;
   }
 }
 
@@ -114,7 +91,7 @@ export type PrefetchProgress = {
 
 export async function prefetchLiturgies(
   days: number,
-  onProgress?: (p: PrefetchProgress) => void
+  onProgress?: (p: PrefetchProgress) => void,
 ): Promise<PrefetchProgress> {
   const dates = nextDates(days);
   const prog: PrefetchProgress = { total: dates.length, done: 0, failed: [] };
@@ -122,7 +99,7 @@ export async function prefetchLiturgies(
     prog.current = d;
     onProgress?.(prog);
     try {
-      const data = await fetchJson<Liturgy>(`/liturgy/${d}`);
+      const data = await getFullLiturgyByDateStr(d);
       if (data && Array.isArray(data.readings) && data.readings.length > 0) {
         await saveLiturgy(d, data);
       } else {
@@ -138,53 +115,38 @@ export async function prefetchLiturgies(
   return prog;
 }
 
-// Pre-cache testi statici in un colpo solo (ordinario, prefazi, ecc.)
+// I testi statici sono già nell'app: prefetchStatic è un no-op
 export async function prefetchStatic(): Promise<void> {
-  await Promise.all([
-    getStaticCached("order", () => fetchJson<{ order: any }>(`/mass/order`)),
-    getStaticCached("fixedParts", () => fetchJson<{ parts: any }>(`/mass/fixed-parts`)),
-    getStaticCached("prefaces", () => fetchJson<{ prefaces: Preface[] }>(`/prefaces`)),
-    getStaticCached("eucharisticPrayers", () => fetchJson<{ prayers: EucharisticPrayer[] }>(`/eucharistic-prayers`)),
-    getStaticCached("mysteryAcclamations", () => fetchJson<{ acclamations: MysteryAcclamation[] }>(`/mystery-acclamations`)),
-    getStaticCached("solemnBlessings", () => fetchJson<{ blessings: SolemnBlessing[]; pasqua_dismissal: any }>(`/solemn-blessings`)),
-    getStaticCached("votiveMasses", () => fetchJson<{ masses: VotiveMass[] }>(`/votive-masses`)),
-  ]);
+  // Nulla da fare - tutti i testi statici sono bundlati nell'APK
+  return;
 }
 
+// ===== API pubblica (stesse signature della versione precedente) =====
+
 export const api = {
-  // Liturgia giornaliera con fallback offline
   liturgyToday: () => liturgyForDateCached(todayStr()),
   liturgyForDate: (date: string) => liturgyForDateCached(date),
-  refreshLiturgy: (date: string) => fetchJson(`/liturgy/refresh/${date}`, { method: "POST" }),
+  refreshLiturgy: async (date: string) => {
+    // Forza nuovo scraping ignorando cache
+    const data = await getFullLiturgyByDateStr(date);
+    if (data && data.readings && data.readings.length > 0) {
+      await saveLiturgy(date, data);
+    }
+    return { status: "refreshed", date, readings_count: data.readings?.length || 0 };
+  },
 
-  // Testi statici con fallback cache
-  massOrder: () =>
-    getStaticCached("order", () => fetchJson<{ order: { id: string; title: string }[] }>(`/mass/order`)),
-  fixedParts: () =>
-    getStaticCached("fixedParts", () => fetchJson<{ parts: Record<string, any> }>(`/mass/fixed-parts`)),
-  prefaces: (season?: string) =>
-    season
-      ? fetchJson<{ prefaces: Preface[] }>(`/prefaces?season=${season}`).catch(async () => {
-          // fallback: filtra manualmente dalla cache
-          const c = await loadStaticCache();
-          const all: Preface[] = c?.prefaces?.prefaces || [];
-          return { prefaces: all.filter((p) => p.season.toLowerCase() === season.toLowerCase() || p.season === "comune") };
-        })
-      : getStaticCached("prefaces", () => fetchJson<{ prefaces: Preface[] }>(`/prefaces`)),
-  eucharisticPrayers: () =>
-    getStaticCached("eucharisticPrayers", () => fetchJson<{ prayers: EucharisticPrayer[] }>(`/eucharistic-prayers`)),
-  mysteryAcclamations: () =>
-    getStaticCached("mysteryAcclamations", () => fetchJson<{ acclamations: MysteryAcclamation[] }>(`/mystery-acclamations`)),
-  solemnBlessings: () =>
-    getStaticCached("solemnBlessings", () =>
-      fetchJson<{ blessings: SolemnBlessing[]; pasqua_dismissal: any }>(`/solemn-blessings`)
-    ),
-  votiveMasses: () =>
-    getStaticCached("votiveMasses", () => fetchJson<{ masses: VotiveMass[] }>(`/votive-masses`)),
+  // Dati statici: ritorno sincrono wrappato in Promise per retrocompatibilità
+  massOrder: async () => getMassOrder(),
+  fixedParts: async () => getFixedParts(),
+  prefaces: async (season?: string) => getPrefaces(season),
+  eucharisticPrayers: async () => getEucharisticPrayers(true),
+  mysteryAcclamations: async () => getMysteryAcclamations(),
+  solemnBlessings: async () => getSolemnBlessings(),
+  votiveMasses: async () => getVotiveMasses(),
 
-  // Calendario santi (richiesta on-demand, non critica per offline)
-  saintsForDate: (date: string) => fetchJson<{ date: string; celebrations: any[] }>(`/calendar/saints/${date}`),
-  allSaints: () => fetchJson<{ calendar: { date: string; celebrations: any[] }[] }>(`/calendar/saints`),
+  // Calendario santi
+  saintsForDate: async (date: string) => getSaintsForDateStr(date),
+  allSaints: async () => getAllSaints(),
 
   // Utility offline
   getCachedIndex: () => getLiturgyIndex(),
