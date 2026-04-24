@@ -1,0 +1,35 @@
+{
+  "summary": "Backend 13/13 pytest PASS (root, liturgy today+cache+refresh, fixed-parts all 8 sections, atto penitenziale, prefaces+filter pasqua, 4 eucharistic prayers, saints calendar + Natale 25/12, votive masses, invalid date 400). Frontend loaded Home, Messa, Calendario, Impostazioni screens with all key testIDs present. CRITICAL red-screen bug in /messa ('Rendered more hooks than during the previous render') was fixed by moving two useState declarations (congedoId, benedizioneId) above the early-return guard. Modal prefazio/preghiera, theme/font/contrast controls verified present. Scraper chiesacattolica.it returned 200 for 2026-04-24.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "app/messa.tsx", "issue": "FIXED: React hooks order violation. useState for congedoId/benedizioneId was declared AFTER the early return `if (loading || !fixedParts) return ...`, producing 'Rendered more hooks than during the previous render' red-screen when data loaded. Moved hooks to top of component.", "testID": "mass-screen", "priority": "CRITICAL (fixed)"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "home", "issues": ["Impostazioni appears as top-right button AND as card; consider removing duplication for tablet clarity (minor)"]}
+    ],
+    "react_native_issues": [
+      {"component": "Image in layout", "issue": "Warning: `style.resizeMode` deprecated, should use `props.resizeMode` (non-blocking Expo warning)"}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_messale_api.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "Main agent: please review the hook-order fix in /app/frontend/app/messa.tsx (lines 26-27 moved up). No other changes made.",
+    "Minor: remove `style.resizeMode` deprecation warning by using prop form on any <Image resizeMode=... />.",
+    "Package compatibility warnings: @react-native-async-storage/async-storage@3.0.2 (expected 2.2.0) and @react-native-community/slider@5.2.0 (expected 5.0.1) — please align via `expo install` to avoid future runtime issues.",
+    "Consider adding testIDs `home-title` and lowercase aliases for atto-penitenziale if desired (current are btn-penitential-A/B/C — uppercase)."
+  ],
+  "critical_code_review_comments": [
+    "messa.tsx now safe; verify no other useState/useEffect are placed after conditional returns in other screens (calendario/impostazioni looked clean).",
+    "server.py properly excludes MongoDB _id, uses env MONGO_URL/DB_NAME, CORS present, all endpoints /api-prefixed. Good.",
+    "liturgy/today ok even when scraper returns empty list; cached flag works on second call."
+  ],
+  "updated_files": ["/app/frontend/app/messa.tsx", "/app/backend/tests/test_messale_api.py"],
+  "success_rate": {"backend": "100% (13/13)", "frontend": "~95% (all screens render, all primary testIDs found, major flows tested)"},
+  "seed_data_creation": "None. MongoDB cache populated naturally by calling /api/liturgy/today and /api/liturgy/refresh/2026-04-24.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Frontend is tablet-first (768x1024). Penitential button testIDs use uppercase: btn-penitential-A/B/C (not lowercase). EXPO_PUBLIC_BACKEND_URL is used (not EXPO_BACKEND_URL). Prefaces/prayers modals appear via `Scegli ...` buttons inside part-prefazio and part-preghiera-eucaristica sections with testIDs modal-prefaces and modal-prayers.",
+  "rca_of_issue": "Red screen RCA: MessaScreen had an early return `if (loading || !fixedParts) return <ActivityIndicator/>;` at line 59, then TWO additional useState hooks declared further down (originally lines 194-195). On first render (loading=true) only the top hooks were executed; once the effect finished loading, render re-executed and the lower useState hooks were now also reached, so React saw additional hook calls and threw 'Rendered more hooks than during the previous render.' Fix: moved `useState(\"A\")` for congedoId and benedizioneId above the early return so hook order is stable across renders."
+}
