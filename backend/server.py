@@ -7,7 +7,8 @@ import logging
 from pathlib import Path
 from datetime import datetime, date, timezone
 
-from liturgy_data import FIXED_PARTS, MASS_ORDER, PREFACES, EUCHARISTIC_PRAYERS
+from liturgy_data import FIXED_PARTS, MASS_ORDER, EUCHARISTIC_PRAYERS
+from prefaces_data import PREFACES
 from liturgy_scraper import fetch_liturgy, get_liturgical_season
 from saints_calendar import get_saints_for_date, VOTIVE_MASSES, SAINTS_CALENDAR
 

@@ -215,20 +215,8 @@ FIXED_PARTS = {
                 "options": [
                     {
                         "id": "A",
-                        "label": "Forma A - Standard",
+                        "label": "Formula standard",
                         "celebrante": "Pregate, fratelli e sorelle, perché il mio e vostro sacrificio sia gradito a Dio, Padre onnipotente.",
-                        "assemblea": "Il Signore riceva dalle tue mani questo sacrificio a lode e gloria del suo nome, per il bene nostro e di tutta la sua santa Chiesa."
-                    },
-                    {
-                        "id": "B",
-                        "label": "Forma B - Sacrificio di lode",
-                        "celebrante": "Pregate, fratelli e sorelle, perché, portando all'altare le gioie e le fatiche di ogni giorno, ci disponiamo ad offrire il sacrificio gradito a Dio, Padre onnipotente.",
-                        "assemblea": "Il Signore riceva dalle tue mani questo sacrificio a lode e gloria del suo nome, per il bene nostro e di tutta la sua santa Chiesa."
-                    },
-                    {
-                        "id": "C",
-                        "label": "Forma C - Defunti",
-                        "celebrante": "Pregate, fratelli e sorelle, perché il sacrificio della Chiesa, in questo memoriale della Pasqua del Signore, sia gradito a Dio Padre onnipotente.",
                         "assemblea": "Il Signore riceva dalle tue mani questo sacrificio a lode e gloria del suo nome, per il bene nostro e di tutta la sua santa Chiesa."
                     }
                 ]
