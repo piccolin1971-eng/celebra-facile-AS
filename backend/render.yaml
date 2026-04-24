@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: messale-backend
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/
+    envVars:
+      - key: MONGO_URL
+        sync: false   # da impostare manualmente nel dashboard (stringa Atlas)
+      - key: DB_NAME
+        value: messale
+      - key: PYTHONUNBUFFERED
+        value: "1"

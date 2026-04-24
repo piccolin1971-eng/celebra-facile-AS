@@ -1,0 +1,12 @@
+# Requirements SLIM per deploy su Render.com
+# Solo le dipendenze effettivamente usate dal backend Messale
+
+fastapi==0.110.1
+uvicorn[standard]==0.25.0
+motor==3.3.1
+pymongo==4.5.0
+beautifulsoup4==4.14.3
+lxml==6.1.0
+httpx==0.28.1
+python-dotenv==1.2.2
+python-multipart==0.0.24
