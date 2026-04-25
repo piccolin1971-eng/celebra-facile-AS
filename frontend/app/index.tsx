@@ -7,21 +7,23 @@ import { useSettings } from "../src/SettingsContext";
 import { api, Liturgy } from "../src/api";
 import { localDateStr, italianDateLabel, addDays, parseLocalDate } from "../src/dateUtils";
 
-type DayChoice = "yesterday" | "today" | "tomorrow" | "dayAfter";
+type DayChoice = "today" | "day1" | "day2" | "day3" | "day4";
 
 const DAY_OFFSETS: Record<DayChoice, number> = {
-  yesterday: -1,
   today: 0,
-  tomorrow: 1,
-  dayAfter: 2,
+  day1: 1,
+  day2: 2,
+  day3: 3,
+  day4: 4,
 };
 
-const DAY_LABELS: Record<DayChoice, string> = {
-  yesterday: "Ieri",
-  today: "Oggi",
-  tomorrow: "Domani",
-  dayAfter: "Dopodomani",
-};
+const WEEKDAYS_SHORT = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"];
+
+function dayLabelFor(day: DayChoice, date: Date): string {
+  if (day === "today") return "Oggi";
+  const wd = (date.getDay() + 6) % 7; // 0=Lun
+  return WEEKDAYS_SHORT[wd];
+}
 
 export default function Home() {
   const router = useRouter();
@@ -117,6 +119,7 @@ export default function Home() {
               const isActive = selectedDay === day;
               const d = addDays(new Date(), DAY_OFFSETS[day]);
               const dayNum = d.getDate();
+              const label = dayLabelFor(day, d);
               return (
                 <TouchableOpacity
                   key={day}
@@ -125,10 +128,10 @@ export default function Home() {
                   testID={`btn-day-${day}`}
                   accessibilityRole="button"
                   accessibilityState={{ selected: isActive }}
-                  accessibilityLabel={`${DAY_LABELS[day]}, ${dayNum}`}
+                  accessibilityLabel={`${label}, ${dayNum}`}
                 >
                   <Text style={[styles.dayButtonLabel, isActive && styles.dayButtonLabelActive]}>
-                    {DAY_LABELS[day]}
+                    {label}
                   </Text>
                   <Text style={[styles.dayButtonNum, isActive && styles.dayButtonNumActive]}>
                     {dayNum}
@@ -162,14 +165,14 @@ export default function Home() {
           onPress={openMessa}
           testID="btn-mass-of-the-day"
           accessibilityRole="button"
-          accessibilityLabel={`Celebra la Messa di ${DAY_LABELS[selectedDay].toLowerCase()}`}
+          accessibilityLabel={`Celebra la Messa di ${dayLabelFor(selectedDay, selectedDate).toLowerCase()}`}
         >
           <Ionicons name="book" size={scaledFont(56)} color="#FFFFFF" />
           <Text style={styles.bigCardTitle}>Celebra la Messa</Text>
           <Text style={styles.bigCardSubtitle}>
             {selectedDay === "today"
               ? "Ordinario + Letture del giorno"
-              : `Ordinario + Letture di ${DAY_LABELS[selectedDay]}`}
+              : `Ordinario + Letture di ${dayLabelFor(selectedDay, selectedDate)}`}
           </Text>
         </TouchableOpacity>
 
@@ -282,12 +285,12 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
   daySelectorLabel: { fontSize: Math.round(fontSize * 0.7), fontWeight: "600", color: colors.textSecondary },
   dayButtonsRow: {
     flexDirection: "row",
-    gap: 8,
+    gap: 6,
   },
   dayButton: {
     flex: 1,
-    paddingVertical: 14,
-    paddingHorizontal: 6,
+    paddingVertical: 12,
+    paddingHorizontal: 4,
     borderWidth: 2,
     borderColor: colors.border,
     borderRadius: 12,

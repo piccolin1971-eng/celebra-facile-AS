@@ -13,7 +13,7 @@ type ReadingType =
 
 export default function MessaScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ date?: string }>();
+  const params = useLocalSearchParams<{ date?: string; preface?: string; votive?: string }>();
   const { colors, fontSize, scaledFont } = useSettings();
   const [liturgy, setLiturgy] = useState<Liturgy | null>(null);
   const [fixedParts, setFixedParts] = useState<Record<string, any> | null>(null);
@@ -74,6 +74,12 @@ export default function MessaScreen() {
         setCurrentSeasonKey(seasonKey);
         const match = pr.prefaces.find(p => p.season === seasonKey) || pr.prefaces[0];
         if (match) setSelectedPrefaceId(match.id);
+        // Override prefazio se passato esplicitamente (es. messa votiva)
+        const prefaceParam = typeof params.preface === "string" ? params.preface : "";
+        if (prefaceParam) {
+          const forced = pr.prefaces.find(p => p.id === prefaceParam);
+          if (forced) setSelectedPrefaceId(forced.id);
+        }
         setPenitentialSeason(seasonKey);
         if (seasonKey === "avvento" || seasonKey === "quaresima") setShowGloria(false);
         // Benedizione solenne: preseleziona quella della stagione se disponibile
@@ -87,7 +93,7 @@ export default function MessaScreen() {
         setLoading(false);
       }
     })();
-  }, [params.date]);
+  }, [params.date, params.preface]);
 
   if (loading || !fixedParts) {
     return (

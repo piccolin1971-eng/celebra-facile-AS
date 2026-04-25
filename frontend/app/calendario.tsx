@@ -129,14 +129,24 @@ export default function CalendarioScreen() {
       ) : (
         <ScrollView contentContainerStyle={styles.content}>
           <Text style={styles.sectionIntro}>
-            Messe votive disponibili per celebrazioni particolari.
+            Tocca una messa votiva per vedere il dettaglio e celebrarla con il prefazio adeguato.
           </Text>
           {votive.map(v => (
-            <View key={v.id} style={styles.votiveCard} testID={`votive-${v.id}`}>
+            <TouchableOpacity
+              key={v.id}
+              style={styles.votiveCard}
+              testID={`votive-${v.id}`}
+              onPress={() => router.push(`/messa-votiva/${v.id}`)}
+              accessibilityRole="button"
+              accessibilityLabel={`Apri messa votiva ${v.title}`}
+            >
               <View style={[styles.colorDot, { backgroundColor: colorHex(v.color), width: 28, height: 28 }]} />
-              <Text style={styles.votiveTitle}>{v.title}</Text>
-              <Text style={styles.votiveColor}>Colore: {v.color}</Text>
-            </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.votiveTitle}>{v.title}</Text>
+                <Text style={styles.votiveColor}>Colore: {v.color}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={scaledFont(36)} color={colors.textSecondary} />
+            </TouchableOpacity>
           ))}
         </ScrollView>
       )}
