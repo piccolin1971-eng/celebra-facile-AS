@@ -108,6 +108,13 @@ export default function Home() {
             {liturgy?.title ? (
               <Text style={styles.celebrationTitle} testID="celebration-title">{liturgy.title}</Text>
             ) : null}
+            {liturgy?.saints && liturgy.saints.length > 0 ? (
+              <View style={styles.saintsInline} testID="saints-inline">
+                {liturgy.saints.map((s, i) => (
+                  <Text key={i} style={styles.saintInlineItem} testID={`saint-${i}`}>• {s.title}</Text>
+                ))}
+              </View>
+            ) : null}
           </View>
         </View>
 
@@ -167,7 +174,7 @@ export default function Home() {
           accessibilityRole="button"
           accessibilityLabel={`Celebra la Messa di ${dayLabelFor(selectedDay, selectedDate).toLowerCase()}`}
         >
-          <Ionicons name="book" size={scaledFont(56)} color="#FFFFFF" />
+          <Ionicons name="book" size={scaledFont(40)} color="#FFFFFF" />
           <Text style={styles.bigCardTitle}>Celebra la Messa</Text>
           <Text style={styles.bigCardSubtitle}>
             {selectedDay === "today"
@@ -219,14 +226,7 @@ export default function Home() {
           <Ionicons name="chevron-forward" size={scaledFont(40)} color={colors.textSecondary} />
         </TouchableOpacity>
 
-        {liturgy?.saints && liturgy.saints.length > 0 ? (
-          <View style={styles.saintsBox} testID="saints-box">
-            <Text style={styles.saintsTitle}>{selectedDay === "today" ? "Oggi si celebra:" : "Si celebra:"}</Text>
-            {liturgy.saints.map((s, i) => (
-              <Text key={i} style={styles.saintItem} testID={`saint-${i}`}>• {s.title}</Text>
-            ))}
-          </View>
-        ) : null}
+        {liturgy?.saints && liturgy.saints.length > 0 ? null : null}
 
         <Text style={styles.footer}>
           Fonte letture: chiesacattolica.it · Testi liturgici secondo il Messale Romano in lingua italiana
@@ -274,6 +274,18 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
   dateLabel: { fontSize: Math.round(fontSize * 0.85), fontWeight: "700", color: colors.textPrimary },
   seasonLabel: { fontSize: Math.round(fontSize * 0.7), color: colors.textSecondary, marginTop: 4 },
   celebrationTitle: { fontSize: Math.round(fontSize * 0.75), color: colors.textPrimary, marginTop: 8, fontStyle: "italic" },
+  saintsInline: {
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    gap: 4,
+  },
+  saintInlineItem: {
+    fontSize: Math.round(fontSize * 0.65),
+    color: colors.textPrimary,
+    fontWeight: "600",
+  },
   daySelector: {
     padding: 16,
     borderWidth: 2,
@@ -317,15 +329,15 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
   },
   dayButtonNumActive: { color: "#FFFFFF" },
   bigCard: {
-    padding: 32,
-    borderRadius: 16,
+    padding: 22,
+    borderRadius: 14,
     alignItems: "center",
-    gap: 12,
-    minHeight: 200,
+    gap: 8,
+    minHeight: 140,
     justifyContent: "center",
   },
-  bigCardTitle: { fontSize: Math.round(fontSize * 1.1), fontWeight: "700", color: "#FFFFFF" },
-  bigCardSubtitle: { fontSize: Math.round(fontSize * 0.7), color: "#FFFFFF", opacity: 0.9, textAlign: "center" },
+  bigCardTitle: { fontSize: Math.round(fontSize * 0.8), fontWeight: "700", color: "#FFFFFF" },
+  bigCardSubtitle: { fontSize: Math.round(fontSize * 0.55), color: "#FFFFFF", opacity: 0.9, textAlign: "center" },
   secondaryCard: {
     flexDirection: "row",
     alignItems: "center",
