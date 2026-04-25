@@ -11,6 +11,9 @@ type VotiveMassFull = VotiveMass & {
   occasions?: string;
   antifona_ingresso?: string;
   antifona_comunione?: string;
+  colletta?: string;
+  sulle_offerte?: string;
+  dopo_comunione?: string;
   rubric?: string;
 };
 
@@ -137,11 +140,19 @@ export default function VotiveMassDetail() {
           </View>
         ) : null}
 
-        {/* Antifona alla comunione */}
-        {mass.antifona_comunione ? (
+        {/* Colletta */}
+        {mass.colletta ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Antifona alla comunione</Text>
-            <Text style={styles.body}>{mass.antifona_comunione}</Text>
+            <Text style={styles.sectionTitle}>Colletta</Text>
+            <Text style={styles.body}>{mass.colletta}</Text>
+          </View>
+        ) : null}
+
+        {/* Orazione sulle offerte */}
+        {mass.sulle_offerte ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Sulle offerte</Text>
+            <Text style={styles.body}>{mass.sulle_offerte}</Text>
           </View>
         ) : null}
 
@@ -151,6 +162,22 @@ export default function VotiveMassDetail() {
             <Text style={styles.sectionTitle}>Prefazio consigliato</Text>
             <Text style={styles.prefaceTitle}>{preface.title}</Text>
             <Text style={styles.body}>{preface.text}</Text>
+          </View>
+        ) : null}
+
+        {/* Antifona alla comunione */}
+        {mass.antifona_comunione ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Antifona alla comunione</Text>
+            <Text style={styles.body}>{mass.antifona_comunione}</Text>
+          </View>
+        ) : null}
+
+        {/* Dopo la comunione */}
+        {mass.dopo_comunione ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Dopo la comunione</Text>
+            <Text style={styles.body}>{mass.dopo_comunione}</Text>
           </View>
         ) : null}
 
@@ -184,7 +211,7 @@ export default function VotiveMassDetail() {
         </TouchableOpacity>
 
         <Text style={styles.footer}>
-          Per i testi proprii completi (Colletta, Sulle offerte, Dopo la comunione) consultare il Messale Romano.
+          Testi liturgici dal Messale Romano CEI 2020.
         </Text>
       </ScrollView>
     </SafeAreaView>

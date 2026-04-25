@@ -7,7 +7,10 @@
     "occasions": "Si celebra in onore della Santissima Trinità in giorni feriali del Tempo Ordinario.",
     "antifona_ingresso": "Sia benedetto Dio Padre, e l'unigenito Figlio di Dio, e lo Spirito Santo: perché grande è il suo amore per noi (cfr. Tb 12, 6).",
     "antifona_comunione": "Voi siete figli di Dio: Dio ha mandato nei vostri cuori lo Spirito del suo Figlio, che grida: «Abbà, Padre!» (cfr. Gal 4, 6).",
-    "rubric": "Per le orazioni proprie (Colletta, Sulle offerte, Dopo la comunione) consultare il Messale Romano alla sezione «Messe votive – Della Santissima Trinità»."
+    "colletta": "O Dio Padre, che hai mandato nel mondo il tuo Figlio, Parola di verità, e lo Spirito santificatore per rivelare agli uomini il mistero ineffabile della tua vita, fa' che nella confessione della vera fede riconosciamo la gloria della Trinità e adoriamo l'unico Dio in tre persone. Per il nostro Signore Gesù Cristo, tuo Figlio, che è Dio, e vive e regna con te, nell'unità dello Spirito Santo, per tutti i secoli dei secoli.",
+    "sulle_offerte": "Santifica, Signore nostro Dio, i doni del nostro servizio sacerdotale sui quali invochiamo il tuo nome, e per questo sacrificio fa' di noi un'offerta perenne a te gradita. Per Cristo nostro Signore.",
+    "dopo_comunione": "Signore Dio nostro, la comunione al tuo sacramento e la professione della nostra fede in te, unico Dio in tre persone, siano per noi pegno di salvezza dell'anima e del corpo. Per Cristo nostro Signore.",
+    "rubric": "Testi dal Messale Romano CEI 2020 — formulario principale. Per altri formulari consultare il Messale."
   },
   {
     "id": "spirito_santo",
@@ -17,7 +20,10 @@
     "occasions": "Si celebra per invocare i doni dello Spirito Santo, particolarmente in inizio d'anno scolastico, prima di assemblee, sinodi, riunioni pastorali.",
     "antifona_ingresso": "L'amore di Dio è stato riversato nei nostri cuori per mezzo dello Spirito Santo che ci è stato dato (Rm 5, 5).",
     "antifona_comunione": "Lo Spirito stesso attesta al nostro spirito che siamo figli di Dio (Rm 8, 16).",
-    "rubric": "Per le orazioni proprie consultare il Messale Romano alla sezione «Messe votive – Dello Spirito Santo»."
+    "colletta": "O Dio, che nella luce dello Spirito Santo guidi il cuore dei credenti alla conoscenza piena della verità, donaci di gustare nel tuo Spirito la vera sapienza e di godere sempre del suo conforto. Per il nostro Signore Gesù Cristo, tuo Figlio, che è Dio, e vive e regna con te, nell'unità dello Spirito Santo, per tutti i secoli dei secoli.",
+    "sulle_offerte": "Santifica, o Signore, i doni che ti offriamo e purifica i nostri cuori con la luce dello Spirito Santo. Per Cristo nostro Signore.",
+    "dopo_comunione": "L'effusione dello Spirito Santo, o Signore, purifichi i nostri cuori e li renda fecondi con la rugiada della sua grazia. Per Cristo nostro Signore.",
+    "rubric": "Testi dal Messale Romano CEI 2020 — formulario A. Sono disponibili anche i formulari B e C."
   },
   {
     "id": "ss_sacramento",
@@ -27,7 +33,10 @@
     "occasions": "Si celebra in onore dell'Eucaristia, in occasione di adorazioni eucaristiche, processioni e feste eucaristiche.",
     "antifona_ingresso": "Egli li ha nutriti col fiore di frumento, li ha saziati con miele dalla roccia (cfr. Sal 80, 17).",
     "antifona_comunione": "Chi mangia la mia carne e beve il mio sangue dimora in me e io in lui, dice il Signore (Gv 6, 56).",
-    "rubric": "Per le orazioni proprie consultare il Messale Romano alla sezione «Messe votive – Del Santissimo Sacramento»."
+    "colletta": "O Padre, che nel mistero pasquale del tuo Figlio unigenito hai portato a compimento l'opera della nostra redenzione, concedi a noi, che nei segni sacramentali annunciamo con fede la sua morte e risurrezione, di sperimentare sempre più i benefici della tua salvezza. Per il nostro Signore Gesù Cristo, tuo Figlio, che è Dio, e vive e regna con te, nell'unità dello Spirito Santo, per tutti i secoli dei secoli.",
+    "sulle_offerte": "Invochiamo la tua clemenza, o Signore, celebrando il memoriale della nostra salvezza: questo sacramento del tuo amore sia per noi segno di unità e vincolo di carità. Per Cristo nostro Signore.",
+    "dopo_comunione": "La partecipazione alla tua mensa ci santifichi, o Padre, perché la comunione al Corpo e al Sangue di Cristo rinsaldi l'unità di tutti i fratelli. Per Cristo nostro Signore.",
+    "rubric": "Testi dal Messale Romano CEI 2020 — formulario principale."
   },
   {
     "id": "ss_nome_gesu",
@@ -37,7 +46,10 @@
     "occasions": "Si celebra in onore del Santo Nome di Gesù, particolarmente il 3 gennaio.",
     "antifona_ingresso": "Nel nome di Gesù ogni ginocchio si pieghi nei cieli, sulla terra e sotto terra; e ogni lingua proclami: Gesù Cristo è il Signore, a gloria di Dio Padre (Fil 2, 10-11).",
     "antifona_comunione": "Tutto quello che fate in parole ed opere, tutto si compia nel nome del Signore Gesù (Col 3, 17).",
-    "rubric": "Per le orazioni proprie consultare il Messale Romano alla sezione «Messe votive – Del Santissimo Nome di Gesù»."
+    "colletta": "O Padre, concedi a noi, che onoriamo il santissimo nome di Gesù, di gustare la sua dolcezza in questa vita, per godere la felicità eterna nella patria del cielo. Per il nostro Signore Gesù Cristo, tuo Figlio, che è Dio, e vive e regna con te, nell'unità dello Spirito Santo, per tutti i secoli dei secoli.",
+    "sulle_offerte": "Accogli, o Padre, i doni che ti offriamo nel nome di Cristo tuo Figlio, fiduciosi nella confortante promessa che ogni domanda fatta nel suo nome sarà esaudita. Per Cristo nostro Signore.",
+    "dopo_comunione": "Nella tua misericordia, o Padre, donaci la grazia di adorare con fede viva, in questi santi misteri, il Signore Gesù, nel cui nome hai voluto che ogni ginocchio si pieghi e ogni uomo trovi la salvezza. Per Cristo nostro Signore.",
+    "rubric": "Testi dal Messale Romano CEI 2020."
   },
   {
     "id": "preziosissimo_sangue",
@@ -47,7 +59,10 @@
     "occasions": "Si celebra in onore del Sangue di Cristo versato per la nostra salvezza.",
     "antifona_ingresso": "Ci hai redenti, Signore, con il tuo Sangue, da ogni tribù, lingua, popolo e nazione, e hai fatto di noi, per il nostro Dio, un regno (cfr. Ap 5, 9-10).",
     "antifona_comunione": "Il calice della benedizione che noi benediciamo, non è forse comunione con il sangue di Cristo? (1 Cor 10, 16).",
-    "rubric": "Per le orazioni proprie consultare il Messale Romano alla sezione «Messe votive – Del Preziosissimo Sangue di Cristo»."
+    "colletta": "O Padre, che nel Sangue prezioso del tuo unigenito Figlio hai redento tutti gli uomini, custodisci in noi l'opera della tua misericordia perché, celebrando sempre il mistero della nostra salvezza, otteniamo il frutto della redenzione. Per il nostro Signore Gesù Cristo, tuo Figlio, che è Dio, e vive e regna con te, nell'unità dello Spirito Santo, per tutti i secoli dei secoli.",
+    "sulle_offerte": "Fa', o Padre, che presentando i nostri umili doni alla tua grandezza possiamo accostarci in questi misteri a Gesù, mediatore della nuova alleanza, e rinnovare in noi l'effusione redentrice del suo Sangue. Egli vive e regna nei secoli dei secoli.",
+    "dopo_comunione": "O Signore, che ci hai nutriti con il pane della vita e il calice della salvezza, fa' che siamo sempre aspersi del Sangue del nostro Salvatore, per noi sorgente che zampilla per la vita eterna. Per Cristo nostro Signore.",
+    "rubric": "Testi dal Messale Romano CEI 2020."
   },
   {
     "id": "sacro_cuore",
@@ -57,7 +72,10 @@
     "occasions": "Si celebra in onore del Sacratissimo Cuore di Gesù, particolarmente nei primi venerdì del mese.",
     "antifona_ingresso": "I disegni del suo cuore per tutte le generazioni: liberare dalla morte e nutrire in tempo di fame (cfr. Sal 32, 11.19).",
     "antifona_comunione": "«Uno dei soldati con la lancia gli colpì il fianco, e subito ne uscì sangue e acqua» (Gv 19, 34).",
-    "rubric": "Per le orazioni proprie consultare il Messale Romano alla sezione «Messe votive – Del Sacratissimo Cuore di Gesù»."
+    "colletta": "O Padre, donaci di essere rivestiti delle virtù e infiammati dei sentimenti del Cuore del tuo Figlio, perché, trasformati a sua immagine, diventiamo partecipi della redenzione eterna. Per il nostro Signore Gesù Cristo, tuo Figlio, che è Dio, e vive e regna con te, nell'unità dello Spirito Santo, per tutti i secoli dei secoli.",
+    "sulle_offerte": "Dio, Padre di misericordia, che per il grande amore con il quale ci hai amati hai dato per noi con ineffabile bontà il tuo unigenito Figlio, fa' che nella perfetta unione con lui possiamo presentarti un'offerta degna della tua gloria. Per Cristo nostro Signore.",
+    "dopo_comunione": "Resi partecipi del sacramento del tuo amore, supplichiamo, o Padre, la tua misericordia affinché ci renda conformi a Cristo sulla terra, per condividere la sua gloria nel cielo. Egli vive e regna nei secoli dei secoli.",
+    "rubric": "Testi dal Messale Romano CEI 2020."
   },
   {
     "id": "bvm",
@@ -67,7 +85,10 @@
     "occasions": "Si celebra in onore della Beata Vergine Maria, particolarmente il sabato durante il Tempo Ordinario.",
     "antifona_ingresso": "Salve, santa Madre: tu hai dato alla luce il Re che governa il cielo e la terra per i secoli eterni.",
     "antifona_comunione": "Beato il grembo della Vergine Maria che ha portato il Figlio dell'eterno Padre.",
-    "rubric": "Per le orazioni proprie consultare il Messale Romano alla sezione «Messe della Beata Vergine Maria nel Tempo Ordinario». Sono disponibili 46 formulari mariani diversi."
+    "colletta": "Dio, Padre di misericordia, il tuo Figlio unigenito, morente sulla croce, ci ha donato la sua stessa Madre, la beata Vergine Maria, come nostra Madre; concedi che la tua Chiesa, sorretta dal suo amore, sia sempre più feconda nello Spirito, esulti per la santità dei suoi figli e raccolga nel suo grembo l'intera famiglia degli uomini. Per il nostro Signore Gesù Cristo, tuo Figlio, che è Dio, e vive e regna con te, nell'unità dello Spirito Santo, per tutti i secoli dei secoli.",
+    "sulle_offerte": "Accogli, o Signore, le nostre offerte e trasformale in sacramento di salvezza, perché con la potenza di questo sacrificio e per l'amorevole intercessione della Vergine Maria, Madre della Chiesa, cooperiamo più strettamente al disegno della redenzione. Per Cristo nostro Signore.",
+    "dopo_comunione": "O Signore, che in questo sacramento ci hai dato il pegno di redenzione e di vita, fa' che la tua Chiesa, con l'aiuto materno della Vergine Maria, porti a tutti i popoli l'annuncio del Vangelo e attiri sul mondo l'effusione del tuo Spirito. Per Cristo nostro Signore.",
+    "rubric": "Testi dal Messale Romano CEI 2020 — formulario «Maria Madre della Chiesa». Sono disponibili 46 formulari mariani diversi nel Messale."
   },
   {
     "id": "angeli",
@@ -77,7 +98,10 @@
     "occasions": "Si celebra in onore dei Santi Angeli, particolarmente per intercedere a tutela della Chiesa e dei fedeli.",
     "antifona_ingresso": "Benedite il Signore, voi tutti suoi angeli, potenti esecutori dei suoi comandi, pronti alla voce della sua parola (Sal 102, 20).",
     "antifona_comunione": "Alla presenza degli angeli a te canterò, mio Dio (cfr. Sal 137, 1).",
-    "rubric": "Per le orazioni proprie consultare il Messale Romano alla sezione «Messe votive – Dei Santi Angeli»."
+    "colletta": "O Dio, che con ordine mirabile affidi la loro missione agli angeli e agli uomini, fa' che la nostra vita sia difesa sulla terra da coloro che in cielo stanno sempre davanti a te per servirti. Per il nostro Signore Gesù Cristo, tuo Figlio, che è Dio, e vive e regna con te, nell'unità dello Spirito Santo, per tutti i secoli dei secoli.",
+    "sulle_offerte": "Accogli, o Signore, l'offerta della tua Chiesa: fa' che per le mani dei tuoi angeli sia portata davanti a te e diventi per tutti gli uomini sorgente di perdono e di salvezza. Per Cristo nostro Signore.",
+    "dopo_comunione": "Fortifica, o Signore, il nostro spirito con la potenza del pane del cielo e fa' che, con l'aiuto dei tuoi angeli, avanziamo con rinnovato vigore nella via della salvezza. Per Cristo nostro Signore.",
+    "rubric": "Testi dal Messale Romano CEI 2020."
   },
   {
     "id": "ss_apostoli",
@@ -87,7 +111,10 @@
     "occasions": "Si celebra in onore dei Santi Apostoli Pietro e Paolo, fondamento della Chiesa.",
     "antifona_ingresso": "Questi sono i santi che il Signore ha scelto nel suo amore di carità, ha dato loro gloria eterna (cfr. Sir 44, 25).",
     "antifona_comunione": "Tu sei Pietro, e su questa pietra edificherò la mia Chiesa (Mt 16, 18).",
-    "rubric": "Per le orazioni proprie consultare il Messale Romano alla sezione «Messe votive – Dei Santi Apostoli»."
+    "colletta": "Sostienici, Signore Dio nostro, per l'intercessione dei santi apostoli Pietro e Paolo, e concedi alla tua Chiesa, che da loro ha ricevuto le primizie della fede, l'aiuto necessario alla salvezza eterna. Per il nostro Signore Gesù Cristo, tuo Figlio, che è Dio, e vive e regna con te, nell'unità dello Spirito Santo, per tutti i secoli dei secoli.",
+    "sulle_offerte": "Deponiamo i nostri doni sul tuo altare, o Signore, celebrando con gioia la memoria dei santi apostoli Pietro e Paolo e, se temiamo per la povertà dei nostri meriti, fa' che ci rallegriamo per la grandezza della tua misericordia. Per Cristo nostro Signore.",
+    "dopo_comunione": "Con la forza di questi divini sacramenti sostieni, o Signore, i tuoi fedeli, che hai illuminato con la dottrina degli apostoli. Per Cristo nostro Signore.",
+    "rubric": "Testi dal Messale Romano CEI 2020."
   },
   {
     "id": "tutti_santi",
@@ -97,7 +124,10 @@
     "occasions": "Si celebra in onore di tutti i Santi, per loro intercessione.",
     "antifona_ingresso": "Rallegriamoci tutti nel Signore, in questa festa di tutti i Santi: con noi gioiscono gli Angeli e lodano il Figlio di Dio.",
     "antifona_comunione": "Beati i puri di cuore, perché vedranno Dio. Beati i misericordiosi, perché troveranno misericordia. Beati i perseguitati per la giustizia, perché di essi è il regno dei cieli (Mt 5, 8-10).",
-    "rubric": "Per le orazioni proprie consultare il Messale Romano alla sezione «Messe votive – Di Tutti i Santi»."
+    "colletta": "O Dio, fonte di ogni santità, che hai dato ai tuoi Santi una mirabile varietà di carismi sulla terra e un'unica ricompensa nel cielo, per loro intercessione concedi che camminiamo degnamente nella nostra vocazione per condividere la stessa corona di gloria. Per il nostro Signore Gesù Cristo, tuo Figlio, che è Dio, e vive e regna con te, nell'unità dello Spirito Santo, per tutti i secoli dei secoli.",
+    "sulle_offerte": "Ti siano graditi, o Signore, i doni che ti offriamo in onore di tutti i Santi, e fa' che sentiamo solleciti della nostra salvezza coloro che crediamo già partecipi della vita immortale. Per Cristo nostro Signore.",
+    "dopo_comunione": "O Dio, che ci nutri dell'unico pane e ci sostieni con l'unica speranza, rafforzaci con la tua grazia, perché insieme con i tuoi Santi formiamo tutti in Cristo un solo corpo e un solo spirito, per risorgere con lui nella gloria. Egli vive e regna nei secoli dei secoli.",
+    "rubric": "Testi dal Messale Romano CEI 2020."
   },
   {
     "id": "defunti",
@@ -107,7 +137,10 @@
     "occasions": "Si celebra in suffragio dei defunti, per le esequie, anniversari, commemorazioni.",
     "antifona_ingresso": "L'eterno riposo dona loro, o Signore, e splenda ad essi la luce perpetua.",
     "antifona_comunione": "Splenda ad essi la luce perpetua, o Signore, con i tuoi santi in eterno: perché tu sei buono. L'eterno riposo dona loro, o Signore, e splenda ad essi la luce perpetua, con i tuoi santi in eterno: perché tu sei buono (4 Esd 2, 35.34).",
-    "rubric": "Per le orazioni proprie consultare il Messale Romano alle sezioni «Messa per i fedeli defunti» e «Messe esequiali». Sono disponibili formulari per esequie, anniversari, varie commemorazioni."
+    "colletta": "O Dio, Padre onnipotente, la nostra fede confessa che il tuo Figlio è morto ed è risorto: per questo mistero, concedi al nostro fratello [alla nostra sorella] N., che si è addormentato[a] in Cristo, la gioia di risorgere per mezzo di lui. Egli è Dio, e vive e regna con te, nell'unità dello Spirito Santo, per tutti i secoli dei secoli.",
+    "sulle_offerte": "Ti offriamo, o Padre, questo sacrificio per la salvezza del nostro fratello [della nostra sorella] N., e supplichiamo la tua clemenza perché possa incontrare come giudice misericordioso il tuo Figlio, che nella fede ha riconosciuto suo salvatore. Egli vive e regna nei secoli dei secoli.",
+    "dopo_comunione": "Signore Dio nostro, il tuo Figlio ci ha lasciato il sacramento del suo Corpo come viatico nel pellegrinaggio terreno: concedi benigno che per la sua potenza il nostro fratello [la nostra sorella] N. giunga al convito eterno di Cristo. Egli vive e regna nei secoli dei secoli.",
+    "rubric": "Testi dal Messale Romano CEI 2020 — formulario «Nelle esequie - Per un defunto». Nel Messale sono disponibili anche formulari per anniversario e diverse commemorazioni."
   },
   {
     "id": "sposi",
@@ -117,7 +150,10 @@
     "occasions": "Si celebra nel rito del Matrimonio o in occasione di anniversari di Matrimonio.",
     "antifona_ingresso": "Il Signore vi mandi aiuto dal suo santuario; vi sostenga da Sion. Vi conceda secondo il vostro cuore (cfr. Sal 19, 3.5).",
     "antifona_comunione": "Il Signore è buono con tutti, la sua tenerezza si espande su tutte le creature (cfr. Sal 144, 9).",
-    "rubric": "Per le orazioni proprie consultare il Rito del Matrimonio e il Messale Romano alla sezione «Messe per gli sposi»."
+    "colletta": "Ascolta, o Signore, la nostra preghiera ed effondi con bontà la tua grazia su N. e N., perché, unendosi davanti al tuo altare, siano confermati nel reciproco amore. Per il nostro Signore Gesù Cristo, tuo Figlio, che è Dio, e vive e regna con te, nell'unità dello Spirito Santo, per tutti i secoli dei secoli.",
+    "sulle_offerte": "Accogli con benevolenza, o Signore, i doni che ti offriamo con gioia e custodisci con paterno amore N. e N., che hai unito con il sacramento nuziale. Per Cristo nostro Signore.",
+    "dopo_comunione": "Signore, che ci hai fatto partecipi della tua mensa, concedi a N. e N., da te uniti con il sacramento nuziale, di esserti sempre fedeli e di annunciare il tuo nome ai fratelli. Per Cristo nostro Signore.",
+    "rubric": "Testi dal Messale Romano CEI 2020 — Messa rituale per il Matrimonio. Per anniversario di matrimonio consultare i formulari specifici nel Messale."
   },
   {
     "id": "malati",
@@ -127,7 +163,10 @@
     "occasions": "Si celebra per pregare per gli infermi e ottenere loro salute spirituale e fisica.",
     "antifona_ingresso": "Ricordati, Signore, della tua misericordia e del tuo amore, che sono da sempre (Sal 24, 6).",
     "antifona_comunione": "Egli ha preso le nostre infermità e si è caricato delle nostre malattie (Mt 8, 17).",
-    "rubric": "Per le orazioni proprie consultare il Messale Romano alla sezione «Messe per gli infermi»."
+    "colletta": "O Padre, nel tuo Figlio unigenito, che ha preso su di sé le nostre infermità, hai voluto manifestare la forza della debolezza e della sofferenza umana: ascolta con benevolenza le preghiere che ti rivolgiamo per i nostri fratelli infermi, e concedi a coloro che si trovano nel dolore, nell'angoscia o nella malattia di sentirsi chiamati alla beatitudine promessa agli afflitti, e di riconoscersi uniti a Cristo che ha sofferto per la salvezza del mondo. Egli è Dio, e vive e regna con te, nell'unità dello Spirito Santo, per tutti i secoli dei secoli.",
+    "sulle_offerte": "O Dio, che vegli sul trascorrere della nostra vita, accogli le preghiere e le offerte che ti presentiamo implorando la tua misericordia per i fratelli infermi, e fa' che, dopo aver trepidato per la loro malattia, possiamo rallegrarci della loro guarigione. Per Cristo nostro Signore.",
+    "dopo_comunione": "O Dio, rifugio sicuro dei sofferenti, manifesta la potenza del tuo soccorso sui tuoi fedeli infermi perché, con l'aiuto della tua misericordia, possano rallegrarsi nella santa Chiesa per la salute ritrovata. Per Cristo nostro Signore.",
+    "rubric": "Testi dal Messale Romano CEI 2020 — formulario principale «Per gli infermi». Sono disponibili anche formulari per anziani gravi e morenti."
   },
   {
     "id": "pace",
@@ -137,6 +176,9 @@
     "occasions": "Si celebra per implorare il dono della pace e della giustizia nel mondo.",
     "antifona_ingresso": "Dona, Signore, la pace a chi spera in te, perché la voce dei tuoi profeti si dimostri vera (cfr. Sir 36, 18-19).",
     "antifona_comunione": "Vi do la mia pace, vi lascio la mia pace, dice il Signore (Gv 14, 27).",
-    "rubric": "Per le orazioni proprie consultare il Messale Romano alla sezione «Messe e orazioni per varie necessità – Per la pace e la giustizia»."
+    "colletta": "O Dio, tu hai rivelato che gli operatori di pace saranno chiamati tuoi figli: concedi a noi di ricercare sempre quella giustizia che, sola, può garantire una pace stabile e autentica. Per il nostro Signore Gesù Cristo, tuo Figlio, che è Dio, e vive e regna con te, nell'unità dello Spirito Santo, per tutti i secoli dei secoli.",
+    "sulle_offerte": "Il sacrificio di salvezza del tuo Figlio, re della pace, che ti offriamo, o Padre, in questo sacramento, segno di unità e di amore, rafforzi la concordia fra tutti i tuoi figli. Per Cristo nostro Signore.",
+    "dopo_comunione": "Donaci, o Padre, lo spirito di carità perché, nutriti dal Corpo e dal Sangue del tuo Figlio unigenito, siamo in mezzo a tutti gli uomini operatori di quella pace che Cristo ci ha lasciato in dono. Egli vive e regna nei secoli dei secoli.",
+    "rubric": "Testi dal Messale Romano CEI 2020 — formulario «Per la pace e la giustizia»."
   }
 ]
