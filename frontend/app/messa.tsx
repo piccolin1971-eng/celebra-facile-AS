@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Modal, Switch } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Modal, Switch, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -43,6 +43,10 @@ export default function MessaScreen() {
 
   const [showPrefaces, setShowPrefaces] = useState(false);
   const [showPrayers, setShowPrayers] = useState(false);
+
+  // Paginazione: tap-to-advance per facilitare la celebrazione
+  const [currentPage, setCurrentPage] = useState(0);
+  const scrollRef = React.useRef<ScrollView | null>(null);
 
   const styles = makeStyles(colors, fontSize);
 
@@ -275,11 +279,12 @@ export default function MessaScreen() {
     return (
       <View testID="part-offertorio">
         <R kind="title">Liturgia Eucaristica – Presentazione dei doni</R>
-        {off.sections.filter((s: any) => s.type !== "choice_orate").map(renderSection)}
+        {off.sections
+          .filter((s: any) => s.type !== "choice_orate" && s.type !== "rubric")
+          .map(renderSection)}
 
         {orateChoice && (
           <View style={styles.block}>
-            {orateChoice.rubric && <R kind="rubric">{orateChoice.rubric}</R>}
             <R kind="subtitle">Invito e risposta</R>
             <View style={styles.choiceRow}>
               {orateChoice.options.map((o: any) => (
@@ -477,191 +482,295 @@ export default function MessaScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} testID="mass-scroll">
-        {/* Header del giorno */}
-        <View style={[styles.dayHeader, { borderColor: liturgy?.season?.color_hex || colors.border }]}>
-          <Text style={styles.dayDate} testID="mass-date">{liturgy?.date_label}</Text>
-          {liturgy?.title ? <Text style={styles.dayTitle}>{liturgy.title}</Text> : null}
-          <Text style={styles.daySeason}>{liturgy?.season?.season} · Colore liturgico: {liturgy?.liturgical_color || liturgy?.season?.color}</Text>
-        </View>
+      {/* Definizione delle pagine della messa */}
+      {(() => {
+        // Costruisce dinamicamente le pagine in base ai toggle
+        const pages: { key: string; title: string; render: () => React.ReactNode }[] = [];
 
-        {/* Toggle Gloria / Credo */}
-        <View style={styles.togglesBox} testID="toggles-box">
-          <View style={styles.toggleRow}>
-            <Text style={styles.toggleLabel}>Mostra Gloria</Text>
-            <Switch
-              value={showGloria}
-              onValueChange={setShowGloria}
-              trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor="#FFFFFF"
-              style={{ transform: [{ scaleX: 1.4 }, { scaleY: 1.4 }], marginLeft: 16 }}
-              testID="switch-show-gloria"
-            />
-          </View>
-          <View style={styles.toggleRow}>
-            <Text style={styles.toggleLabel}>Mostra Credo</Text>
-            <Switch
-              value={showCredo}
-              onValueChange={setShowCredo}
-              trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor="#FFFFFF"
-              style={{ transform: [{ scaleX: 1.4 }, { scaleY: 1.4 }], marginLeft: 16 }}
-              testID="switch-show-credo"
-            />
-          </View>
-        </View>
-
-        {/* ============ RITI DI INTRODUZIONE ============ */}
-        <View style={styles.partBox} testID="part-riti-iniziali">
-          {renderReading("antifona_ingresso", "Antifona d'ingresso")}
-          <R kind="title">Riti di Introduzione</R>
-          {fixedParts["riti_iniziali"].sections.map(renderSection)}
-        </View>
-
-        <View style={styles.partBox}>
-          {renderAttoPenitenziale()}
-        </View>
-
-        {showGloria && (
-          <View style={styles.partBox} testID="part-gloria">
-            <R kind="title">Gloria</R>
-            {fixedParts["gloria"].sections.map(renderSection)}
-          </View>
-        )}
-
-        {/* Colletta del giorno - chiude i riti di introduzione */}
-        <View style={styles.partBox} testID="part-colletta">
-          {renderReading("colletta", "Colletta (Orazione del giorno)")}
-        </View>
-
-        {/* ============ LITURGIA DELLA PAROLA ============ */}
-        <View style={styles.partBox} testID="part-letture">
-          <R kind="title">Liturgia della Parola</R>
-          {renderReading("prima_lettura")}
-          {renderReading("salmo")}
-          {renderReading("seconda_lettura")}
-          {renderReading("sequenza")}
-          {renderReading("acclamazione")}
-          {renderReading("vangelo")}
-          {!liturgy?.readings?.length && (
-            <R kind="rubric">Letture non disponibili. Verifica connessione internet.</R>
-          )}
-        </View>
-
-        {showCredo && (
-          <View style={styles.partBox}>
-            {renderCredo()}
-          </View>
-        )}
-
-        {/* ============ LITURGIA EUCARISTICA ============ */}
-        <View style={styles.partBox}>
-          {renderOffertorio()}
-          {/* Sulle offerte (variabile del giorno) - dopo l'Orate Fratres */}
-          {renderReading("sulle_offerte", "Sulle offerte")}
-        </View>
-
-        <View style={styles.partBox} testID="part-prefazio">
-          <R kind="title">Prefazio</R>
-          <TouchableOpacity style={styles.selectorBtn} onPress={() => setShowPrefaces(true)} testID="btn-select-preface">
-            <Ionicons name="swap-horizontal" size={scaledFont(28)} color={colors.primary} />
-            <Text style={styles.selectorBtnText}>Scegli Prefazio</Text>
-          </TouchableOpacity>
-          {selectedPreface && (
-            <View style={styles.block}>
-              <R kind="subtitle">{selectedPreface.title}</R>
-              <R>{selectedPreface.text}</R>
-              <View style={styles.block}>
-                <R>Santo, Santo, Santo il Signore Dio dell'universo.{"\n"}I cieli e la terra sono pieni della tua gloria.{"\n"}Osanna nell'alto dei cieli.{"\n"}Benedetto colui che viene nel nome del Signore.{"\n"}Osanna nell'alto dei cieli.</R>
+        // PAGINA 0: Frontespizio
+        pages.push({
+          key: "intro",
+          title: "Inizio",
+          render: () => (
+            <View style={styles.partBox}>
+              <View style={[styles.dayHeader, { borderColor: liturgy?.season?.color_hex || colors.border }]}>
+                <Text style={styles.dayDate} testID="mass-date">{liturgy?.date_label}</Text>
+                {liturgy?.title ? <Text style={styles.dayTitle}>{liturgy.title}</Text> : null}
+                <Text style={styles.daySeason}>{liturgy?.season?.season} · Colore liturgico: {liturgy?.liturgical_color || liturgy?.season?.color}</Text>
               </View>
+              <View style={styles.togglesBox}>
+                <View style={styles.toggleRow}>
+                  <Text style={styles.toggleLabel}>Mostra Gloria</Text>
+                  <Switch value={showGloria} onValueChange={setShowGloria} trackColor={{ false: colors.border, true: colors.primary }} thumbColor="#FFFFFF" style={{ transform: [{ scaleX: 1.4 }, { scaleY: 1.4 }], marginLeft: 16 }} />
+                </View>
+                <View style={styles.toggleRow}>
+                  <Text style={styles.toggleLabel}>Mostra Credo</Text>
+                  <Switch value={showCredo} onValueChange={setShowCredo} trackColor={{ false: colors.border, true: colors.primary }} thumbColor="#FFFFFF" style={{ transform: [{ scaleX: 1.4 }, { scaleY: 1.4 }], marginLeft: 16 }} />
+                </View>
+              </View>
+              <Text style={[styles.toggleLabel, { textAlign: "center", marginTop: 16, fontStyle: "italic" }]}>
+                Tocca lo schermo o premi «Avanti» per iniziare la celebrazione
+              </Text>
             </View>
-          )}
-        </View>
+          ),
+        });
 
-        <View style={styles.partBox} testID="part-preghiera-eucaristica">
-          <R kind="title">Preghiera Eucaristica</R>
-          <TouchableOpacity style={styles.selectorBtn} onPress={() => setShowPrayers(true)} testID="btn-select-prayer">
-            <Ionicons name="swap-horizontal" size={scaledFont(28)} color={colors.primary} />
-            <Text style={styles.selectorBtnText}>Scegli Preghiera Eucaristica</Text>
-          </TouchableOpacity>
-          {selectedPrayer && (() => {
-            // Splitta il testo della PE sul "Mistero della fede." per inserire il selettore
-            // nel punto liturgico corretto (dopo la consacrazione del calice).
-            const marker = "Mistero della fede.";
-            const text = selectedPrayer.text;
-            const idx = text.indexOf(marker);
-            let beforePart = text;
-            let afterPart = "";
-            if (idx >= 0) {
-              beforePart = text.substring(0, idx).trimEnd();
-              const rest = text.substring(idx + marker.length);
-              const nextBreak = rest.indexOf("\n\n");
-              afterPart = nextBreak > 0 ? rest.substring(nextBreak + 2).trimStart() : rest.trimStart();
-            }
-            const selAcc = acclamations.find(x => x.id === acclamationId);
-            return (
-              <View style={styles.block}>
-                <R kind="subtitle">{selectedPrayer.title}</R>
-                <R kind="rubric">{selectedPrayer.description}</R>
-                <R>{beforePart}</R>
+        // PAGINA: Riti di Introduzione
+        pages.push({
+          key: "riti-iniziali",
+          title: "Riti di Introduzione",
+          render: () => (
+            <View style={styles.partBox}>
+              {renderReading("antifona_ingresso", "Antifona d'ingresso")}
+              <R kind="title">Riti di Introduzione</R>
+              {fixedParts["riti_iniziali"].sections.map(renderSection)}
+            </View>
+          ),
+        });
 
-                {/* === Acclamazione "Mistero della fede" - dopo la consacrazione del calice === */}
-                {acclamations.length > 0 && idx >= 0 && (
-                  <View style={styles.acclamationBox} testID="part-acclamazione">
-                    <R kind="subtitle">Acclamazione dopo la Consacrazione</R>
-                    <View style={styles.choiceRow}>
-                      {acclamations.map(a => (
-                        <TouchableOpacity
-                          key={a.id}
-                          style={[styles.choiceBtn, acclamationId === a.id && styles.choiceBtnActive]}
-                          onPress={() => setAcclamationId(a.id)}
-                          testID={`btn-acclamation-${a.id}`}
-                        >
-                          <Text style={[styles.choiceBtnText, acclamationId === a.id && { color: "#FFFFFF" }]}>Forma {a.id}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                    {selAcc && (
-                      <View style={styles.block}>
-                        <R kind="celebrante">C. {selAcc.celebrante}</R>
-                        <R kind="assemblea">A. {selAcc.assemblea}</R>
+        // PAGINA: Atto Penitenziale
+        pages.push({
+          key: "penitenziale",
+          title: "Atto Penitenziale",
+          render: () => <View style={styles.partBox}>{renderAttoPenitenziale()}</View>,
+        });
+
+        // PAGINA: Gloria
+        if (showGloria) {
+          pages.push({
+            key: "gloria",
+            title: "Gloria",
+            render: () => (
+              <View style={styles.partBox}>
+                <R kind="title">Gloria</R>
+                {fixedParts["gloria"].sections.map(renderSection)}
+              </View>
+            ),
+          });
+        }
+
+        // PAGINA: Colletta
+        pages.push({
+          key: "colletta",
+          title: "Colletta",
+          render: () => <View style={styles.partBox}>{renderReading("colletta", "Colletta (Orazione del giorno)")}</View>,
+        });
+
+        // PAGINA: Liturgia della Parola
+        pages.push({
+          key: "letture",
+          title: "Liturgia della Parola",
+          render: () => (
+            <View style={styles.partBox}>
+              <R kind="title">Liturgia della Parola</R>
+              {renderReading("prima_lettura")}
+              {renderReading("salmo")}
+              {renderReading("seconda_lettura")}
+              {renderReading("sequenza")}
+              {renderReading("acclamazione")}
+              {renderReading("vangelo")}
+              {!liturgy?.readings?.length && (
+                <R kind="rubric">Letture non disponibili. Verifica connessione internet.</R>
+              )}
+            </View>
+          ),
+        });
+
+        // PAGINA: Credo
+        if (showCredo) {
+          pages.push({
+            key: "credo",
+            title: "Professione di Fede",
+            render: () => <View style={styles.partBox}>{renderCredo()}</View>,
+          });
+        }
+
+        // PAGINA: Offertorio
+        pages.push({
+          key: "offertorio",
+          title: "Presentazione dei Doni",
+          render: () => (
+            <View style={styles.partBox}>
+              {renderOffertorio()}
+              {renderReading("sulle_offerte", "Sulle offerte")}
+            </View>
+          ),
+        });
+
+        // PAGINA: Prefazio + Sanctus
+        pages.push({
+          key: "prefazio",
+          title: "Prefazio",
+          render: () => (
+            <View style={styles.partBox} testID="part-prefazio">
+              <R kind="title">Prefazio</R>
+              <TouchableOpacity style={styles.selectorBtn} onPress={() => setShowPrefaces(true)} testID="btn-select-preface">
+                <Ionicons name="swap-horizontal" size={scaledFont(28)} color={colors.primary} />
+                <Text style={styles.selectorBtnText}>Scegli Prefazio</Text>
+              </TouchableOpacity>
+              {selectedPreface && (
+                <View style={styles.block}>
+                  <R kind="subtitle">{selectedPreface.title}</R>
+                  <R>{selectedPreface.text}</R>
+                  <View style={styles.block}>
+                    <R>Santo, Santo, Santo il Signore Dio dell'universo.{"\n"}I cieli e la terra sono pieni della tua gloria.{"\n"}Osanna nell'alto dei cieli.{"\n"}Benedetto colui che viene nel nome del Signore.{"\n"}Osanna nell'alto dei cieli.</R>
+                  </View>
+                </View>
+              )}
+            </View>
+          ),
+        });
+
+        // PAGINA: Preghiera Eucaristica
+        pages.push({
+          key: "pe",
+          title: "Preghiera Eucaristica",
+          render: () => (
+            <View style={styles.partBox} testID="part-preghiera-eucaristica">
+              <R kind="title">Preghiera Eucaristica</R>
+              <TouchableOpacity style={styles.selectorBtn} onPress={() => setShowPrayers(true)} testID="btn-select-prayer">
+                <Ionicons name="swap-horizontal" size={scaledFont(28)} color={colors.primary} />
+                <Text style={styles.selectorBtnText}>Scegli Preghiera Eucaristica</Text>
+              </TouchableOpacity>
+              {selectedPrayer && (() => {
+                const marker = "Mistero della fede.";
+                const text = selectedPrayer.text;
+                const idx = text.indexOf(marker);
+                let beforePart = text;
+                let afterPart = "";
+                if (idx >= 0) {
+                  beforePart = text.substring(0, idx).trimEnd();
+                  const rest = text.substring(idx + marker.length);
+                  const nextBreak = rest.indexOf("\n\n");
+                  afterPart = nextBreak > 0 ? rest.substring(nextBreak + 2).trimStart() : rest.trimStart();
+                }
+                const selAcc = acclamations.find(x => x.id === acclamationId);
+                return (
+                  <View style={styles.block}>
+                    <R kind="subtitle">{selectedPrayer.title}</R>
+                    <R>{beforePart}</R>
+                    {acclamations.length > 0 && idx >= 0 && (
+                      <View style={styles.acclamationBox}>
+                        <R kind="subtitle">Acclamazione dopo la Consacrazione</R>
+                        <View style={styles.choiceRow}>
+                          {acclamations.map(a => (
+                            <TouchableOpacity key={a.id} style={[styles.choiceBtn, acclamationId === a.id && styles.choiceBtnActive]} onPress={() => setAcclamationId(a.id)} testID={`btn-acclamation-${a.id}`}>
+                              <Text style={[styles.choiceBtnText, acclamationId === a.id && { color: "#FFFFFF" }]}>Forma {a.id}</Text>
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+                        {selAcc && (
+                          <View style={styles.block}>
+                            <R kind="celebrante">C. {selAcc.celebrante}</R>
+                            <R kind="assemblea">A. {selAcc.assemblea}</R>
+                          </View>
+                        )}
                       </View>
                     )}
+                    {afterPart ? <R>{afterPart}</R> : null}
                   </View>
-                )}
+                );
+              })()}
+            </View>
+          ),
+        });
 
-                {afterPart ? <R>{afterPart}</R> : null}
-              </View>
-            );
-          })()}
-        </View>
+        // PAGINA: Riti di Comunione (Padre Nostro)
+        pages.push({
+          key: "padre-nostro",
+          title: "Padre Nostro",
+          render: () => <View style={styles.partBox}>{renderPadreNostro()}</View>,
+        });
 
-        {/* ============ RITI DI COMUNIONE ============ */}
-        <View style={styles.partBox}>
-          {renderPadreNostro()}
-        </View>
+        // PAGINA: Frazione del pane e Comunione
+        pages.push({
+          key: "comunione",
+          title: "Frazione del Pane e Comunione",
+          render: () => (
+            <View style={styles.partBox} testID="part-comunione">
+              {fixedParts["comunione"].sections.map((s: any, i: number) => {
+                if (i === 0 && s.type === "rubric") return <View key="title"><R kind="title">Frazione del Pane e Comunione</R>{renderSection(s, i)}</View>;
+                return renderSection(s, i);
+              })}
+              {renderReading("antifona_comunione", "Antifona alla Comunione")}
+            </View>
+          ),
+        });
 
-        <View style={styles.partBox} testID="part-comunione">
-          {fixedParts["comunione"].sections.map((s: any, i: number) => {
-            if (i === 0 && s.type === "rubric") return <View key="title"><R kind="title">Frazione del Pane e Comunione</R>{renderSection(s, i)}</View>;
-            return renderSection(s, i);
-          })}
-          {/* Antifona alla Comunione - durante la distribuzione */}
-          {renderReading("antifona_comunione", "Antifona alla Comunione")}
-        </View>
+        // PAGINA: Dopo la Comunione
+        pages.push({
+          key: "dopo-comunione",
+          title: "Dopo la Comunione",
+          render: () => <View style={styles.partBox}>{renderReading("dopo_comunione", "Dopo la Comunione")}</View>,
+        });
 
-        {/* Preghiera dopo la Comunione - chiude i riti di comunione */}
-        <View style={styles.partBox} testID="part-dopo-comunione">
-          {renderReading("dopo_comunione", "Dopo la Comunione")}
-        </View>
+        // PAGINA: Riti di Conclusione
+        pages.push({
+          key: "conclusione",
+          title: "Riti di Conclusione",
+          render: () => <View style={styles.partBox}>{renderConclusione()}</View>,
+        });
 
-        {/* ============ RITI DI CONCLUSIONE ============ */}
-        <View style={styles.partBox}>
-          {renderConclusione()}
-        </View>
+        const total = pages.length;
+        const safeIdx = Math.max(0, Math.min(currentPage, total - 1));
+        const cur = pages[safeIdx];
+        const prev = () => {
+          const next = Math.max(0, safeIdx - 1);
+          setCurrentPage(next);
+          scrollRef.current?.scrollTo({ y: 0, animated: false });
+        };
+        const advance = () => {
+          const next = Math.min(total - 1, safeIdx + 1);
+          setCurrentPage(next);
+          scrollRef.current?.scrollTo({ y: 0, animated: false });
+        };
 
-        <View style={{ height: 80 }} />
-      </ScrollView>
+        return (
+          <>
+            {/* Barra di stato pagina */}
+            <View style={styles.pageStatusBar} testID="page-status-bar">
+              <Text style={styles.pageStatusText} numberOfLines={1}>
+                {safeIdx + 1}/{total} · {cur.title}
+              </Text>
+            </View>
+
+            {/* Contenuto con scroll interno per pagine lunghe; tap ovunque → pagina successiva */}
+            <ScrollView ref={scrollRef} contentContainerStyle={styles.content} testID="mass-scroll">
+              <Pressable onPress={advance} testID="page-tap-area" style={{ minHeight: 600 }}>
+                {cur.render()}
+                <View style={{ height: 80 }} />
+              </Pressable>
+            </ScrollView>
+
+            {/* Bottoni grandi di navigazione fissi */}
+            <View style={styles.navBar} testID="nav-bar">
+              <TouchableOpacity
+                style={[styles.navBtn, safeIdx === 0 && styles.navBtnDisabled]}
+                onPress={prev}
+                disabled={safeIdx === 0}
+                testID="btn-prev-page"
+                accessibilityRole="button"
+                accessibilityLabel="Pagina precedente"
+              >
+                <Ionicons name="chevron-back" size={scaledFont(40)} color={safeIdx === 0 ? colors.textSecondary : "#FFFFFF"} />
+                <Text style={[styles.navBtnText, safeIdx === 0 && { color: colors.textSecondary }]}>Indietro</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.navBtn, styles.navBtnPrimary, safeIdx === total - 1 && styles.navBtnDisabled]}
+                onPress={advance}
+                disabled={safeIdx === total - 1}
+                testID="btn-next-page"
+                accessibilityRole="button"
+                accessibilityLabel="Pagina successiva"
+              >
+                <Text style={[styles.navBtnText, { color: "#FFFFFF" }]}>Avanti</Text>
+                <Ionicons name="chevron-forward" size={scaledFont(40)} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+          </>
+        );
+      })()}
 
       {/* Modal Prefazi */}
       <Modal visible={showPrefaces} animationType="slide" onRequestClose={() => setShowPrefaces(false)}>
@@ -827,6 +936,54 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
   block: { marginVertical: 10 },
   dialogBlock: { marginVertical: 6 },
   readingBlock: { marginVertical: 14 },
+  pageStatusBar: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 2,
+    borderBottomColor: colors.border,
+  },
+  pageStatusText: {
+    fontSize: Math.round(fontSize * 0.7),
+    fontWeight: "700",
+    color: colors.textPrimary,
+    textAlign: "center",
+  },
+  navBar: {
+    flexDirection: "row",
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: colors.surface,
+    borderTopWidth: 2,
+    borderTopColor: colors.border,
+  },
+  navBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    minHeight: 72,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  navBtnPrimary: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  navBtnDisabled: {
+    opacity: 0.4,
+  },
+  navBtnText: {
+    fontSize: Math.round(fontSize * 0.8),
+    fontWeight: "700",
+    color: colors.textPrimary,
+  },
   choiceRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginVertical: 14 },
   choiceBtn: {
     paddingHorizontal: 18,
