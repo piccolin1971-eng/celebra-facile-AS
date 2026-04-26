@@ -178,6 +178,18 @@ function buildUrl(d: Date): string {
   return `https://www.chiesacattolica.it/liturgia-del-giorno/?data-liturgia=${y}${mo}${da}`;
 }
 
+// Su web (browser/preview Expo) il fetch cross-origin è bloccato dal CORS.
+// Su React Native (APK Android) non c'è CORS e il fetch è diretto.
+// Usiamo un proxy CORS pubblico solo quando siamo in ambiente browser.
+function fetchUrl(url: string): string {
+  // @ts-ignore - "document" esiste solo nei browser
+  const isWeb = typeof document !== "undefined";
+  if (isWeb) {
+    return `https://corsproxy.io/?${encodeURIComponent(url)}`;
+  }
+  return url;
+}
+
 export async function scrapeLiturgy(targetDate: Date): Promise<{
   date: string;
   title: string;
@@ -203,7 +215,7 @@ export async function scrapeLiturgy(targetDate: Date): Promise<{
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 25000);
-    const res = await fetch(url, {
+    const res = await fetch(fetchUrl(url), {
       headers: {
         "User-Agent": "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
         "Accept-Language": "it-IT,it;q=0.9",
