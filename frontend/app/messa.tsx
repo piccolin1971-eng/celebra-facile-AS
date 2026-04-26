@@ -485,12 +485,13 @@ export default function MessaScreen() {
       {/* Definizione delle pagine della messa */}
       {(() => {
         // Costruisce dinamicamente le pagine in base ai toggle
-        const pages: { key: string; title: string; render: () => React.ReactNode }[] = [];
+        const pages: { key: string; title: string; render: () => React.ReactNode; disableTapAdvance?: boolean }[] = [];
 
         // PAGINA 0: Frontespizio
         pages.push({
           key: "intro",
           title: "Inizio",
+          disableTapAdvance: true, // Evita avanzamento accidentale mentre si toccano i toggle Gloria/Credo
           render: () => (
             <View style={styles.partBox}>
               <View style={[styles.dayHeader, { borderColor: liturgy?.season?.color_hex || colors.border }]}>
@@ -509,7 +510,7 @@ export default function MessaScreen() {
                 </View>
               </View>
               <Text style={[styles.toggleLabel, { textAlign: "center", marginTop: 16, fontStyle: "italic" }]}>
-                Tocca lo schermo o premi «Avanti» per iniziare la celebrazione
+                Premi «Avanti» in basso per iniziare la celebrazione
               </Text>
             </View>
           ),
@@ -753,12 +754,19 @@ export default function MessaScreen() {
               </Text>
             </View>
 
-            {/* Contenuto con scroll interno per pagine lunghe; tap ovunque → pagina successiva */}
+            {/* Contenuto con scroll interno per pagine lunghe; tap ovunque → pagina successiva (escluse pagine con controlli interattivi) */}
             <ScrollView ref={scrollRef} contentContainerStyle={styles.content} testID="mass-scroll">
-              <Pressable onPress={advance} testID="page-tap-area" style={{ minHeight: 600 }}>
-                {cur.render()}
-                <View style={{ height: 80 }} />
-              </Pressable>
+              {cur.disableTapAdvance ? (
+                <View style={{ minHeight: 600 }} testID="page-no-tap">
+                  {cur.render()}
+                  <View style={{ height: 80 }} />
+                </View>
+              ) : (
+                <Pressable onPress={advance} testID="page-tap-area" style={{ minHeight: 600 }}>
+                  {cur.render()}
+                  <View style={{ height: 80 }} />
+                </Pressable>
+              )}
             </ScrollView>
 
             {/* Bottoni grandi di navigazione fissi */}
