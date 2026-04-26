@@ -34,7 +34,7 @@ export default function Impostazioni() {
           <View style={styles.sliderRow}>
             <TouchableOpacity
               style={styles.fontBtn}
-              onPress={() => setFontSize(Math.max(16, fontSize - 2))}
+              onPress={() => setFontSize(Math.max(14, fontSize - 2))}
               testID="btn-font-minus"
               accessibilityLabel="Riduci dimensione testo"
             >
@@ -42,7 +42,7 @@ export default function Impostazioni() {
             </TouchableOpacity>
             <Slider
               style={{ flex: 1, height: 60 }}
-              minimumValue={16}
+              minimumValue={14}
               maximumValue={60}
               step={1}
               value={fontSize}
