@@ -58,7 +58,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   const [theme, setThemeState] = useState<ThemeMode>("light");
   const [fontSize, setFontSizeState] = useState(32);
   const [highContrast, setHighContrastState] = useState(false);
-  const [readingMode, setReadingModeState] = useState<ReadingMode>("scroll");
+  const [readingMode, setReadingModeState] = useState<ReadingMode>("tap");
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {

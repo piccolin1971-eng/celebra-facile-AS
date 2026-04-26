@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Modal, Switch, Pressable } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Modal, Switch, Pressable, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -54,6 +54,7 @@ export default function MessaScreen() {
   // Paginazione: tap-to-advance per facilitare la celebrazione
   const [currentPage, setCurrentPage] = useState(0);
   const scrollRef = React.useRef<ScrollView | null>(null);
+  const { width: screenWidth } = useWindowDimensions();
 
   const styles = makeStyles(colors, fontSize);
 
@@ -587,8 +588,18 @@ export default function MessaScreen() {
                   <Switch value={showOrazionalePray} onValueChange={setShowOrazionalePray} trackColor={{ false: colors.border, true: colors.primary }} thumbColor="#FFFFFF" style={{ transform: [{ scaleX: 1.4 }, { scaleY: 1.4 }], marginLeft: 16 }} />
                 </View>
               </View>
-              <Text style={[styles.toggleLabel, { textAlign: "center", marginTop: 16, fontStyle: "italic" }]}>
-                Premi «Avanti» in basso per iniziare la celebrazione
+              <TouchableOpacity
+                style={styles.startCelebrationBtn}
+                onPress={advance}
+                testID="btn-start-celebration"
+                accessibilityRole="button"
+                accessibilityLabel="Inizia la celebrazione"
+              >
+                <Ionicons name="play-circle" size={scaledFont(40)} color="#FFFFFF" />
+                <Text style={styles.startCelebrationBtnText}>Inizia la celebrazione</Text>
+              </TouchableOpacity>
+              <Text style={[styles.toggleLabel, { textAlign: "center", marginTop: 12, fontStyle: "italic", fontSize: Math.round(fontSize * 0.55) }]}>
+                Durante la messa: tocca a destra per avanzare, a sinistra per tornare indietro
               </Text>
             </View>
           ),
@@ -1061,7 +1072,15 @@ export default function MessaScreen() {
           );
         }
 
-        // ===== MODALITÀ "tap": una pagina alla volta + tap-to-advance =====
+        // ===== MODALITÀ "tap": una pagina alla volta + tap laterali (Kindle) =====
+        // Tap su lato sinistro 35% schermo => indietro
+        // Tap su lato destro 65% schermo => avanti
+        // I tap zones sono sovrapposti al contenuto come bordi laterali assoluti
+        // così non interferiscono con i toggle/selettori al centro pagina.
+        const TAP_LEFT_RATIO = 0.30;
+        const tapLeftWidth = Math.round(screenWidth * TAP_LEFT_RATIO);
+        const tapRightWidth = screenWidth - tapLeftWidth;
+
         return (
           <>
             {/* Barra di stato pagina */}
@@ -1071,52 +1090,45 @@ export default function MessaScreen() {
               </Text>
             </View>
 
-            {/* Contenuto: ScrollView per testi lunghi, ma il tap su area vuota/contenuto avanza la pagina.
-                Lo scroll si attiva solo se l'utente trascina (pan gesture), il tap singolo va avanti. */}
-            <ScrollView
-              ref={scrollRef}
-              contentContainerStyle={[styles.content, { paddingBottom: 120 }]}
-              testID="mass-scroll"
-              showsVerticalScrollIndicator
-              keyboardShouldPersistTaps="handled"
-            >
-              {cur.disableTapAdvance ? (
-                <View testID="page-no-tap">
+            {/* Contenuto scrollabile */}
+            <View style={{ flex: 1 }}>
+              <ScrollView
+                ref={scrollRef}
+                contentContainerStyle={[styles.content, { paddingBottom: 60 }]}
+                testID="mass-scroll"
+                showsVerticalScrollIndicator
+                keyboardShouldPersistTaps="handled"
+              >
+                <View testID="page-content">
                   {cur.render()}
                 </View>
-              ) : (
-                <Pressable onPress={advance} testID="page-tap-area">
-                  {cur.render()}
-                </Pressable>
+              </ScrollView>
+
+              {/* Zone tap invisibili sui bordi (Kindle-style) - solo se la pagina lo consente */}
+              {!cur.disableTapAdvance && (
+                <>
+                  <Pressable
+                    style={[styles.tapZone, { left: 0, width: tapLeftWidth }]}
+                    onPress={prev}
+                    testID="tap-zone-back"
+                    accessibilityLabel="Pagina precedente"
+                  />
+                  <Pressable
+                    style={[styles.tapZone, { right: 0, width: tapRightWidth }]}
+                    onPress={advance}
+                    testID="tap-zone-next"
+                    accessibilityLabel="Pagina successiva"
+                  />
+                </>
               )}
-            </ScrollView>
-
-            {/* Bottoni grandi di navigazione fissi */}
-            <View style={styles.navBar} testID="nav-bar">
-              <TouchableOpacity
-                style={[styles.navBtn, safeIdx === 0 && styles.navBtnDisabled]}
-                onPress={prev}
-                disabled={safeIdx === 0}
-                testID="btn-prev-page"
-                accessibilityRole="button"
-                accessibilityLabel="Pagina precedente"
-              >
-                <Ionicons name="chevron-back" size={scaledFont(40)} color={safeIdx === 0 ? colors.textSecondary : "#FFFFFF"} />
-                <Text style={[styles.navBtnText, safeIdx === 0 && { color: colors.textSecondary }]}>Indietro</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.navBtn, styles.navBtnPrimary, safeIdx === total - 1 && styles.navBtnDisabled]}
-                onPress={advance}
-                disabled={safeIdx === total - 1}
-                testID="btn-next-page"
-                accessibilityRole="button"
-                accessibilityLabel="Pagina successiva"
-              >
-                <Text style={[styles.navBtnText, { color: "#FFFFFF" }]}>Avanti</Text>
-                <Ionicons name="chevron-forward" size={scaledFont(40)} color="#FFFFFF" />
-              </TouchableOpacity>
             </View>
+
+            {/* Suggerimento navigazione (solo prima pagina, sparisce automaticamente dopo) */}
+            {safeIdx === 0 ? (
+              <View style={styles.tapHint} pointerEvents="none">
+                <Text style={styles.tapHintText}>← Tocca a sinistra per tornare indietro · Tocca a destra per avanzare →</Text>
+              </View>
+            ) : null}
           </>
         );
       })()}
@@ -1389,6 +1401,48 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     fontSize: Math.round(fontSize * 0.8),
     fontWeight: "700",
     color: colors.textPrimary,
+  },
+  tapZone: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    backgroundColor: "transparent",
+  },
+  tapHint: {
+    position: "absolute",
+    bottom: 16,
+    left: 16,
+    right: 16,
+    alignItems: "center",
+  },
+  tapHintText: {
+    fontSize: Math.round(fontSize * 0.45),
+    color: colors.textSecondary,
+    backgroundColor: colors.surface,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 16,
+    overflow: "hidden",
+    fontStyle: "italic",
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  startCelebrationBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    backgroundColor: colors.primary,
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+    borderRadius: 14,
+    marginTop: 24,
+    minHeight: 88,
+  },
+  startCelebrationBtnText: {
+    fontSize: Math.round(fontSize * 0.8),
+    fontWeight: "700",
+    color: "#FFFFFF",
   },
   choiceRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginVertical: 14 },
   choiceBtn: {
