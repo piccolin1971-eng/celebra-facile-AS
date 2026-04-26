@@ -150,7 +150,14 @@ export default function OrazionaleScreen() {
   // ===== DETTAGLIO PREGHIERA =====
   if (mode === "prayer" && activePrayer) {
     const isTap = readingMode === "tap";
-    const tapZoneLeft = width * 0.35;
+    const TAP_LEFT_RATIO = 0.35;
+    const tapLeftWidth = Math.round(width * TAP_LEFT_RATIO);
+
+    const handlePagePress = (e: any) => {
+      const x = e?.nativeEvent?.pageX ?? e?.nativeEvent?.locationX ?? 0;
+      if (x < tapLeftWidth) back();
+      else advance();
+    };
 
     const Body = (
       <View style={styles.prayerBody}>
@@ -170,37 +177,26 @@ export default function OrazionaleScreen() {
     return (
       <SafeAreaView style={styles.container} testID="orazionale-prayer">
         {renderHeader(activeSection?.label)}
-        {isTap ? (
-          // Tap to Advance: niente scroll, zone touch sx/dx
-          <View style={{ flex: 1 }}>
-            <View style={styles.prayerScroll} pointerEvents="box-none">
-              {Body}
-            </View>
-            {/* Zone touch invisibili sopra il contenuto */}
-            <Pressable
-              style={[styles.tapZone, { left: 0, width: tapZoneLeft }]}
-              onPress={back}
-              testID="tap-zone-back"
-              accessibilityLabel="Pagina precedente"
-            />
-            <Pressable
-              style={[styles.tapZone, { right: 0, width: width - tapZoneLeft }]}
-              onPress={advance}
-              testID="tap-zone-next"
-              accessibilityLabel="Pagina successiva"
-            />
-            {/* Indicatore pagina */}
-            {total > 1 ? (
-              <View style={styles.pageIndicator} pointerEvents="none">
-                <Text style={styles.pageIndicatorText}>{safePage + 1} / {total}</Text>
-              </View>
-            ) : null}
+        {/* Stato pagina (per modalità tap) */}
+        {isTap && total > 1 ? (
+          <View style={styles.pageStatusBar}>
+            <Text style={styles.pageStatusText}>{safePage + 1} / {total}</Text>
           </View>
-        ) : (
-          <ScrollView contentContainerStyle={styles.prayerScroll}>
-            {Body}
-          </ScrollView>
-        )}
+        ) : null}
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.prayerScroll}>
+          {isTap ? (
+            <Pressable
+              onPress={handlePagePress}
+              testID="prayer-tap-area"
+              android_disableSound
+              style={{ minHeight: 600, flexGrow: 1 }}
+            >
+              {Body}
+            </Pressable>
+          ) : (
+            Body
+          )}
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -317,5 +313,18 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     borderRadius: 18,
     overflow: "hidden",
     fontWeight: "600",
+  },
+  pageStatusBar: {
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  pageStatusText: {
+    fontSize: Math.round(fontSize * 0.55),
+    fontWeight: "700",
+    color: colors.textPrimary,
+    textAlign: "center",
   },
 });
