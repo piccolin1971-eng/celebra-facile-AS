@@ -2,9 +2,10 @@ import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Modal, Switch, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSettings } from "../src/SettingsContext";
 import { api, Liturgy, Preface, EucharisticPrayer, MysteryAcclamation, SolemnBlessing } from "../src/api";
+import { getOrazionaleSections, getPrayerById, suggestPrayerForLiturgy, OrazionalePrayer } from "../src/orazionale";
 
 type ReadingType =
   | "antifona_ingresso" | "colletta"
@@ -43,6 +44,12 @@ export default function MessaScreen() {
 
   const [showPrefaces, setShowPrefaces] = useState(false);
   const [showPrayers, setShowPrayers] = useState(false);
+  const [showOrazionale, setShowOrazionale] = useState(false);
+
+  // Preghiera dei fedeli (Orazionale)
+  const [selectedOrazionaleId, setSelectedOrazionaleId] = useState<string>("");
+  const [showOrazionalePray, setShowOrazionalePray] = useState<boolean>(true);
+  const [orazionaleSection, setOrazionaleSection] = useState<string | null>(null);
 
   // Paginazione: tap-to-advance per facilitare la celebrazione
   const [currentPage, setCurrentPage] = useState(0);
@@ -91,6 +98,10 @@ export default function MessaScreen() {
         if (seasBless) setSolemnBlessingId(seasBless.id);
         // Congedo di Pasqua automatico
         if (seasonKey === "pasqua") setCongedoId("pasqua_alleluia");
+
+        // Suggerisci la Preghiera dei fedeli (Orazionale CEI)
+        const suggestedOrId = suggestPrayerForLiturgy(lit);
+        if (suggestedOrId) setSelectedOrazionaleId(suggestedOrId);
       } catch (e) {
         console.log("Errore:", e);
       } finally {
@@ -109,6 +120,7 @@ export default function MessaScreen() {
 
   const selectedPreface = prefaces.find(p => p.id === selectedPrefaceId);
   const selectedPrayer = prayers.find(p => p.id === selectedPrayerId);
+  const selectedOrazionale = selectedOrazionaleId ? getPrayerById(selectedOrazionaleId) : undefined;
   const getReading = (type: ReadingType) => liturgy?.readings?.find(r => r.type === type);
 
   // Basic text renderers
@@ -570,6 +582,10 @@ export default function MessaScreen() {
                   <Text style={styles.toggleLabel}>Mostra Credo</Text>
                   <Switch value={showCredo} onValueChange={setShowCredo} trackColor={{ false: colors.border, true: colors.primary }} thumbColor="#FFFFFF" style={{ transform: [{ scaleX: 1.4 }, { scaleY: 1.4 }], marginLeft: 16 }} />
                 </View>
+                <View style={styles.toggleRow}>
+                  <Text style={styles.toggleLabel}>Preghiera dei fedeli</Text>
+                  <Switch value={showOrazionalePray} onValueChange={setShowOrazionalePray} trackColor={{ false: colors.border, true: colors.primary }} thumbColor="#FFFFFF" style={{ transform: [{ scaleX: 1.4 }, { scaleY: 1.4 }], marginLeft: 16 }} />
+                </View>
               </View>
               <Text style={[styles.toggleLabel, { textAlign: "center", marginTop: 16, fontStyle: "italic" }]}>
                 Premi «Avanti» in basso per iniziare la celebrazione
@@ -702,6 +718,49 @@ export default function MessaScreen() {
             key: "credo",
             title: "Professione di Fede",
             render: () => <View style={styles.partBox}>{renderCredo()}</View>,
+          });
+        }
+
+        // PAGINE: Preghiera dei fedeli (Orazionale CEI)
+        if (showOrazionalePray && selectedOrazionale) {
+          const orChunks = splitTextIntoChunks(selectedOrazionale.body);
+          orChunks.forEach((_, i) => {
+            pages.push({
+              key: `orazionale-${i}`,
+              title: orChunks.length > 1 ? `Preghiera dei fedeli (${i + 1}/${orChunks.length})` : "Preghiera dei fedeli",
+              render: () => (
+                <View style={styles.partBox}>
+                  {i === 0 ? (
+                    <>
+                      <R kind="title">Preghiera dei fedeli</R>
+                      <TouchableOpacity style={styles.selectorBtn} onPress={() => setShowOrazionale(true)} testID="btn-select-orazionale">
+                        <Ionicons name="swap-horizontal" size={scaledFont(28)} color={colors.primary} />
+                        <Text style={styles.selectorBtnText}>Scegli Preghiera</Text>
+                      </TouchableOpacity>
+                      <R kind="subtitle">{selectedOrazionale.title}</R>
+                    </>
+                  ) : (
+                    <R kind="subtitle">{selectedOrazionale.title} (continua)</R>
+                  )}
+                  <R>{orChunks[i]}</R>
+                </View>
+              ),
+            });
+          });
+        } else if (showOrazionalePray && !selectedOrazionale) {
+          pages.push({
+            key: "orazionale-empty",
+            title: "Preghiera dei fedeli",
+            render: () => (
+              <View style={styles.partBox}>
+                <R kind="title">Preghiera dei fedeli</R>
+                <TouchableOpacity style={styles.selectorBtn} onPress={() => setShowOrazionale(true)} testID="btn-select-orazionale">
+                  <Ionicons name="swap-horizontal" size={scaledFont(28)} color={colors.primary} />
+                  <Text style={styles.selectorBtnText}>Scegli Preghiera</Text>
+                </TouchableOpacity>
+                <R kind="rubric">Tocca per scegliere la Preghiera universale dall'Orazionale.</R>
+              </View>
+            ),
           });
         }
 
@@ -1126,6 +1185,63 @@ export default function MessaScreen() {
                 <Text style={styles.listItemSub}>{p.description}</Text>
               </TouchableOpacity>
             ))}
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
+
+      {/* Modal Orazionale - Preghiera dei fedeli */}
+      <Modal visible={showOrazionale} animationType="slide" onRequestClose={() => setShowOrazionale(false)}>
+        <SafeAreaView style={styles.container} testID="modal-orazionale">
+          <View style={styles.topBar}>
+            <TouchableOpacity style={styles.backBtn} onPress={() => {
+              if (orazionaleSection) { setOrazionaleSection(null); }
+              else { setShowOrazionale(false); }
+            }} testID="btn-close-orazionale">
+              <Ionicons name={orazionaleSection ? "chevron-back" : "close"} size={scaledFont(36)} color={colors.textPrimary} />
+              <Text style={styles.backBtnText}>{orazionaleSection ? "Sezioni" : "Chiudi"}</Text>
+            </TouchableOpacity>
+            <Text style={styles.title}>{orazionaleSection
+              ? (getOrazionaleSections().find(s => s.key === orazionaleSection)?.label || "Orazionale")
+              : "Scegli Preghiera"}</Text>
+            <View style={{ width: 100 }} />
+          </View>
+          <ScrollView contentContainerStyle={styles.content}>
+            {!orazionaleSection ? (
+              <>
+                {selectedOrazionale ? (
+                  <View style={[styles.listItem, styles.listItemActive]}>
+                    <Text style={styles.badgeSeasonal}>▸ ATTUALMENTE SELEZIONATA</Text>
+                    <Text style={styles.listItemText}>{selectedOrazionale.title}</Text>
+                  </View>
+                ) : null}
+                {getOrazionaleSections().map(s => (
+                  <TouchableOpacity
+                    key={s.key}
+                    style={styles.listItem}
+                    onPress={() => setOrazionaleSection(s.key as string)}
+                    testID={`oraz-section-${s.key}`}
+                  >
+                    <Text style={styles.listItemText}>{s.label}</Text>
+                    <Text style={styles.listItemSub}>{s.description} · {s.prayers.length} preghiere</Text>
+                  </TouchableOpacity>
+                ))}
+              </>
+            ) : (
+              (getOrazionaleSections().find(s => s.key === orazionaleSection)?.prayers || []).map((p: OrazionalePrayer) => (
+                <TouchableOpacity
+                  key={p.id}
+                  style={[styles.listItem, selectedOrazionaleId === p.id && styles.listItemActive]}
+                  onPress={() => {
+                    setSelectedOrazionaleId(p.id);
+                    setOrazionaleSection(null);
+                    setShowOrazionale(false);
+                  }}
+                  testID={`oraz-prayer-${p.id}`}
+                >
+                  <Text style={styles.listItemText}>{p.title}</Text>
+                </TouchableOpacity>
+              ))
+            )}
           </ScrollView>
         </SafeAreaView>
       </Modal>

@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSettings } from "../src/SettingsContext";
 import { api, Liturgy } from "../src/api";
 import { localDateStr, italianDateLabel, addDays, parseLocalDate } from "../src/dateUtils";
@@ -167,21 +167,33 @@ export default function Home() {
           <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
         ) : null}
 
-        <TouchableOpacity
-          style={[styles.bigCard, { backgroundColor: colors.primary }]}
-          onPress={openMessa}
-          testID="btn-mass-of-the-day"
-          accessibilityRole="button"
-          accessibilityLabel={`Celebra la Messa di ${dayLabelFor(selectedDay, selectedDate).toLowerCase()}`}
-        >
-          <Ionicons name="book" size={scaledFont(40)} color="#FFFFFF" />
-          <Text style={styles.bigCardTitle}>Celebra la Messa</Text>
-          <Text style={styles.bigCardSubtitle}>
-            {selectedDay === "today"
-              ? "Ordinario + Letture del giorno"
-              : `Ordinario + Letture di ${dayLabelFor(selectedDay, selectedDate)}`}
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.heroRow} testID="hero-row">
+          <TouchableOpacity
+            style={[styles.heroCard, { backgroundColor: colors.primary }]}
+            onPress={openMessa}
+            testID="btn-mass-of-the-day"
+            accessibilityRole="button"
+            accessibilityLabel={`Celebra la Messa di ${dayLabelFor(selectedDay, selectedDate).toLowerCase()}`}
+          >
+            <Ionicons name="book" size={scaledFont(44)} color="#FFFFFF" />
+            <Text style={styles.heroTitle}>Celebra la Messa</Text>
+            <Text style={styles.heroSubtitle}>
+              {selectedDay === "today" ? "Letture di oggi" : `Letture di ${dayLabelFor(selectedDay, selectedDate)}`}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.heroCard, { backgroundColor: colors.liturgicalPurple }]}
+            onPress={() => router.push("/orazionale" as any)}
+            testID="btn-orazionale"
+            accessibilityRole="button"
+            accessibilityLabel="Orazionale, Preghiera Universale"
+          >
+            <MaterialCommunityIcons name="hands-pray" size={scaledFont(44)} color="#FFFFFF" />
+            <Text style={styles.heroTitle}>Orazionale</Text>
+            <Text style={styles.heroSubtitle}>Preghiera Universale</Text>
+          </TouchableOpacity>
+        </View>
 
         <TouchableOpacity
           style={styles.secondaryCard}
@@ -338,6 +350,21 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
   },
   bigCardTitle: { fontSize: Math.round(fontSize * 0.8), fontWeight: "700", color: "#FFFFFF" },
   bigCardSubtitle: { fontSize: Math.round(fontSize * 0.55), color: "#FFFFFF", opacity: 0.9, textAlign: "center" },
+  heroRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  heroCard: {
+    flex: 1,
+    padding: 20,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    minHeight: 160,
+  },
+  heroTitle: { fontSize: Math.round(fontSize * 0.78), fontWeight: "700", color: "#FFFFFF", textAlign: "center" },
+  heroSubtitle: { fontSize: Math.round(fontSize * 0.5), color: "#FFFFFF", opacity: 0.92, textAlign: "center" },
   secondaryCard: {
     flexDirection: "row",
     alignItems: "center",
