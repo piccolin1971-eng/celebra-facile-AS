@@ -159,6 +159,50 @@ export default function MessaScreen() {
     return null;
   };
 
+  // === Helpers paginazione automatica testo ===
+  // Stima quanti caratteri possono stare in una schermata dato il fontSize attuale.
+  const charsPerPage = Math.max(250, Math.min(1800, Math.round(16000 / Math.max(16, fontSize))));
+
+  // Splitta un testo lungo in chunk di massimo `maxChars` rispettando i paragrafi (\n\n).
+  // Se un singolo paragrafo eccede maxChars, lo splitta su frasi (.) o virgole (,).
+  const splitTextIntoChunks = (text: string, maxChars = charsPerPage): string[] => {
+    if (!text) return [];
+    if (text.length <= maxChars) return [text];
+    const paragraphs = text.split(/\n\n+/);
+    const chunks: string[] = [];
+    let current = "";
+    for (const p of paragraphs) {
+      if (p.length > maxChars) {
+        // Paragrafo troppo lungo: splitta su frasi
+        if (current) { chunks.push(current); current = ""; }
+        const sentences = p.split(/(?<=[\.\?\!])\s+/);
+        let buf = "";
+        for (const s of sentences) {
+          if ((buf + " " + s).trim().length > maxChars && buf) {
+            chunks.push(buf.trim());
+            buf = s;
+          } else {
+            buf = buf ? `${buf} ${s}` : s;
+          }
+        }
+        if (buf) {
+          if (current) { chunks.push(current); current = ""; }
+          chunks.push(buf.trim());
+        }
+        continue;
+      }
+      const candidate = current ? `${current}\n\n${p}` : p;
+      if (candidate.length > maxChars && current) {
+        chunks.push(current);
+        current = p;
+      } else {
+        current = candidate;
+      }
+    }
+    if (current) chunks.push(current);
+    return chunks;
+  };
+
   // === Reading renderer (daily) ===
   const renderReading = (type: ReadingType, titleOverride?: string) => {
     const r = getReading(type);
@@ -168,6 +212,24 @@ export default function MessaScreen() {
         <R kind="subtitle">{titleOverride || r.title}</R>
         {r.reference ? <R kind="rubric">{r.reference}</R> : null}
         <R>{r.text}</R>
+      </View>
+    );
+  };
+
+  // Versione "chunked" per modalità Tap: mostra solo una porzione del testo
+  const renderReadingChunk = (type: ReadingType, chunkIndex: number, totalChunks: number, titleOverride?: string) => {
+    const r = getReading(type);
+    if (!r || !r.text) return null;
+    const chunks = splitTextIntoChunks(r.text);
+    const t = chunks[chunkIndex] || "";
+    const baseTitle = titleOverride || r.title;
+    const showTitle = chunkIndex === 0;
+    const suffix = totalChunks > 1 ? ` (${chunkIndex + 1}/${totalChunks})` : "";
+    return (
+      <View style={styles.readingBlock} testID={`reading-${type}-${chunkIndex}`}>
+        {showTitle ? <R kind="subtitle">{baseTitle}{suffix}</R> : <R kind="subtitle">{baseTitle}{suffix} (continua)</R>}
+        {showTitle && r.reference ? <R kind="rubric">{r.reference}</R> : null}
+        <R>{t}</R>
       </View>
     );
   };
@@ -563,50 +625,63 @@ export default function MessaScreen() {
           ),
         });
 
-        // PAGINE: Liturgia della Parola (suddivisa in più schermate)
+        // PAGINE: Liturgia della Parola (suddivisa in più schermate, con auto-pagination per testi lunghi)
         const readings = liturgy?.readings || [];
         const hasReading = (type: string) => readings.some(r => r.type === type);
 
-        if (hasReading("prima_lettura")) {
-          pages.push({
-            key: "prima-lettura",
-            title: "Prima Lettura",
-            render: () => <View style={styles.partBox}>{renderReading("prima_lettura")}</View>,
+        const addReadingPages = (type: ReadingType, title: string) => {
+          const r = readings.find(rr => rr.type === type);
+          if (!r || !r.text) return;
+          const chunks = splitTextIntoChunks(r.text);
+          chunks.forEach((_, i) => {
+            pages.push({
+              key: `read-${type}-${i}`,
+              title: chunks.length > 1 ? `${title} (${i + 1}/${chunks.length})` : title,
+              render: () => (
+                <View style={styles.partBox}>
+                  {renderReadingChunk(type, i, chunks.length, title)}
+                </View>
+              ),
+            });
           });
-        }
-        if (hasReading("salmo")) {
-          pages.push({
-            key: "salmo",
-            title: "Salmo Responsoriale",
-            render: () => <View style={styles.partBox}>{renderReading("salmo")}</View>,
-          });
-        }
-        if (hasReading("seconda_lettura")) {
-          pages.push({
-            key: "seconda-lettura",
-            title: "Seconda Lettura",
-            render: () => <View style={styles.partBox}>{renderReading("seconda_lettura")}</View>,
-          });
-        }
-        if (hasReading("sequenza")) {
-          pages.push({
-            key: "sequenza",
-            title: "Sequenza",
-            render: () => <View style={styles.partBox}>{renderReading("sequenza")}</View>,
-          });
-        }
-        // Acclamazione + Vangelo (insieme perché molto correlati)
-        if (hasReading("vangelo") || hasReading("acclamazione")) {
-          pages.push({
-            key: "vangelo",
-            title: "Acclamazione e Vangelo",
-            render: () => (
-              <View style={styles.partBox}>
-                {renderReading("acclamazione")}
-                {renderReading("vangelo")}
-              </View>
-            ),
-          });
+        };
+
+        addReadingPages("prima_lettura", "Prima Lettura");
+        addReadingPages("salmo", "Salmo Responsoriale");
+        addReadingPages("seconda_lettura", "Seconda Lettura");
+        addReadingPages("sequenza", "Sequenza");
+        // Acclamazione + Vangelo (chunked separatamente per il vangelo che è quello lungo)
+        const accl = readings.find(r => r.type === "acclamazione");
+        const vang = readings.find(r => r.type === "vangelo");
+        if (accl || vang) {
+          if (accl && vang) {
+            // Prima pagina: acclamazione + inizio vangelo (se entra)
+            pages.push({
+              key: "vangelo-intro",
+              title: "Acclamazione e Vangelo",
+              render: () => (
+                <View style={styles.partBox}>
+                  {renderReadingChunk("acclamazione", 0, 1, "Acclamazione al Vangelo")}
+                </View>
+              ),
+            });
+            const vangChunks = splitTextIntoChunks(vang.text);
+            vangChunks.forEach((_, i) => {
+              pages.push({
+                key: `vangelo-${i}`,
+                title: vangChunks.length > 1 ? `Vangelo (${i + 1}/${vangChunks.length})` : "Vangelo",
+                render: () => (
+                  <View style={styles.partBox}>
+                    {renderReadingChunk("vangelo", i, vangChunks.length, "Vangelo")}
+                  </View>
+                ),
+              });
+            });
+          } else if (vang) {
+            addReadingPages("vangelo", "Vangelo");
+          } else if (accl) {
+            addReadingPages("acclamazione", "Acclamazione al Vangelo");
+          }
         }
         if (!hasReading("prima_lettura") && !hasReading("vangelo")) {
           pages.push({
@@ -642,29 +717,58 @@ export default function MessaScreen() {
           ),
         });
 
-        // PAGINA: Prefazio + Sanctus
-        pages.push({
-          key: "prefazio",
-          title: "Prefazio",
-          render: () => (
-            <View style={styles.partBox} testID="part-prefazio">
-              <R kind="title">Prefazio</R>
-              <TouchableOpacity style={styles.selectorBtn} onPress={() => setShowPrefaces(true)} testID="btn-select-preface">
-                <Ionicons name="swap-horizontal" size={scaledFont(28)} color={colors.primary} />
-                <Text style={styles.selectorBtnText}>Scegli Prefazio</Text>
-              </TouchableOpacity>
-              {selectedPreface && (
-                <View style={styles.block}>
-                  <R kind="subtitle">{selectedPreface.title}</R>
-                  <R>{selectedPreface.text}</R>
-                  <View style={styles.block}>
-                    <R>Santo, Santo, Santo il Signore Dio dell'universo.{"\n"}I cieli e la terra sono pieni della tua gloria.{"\n"}Osanna nell'alto dei cieli.{"\n"}Benedetto colui che viene nel nome del Signore.{"\n"}Osanna nell'alto dei cieli.</R>
-                  </View>
+        // PAGINA: Prefazio + Sanctus (Sanctus su pagina separata se prefazio lungo)
+        if (selectedPreface) {
+          const prefChunks = splitTextIntoChunks(selectedPreface.text);
+          prefChunks.forEach((_, i) => {
+            pages.push({
+              key: `prefazio-${i}`,
+              title: prefChunks.length > 1 ? `Prefazio (${i + 1}/${prefChunks.length})` : "Prefazio",
+              render: () => (
+                <View style={styles.partBox}>
+                  {i === 0 ? (
+                    <>
+                      <R kind="title">Prefazio</R>
+                      <TouchableOpacity style={styles.selectorBtn} onPress={() => setShowPrefaces(true)} testID="btn-select-preface">
+                        <Ionicons name="swap-horizontal" size={scaledFont(28)} color={colors.primary} />
+                        <Text style={styles.selectorBtnText}>Scegli Prefazio</Text>
+                      </TouchableOpacity>
+                      <R kind="subtitle">{selectedPreface.title}</R>
+                    </>
+                  ) : (
+                    <R kind="subtitle">{selectedPreface.title} (continua)</R>
+                  )}
+                  <R>{prefChunks[i]}</R>
                 </View>
-              )}
-            </View>
-          ),
-        });
+              ),
+            });
+          });
+          // Pagina Sanctus separata
+          pages.push({
+            key: "sanctus",
+            title: "Sanctus",
+            render: () => (
+              <View style={styles.partBox}>
+                <R kind="title">Sanctus</R>
+                <R>Santo, Santo, Santo il Signore Dio dell'universo.{"\n"}I cieli e la terra sono pieni della tua gloria.{"\n"}Osanna nell'alto dei cieli.{"\n"}Benedetto colui che viene nel nome del Signore.{"\n"}Osanna nell'alto dei cieli.</R>
+              </View>
+            ),
+          });
+        } else {
+          pages.push({
+            key: "prefazio",
+            title: "Prefazio",
+            render: () => (
+              <View style={styles.partBox}>
+                <R kind="title">Prefazio</R>
+                <TouchableOpacity style={styles.selectorBtn} onPress={() => setShowPrefaces(true)} testID="btn-select-preface">
+                  <Ionicons name="swap-horizontal" size={scaledFont(28)} color={colors.primary} />
+                  <Text style={styles.selectorBtnText}>Scegli Prefazio</Text>
+                </TouchableOpacity>
+              </View>
+            ),
+          });
+        }
 
         // PAGINE: Preghiera Eucaristica (suddivisa: Consacrazione | Mistero della Fede + Dossologia)
         if (selectedPrayer) {
@@ -681,36 +785,47 @@ export default function MessaScreen() {
           }
           const selAcc = acclamations.find(x => x.id === acclamationId);
 
-          // Pagina 1: Selettore + parte iniziale fino alla Consacrazione
-          pages.push({
-            key: "pe-1",
-            title: "Preghiera Eucaristica – Consacrazione",
-            render: () => (
-              <View style={styles.partBox}>
-                <R kind="title">Preghiera Eucaristica</R>
-                <TouchableOpacity style={styles.selectorBtn} onPress={() => setShowPrayers(true)} testID="btn-select-prayer">
-                  <Ionicons name="swap-horizontal" size={scaledFont(28)} color={colors.primary} />
-                  <Text style={styles.selectorBtnText}>Scegli Preghiera Eucaristica</Text>
-                </TouchableOpacity>
-                <View style={styles.block}>
-                  <R kind="subtitle">{selectedPrayer.title}</R>
-                  <R>{beforePart}</R>
-                </View>
-              </View>
-            ),
-          });
-
-          // Pagina 2: Acclamazione Mistero della Fede + Anamnesi/Dossologia
-          if (afterPart || acclamations.length > 0) {
+          // Pagina 1+: Selettore + parte iniziale fino alla Consacrazione (chunked se lungo)
+          const beforeChunks = splitTextIntoChunks(beforePart);
+          beforeChunks.forEach((_, i) => {
             pages.push({
-              key: "pe-2",
-              title: "Mistero della Fede e Dossologia",
+              key: `pe-cons-${i}`,
+              title: beforeChunks.length > 1
+                ? `Preghiera Eucaristica – Consacrazione (${i + 1}/${beforeChunks.length})`
+                : "Preghiera Eucaristica – Consacrazione",
               render: () => (
                 <View style={styles.partBox}>
-                  <R kind="title">Acclamazione e Dossologia</R>
-                  {acclamations.length > 0 && (
+                  {i === 0 ? (
+                    <>
+                      <R kind="title">Preghiera Eucaristica</R>
+                      <TouchableOpacity style={styles.selectorBtn} onPress={() => setShowPrayers(true)} testID="btn-select-prayer">
+                        <Ionicons name="swap-horizontal" size={scaledFont(28)} color={colors.primary} />
+                        <Text style={styles.selectorBtnText}>Scegli Preghiera Eucaristica</Text>
+                      </TouchableOpacity>
+                      <R kind="subtitle">{selectedPrayer.title}</R>
+                    </>
+                  ) : (
+                    <R kind="subtitle">{selectedPrayer.title} (continua)</R>
+                  )}
+                  <R>{beforeChunks[i]}</R>
+                </View>
+              ),
+            });
+          });
+
+          // Pagina Acclamazione + Mistero della Fede + Anamnesi/Dossologia (chunked se lungo)
+          if (afterPart || acclamations.length > 0) {
+            const afterChunks = splitTextIntoChunks(afterPart);
+            // Prima pagina: acclamazione (selettore + dialogo)
+            if (acclamations.length > 0) {
+              pages.push({
+                key: "pe-acclamazione",
+                title: "Mistero della Fede",
+                render: () => (
+                  <View style={styles.partBox}>
+                    <R kind="title">Mistero della Fede</R>
                     <View style={styles.acclamationBox}>
-                      <R kind="subtitle">Mistero della fede</R>
+                      <R kind="subtitle">Forma dell'acclamazione</R>
                       <View style={styles.choiceRow}>
                         {acclamations.map(a => (
                           <TouchableOpacity key={a.id} style={[styles.choiceBtn, acclamationId === a.id && styles.choiceBtnActive]} onPress={() => setAcclamationId(a.id)} testID={`btn-acclamation-${a.id}`}>
@@ -725,10 +840,24 @@ export default function MessaScreen() {
                         </View>
                       )}
                     </View>
-                  )}
-                  {afterPart ? <R>{afterPart}</R> : null}
-                </View>
-              ),
+                  </View>
+                ),
+              });
+            }
+            // Pagine seguenti: anamnesi + dossologia (chunked)
+            afterChunks.forEach((_, i) => {
+              pages.push({
+                key: `pe-after-${i}`,
+                title: afterChunks.length > 1
+                  ? `Anamnesi e Dossologia (${i + 1}/${afterChunks.length})`
+                  : "Anamnesi e Dossologia",
+                render: () => (
+                  <View style={styles.partBox}>
+                    <R kind="title">{i === 0 ? "Anamnesi e Dossologia" : "Anamnesi e Dossologia (continua)"}</R>
+                    <R>{afterChunks[i]}</R>
+                  </View>
+                ),
+              });
             });
           }
         } else {
