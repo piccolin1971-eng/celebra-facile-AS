@@ -591,27 +591,6 @@ export default function MessaScreen() {
           });
         }
 
-        // PAGINA: Preghiera dei Fedeli (Preghiera Universale)
-        pages.push({
-          key: "fedeli",
-          title: "Preghiera dei Fedeli",
-          render: () => (
-            <View style={styles.partBox}>
-              <R kind="title">Preghiera Universale (dei Fedeli)</R>
-              <R>Il celebrante invita all'orazione comune con una breve monizione. Si propongono le intenzioni a cui l'assemblea risponde con un'invocazione, ad esempio:</R>
-              <View style={styles.block}>
-                <R kind="celebrante">C. Preghiamo insieme e diciamo:</R>
-                <R kind="assemblea">A. Ascoltaci, o Signore.</R>
-              </View>
-              <R kind="rubric">[Per] la Chiesa universale, il Papa, il Vescovo, i pastori della comunità.{"\n"}[Per] i governanti e quanti hanno responsabilità pubblica.{"\n"}[Per] coloro che soffrono nel corpo e nello spirito, i poveri, gli afflitti.{"\n"}[Per] la nostra comunità e le persone care.</R>
-              <View style={styles.block}>
-                <R kind="celebrante">C. O Padre, ascolta le preghiere del tuo popolo, e per intercessione del tuo Figlio Gesù Cristo concedi a noi quanto ti chiediamo con fede. Per Cristo nostro Signore.</R>
-                <R kind="assemblea">A. Amen.</R>
-              </View>
-            </View>
-          ),
-        });
-
         // PAGINA: Offertorio
         pages.push({
           key: "offertorio",
