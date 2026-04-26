@@ -747,26 +747,90 @@ export default function MessaScreen() {
           });
         }
 
-        // PAGINA: Riti di Comunione (Padre Nostro)
+        // PAGINA: Padre Nostro (solo Pater + monizione + embolismo)
         pages.push({
           key: "padre-nostro",
           title: "Padre Nostro",
-          render: () => <View style={styles.partBox}>{renderPadreNostro()}</View>,
+          render: () => {
+            const pn = fixedParts["padre_nostro"];
+            const introChoice = pn.sections.find((s: any) => s.type === "choice_intro");
+            const selectedIntro = introChoice?.options.find((o: any) => o.id === padreNostroIntroId);
+            // Le prime 3 sezioni: monizione, Pater, embolismo. Saltiamo la rubrica iniziale "Il sacerdote..."
+            const padreSections = pn.sections.filter((s: any) => s.type !== "choice_intro").slice(0, 2); // Pater + embolismo
+            return (
+              <View testID="part-padre-nostro">
+                <R kind="title">Padre Nostro</R>
+                {introChoice && (
+                  <View style={styles.block}>
+                    <R kind="subtitle">Monizione d'introduzione</R>
+                    <View style={styles.choiceRow}>
+                      {introChoice.options.map((o: any) => (
+                        <TouchableOpacity
+                          key={o.id}
+                          style={[styles.choiceBtn, padreNostroIntroId === o.id && styles.choiceBtnActive]}
+                          onPress={() => setPadreNostroIntroId(o.id)}
+                          testID={`btn-pn-intro-${o.id}`}
+                        >
+                          <Text style={[styles.choiceBtnText, padreNostroIntroId === o.id && { color: "#FFFFFF" }]}>Forma {o.id}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                    {selectedIntro && <R kind="celebrante">C. {selectedIntro.text}</R>}
+                  </View>
+                )}
+                {padreSections.map(renderSection)}
+              </View>
+            );
+          },
         });
 
-        // PAGINA: Frazione del pane e Comunione
+        // PAGINA: Rito della Pace
+        pages.push({
+          key: "pace",
+          title: "Rito della Pace",
+          render: () => {
+            const pn = fixedParts["padre_nostro"];
+            // Sezioni 3, 4, 5: preghiera Signore Gesù Cristo + saluto pace + scambio
+            const peaceSections = pn.sections.filter((s: any) => s.type !== "choice_intro").slice(2);
+            return (
+              <View>
+                <R kind="title">Rito della Pace</R>
+                {peaceSections.map(renderSection)}
+              </View>
+            );
+          },
+        });
+
+        // PAGINA: Frazione del Pane (Agnello di Dio)
+        pages.push({
+          key: "frazione",
+          title: "Frazione del Pane",
+          render: () => {
+            const com = fixedParts["comunione"];
+            // Prime 2 sezioni: rubrica frazione + Agnello di Dio
+            return (
+              <View testID="part-frazione">
+                <R kind="title">Frazione del Pane</R>
+                {com.sections.slice(0, 2).map(renderSection)}
+              </View>
+            );
+          },
+        });
+
+        // PAGINA: Comunione (Beati invitati + antifona + rubrica)
         pages.push({
           key: "comunione",
-          title: "Frazione del Pane e Comunione",
-          render: () => (
-            <View style={styles.partBox} testID="part-comunione">
-              {fixedParts["comunione"].sections.map((s: any, i: number) => {
-                if (i === 0 && s.type === "rubric") return <View key="title"><R kind="title">Frazione del Pane e Comunione</R>{renderSection(s, i)}</View>;
-                return renderSection(s, i);
-              })}
-              {renderReading("antifona_comunione", "Antifona alla Comunione")}
-            </View>
-          ),
+          title: "Comunione",
+          render: () => {
+            const com = fixedParts["comunione"];
+            return (
+              <View testID="part-comunione">
+                <R kind="title">Comunione</R>
+                {com.sections.slice(2).map((s: any, i: number) => renderSection(s, i + 2))}
+                {renderReading("antifona_comunione", "Antifona alla Comunione")}
+              </View>
+            );
+          },
         });
 
         // PAGINA: Dopo la Comunione
@@ -819,19 +883,25 @@ export default function MessaScreen() {
               </Text>
             </View>
 
-            {/* Contenuto: in modalità TAP niente scroll, solo View flex con tap-to-advance.
-                Per pagine con molti controlli interattivi, disableTapAdvance preserva i tap interni. */}
-            <View style={{ flex: 1 }} testID="mass-page-container">
+            {/* Contenuto: ScrollView per testi lunghi, ma il tap su area vuota/contenuto avanza la pagina.
+                Lo scroll si attiva solo se l'utente trascina (pan gesture), il tap singolo va avanti. */}
+            <ScrollView
+              ref={scrollRef}
+              contentContainerStyle={[styles.content, { paddingBottom: 120 }]}
+              testID="mass-scroll"
+              showsVerticalScrollIndicator
+              keyboardShouldPersistTaps="handled"
+            >
               {cur.disableTapAdvance ? (
-                <View style={[styles.content, { flex: 1 }]} testID="page-no-tap">
+                <View testID="page-no-tap">
                   {cur.render()}
                 </View>
               ) : (
-                <Pressable onPress={advance} testID="page-tap-area" style={[styles.content, { flex: 1 }]}>
+                <Pressable onPress={advance} testID="page-tap-area">
                   {cur.render()}
                 </Pressable>
               )}
-            </View>
+            </ScrollView>
 
             {/* Bottoni grandi di navigazione fissi */}
             <View style={styles.navBar} testID="nav-bar">
