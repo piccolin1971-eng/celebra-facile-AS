@@ -2,14 +2,17 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type ThemeMode = "light" | "dark";
+type ReadingMode = "scroll" | "tap";
 
 interface SettingsState {
   theme: ThemeMode;
   fontSize: number; // reading text size in pt
   highContrast: boolean;
+  readingMode: ReadingMode;
   setTheme: (t: ThemeMode) => void;
   setFontSize: (n: number) => void;
   setHighContrast: (v: boolean) => void;
+  setReadingMode: (m: ReadingMode) => void;
   colors: ReturnType<typeof getColors>;
   scaledFont: (base: number) => number;
 }
@@ -55,6 +58,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   const [theme, setThemeState] = useState<ThemeMode>("light");
   const [fontSize, setFontSizeState] = useState(32);
   const [highContrast, setHighContrastState] = useState(false);
+  const [readingMode, setReadingModeState] = useState<ReadingMode>("scroll");
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -66,6 +70,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
           if (s.theme) setThemeState(s.theme);
           if (s.fontSize) setFontSizeState(s.fontSize);
           if (typeof s.highContrast === "boolean") setHighContrastState(s.highContrast);
+          if (s.readingMode === "tap" || s.readingMode === "scroll") setReadingModeState(s.readingMode);
         }
       } catch (e) {
         console.log("Impossibile caricare settings:", e);
@@ -75,14 +80,15 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     })();
   }, []);
 
-  const persist = async (patch: Partial<{ theme: ThemeMode; fontSize: number; highContrast: boolean }>) => {
-    const next = { theme, fontSize, highContrast, ...patch };
+  const persist = async (patch: Partial<{ theme: ThemeMode; fontSize: number; highContrast: boolean; readingMode: ReadingMode }>) => {
+    const next = { theme, fontSize, highContrast, readingMode, ...patch };
     await AsyncStorage.setItem("messale_settings", JSON.stringify(next));
   };
 
   const setTheme = (t: ThemeMode) => { setThemeState(t); persist({ theme: t }); };
   const setFontSize = (n: number) => { setFontSizeState(n); persist({ fontSize: n }); };
   const setHighContrast = (v: boolean) => { setHighContrastState(v); persist({ highContrast: v }); };
+  const setReadingMode = (m: ReadingMode) => { setReadingModeState(m); persist({ readingMode: m }); };
 
   const colors = getColors(theme, highContrast);
   // scaledFont: UI elements scale proportionally based on reading font
@@ -94,7 +100,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   if (!loaded) return null;
 
   return (
-    <SettingsContext.Provider value={{ theme, fontSize, highContrast, setTheme, setFontSize, setHighContrast, colors, scaledFont }}>
+    <SettingsContext.Provider value={{ theme, fontSize, highContrast, readingMode, setTheme, setFontSize, setHighContrast, setReadingMode, colors, scaledFont }}>
       {children}
     </SettingsContext.Provider>
   );

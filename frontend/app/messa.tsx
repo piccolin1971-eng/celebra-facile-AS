@@ -14,7 +14,7 @@ type ReadingType =
 export default function MessaScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ date?: string; preface?: string; votive?: string }>();
-  const { colors, fontSize, scaledFont } = useSettings();
+  const { colors, fontSize, scaledFont, readingMode } = useSettings();
   const [liturgy, setLiturgy] = useState<Liturgy | null>(null);
   const [fixedParts, setFixedParts] = useState<Record<string, any> | null>(null);
   const [prefaces, setPrefaces] = useState<Preface[]>([]);
@@ -515,7 +515,7 @@ export default function MessaScreen() {
           ),
         });
 
-        // PAGINA: Riti di Introduzione
+        // PAGINA: Riti di Introduzione + Colletta combinati (Colletta chiude i riti iniziali)
         pages.push({
           key: "riti-iniziali",
           title: "Riti di Introduzione",
@@ -549,11 +549,17 @@ export default function MessaScreen() {
           });
         }
 
-        // PAGINA: Colletta
+        // PAGINA: Colletta del giorno
         pages.push({
           key: "colletta",
           title: "Colletta",
-          render: () => <View style={styles.partBox}>{renderReading("colletta", "Colletta (Orazione del giorno)")}</View>,
+          render: () => (
+            <View style={styles.partBox}>
+              {renderReading("colletta", "Colletta (Orazione del giorno)") || (
+                <R kind="rubric">Colletta non disponibile per oggi.</R>
+              )}
+            </View>
+          ),
         });
 
         // PAGINA: Liturgia della Parola
@@ -584,6 +590,27 @@ export default function MessaScreen() {
             render: () => <View style={styles.partBox}>{renderCredo()}</View>,
           });
         }
+
+        // PAGINA: Preghiera dei Fedeli (Preghiera Universale)
+        pages.push({
+          key: "fedeli",
+          title: "Preghiera dei Fedeli",
+          render: () => (
+            <View style={styles.partBox}>
+              <R kind="title">Preghiera Universale (dei Fedeli)</R>
+              <R>Il celebrante invita all'orazione comune con una breve monizione. Si propongono le intenzioni a cui l'assemblea risponde con un'invocazione, ad esempio:</R>
+              <View style={styles.block}>
+                <R kind="celebrante">C. Preghiamo insieme e diciamo:</R>
+                <R kind="assemblea">A. Ascoltaci, o Signore.</R>
+              </View>
+              <R kind="rubric">[Per] la Chiesa universale, il Papa, il Vescovo, i pastori della comunità.{"\n"}[Per] i governanti e quanti hanno responsabilità pubblica.{"\n"}[Per] coloro che soffrono nel corpo e nello spirito, i poveri, gli afflitti.{"\n"}[Per] la nostra comunità e le persone care.</R>
+              <View style={styles.block}>
+                <R kind="celebrante">C. O Padre, ascolta le preghiere del tuo popolo, e per intercessione del tuo Figlio Gesù Cristo concedi a noi quanto ti chiediamo con fede. Per Cristo nostro Signore.</R>
+                <R kind="assemblea">A. Amen.</R>
+              </View>
+            </View>
+          ),
+        });
 
         // PAGINA: Offertorio
         pages.push({
@@ -725,6 +752,19 @@ export default function MessaScreen() {
           scrollRef.current?.scrollTo({ y: 0, animated: false });
         };
 
+        // ===== MODALITÀ "scroll": tutta la messa in scorrimento continuo =====
+        if (readingMode === "scroll") {
+          return (
+            <ScrollView contentContainerStyle={styles.content} testID="mass-scroll-continuous">
+              {pages.map((p) => (
+                <View key={p.key}>{p.render()}</View>
+              ))}
+              <View style={{ height: 80 }} />
+            </ScrollView>
+          );
+        }
+
+        // ===== MODALITÀ "tap": una pagina alla volta + tap-to-advance =====
         return (
           <>
             {/* Barra di stato pagina */}
