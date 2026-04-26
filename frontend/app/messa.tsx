@@ -563,25 +563,63 @@ export default function MessaScreen() {
           ),
         });
 
-        // PAGINA: Liturgia della Parola
-        pages.push({
-          key: "letture",
-          title: "Liturgia della Parola",
-          render: () => (
-            <View style={styles.partBox}>
-              <R kind="title">Liturgia della Parola</R>
-              {renderReading("prima_lettura")}
-              {renderReading("salmo")}
-              {renderReading("seconda_lettura")}
-              {renderReading("sequenza")}
-              {renderReading("acclamazione")}
-              {renderReading("vangelo")}
-              {!liturgy?.readings?.length && (
+        // PAGINE: Liturgia della Parola (suddivisa in più schermate)
+        const readings = liturgy?.readings || [];
+        const hasReading = (type: string) => readings.some(r => r.type === type);
+
+        if (hasReading("prima_lettura")) {
+          pages.push({
+            key: "prima-lettura",
+            title: "Prima Lettura",
+            render: () => <View style={styles.partBox}>{renderReading("prima_lettura")}</View>,
+          });
+        }
+        if (hasReading("salmo")) {
+          pages.push({
+            key: "salmo",
+            title: "Salmo Responsoriale",
+            render: () => <View style={styles.partBox}>{renderReading("salmo")}</View>,
+          });
+        }
+        if (hasReading("seconda_lettura")) {
+          pages.push({
+            key: "seconda-lettura",
+            title: "Seconda Lettura",
+            render: () => <View style={styles.partBox}>{renderReading("seconda_lettura")}</View>,
+          });
+        }
+        if (hasReading("sequenza")) {
+          pages.push({
+            key: "sequenza",
+            title: "Sequenza",
+            render: () => <View style={styles.partBox}>{renderReading("sequenza")}</View>,
+          });
+        }
+        // Acclamazione + Vangelo (insieme perché molto correlati)
+        if (hasReading("vangelo") || hasReading("acclamazione")) {
+          pages.push({
+            key: "vangelo",
+            title: "Acclamazione e Vangelo",
+            render: () => (
+              <View style={styles.partBox}>
+                {renderReading("acclamazione")}
+                {renderReading("vangelo")}
+              </View>
+            ),
+          });
+        }
+        if (!hasReading("prima_lettura") && !hasReading("vangelo")) {
+          pages.push({
+            key: "letture-vuote",
+            title: "Liturgia della Parola",
+            render: () => (
+              <View style={styles.partBox}>
+                <R kind="title">Liturgia della Parola</R>
                 <R kind="rubric">Letture non disponibili. Verifica connessione internet.</R>
-              )}
-            </View>
-          ),
-        });
+              </View>
+            ),
+          });
+        }
 
         // PAGINA: Credo
         if (showCredo) {
@@ -628,59 +666,86 @@ export default function MessaScreen() {
           ),
         });
 
-        // PAGINA: Preghiera Eucaristica
-        pages.push({
-          key: "pe",
-          title: "Preghiera Eucaristica",
-          render: () => (
-            <View style={styles.partBox} testID="part-preghiera-eucaristica">
-              <R kind="title">Preghiera Eucaristica</R>
-              <TouchableOpacity style={styles.selectorBtn} onPress={() => setShowPrayers(true)} testID="btn-select-prayer">
-                <Ionicons name="swap-horizontal" size={scaledFont(28)} color={colors.primary} />
-                <Text style={styles.selectorBtnText}>Scegli Preghiera Eucaristica</Text>
-              </TouchableOpacity>
-              {selectedPrayer && (() => {
-                const marker = "Mistero della fede.";
-                const text = selectedPrayer.text;
-                const idx = text.indexOf(marker);
-                let beforePart = text;
-                let afterPart = "";
-                if (idx >= 0) {
-                  beforePart = text.substring(0, idx).trimEnd();
-                  const rest = text.substring(idx + marker.length);
-                  const nextBreak = rest.indexOf("\n\n");
-                  afterPart = nextBreak > 0 ? rest.substring(nextBreak + 2).trimStart() : rest.trimStart();
-                }
-                const selAcc = acclamations.find(x => x.id === acclamationId);
-                return (
-                  <View style={styles.block}>
-                    <R kind="subtitle">{selectedPrayer.title}</R>
-                    <R>{beforePart}</R>
-                    {acclamations.length > 0 && idx >= 0 && (
-                      <View style={styles.acclamationBox}>
-                        <R kind="subtitle">Acclamazione dopo la Consacrazione</R>
-                        <View style={styles.choiceRow}>
-                          {acclamations.map(a => (
-                            <TouchableOpacity key={a.id} style={[styles.choiceBtn, acclamationId === a.id && styles.choiceBtnActive]} onPress={() => setAcclamationId(a.id)} testID={`btn-acclamation-${a.id}`}>
-                              <Text style={[styles.choiceBtnText, acclamationId === a.id && { color: "#FFFFFF" }]}>Forma {a.id}</Text>
-                            </TouchableOpacity>
-                          ))}
-                        </View>
-                        {selAcc && (
-                          <View style={styles.block}>
-                            <R kind="celebrante">C. {selAcc.celebrante}</R>
-                            <R kind="assemblea">A. {selAcc.assemblea}</R>
-                          </View>
-                        )}
+        // PAGINE: Preghiera Eucaristica (suddivisa: Consacrazione | Mistero della Fede + Dossologia)
+        if (selectedPrayer) {
+          const marker = "Mistero della fede.";
+          const text = selectedPrayer.text;
+          const idx = text.indexOf(marker);
+          let beforePart = text;
+          let afterPart = "";
+          if (idx >= 0) {
+            beforePart = text.substring(0, idx).trimEnd();
+            const rest = text.substring(idx + marker.length);
+            const nextBreak = rest.indexOf("\n\n");
+            afterPart = nextBreak > 0 ? rest.substring(nextBreak + 2).trimStart() : rest.trimStart();
+          }
+          const selAcc = acclamations.find(x => x.id === acclamationId);
+
+          // Pagina 1: Selettore + parte iniziale fino alla Consacrazione
+          pages.push({
+            key: "pe-1",
+            title: "Preghiera Eucaristica – Consacrazione",
+            render: () => (
+              <View style={styles.partBox}>
+                <R kind="title">Preghiera Eucaristica</R>
+                <TouchableOpacity style={styles.selectorBtn} onPress={() => setShowPrayers(true)} testID="btn-select-prayer">
+                  <Ionicons name="swap-horizontal" size={scaledFont(28)} color={colors.primary} />
+                  <Text style={styles.selectorBtnText}>Scegli Preghiera Eucaristica</Text>
+                </TouchableOpacity>
+                <View style={styles.block}>
+                  <R kind="subtitle">{selectedPrayer.title}</R>
+                  <R>{beforePart}</R>
+                </View>
+              </View>
+            ),
+          });
+
+          // Pagina 2: Acclamazione Mistero della Fede + Anamnesi/Dossologia
+          if (afterPart || acclamations.length > 0) {
+            pages.push({
+              key: "pe-2",
+              title: "Mistero della Fede e Dossologia",
+              render: () => (
+                <View style={styles.partBox}>
+                  <R kind="title">Acclamazione e Dossologia</R>
+                  {acclamations.length > 0 && (
+                    <View style={styles.acclamationBox}>
+                      <R kind="subtitle">Mistero della fede</R>
+                      <View style={styles.choiceRow}>
+                        {acclamations.map(a => (
+                          <TouchableOpacity key={a.id} style={[styles.choiceBtn, acclamationId === a.id && styles.choiceBtnActive]} onPress={() => setAcclamationId(a.id)} testID={`btn-acclamation-${a.id}`}>
+                            <Text style={[styles.choiceBtnText, acclamationId === a.id && { color: "#FFFFFF" }]}>Forma {a.id}</Text>
+                          </TouchableOpacity>
+                        ))}
                       </View>
-                    )}
-                    {afterPart ? <R>{afterPart}</R> : null}
-                  </View>
-                );
-              })()}
-            </View>
-          ),
-        });
+                      {selAcc && (
+                        <View style={styles.block}>
+                          <R kind="celebrante">C. {selAcc.celebrante}</R>
+                          <R kind="assemblea">A. {selAcc.assemblea}</R>
+                        </View>
+                      )}
+                    </View>
+                  )}
+                  {afterPart ? <R>{afterPart}</R> : null}
+                </View>
+              ),
+            });
+          }
+        } else {
+          pages.push({
+            key: "pe",
+            title: "Preghiera Eucaristica",
+            render: () => (
+              <View style={styles.partBox}>
+                <R kind="title">Preghiera Eucaristica</R>
+                <TouchableOpacity style={styles.selectorBtn} onPress={() => setShowPrayers(true)} testID="btn-select-prayer">
+                  <Ionicons name="swap-horizontal" size={scaledFont(28)} color={colors.primary} />
+                  <Text style={styles.selectorBtnText}>Scegli Preghiera Eucaristica</Text>
+                </TouchableOpacity>
+              </View>
+            ),
+          });
+        }
 
         // PAGINA: Riti di Comunione (Padre Nostro)
         pages.push({
@@ -754,20 +819,19 @@ export default function MessaScreen() {
               </Text>
             </View>
 
-            {/* Contenuto con scroll interno per pagine lunghe; tap ovunque → pagina successiva (escluse pagine con controlli interattivi) */}
-            <ScrollView ref={scrollRef} contentContainerStyle={styles.content} testID="mass-scroll">
+            {/* Contenuto: in modalità TAP niente scroll, solo View flex con tap-to-advance.
+                Per pagine con molti controlli interattivi, disableTapAdvance preserva i tap interni. */}
+            <View style={{ flex: 1 }} testID="mass-page-container">
               {cur.disableTapAdvance ? (
-                <View style={{ minHeight: 600 }} testID="page-no-tap">
+                <View style={[styles.content, { flex: 1 }]} testID="page-no-tap">
                   {cur.render()}
-                  <View style={{ height: 80 }} />
                 </View>
               ) : (
-                <Pressable onPress={advance} testID="page-tap-area" style={{ minHeight: 600 }}>
+                <Pressable onPress={advance} testID="page-tap-area" style={[styles.content, { flex: 1 }]}>
                   {cur.render()}
-                  <View style={{ height: 80 }} />
                 </Pressable>
               )}
-            </ScrollView>
+            </View>
 
             {/* Bottoni grandi di navigazione fissi */}
             <View style={styles.navBar} testID="nav-bar">
