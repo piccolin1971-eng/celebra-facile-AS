@@ -175,9 +175,13 @@ export default function MessaScreen() {
   // === Helpers paginazione automatica testo ===
   // Stima quanti caratteri possono stare in una schermata dato il fontSize attuale.
   // Più aggressivo per evitare overflow oltre il fondo schermo con font grandi.
-  const charsPerPage = Math.max(200, Math.min(1200, Math.round(11000 / Math.max(16, fontSize))));
+  // Stima caratteri per schermata per modalità tap.
+  // Aumentato per riempire meglio lo schermo senza spazi vuoti inutili.
+  const charsPerPage = Math.max(280, Math.min(2000, Math.round(18000 / Math.max(16, fontSize))));
 
-  // Splitta un testo lungo in chunk di massimo `maxChars` rispettando i paragrafi (\n\n).
+  // Splitta un testo lungo in chunk rispettando i paragrafi (\n\n).
+  // Algoritmo "greedy fill": riempie ogni chunk il più possibile per minimizzare
+  // il numero di pagine ed evitare spazio vuoto in fondo.
   // Se un singolo paragrafo eccede maxChars, lo splitta su frasi (.) o virgole (,).
   const splitTextIntoChunks = (text: string, maxChars = charsPerPage): string[] => {
     if (!text) return [];
@@ -185,32 +189,49 @@ export default function MessaScreen() {
     const paragraphs = text.split(/\n\n+/);
     const chunks: string[] = [];
     let current = "";
-    for (const p of paragraphs) {
-      if (p.length > maxChars) {
-        // Paragrafo troppo lungo: splitta su frasi
-        if (current) { chunks.push(current); current = ""; }
-        const sentences = p.split(/(?<=[\.\?\!])\s+/);
-        let buf = "";
-        for (const s of sentences) {
-          if ((buf + " " + s).trim().length > maxChars && buf) {
-            chunks.push(buf.trim());
-            buf = s;
-          } else {
-            buf = buf ? `${buf} ${s}` : s;
-          }
+    // Tolleranza: accetta lievi sforamenti per evitare pagine semi-vuote
+    const HARD_LIMIT = Math.round(maxChars * 1.15);
+    const MIN_FILL = Math.round(maxChars * 0.55); // se il chunk è < 55% pieno, prova a unire
+
+    const splitParagraphLong = (p: string): string[] => {
+      const pieces: string[] = [];
+      const sentences = p.split(/(?<=[\.\?\!])\s+/);
+      let buf = "";
+      for (const s of sentences) {
+        const cand = buf ? `${buf} ${s}` : s;
+        if (cand.length > maxChars && buf) {
+          pieces.push(buf.trim());
+          buf = s;
+        } else {
+          buf = cand;
         }
-        if (buf) {
-          if (current) { chunks.push(current); current = ""; }
-          chunks.push(buf.trim());
+      }
+      if (buf) pieces.push(buf.trim());
+      return pieces;
+    };
+
+    for (const p of paragraphs) {
+      if (p.length > HARD_LIMIT) {
+        // Paragrafo troppo lungo: splittalo
+        if (current) {
+          chunks.push(current);
+          current = "";
+        }
+        const pieces = splitParagraphLong(p);
+        for (const piece of pieces) {
+          chunks.push(piece);
         }
         continue;
       }
       const candidate = current ? `${current}\n\n${p}` : p;
-      if (candidate.length > maxChars && current) {
+      if (candidate.length <= HARD_LIMIT) {
+        current = candidate;
+      } else if (current.length < MIN_FILL && candidate.length <= HARD_LIMIT * 1.2) {
+        // Chunk attuale troppo vuoto: unisci anche se sfora un po'
+        current = candidate;
+      } else {
         chunks.push(current);
         current = p;
-      } else {
-        current = candidate;
       }
     }
     if (current) chunks.push(current);
@@ -657,59 +678,45 @@ export default function MessaScreen() {
         const readings = liturgy?.readings || [];
         const hasReading = (type: string) => readings.some(r => r.type === type);
 
-        const addReadingPages = (type: ReadingType, title: string) => {
+        // ===== LETTURE & SALMO =====
+        // Una pagina sola per ciascuna lettura - lo scroll verticale gestisce
+        // testi lunghi (richiesta utente: niente chunking, niente spazio vuoto).
+        const addReadingPage = (type: ReadingType, title: string) => {
           const r = readings.find(rr => rr.type === type);
           if (!r || !r.text) return;
-          const chunks = splitTextIntoChunks(r.text);
-          chunks.forEach((_, i) => {
-            pages.push({
-              key: `read-${type}-${i}`,
-              title: chunks.length > 1 ? `${title} (${i + 1}/${chunks.length})` : title,
-              render: () => (
-                <View style={styles.partBox}>
-                  {renderReadingChunk(type, i, chunks.length, title)}
-                </View>
-              ),
-            });
+          pages.push({
+            key: `read-${type}`,
+            title,
+            render: () => (
+              <View style={styles.partBox}>
+                {renderReading(type, title)}
+              </View>
+            ),
           });
         };
 
-        addReadingPages("prima_lettura", "Prima Lettura");
-        addReadingPages("salmo", "Salmo Responsoriale");
-        addReadingPages("seconda_lettura", "Seconda Lettura");
-        addReadingPages("sequenza", "Sequenza");
-        // Acclamazione + Vangelo (chunked separatamente per il vangelo che è quello lungo)
+        addReadingPage("prima_lettura", "Prima Lettura");
+        addReadingPage("salmo", "Salmo Responsoriale");
+        addReadingPage("seconda_lettura", "Seconda Lettura");
+        addReadingPage("sequenza", "Sequenza");
+        // Acclamazione + Vangelo: una sola pagina (scroll), oppure separate se manca uno
         const accl = readings.find(r => r.type === "acclamazione");
         const vang = readings.find(r => r.type === "vangelo");
-        if (accl || vang) {
-          if (accl && vang) {
-            // Prima pagina: acclamazione + inizio vangelo (se entra)
-            pages.push({
-              key: "vangelo-intro",
-              title: "Acclamazione e Vangelo",
-              render: () => (
-                <View style={styles.partBox}>
-                  {renderReadingChunk("acclamazione", 0, 1, "Acclamazione al Vangelo")}
-                </View>
-              ),
-            });
-            const vangChunks = splitTextIntoChunks(vang.text);
-            vangChunks.forEach((_, i) => {
-              pages.push({
-                key: `vangelo-${i}`,
-                title: vangChunks.length > 1 ? `Vangelo (${i + 1}/${vangChunks.length})` : "Vangelo",
-                render: () => (
-                  <View style={styles.partBox}>
-                    {renderReadingChunk("vangelo", i, vangChunks.length, "Vangelo")}
-                  </View>
-                ),
-              });
-            });
-          } else if (vang) {
-            addReadingPages("vangelo", "Vangelo");
-          } else if (accl) {
-            addReadingPages("acclamazione", "Acclamazione al Vangelo");
-          }
+        if (accl && vang) {
+          pages.push({
+            key: "vangelo-page",
+            title: "Vangelo",
+            render: () => (
+              <View style={styles.partBox}>
+                {renderReading("acclamazione", "Acclamazione al Vangelo")}
+                {renderReading("vangelo", "Vangelo")}
+              </View>
+            ),
+          });
+        } else if (vang) {
+          addReadingPage("vangelo", "Vangelo");
+        } else if (accl) {
+          addReadingPage("acclamazione", "Acclamazione al Vangelo");
         }
         if (!hasReading("prima_lettura") && !hasReading("vangelo")) {
           pages.push({
@@ -788,9 +795,12 @@ export default function MessaScreen() {
           ),
         });
 
-        // PAGINA: Prefazio + Sanctus (Sanctus su pagina separata se prefazio lungo)
+        // PAGINA: Prefazio + Santo (uniti, si chunkano insieme: il Santo finisce
+        // sull'ultima pagina del prefazio o appena dopo se non entra)
         if (selectedPreface) {
-          const prefChunks = splitTextIntoChunks(selectedPreface.text);
+          const SANTO_TEXT = "Santo, Santo, Santo il Signore Dio dell'universo.\nI cieli e la terra sono pieni della tua gloria.\nOsanna nell'alto dei cieli.\nBenedetto colui che viene nel nome del Signore.\nOsanna nell'alto dei cieli.";
+          const fullText = selectedPreface.text.trimEnd() + "\n\n" + SANTO_TEXT;
+          const prefChunks = splitTextIntoChunks(fullText);
           prefChunks.forEach((_, i) => {
             pages.push({
               key: `prefazio-${i}`,
@@ -813,17 +823,6 @@ export default function MessaScreen() {
                 </View>
               ),
             });
-          });
-          // Pagina Sanctus separata
-          pages.push({
-            key: "sanctus",
-            title: "Sanctus",
-            render: () => (
-              <View style={styles.partBox}>
-                <R kind="title">Sanctus</R>
-                <R>Santo, Santo, Santo il Signore Dio dell'universo.{"\n"}I cieli e la terra sono pieni della tua gloria.{"\n"}Osanna nell'alto dei cieli.{"\n"}Benedetto colui che viene nel nome del Signore.{"\n"}Osanna nell'alto dei cieli.</R>
-              </View>
-            ),
           });
         } else {
           pages.push({
