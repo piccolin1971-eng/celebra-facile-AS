@@ -54,7 +54,7 @@ export default function MessaScreen() {
   // Paginazione: tap-to-advance per facilitare la celebrazione
   const [currentPage, setCurrentPage] = useState(0);
   const scrollRef = React.useRef<ScrollView | null>(null);
-  const { width: screenWidth } = useWindowDimensions();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
   const styles = makeStyles(colors, fontSize);
 
@@ -174,7 +174,8 @@ export default function MessaScreen() {
 
   // === Helpers paginazione automatica testo ===
   // Stima quanti caratteri possono stare in una schermata dato il fontSize attuale.
-  const charsPerPage = Math.max(250, Math.min(1800, Math.round(16000 / Math.max(16, fontSize))));
+  // Più aggressivo per evitare overflow oltre il fondo schermo con font grandi.
+  const charsPerPage = Math.max(200, Math.min(1200, Math.round(11000 / Math.max(16, fontSize))));
 
   // Splitta un testo lungo in chunk di massimo `maxChars` rispettando i paragrafi (\n\n).
   // Se un singolo paragrafo eccede maxChars, lo splitta su frasi (.) o virgole (,).
@@ -1072,14 +1073,22 @@ export default function MessaScreen() {
           );
         }
 
-        // ===== MODALITÀ "tap": una pagina alla volta + tap laterali (Kindle) =====
-        // Tap su lato sinistro 35% schermo => indietro
-        // Tap su lato destro 65% schermo => avanti
-        // I tap zones sono sovrapposti al contenuto come bordi laterali assoluti
-        // così non interferiscono con i toggle/selettori al centro pagina.
-        const TAP_LEFT_RATIO = 0.30;
+        // ===== MODALITÀ "tap": una pagina alla volta + tap Kindle (sx/dx) =====
+        // Strategia anti-conflitti:
+        //  - ScrollView esterna permette lo scroll verticale (drag)
+        //  - Pressable interno cattura il tap singolo (senza movimento)
+        //  - I bottoni TouchableOpacity interni (Scegli Prefazio, ecc.) hanno
+        //    sempre priorità (deeper touchable wins in React Native)
+        //  - In base a locationX/pageX decidiamo se è sinistra (indietro) o
+        //    destra (avanti). Rapporto: 35% sinistra, 65% destra.
+        const TAP_LEFT_RATIO = 0.35;
         const tapLeftWidth = Math.round(screenWidth * TAP_LEFT_RATIO);
-        const tapRightWidth = screenWidth - tapLeftWidth;
+
+        const handlePagePress = (e: any) => {
+          const x = e?.nativeEvent?.pageX ?? e?.nativeEvent?.locationX ?? 0;
+          if (x < tapLeftWidth) prev();
+          else advance();
+        };
 
         return (
           <>
@@ -1090,43 +1099,35 @@ export default function MessaScreen() {
               </Text>
             </View>
 
-            {/* Contenuto scrollabile */}
-            <View style={{ flex: 1 }}>
-              <ScrollView
-                ref={scrollRef}
-                contentContainerStyle={[styles.content, { paddingBottom: 60 }]}
-                testID="mass-scroll"
-                showsVerticalScrollIndicator
-                keyboardShouldPersistTaps="handled"
-              >
-                <View testID="page-content">
+            {/* Contenuto scrollabile: ScrollView esterna + Pressable interno per tap */}
+            <ScrollView
+              ref={scrollRef}
+              style={{ flex: 1 }}
+              contentContainerStyle={[styles.content, { paddingBottom: 60 }]}
+              testID="mass-scroll"
+              showsVerticalScrollIndicator
+              keyboardShouldPersistTaps="handled"
+            >
+              {cur.disableTapAdvance ? (
+                <View testID="page-no-tap">
                   {cur.render()}
                 </View>
-              </ScrollView>
-
-              {/* Zone tap invisibili sui bordi (Kindle-style) - solo se la pagina lo consente */}
-              {!cur.disableTapAdvance && (
-                <>
-                  <Pressable
-                    style={[styles.tapZone, { left: 0, width: tapLeftWidth }]}
-                    onPress={prev}
-                    testID="tap-zone-back"
-                    accessibilityLabel="Pagina precedente"
-                  />
-                  <Pressable
-                    style={[styles.tapZone, { right: 0, width: tapRightWidth }]}
-                    onPress={advance}
-                    testID="tap-zone-next"
-                    accessibilityLabel="Pagina successiva"
-                  />
-                </>
+              ) : (
+                <Pressable
+                  onPress={handlePagePress}
+                  testID="page-tap-area"
+                  android_disableSound
+                  style={{ minHeight: screenHeight - 200, flexGrow: 1 }}
+                >
+                  {cur.render()}
+                </Pressable>
               )}
-            </View>
+            </ScrollView>
 
-            {/* Suggerimento navigazione (solo prima pagina, sparisce automaticamente dopo) */}
-            {safeIdx === 0 ? (
+            {/* Suggerimento navigazione (solo prima pagina) */}
+            {safeIdx === 1 ? (
               <View style={styles.tapHint} pointerEvents="none">
-                <Text style={styles.tapHintText}>← Tocca a sinistra per tornare indietro · Tocca a destra per avanzare →</Text>
+                <Text style={styles.tapHintText}>← Tocca a sinistra per indietro · Tocca a destra per avanti →</Text>
               </View>
             ) : null}
           </>
