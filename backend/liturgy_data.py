@@ -1,4 +1,4 @@
-"""
+ """
 Testi liturgici dell'Ordinario della Messa.
 Nota: Questi sono i testi tradizionali in uso nella Chiesa Cattolica Italiana.
 Per uso pastorale - si raccomanda confronto con edizione CEI ufficiale del Messale Romano.

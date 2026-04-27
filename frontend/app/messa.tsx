@@ -6,6 +6,7 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSettings } from "../src/SettingsContext";
 import { api, Liturgy, Preface, EucharisticPrayer, MysteryAcclamation, SolemnBlessing } from "../src/api";
 import { getOrazionaleSections, getPrayerById, suggestPrayerForLiturgy, OrazionalePrayer } from "../src/orazionale";
+import { loadSession, saveSession, cleanupOldSessions, MassSession } from "../src/massSession";
 
 type ReadingType =
   | "antifona_ingresso" | "colletta"
@@ -56,6 +57,12 @@ export default function MessaScreen() {
   const scrollRef = React.useRef<ScrollView | null>(null);
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
+  // Date corrente per session storage (key: data ISO)
+  const [sessionDate, setSessionDate] = useState<string>("");
+  // True quando le scelte iniziali sono state caricate (default + sessione salvata).
+  // Solo dopo questo flag, il save automatico è attivo.
+  const [sessionLoaded, setSessionLoaded] = useState(false);
+
   const styles = makeStyles(colors, fontSize);
 
   useEffect(() => {
@@ -103,6 +110,31 @@ export default function MessaScreen() {
         // Suggerisci la Preghiera dei fedeli (Orazionale CEI)
         const suggestedOrId = suggestPrayerForLiturgy(lit);
         if (suggestedOrId) setSelectedOrazionaleId(suggestedOrId);
+
+        // === SESSION RESTORE ===
+        // Carica le scelte salvate per la giornata corrente (se esistono),
+        // sovrascrivendo i default suggeriti. Se l'utente apre l'app il
+        // mattino e imposta tutto, ritrova le stesse scelte la sera.
+        const dateKey = lit?.date || dateParam || new Date().toISOString().slice(0, 10);
+        setSessionDate(dateKey);
+        const saved = await loadSession(dateKey);
+        if (saved) {
+          if (typeof saved.showGloria === "boolean") setShowGloria(saved.showGloria);
+          if (typeof saved.showCredo === "boolean") setShowCredo(saved.showCredo);
+          if (typeof saved.showOrazionalePray === "boolean") setShowOrazionalePray(saved.showOrazionalePray);
+          if (saved.selectedOrazionaleId) setSelectedOrazionaleId(saved.selectedOrazionaleId);
+          if (saved.selectedPrefaceId) setSelectedPrefaceId(saved.selectedPrefaceId);
+          if (saved.selectedPrayerId) setSelectedPrayerId(saved.selectedPrayerId);
+          if (saved.benedizioneId) setBenedizioneId(saved.benedizioneId);
+          if (saved.congedoId) setCongedoId(saved.congedoId);
+          if (saved.acclamationId) setAcclamationId(saved.acclamationId);
+          if (saved.padreNostroIntroId) setPadreNostroIntroId(saved.padreNostroIntroId);
+          if (typeof saved.useSolemnBlessing === "boolean") setUseSolemnBlessing(saved.useSolemnBlessing);
+          if (saved.solemnBlessingId) setSolemnBlessingId(saved.solemnBlessingId);
+        }
+        // Pulisce sessioni vecchie in background
+        cleanupOldSessions();
+        setSessionLoaded(true);
       } catch (e) {
         console.log("Errore:", e);
       } finally {
@@ -110,6 +142,23 @@ export default function MessaScreen() {
       }
     })();
   }, [params.date, params.preface]);
+
+  // === SESSION AUTO-SAVE ===
+  // Salva automaticamente le scelte del prete su AsyncStorage ogni volta
+  // che cambiano. La chiave è la data della liturgia in corso.
+  useEffect(() => {
+    if (!sessionLoaded || !sessionDate) return;
+    const session: MassSession = {
+      showGloria, showCredo, showOrazionalePray,
+      selectedOrazionaleId, selectedPrefaceId, selectedPrayerId,
+      benedizioneId, congedoId, acclamationId, padreNostroIntroId,
+      useSolemnBlessing, solemnBlessingId,
+    };
+    saveSession(sessionDate, session);
+  }, [sessionLoaded, sessionDate, showGloria, showCredo, showOrazionalePray,
+      selectedOrazionaleId, selectedPrefaceId, selectedPrayerId,
+      benedizioneId, congedoId, acclamationId, padreNostroIntroId,
+      useSolemnBlessing, solemnBlessingId]);
 
   if (loading || !fixedParts) {
     return (
@@ -170,6 +219,18 @@ export default function MessaScreen() {
       );
     }
     return null;
+  };
+
+  // Versione che SALTA tutte le rubriche in rosso (per sezioni dove l'utente
+  // ha chiesto di rimuoverle: riti iniziali, gloria, pace, comunione, ecc.)
+  const renderSectionNoRubric = (section: any, idx: number) => {
+    if (section.type === "rubric") return null;
+    if (section.type === "prayer" || section.type === "kyrie") {
+      const cleaned = { ...section };
+      delete cleaned.rubric;
+      return renderSection(cleaned, idx);
+    }
+    return renderSection(section, idx);
   };
 
   // === Helpers paginazione automatica testo ===
@@ -441,29 +502,34 @@ export default function MessaScreen() {
   };
 
   // === Riti di Conclusione ===
-  const renderConclusione = () => {
+  // Suddivisi in due funzioni: Benedizione e Congedo (su pagine separate)
+
+  // Lista congedi (i 4 standard + eventualmente quello pasquale)
+  const getCongedoOptions = () => {
     const rc = fixedParts["riti_conclusione"];
-    const dialogue = rc.sections[0];
-    const benedChoice = rc.sections[1];
     const congedoChoice = rc.sections[2];
-    const bened = benedChoice.options.find((o: any) => o.id === benedizioneId);
-    const congedo = congedoChoice.options.find((o: any) => o.id === congedoId);
-    // Lista congedi: i 4 standard + eventualmente quello pasquale
-    const congedoOptions = [...congedoChoice.options];
+    const opts = [...congedoChoice.options];
     if (pasquaDismissal && currentSeasonKey === "pasqua") {
-      congedoOptions.push({
+      opts.push({
         id: pasquaDismissal.id,
         label: "Pasqua",
         celebrante: pasquaDismissal.celebrante,
         assemblea: pasquaDismissal.assemblea,
       });
     }
-    const selectedCongedo = congedoOptions.find((o: any) => o.id === congedoId) || congedo;
+    return opts;
+  };
+
+  const renderConclusioneBenedizione = () => {
+    const rc = fixedParts["riti_conclusione"];
+    const dialogue = rc.sections[0];
+    const benedChoice = rc.sections[1];
+    const bened = benedChoice.options.find((o: any) => o.id === benedizioneId);
     const selectedSolemn = solemnBlessings.find(b => b.id === solemnBlessingId);
 
     return (
-      <View testID="section-conclusione">
-        <R kind="title">Riti di Conclusione</R>
+      <View testID="section-benedizione">
+        <R kind="title">Benedizione</R>
         {renderSection(dialogue, 0)}
 
         {/* Toggle benedizione solenne */}
@@ -503,7 +569,6 @@ export default function MessaScreen() {
             {selectedSolemn && (
               <View style={styles.block}>
                 <R kind="subtitle">{selectedSolemn.title}</R>
-                {selectedSolemn.rubric && <R kind="rubric">{selectedSolemn.rubric}</R>}
                 {selectedSolemn.invocations.map((inv, i) => (
                   <View key={i} style={styles.dialogBlock}>
                     <R kind="celebrante">C. {inv.c}</R>
@@ -540,8 +605,17 @@ export default function MessaScreen() {
             )}
           </View>
         )}
+      </View>
+    );
+  };
 
-        <R kind="subtitle">Congedo</R>
+  const renderConclusioneCongedo = () => {
+    const congedoOptions = getCongedoOptions();
+    const selectedCongedo = congedoOptions.find((o: any) => o.id === congedoId) || congedoOptions[0];
+
+    return (
+      <View testID="section-congedo">
+        <R kind="title">Congedo</R>
         <View style={styles.choiceRow}>
           {congedoOptions.map((o: any) => (
             <TouchableOpacity
@@ -565,6 +639,14 @@ export default function MessaScreen() {
       </View>
     );
   };
+
+  // (manteniamo la vecchia funzione per compatibilità con la modalità scroll)
+  const renderConclusione = () => (
+    <>
+      {renderConclusioneBenedizione()}
+      {renderConclusioneCongedo()}
+    </>
+  );
 
   return (
     <SafeAreaView style={styles.container} testID="mass-screen">
@@ -635,7 +717,7 @@ export default function MessaScreen() {
             <View style={styles.partBox}>
               {renderReading("antifona_ingresso", "Antifona d'ingresso")}
               <R kind="title">Riti di Introduzione</R>
-              {fixedParts["riti_iniziali"].sections.map(renderSection)}
+              {fixedParts["riti_iniziali"].sections.map(renderSectionNoRubric)}
             </View>
           ),
         });
@@ -655,7 +737,7 @@ export default function MessaScreen() {
             render: () => (
               <View style={styles.partBox}>
                 <R kind="title">Gloria</R>
-                {fixedParts["gloria"].sections.map(renderSection)}
+                {fixedParts["gloria"].sections.map(renderSectionNoRubric)}
               </View>
             ),
           });
@@ -977,13 +1059,17 @@ export default function MessaScreen() {
                     {selectedIntro && <R kind="celebrante">C. {selectedIntro.text}</R>}
                   </View>
                 )}
-                {padreSections.map(renderSection)}
+                {/* Padre nostro (abbreviato) + Embolismo */}
+                <View style={styles.block}>
+                  <R>Padre nostro...</R>
+                </View>
+                {padreSections.slice(1).map((s: any, i: number) => renderSection(s, i + 1))}
               </View>
             );
           },
         });
 
-        // PAGINA: Rito della Pace
+        // PAGINA: Rito della Pace (senza rubriche)
         pages.push({
           key: "pace",
           title: "Rito della Pace",
@@ -994,13 +1080,13 @@ export default function MessaScreen() {
             return (
               <View>
                 <R kind="title">Rito della Pace</R>
-                {peaceSections.map(renderSection)}
+                {peaceSections.map(renderSectionNoRubric)}
               </View>
             );
           },
         });
 
-        // PAGINA: Frazione del Pane (Agnello di Dio)
+        // PAGINA: Frazione del Pane (Agnello di Dio) - senza rubriche
         pages.push({
           key: "frazione",
           title: "Frazione del Pane",
@@ -1010,13 +1096,13 @@ export default function MessaScreen() {
             return (
               <View testID="part-frazione">
                 <R kind="title">Frazione del Pane</R>
-                {com.sections.slice(0, 2).map(renderSection)}
+                {com.sections.slice(0, 2).map(renderSectionNoRubric)}
               </View>
             );
           },
         });
 
-        // PAGINA: Comunione (Beati invitati + antifona + rubrica)
+        // PAGINA: Comunione (Beati invitati + antifona) - senza rubriche
         pages.push({
           key: "comunione",
           title: "Comunione",
@@ -1025,7 +1111,7 @@ export default function MessaScreen() {
             return (
               <View testID="part-comunione">
                 <R kind="title">Comunione</R>
-                {com.sections.slice(2).map((s: any, i: number) => renderSection(s, i + 2))}
+                {com.sections.slice(2).map((s: any, i: number) => renderSectionNoRubric(s, i + 2))}
                 {renderReading("antifona_comunione", "Antifona alla Comunione")}
               </View>
             );
@@ -1039,11 +1125,18 @@ export default function MessaScreen() {
           render: () => <View style={styles.partBox}>{renderReading("dopo_comunione", "Dopo la Comunione")}</View>,
         });
 
-        // PAGINA: Riti di Conclusione
+        // PAGINA: Riti di Conclusione - Benedizione (senza congedo)
         pages.push({
-          key: "conclusione",
-          title: "Riti di Conclusione",
-          render: () => <View style={styles.partBox}>{renderConclusione()}</View>,
+          key: "conclusione-benedizione",
+          title: "Benedizione",
+          render: () => <View style={styles.partBox}>{renderConclusioneBenedizione()}</View>,
+        });
+
+        // PAGINA: Congedo (separata)
+        pages.push({
+          key: "conclusione-congedo",
+          title: "Congedo",
+          render: () => <View style={styles.partBox}>{renderConclusioneCongedo()}</View>,
         });
 
         const total = pages.length;
@@ -1091,13 +1184,6 @@ export default function MessaScreen() {
 
         return (
           <>
-            {/* Barra di stato pagina */}
-            <View style={styles.pageStatusBar} testID="page-status-bar">
-              <Text style={styles.pageStatusText} numberOfLines={1}>
-                {safeIdx + 1}/{total} · {cur.title}
-              </Text>
-            </View>
-
             {/* Contenuto scrollabile: ScrollView esterna + Pressable interno per tap */}
             <ScrollView
               ref={scrollRef}

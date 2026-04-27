@@ -55,7 +55,7 @@ const getColors = (theme: ThemeMode, highContrast: boolean) => {
 const SettingsContext = createContext<SettingsState | null>(null);
 
 export const SettingsProvider = ({ children }: { children: ReactNode }) => {
-  const [theme, setThemeState] = useState<ThemeMode>("light");
+  const [theme, setThemeState] = useState<ThemeMode>("dark");
   const [fontSize, setFontSizeState] = useState(32);
   const [highContrast, setHighContrastState] = useState(false);
   const [readingMode, setReadingModeState] = useState<ReadingMode>("tap");

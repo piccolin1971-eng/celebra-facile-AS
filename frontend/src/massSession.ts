@@ -1,0 +1,61 @@
+/**
+ * Session storage giornaliera: salva le scelte del prete (prefazio, preghiera
+ * eucaristica, congedo, ecc.) con chiave per data. Quando l'app viene riaperta
+ * lo stesso giorno, le scelte vengono ripristinate. Al cambio data le sessioni
+ * vecchie non vengono caricate (la liturgia cambia, le scelte non sono più valide).
+ */
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+export type MassSession = {
+  showGloria?: boolean;
+  showCredo?: boolean;
+  showOrazionalePray?: boolean;
+  selectedOrazionaleId?: string;
+  selectedPrefaceId?: string;
+  selectedPrayerId?: string;
+  benedizioneId?: string;
+  congedoId?: string;
+  acclamationId?: string;
+  padreNostroIntroId?: string;
+  useSolemnBlessing?: boolean;
+  solemnBlessingId?: string;
+};
+
+const KEY_PREFIX = "@messa_session_";
+// Quante sessioni passate tenere prima di pulire (non strettamente necessario,
+// ma evita di accumulare entry vecchie senza limite).
+const MAX_KEPT_SESSIONS = 7;
+
+const sessionKey = (dateISO: string) => `${KEY_PREFIX}${dateISO}`;
+
+export async function loadSession(dateISO: string): Promise<MassSession | null> {
+  try {
+    const raw = await AsyncStorage.getItem(sessionKey(dateISO));
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    console.log("loadSession err:", e);
+    return null;
+  }
+}
+
+export async function saveSession(dateISO: string, session: MassSession): Promise<void> {
+  try {
+    await AsyncStorage.setItem(sessionKey(dateISO), JSON.stringify(session));
+  } catch (e) {
+    console.log("saveSession err:", e);
+  }
+}
+
+/** Pulisce sessioni vecchie tenendo solo le ultime MAX_KEPT_SESSIONS. */
+export async function cleanupOldSessions(): Promise<void> {
+  try {
+    const allKeys = await AsyncStorage.getAllKeys();
+    const sessionKeys = allKeys.filter(k => k.startsWith(KEY_PREFIX)).sort();
+    if (sessionKeys.length > MAX_KEPT_SESSIONS) {
+      const toRemove = sessionKeys.slice(0, sessionKeys.length - MAX_KEPT_SESSIONS);
+      await AsyncStorage.multiRemove(toRemove);
+    }
+  } catch (e) {
+    console.log("cleanupOldSessions err:", e);
+  }
+}
