@@ -131,6 +131,10 @@ export default function MessaScreen() {
           if (saved.padreNostroIntroId) setPadreNostroIntroId(saved.padreNostroIntroId);
           if (typeof saved.useSolemnBlessing === "boolean") setUseSolemnBlessing(saved.useSolemnBlessing);
           if (saved.solemnBlessingId) setSolemnBlessingId(saved.solemnBlessingId);
+          if (saved.penitentialForm) setPenitentialForm(saved.penitentialForm);
+          if (saved.penitentialSeason) setPenitentialSeason(saved.penitentialSeason);
+          if (saved.selectedCredoId) setSelectedCredoId(saved.selectedCredoId);
+          if (saved.orateFratresId) setOrateFratresId(saved.orateFratresId);
         }
         // Pulisce sessioni vecchie in background
         cleanupOldSessions();
@@ -153,12 +157,14 @@ export default function MessaScreen() {
       selectedOrazionaleId, selectedPrefaceId, selectedPrayerId,
       benedizioneId, congedoId, acclamationId, padreNostroIntroId,
       useSolemnBlessing, solemnBlessingId,
+      penitentialForm, penitentialSeason, selectedCredoId, orateFratresId,
     };
     saveSession(sessionDate, session);
   }, [sessionLoaded, sessionDate, showGloria, showCredo, showOrazionalePray,
       selectedOrazionaleId, selectedPrefaceId, selectedPrayerId,
       benedizioneId, congedoId, acclamationId, padreNostroIntroId,
-      useSolemnBlessing, solemnBlessingId]);
+      useSolemnBlessing, solemnBlessingId,
+      penitentialForm, penitentialSeason, selectedCredoId, orateFratresId]);
 
   if (loading || !fixedParts) {
     return (

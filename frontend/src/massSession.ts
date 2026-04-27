@@ -19,6 +19,11 @@ export type MassSession = {
   padreNostroIntroId?: string;
   useSolemnBlessing?: boolean;
   solemnBlessingId?: string;
+  // === NUOVE scelte aggiunte (v2.2.0) ===
+  penitentialForm?: "A" | "B" | "C";
+  penitentialSeason?: string;
+  selectedCredoId?: "niceno" | "apostolico";
+  orateFratresId?: string;
 };
 
 const KEY_PREFIX = "@messa_session_";
