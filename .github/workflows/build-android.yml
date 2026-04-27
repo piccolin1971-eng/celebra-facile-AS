@@ -1,0 +1,92 @@
+name: Build Android APK (Native Gradle)
+
+# Costruisce l'APK Android del Messale CEI usando Gradle direttamente
+# (NO EAS - evita la quota mensile gratuita).
+# L'APK viene caricato come artifact scaricabile dalla pagina Actions.
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build APK with Gradle
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+          cache-dependency-path: frontend/yarn.lock
+
+      - name: Setup Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: yarn install --frozen-lockfile
+
+      - name: Generate debug keystore for signing (sideload-friendly)
+        run: |
+          mkdir -p $HOME/.android
+          if [ ! -f "$HOME/.android/debug.keystore" ]; then
+            keytool -genkey -v -keystore $HOME/.android/debug.keystore \
+              -storepass android -alias androiddebugkey -keypass android \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=Android Debug,O=Android,C=US"
+          fi
+
+      - name: Expo prebuild (genera progetto Android nativo)
+        working-directory: ./frontend
+        run: npx expo prebuild --platform android --clean --no-install
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('frontend/android/**/*.gradle*') }}
+
+      - name: Make gradlew executable
+        working-directory: ./frontend/android
+        run: chmod +x ./gradlew
+
+      - name: Build Release APK (firmato con debug keystore)
+        working-directory: ./frontend/android
+        env:
+          GRADLE_OPTS: "-Xmx4g -Dfile.encoding=UTF-8"
+        run: |
+          ./gradlew assembleRelease \
+            -PreactNativeArchitectures=arm64-v8a,armeabi-v7a \
+            -Pandroid.injected.signing.store.file=$HOME/.android/debug.keystore \
+            -Pandroid.injected.signing.store.password=android \
+            -Pandroid.injected.signing.key.alias=androiddebugkey \
+            -Pandroid.injected.signing.key.password=android \
+            --no-daemon
+
+      - name: Locate APK
+        id: locate
+        run: |
+          APK=$(find frontend/android/app/build/outputs/apk -name "*.apk" | head -1)
+          echo "apk_path=$APK" >> $GITHUB_OUTPUT
+          ls -lh "$APK"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: messa-cei-v${{ github.run_number }}-apk
+          path: ${{ steps.locate.outputs.apk_path }}
+          retention-days: 30
