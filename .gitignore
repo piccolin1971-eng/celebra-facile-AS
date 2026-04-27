@@ -83,3 +83,6 @@ android-sdk/
 frontend/android/
 frontend/ios/
 frontend/.expo/
+# Metro bundler cache (huge)
+frontend/.metro-cache/
+**/.metro-cache/
