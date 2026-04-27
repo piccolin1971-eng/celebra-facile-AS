@@ -239,6 +239,35 @@ export default function MessaScreen() {
     return renderSection(section, idx);
   };
 
+  // === Helpers Preghiera Eucaristica: gestione rubriche e marker [Santo] ===
+  // Per la PE I (Canone Romano) le rubriche tra parentesi quadre vengono mostrate
+  // come piccolo testo rosso. Per tutte le altre PE i marker [xxx] (es. [Santo])
+  // vengono completamente rimossi dal testo visualizzato.
+  const processPrayerText = (text: string, prayerId: string): string => {
+    if (!text) return "";
+    if (prayerId === "pe1") return text;
+    // Rimuove tutti i marker [xxx] e ricompatta gli spazi/righe vuote in eccesso
+    return text
+      .replace(/\[[^\]]*\]\s*\n?/g, "")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+  };
+
+  // Renderizza un chunk di testo della Preghiera Eucaristica, splittando su [xxx]
+  // marker per emetterli come rubriche piccole rosse. Usato solo per la PE I.
+  const renderPe1Chunk = (chunk: string, keyPrefix: string) => {
+    const parts = chunk.split(/(\[[^\]]+\])/g);
+    return parts.map((part, i) => {
+      const m = part.match(/^\[([^\]]+)\]$/);
+      if (m) {
+        return <R key={`${keyPrefix}-r-${i}`} kind="rubric">{m[1]}</R>;
+      }
+      const trimmed = part.replace(/^\n+|\n+$/g, "");
+      if (!trimmed) return null;
+      return <R key={`${keyPrefix}-t-${i}`}>{trimmed}</R>;
+    });
+  };
+
   // === Helpers paginazione automatica testo ===
   // Stima quanti caratteri possono stare in una schermata dato il fontSize attuale.
   // Più aggressivo per evitare overflow oltre il fondo schermo con font grandi.
@@ -930,8 +959,9 @@ export default function MessaScreen() {
 
         // PAGINE: Preghiera Eucaristica (suddivisa: Consacrazione | Mistero della Fede + Dossologia)
         if (selectedPrayer) {
+          const isPe1 = selectedPrayer.id === "pe1";
           const marker = "Mistero della fede.";
-          const text = selectedPrayer.text;
+          const text = processPrayerText(selectedPrayer.text, selectedPrayer.id);
           const idx = text.indexOf(marker);
           let beforePart = text;
           let afterPart = "";
@@ -965,7 +995,7 @@ export default function MessaScreen() {
                   ) : (
                     <R kind="subtitle">{selectedPrayer.title} (continua)</R>
                   )}
-                  <R>{beforeChunks[i]}</R>
+                  {isPe1 ? renderPe1Chunk(beforeChunks[i], `pe1-b${i}`) : <R>{beforeChunks[i]}</R>}
                 </View>
               ),
             });
@@ -1012,7 +1042,7 @@ export default function MessaScreen() {
                 render: () => (
                   <View style={styles.partBox}>
                     <R kind="title">{i === 0 ? "Anamnesi e Dossologia" : "Anamnesi e Dossologia (continua)"}</R>
-                    <R>{afterChunks[i]}</R>
+                    {isPe1 ? renderPe1Chunk(afterChunks[i], `pe1-a${i}`) : <R>{afterChunks[i]}</R>}
                   </View>
                 ),
               });
