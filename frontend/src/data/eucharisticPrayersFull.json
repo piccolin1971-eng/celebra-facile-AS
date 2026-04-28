@@ -885,8 +885,210 @@
     "id": "pe3",
     "title": "Preghiera Eucaristica III",
     "shortTitle": "PE III",
-    "description": "Per le domeniche e le feste",
-    "selectors": {},
+    "description": "Per le domeniche e le feste (con propri per tempi e riti)",
+    "selectors": {
+      "communicantes": {
+        "label": "Tempo liturgico (giorno santissimo)",
+        "options": [
+          {
+            "id": "ordinario",
+            "label": "Tempo Ordinario / Feriale"
+          },
+          {
+            "id": "domenica",
+            "label": "Domenica"
+          },
+          {
+            "id": "natale",
+            "label": "Natale e Ottava"
+          },
+          {
+            "id": "epifania",
+            "label": "Epifania"
+          },
+          {
+            "id": "giovedi_santo",
+            "label": "Giovedì Santo (Cena del Signore)"
+          },
+          {
+            "id": "pasqua",
+            "label": "Veglia Pasquale → II Domenica di Pasqua"
+          },
+          {
+            "id": "ascensione",
+            "label": "Ascensione del Signore"
+          },
+          {
+            "id": "pentecoste",
+            "label": "Pentecoste"
+          }
+        ],
+        "variants": {
+          "ordinario": [
+            {
+              "type": "title",
+              "text": "Ascolta la preghiera"
+            },
+            {
+              "type": "t",
+              "text": "Ascolta la preghiera di questa famiglia\nche hai convocato alla tua presenza."
+            }
+          ],
+          "domenica": [
+            {
+              "type": "title",
+              "text": "Ascolta la preghiera (Domenica)"
+            },
+            {
+              "type": "t",
+              "text": "Ascolta la preghiera di questa famiglia\nche hai convocato alla tua presenza\nnel giorno in cui Cristo ha vinto la morte\ne ci ha resi partecipi della sua vita immortale."
+            }
+          ],
+          "natale": [
+            {
+              "type": "title",
+              "text": "Ascolta la preghiera (Natale e Ottava)"
+            },
+            {
+              "type": "t",
+              "text": "Ascolta la preghiera di questa famiglia\nche hai convocato alla tua presenza\nnel giorno santissimo [nella notte santissima]\nin cui la Vergine Maria diede al mondo il Salvatore."
+            }
+          ],
+          "epifania": [
+            {
+              "type": "title",
+              "text": "Ascolta la preghiera (Epifania)"
+            },
+            {
+              "type": "t",
+              "text": "Ascolta la preghiera di questa famiglia\nche hai convocato alla tua presenza\nnel giorno santissimo in cui il tuo unico Figlio,\neterno con te nella gloria,\nsi è manifestato nella nostra natura umana."
+            }
+          ],
+          "giovedi_santo": [
+            {
+              "type": "title",
+              "text": "Ascolta la preghiera (Giovedì Santo)"
+            },
+            {
+              "type": "t",
+              "text": "Ascolta la preghiera di questa famiglia\nche hai convocato alla tua presenza\nnel giorno santissimo nel quale\nGesù Cristo nostro Signore\nfu consegnato alla morte per noi."
+            }
+          ],
+          "pasqua": [
+            {
+              "type": "title",
+              "text": "Ascolta la preghiera (Pasqua)"
+            },
+            {
+              "type": "t",
+              "text": "Ascolta la preghiera di questa famiglia\nche hai convocato alla tua presenza\nnel giorno glorioso [nella notte gloriosa]\ndella risurrezione di Cristo Signore\nnel suo vero corpo."
+            }
+          ],
+          "ascensione": [
+            {
+              "type": "title",
+              "text": "Ascolta la preghiera (Ascensione)"
+            },
+            {
+              "type": "t",
+              "text": "Ascolta la preghiera di questa famiglia\nche hai convocato alla tua presenza\nnel giorno glorioso dell'Ascensione\nin cui Cristo è stato costituito\nSignore del cielo e della terra."
+            }
+          ],
+          "pentecoste": [
+            {
+              "type": "title",
+              "text": "Ascolta la preghiera (Pentecoste)"
+            },
+            {
+              "type": "t",
+              "text": "Ascolta la preghiera di questa famiglia\nche hai convocato alla tua presenza\nnel giorno santissimo in cui l'effusione del tuo Spirito\nl'ha costituita sacramento di unità per tutti i popoli."
+            }
+          ]
+        }
+      },
+      "rito": {
+        "label": "Rito particolare",
+        "options": [
+          {
+            "id": "nessuno",
+            "label": "Nessuno"
+          },
+          {
+            "id": "battesimo_bambini",
+            "label": "Battesimo dei bambini"
+          },
+          {
+            "id": "battesimo_adulti",
+            "label": "Battesimo degli adulti"
+          },
+          {
+            "id": "confermazione",
+            "label": "Confermazione"
+          },
+          {
+            "id": "prima_comunione",
+            "label": "Prima Comunione"
+          },
+          {
+            "id": "matrimonio",
+            "label": "Matrimonio"
+          }
+        ],
+        "variants": {
+          "nessuno": [],
+          "battesimo_bambini": [
+            {
+              "type": "title",
+              "text": "Per il Battesimo dei bambini"
+            },
+            {
+              "type": "t",
+              "text": "Assisti i nostri fratelli [N. e N.],\nche oggi hai liberato dal peccato\ne rigenerato dall'acqua e dallo Spirito Santo:\ntu che li hai inseriti come membra vive nel corpo di Cristo,\nscrivi i loro nomi nel libro della vita."
+            }
+          ],
+          "battesimo_adulti": [
+            {
+              "type": "title",
+              "text": "Per il Battesimo degli adulti"
+            },
+            {
+              "type": "t",
+              "text": "Sostieni nell'impegno cristiano i tuoi figli [N. e N.],\nche oggi mediante il lavacro della rigenerazione\n[e il dono dello Spirito Santo]\nhai chiamato a far parte del tuo popolo:\ncon il tuo aiuto possano camminare sempre in novità di vita."
+            }
+          ],
+          "confermazione": [
+            {
+              "type": "title",
+              "text": "Per la Confermazione"
+            },
+            {
+              "type": "t",
+              "text": "Ricordati anche dei tuoi figli [N. e N.],\nche, rigenerati nel Battesimo,\noggi hai confermato con il sigillo dello Spirito Santo:\ncustodisci in loro il dono del tuo amore."
+            }
+          ],
+          "prima_comunione": [
+            {
+              "type": "title",
+              "text": "Per la Messa di Prima Comunione"
+            },
+            {
+              "type": "t",
+              "text": "Assisti i tuoi figli [N. e N.],\nche oggi per la prima volta raduni alla mensa della tua famiglia\nnella partecipazione al pane della vita e al calice della salvezza:\nconcedi loro di crescere sempre nella tua amicizia\ne nella comunione con la tua Chiesa."
+            }
+          ],
+          "matrimonio": [
+            {
+              "type": "title",
+              "text": "Per il Matrimonio"
+            },
+            {
+              "type": "t",
+              "text": "Sostieni nella grazia del Matrimonio N. e N.,\nche hai condotto felicemente al giorno delle nozze:\ncon il tuo aiuto custodiscano per tutta la vita\nl'alleanza sponsale che hanno stretto davanti a te."
+            }
+          ]
+        }
+      }
+    },
     "blocks": [
       {
         "type": "title",
@@ -1021,12 +1223,26 @@
         "text": "Ti preghiamo, o Padre:\nquesto sacrificio della nostra riconciliazione\ndoni pace e salvezza al mondo intero.\nConferma nella fede e nell'amore\nla tua Chiesa pellegrina sulla terra:\nil tuo servo e nostro Papa N.,\nil nostro Vescovo N., l'ordine episcopale,\ni presbiteri, i diaconi e il popolo che tu hai redento."
       },
       {
-        "type": "t",
-        "text": "Ascolta la preghiera di questa famiglia\nche hai convocato alla tua presenza.\nRicongiungi a te, Padre misericordioso,\ntutti i tuoi figli ovunque dispersi."
+        "type": "var",
+        "selector": "communicantes",
+        "title": "Ascolta la preghiera"
+      },
+      {
+        "type": "var",
+        "selector": "rito",
+        "title": "Intercessione particolare"
+      },
+      {
+        "type": "title",
+        "text": "Memoria dei defunti"
       },
       {
         "type": "t",
-        "text": "Accogli nel tuo regno i nostri fratelli e sorelle defunti,\ne tutti coloro che, in pace con te, hanno lasciato questo mondo;\nconcedi anche a noi di ritrovarci insieme\na godere per sempre della tua gloria,\nin Cristo, nostro Signore,\nper mezzo del quale tu, o Dio, doni al mondo ogni bene."
+        "text": "Ricongiungi a te, Padre misericordioso,\ntutti i tuoi figli ovunque dispersi."
+      },
+      {
+        "type": "t",
+        "text": "Accogli nel tuo regno\ni nostri fratelli e sorelle defunti,\ne tutti coloro che, in pace con te,\nhanno lasciato questo mondo;\nconcedi anche a noi di ritrovarci insieme\na godere per sempre della tua gloria,\nin Cristo, nostro Signore,\nper mezzo del quale tu, o Dio, doni al mondo ogni bene."
       },
       {
         "type": "r",
@@ -1058,8 +1274,77 @@
     "id": "pe4",
     "title": "Preghiera Eucaristica IV",
     "shortTitle": "PE IV",
-    "description": "Grande affresco della storia della salvezza (con prefazio proprio)",
-    "selectors": {},
+    "description": "Grande affresco della storia della salvezza (con prefazio proprio + Riti)",
+    "selectors": {
+      "rito": {
+        "label": "Rito particolare",
+        "options": [
+          {
+            "id": "nessuno",
+            "label": "Nessuno"
+          },
+          {
+            "id": "battesimo",
+            "label": "Battesimo"
+          },
+          {
+            "id": "confermazione",
+            "label": "Confermazione"
+          },
+          {
+            "id": "prima_comunione",
+            "label": "Prima Comunione"
+          },
+          {
+            "id": "matrimonio",
+            "label": "Matrimonio"
+          }
+        ],
+        "variants": {
+          "nessuno": [],
+          "battesimo": [
+            {
+              "type": "title",
+              "text": "Per il Battesimo"
+            },
+            {
+              "type": "t",
+              "text": "dei nostri fratelli [N. e N.],\nche oggi hai rigenerato dall'acqua e dallo Spirito Santo,"
+            }
+          ],
+          "confermazione": [
+            {
+              "type": "title",
+              "text": "Per la Confermazione"
+            },
+            {
+              "type": "t",
+              "text": "dei tuoi figli [N. e N.],\nche oggi hai confermato con il sigillo dello Spirito Santo,"
+            }
+          ],
+          "prima_comunione": [
+            {
+              "type": "title",
+              "text": "Per la Messa di Prima Comunione"
+            },
+            {
+              "type": "t",
+              "text": "dei tuoi figli [N. e N.],\nche oggi per la prima volta raduni alla mensa della tua famiglia\nnella partecipazione al pane della vita e al calice della salvezza,"
+            }
+          ],
+          "matrimonio": [
+            {
+              "type": "title",
+              "text": "Per il Matrimonio"
+            },
+            {
+              "type": "t",
+              "text": "dei tuoi figli N. e N.,\nche in Cristo hanno costituito una nuova famiglia,"
+            }
+          ]
+        }
+      }
+    },
     "blocks": [
       {
         "type": "title",
@@ -1243,7 +1528,16 @@
       },
       {
         "type": "t",
-        "text": "Ora, Padre, ricordati di tutti quelli\nper i quali noi ti offriamo questo sacrificio:\ndel tuo servo e nostro Papa N.,\ndel nostro Vescovo N.,\ndell'ordine episcopale, dei presbiteri, dei diaconi,\ndi coloro che si uniscono alla nostra offerta,\ndi quanti sono qui riuniti, dell'intero tuo popolo,\ne di tutti quelli che ti cercano con cuore sincero."
+        "text": "Ora, Padre, ricordati di tutti quelli\nper i quali noi ti offriamo questo sacrificio:\ndel tuo servo e nostro Papa N.,\ndel nostro Vescovo N.,\ndell'ordine episcopale, dei presbiteri, dei diaconi,\ndi coloro che si uniscono alla nostra offerta,\ndi quanti sono qui riuniti,"
+      },
+      {
+        "type": "var",
+        "selector": "rito",
+        "title": "Intercessione particolare"
+      },
+      {
+        "type": "t",
+        "text": "dell'intero tuo popolo,\ne di tutti quelli che ti cercano con cuore sincero."
       },
       {
         "type": "t",
