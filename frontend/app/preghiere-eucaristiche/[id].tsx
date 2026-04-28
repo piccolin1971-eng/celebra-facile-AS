@@ -50,16 +50,19 @@ export default function PreghieraEucaristicaDetail() {
   }, [pe?.id]);
 
   // Espande i blocchi sostituendo i `var` con i blocchi della variante selezionata
-  const expandedBlocks: Block[] = useMemo(() => {
-    if (!pe) return [];
+  // Tiene traccia anche degli "ancoraggi": per ogni selettore, l'indice della pagina dove inizia il suo contenuto
+  const { expandedBlocks, anchorPageBySelector } = useMemo(() => {
+    if (!pe) return { expandedBlocks: [] as Block[], anchorPageBySelector: {} as Record<string, number> };
     const out: Block[] = [];
+    const anchors: Record<string, number> = {};
     for (const b of pe.blocks) {
       if (b.type === "var" && b.selector && pe.selectors?.[b.selector]) {
         const def = pe.selectors[b.selector];
         const optId = selections[b.selector] || def.options[0]?.id;
         const variantBlocks = def.variants[optId] || def.variants[def.options[0]?.id] || [];
-        // Se la variante non inizia già con un title e il var ha un title, anteponilo
         const startsWithTitle = variantBlocks[0]?.type === "title";
+        // Ricorda l'indice del primo blocco "title" per poter saltare a quella pagina
+        anchors[b.selector] = out.length; // posizione assoluta nei blocchi
         if (!startsWithTitle && b.title) {
           out.push({ type: "title", text: b.title });
         }
@@ -68,27 +71,42 @@ export default function PreghieraEucaristicaDetail() {
         out.push(b);
       }
     }
-    return out;
+    return { expandedBlocks: out, anchorPageBySelector: anchors };
   }, [pe, selections]);
 
   // Dividi in pagine: ogni `title` inizia una nuova pagina
-  const pages: Block[][] = useMemo(() => {
+  // Ritorna anche una mappa blockIndex -> pageIndex
+  const { pages, pageOfBlock } = useMemo(() => {
     const result: Block[][] = [];
+    const map: number[] = [];
     let cur: Block[] = [];
-    for (const b of expandedBlocks) {
+    expandedBlocks.forEach((b, idx) => {
       if (b.type === "title" && cur.length > 0) {
         result.push(cur);
         cur = [b];
       } else {
         cur.push(b);
       }
-    }
+      map[idx] = result.length; // pagina che conterrà questo blocco
+    });
     if (cur.length > 0) result.push(cur);
-    return result.length === 0 ? [[]] : result;
+    return { pages: result.length === 0 ? [[]] : result, pageOfBlock: map };
   }, [expandedBlocks]);
 
   const [pageIdx, setPageIdx] = useState(0);
-  useEffect(() => { setPageIdx(0); }, [pe?.id, selections]);
+  useEffect(() => { setPageIdx(0); }, [pe?.id]);
+
+  // Quando l'utente cambia un selettore, salta automaticamente alla pagina della variante
+  const handleSelectorChange = (selectorKey: string, optionId: string) => {
+    setSelections((s) => ({ ...s, [selectorKey]: optionId }));
+    setPickerOpen(null);
+    // Salto alla pagina del selettore (calcolato sui blocchi originali, prima dell'espansione)
+    const blockIdx = anchorPageBySelector[selectorKey];
+    if (blockIdx !== undefined && pageOfBlock[blockIdx] !== undefined) {
+      // attesa per re-render con nuova selezione
+      setTimeout(() => setPageIdx(pageOfBlock[blockIdx] || 0), 50);
+    }
+  };
 
   const goNext = () => {
     setPageIdx((i) => Math.min(i + 1, pages.length - 1));
@@ -231,10 +249,7 @@ export default function PreghieraEucaristicaDetail() {
                   <TouchableOpacity
                     key={o.id}
                     style={[styles.modalOption, isSel && styles.modalOptionActive]}
-                    onPress={() => {
-                      setSelections((s) => ({ ...s, [pickerOpen]: o.id }));
-                      setPickerOpen(null);
-                    }}
+                    onPress={() => handleSelectorChange(pickerOpen, o.id)}
                   >
                     <Text style={[styles.modalOptionText, isSel && { color: colors.primary, fontWeight: "700" }]}>
                       {o.label}
