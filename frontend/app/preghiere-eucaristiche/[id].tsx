@@ -96,16 +96,11 @@ export default function PreghieraEucaristicaDetail() {
   const [pageIdx, setPageIdx] = useState(0);
   useEffect(() => { setPageIdx(0); }, [pe?.id]);
 
-  // Quando l'utente cambia un selettore, salta automaticamente alla pagina della variante
+  // Quando l'utente cambia un selettore, aggiorna la selezione e resta sulla pagina corrente
+  // (l'auto-jump alla sezione cambiata era stato richiesto come solo-preview, ora rimosso)
   const handleSelectorChange = (selectorKey: string, optionId: string) => {
     setSelections((s) => ({ ...s, [selectorKey]: optionId }));
     setPickerOpen(null);
-    // Salto alla pagina del selettore (calcolato sui blocchi originali, prima dell'espansione)
-    const blockIdx = anchorPageBySelector[selectorKey];
-    if (blockIdx !== undefined && pageOfBlock[blockIdx] !== undefined) {
-      // attesa per re-render con nuova selezione
-      setTimeout(() => setPageIdx(pageOfBlock[blockIdx] || 0), 50);
-    }
   };
 
   const goNext = () => {

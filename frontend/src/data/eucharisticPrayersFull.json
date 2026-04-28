@@ -459,8 +459,271 @@
     "id": "pe2",
     "title": "Preghiera Eucaristica II",
     "shortTitle": "PE II",
-    "description": "La più breve, adatta ai giorni feriali",
-    "selectors": {},
+    "description": "La più breve, adatta ai giorni feriali (con propri per tempi e riti)",
+    "selectors": {
+      "communicantes": {
+        "label": "Tempo liturgico (Ricordati, Padre)",
+        "options": [
+          {
+            "id": "ordinario",
+            "label": "Tempo Ordinario / Feriale"
+          },
+          {
+            "id": "domenica",
+            "label": "Domenica"
+          },
+          {
+            "id": "natale",
+            "label": "Natale e Ottava"
+          },
+          {
+            "id": "epifania",
+            "label": "Epifania"
+          },
+          {
+            "id": "pasqua",
+            "label": "Veglia Pasquale e II Domenica di Pasqua"
+          },
+          {
+            "id": "ascensione",
+            "label": "Ascensione"
+          },
+          {
+            "id": "pentecoste",
+            "label": "Pentecoste"
+          }
+        ],
+        "variants": {
+          "ordinario": [
+            {
+              "type": "title",
+              "text": "Intercessioni"
+            },
+            {
+              "type": "t",
+              "text": "Ricordati, Padre, della tua Chiesa diffusa su tutta la terra:\nrendila perfetta nell'amore in unione con il nostro Papa N.,\nil nostro Vescovo N., i presbiteri e i diaconi."
+            }
+          ],
+          "domenica": [
+            {
+              "type": "title",
+              "text": "Intercessioni (Domenica)"
+            },
+            {
+              "type": "t",
+              "text": "Ricordati, Padre, della tua Chiesa diffusa su tutta la terra,\ne qui convocata nel giorno in cui Cristo ha vinto la morte\ne ci ha resi partecipi della sua vita immortale:\nrendila perfetta nell'amore in unione con il nostro Papa N.,\nil nostro Vescovo N., i presbiteri e i diaconi."
+            }
+          ],
+          "natale": [
+            {
+              "type": "title",
+              "text": "Intercessioni (Natale e Ottava)"
+            },
+            {
+              "type": "t",
+              "text": "Ricordati, Padre, della tua Chiesa diffusa su tutta la terra,\ne qui convocata nel giorno santissimo nel quale\n[nella notte santissima nella quale]\nMaria, Vergine illibata, diede al mondo il Salvatore:\nrendila perfetta nell'amore in unione con il nostro Papa N.,\nil nostro Vescovo N., i presbiteri e i diaconi."
+            }
+          ],
+          "epifania": [
+            {
+              "type": "title",
+              "text": "Intercessioni (Epifania)"
+            },
+            {
+              "type": "t",
+              "text": "Ricordati, Padre, della tua Chiesa diffusa su tutta la terra,\ne qui convocata nel giorno santissimo\nnel quale il tuo unigenito Figlio, eterno con te nella gloria,\nsi è manifestato nella verità della nostra carne:\nrendila perfetta nell'amore in unione con il nostro Papa N.,\nil nostro Vescovo N., i presbiteri e i diaconi."
+            }
+          ],
+          "pasqua": [
+            {
+              "type": "title",
+              "text": "Intercessioni (Veglia Pasquale → II Pasqua)"
+            },
+            {
+              "type": "t",
+              "text": "Ricordati, Padre, della tua Chiesa diffusa su tutta la terra,\ne qui convocata nel giorno santissimo [nella notte santissima]\ndella risurrezione di nostro Signore Gesù Cristo nel suo vero corpo:\nrendila perfetta nell'amore in unione con il nostro Papa N.,\nil nostro Vescovo N., i presbiteri e i diaconi."
+            }
+          ],
+          "ascensione": [
+            {
+              "type": "title",
+              "text": "Intercessioni (Ascensione)"
+            },
+            {
+              "type": "t",
+              "text": "Ricordati, Padre, della tua Chiesa diffusa su tutta la terra,\ne qui convocata nel giorno santissimo\nnel quale il tuo unigenito Figlio, nostro Signore,\nha portato alla tua destra nella gloria la nostra fragile natura:\nrendila perfetta nell'amore in unione con il nostro Papa N.,\nil nostro Vescovo N., i presbiteri e i diaconi."
+            }
+          ],
+          "pentecoste": [
+            {
+              "type": "title",
+              "text": "Intercessioni (Pentecoste)"
+            },
+            {
+              "type": "t",
+              "text": "Ricordati, Padre, della tua Chiesa diffusa su tutta la terra,\ne qui convocata nel giorno santissimo della Pentecoste,\nnel quale lo Spirito Santo si manifestò agli apostoli\nin molteplici lingue di fuoco:\nrendila perfetta nell'amore in unione con il nostro Papa N.,\nil nostro Vescovo N., i presbiteri e i diaconi."
+            }
+          ]
+        }
+      },
+      "rito": {
+        "label": "Rito particolare / Defunti",
+        "options": [
+          {
+            "id": "nessuno",
+            "label": "Nessuno"
+          },
+          {
+            "id": "battesimo_bambini",
+            "label": "Battesimo dei bambini"
+          },
+          {
+            "id": "battesimo_adulti",
+            "label": "Battesimo degli adulti"
+          },
+          {
+            "id": "confermazione",
+            "label": "Confermazione"
+          },
+          {
+            "id": "prima_comunione",
+            "label": "Prima Comunione"
+          },
+          {
+            "id": "matrimonio",
+            "label": "Matrimonio"
+          },
+          {
+            "id": "defunti",
+            "label": "Messa per i defunti"
+          }
+        ],
+        "variants": {
+          "nessuno": [
+            {
+              "type": "title",
+              "text": "Memoria dei defunti e dei santi"
+            },
+            {
+              "type": "t",
+              "text": "Ricordati anche dei nostri fratelli e sorelle\nche si sono addormentati nella speranza della risurrezione\ne, nella tua misericordia, di tutti i defunti:\nammettili alla luce del tuo volto."
+            },
+            {
+              "type": "t",
+              "text": "Di noi tutti abbi misericordia,\ndonaci di aver parte alla vita eterna,\ninsieme con la beata Maria, Vergine e Madre di Dio,\nsan Giuseppe, suo sposo,\ngli apostoli e tutti i santi\nche in ogni tempo ti furono graditi,\ne in Gesù Cristo tuo Figlio canteremo la tua lode e la tua gloria."
+            }
+          ],
+          "battesimo_bambini": [
+            {
+              "type": "title",
+              "text": "Per il Battesimo dei bambini"
+            },
+            {
+              "type": "t",
+              "text": "Ricordati anche dei nostri fratelli [N. e N.],\nche oggi hai liberato dal peccato\ne rigenerato dall'acqua e dallo Spirito Santo:\ntu, che li hai inseriti come membra vive nel corpo di Cristo,\nscrivi i loro nomi nel libro della vita."
+            },
+            {
+              "type": "t",
+              "text": "Ricordati anche dei nostri fratelli e sorelle\nche si sono addormentati nella speranza della risurrezione,\ne, nella tua misericordia, di tutti i defunti:\nammettili alla luce del tuo volto."
+            },
+            {
+              "type": "t",
+              "text": "Di noi tutti abbi misericordia,\ndonaci di aver parte alla vita eterna,\ninsieme con la beata Maria, Vergine e Madre di Dio,\nsan Giuseppe, suo sposo,\ngli apostoli e tutti i santi che in ogni tempo ti furono graditi,\ne in Gesù Cristo tuo Figlio canteremo la tua lode e la tua gloria."
+            }
+          ],
+          "battesimo_adulti": [
+            {
+              "type": "title",
+              "text": "Per il Battesimo degli adulti"
+            },
+            {
+              "type": "t",
+              "text": "Ricordati anche dei nostri fratelli [N. e N.],\nche oggi hai chiamato alla fede in te\ne rigenerato dall'acqua e dallo Spirito Santo:\ntu, che li hai inseriti come membra vive nel corpo di Cristo,\nscrivi i loro nomi nel libro della vita."
+            },
+            {
+              "type": "t",
+              "text": "Ricordati anche dei nostri fratelli e sorelle\nche si sono addormentati nella speranza della risurrezione,\ne, nella tua misericordia, di tutti i defunti:\nammettili alla luce del tuo volto."
+            },
+            {
+              "type": "t",
+              "text": "Di noi tutti abbi misericordia,\ndonaci di aver parte alla vita eterna,\ninsieme con la beata Maria, Vergine e Madre di Dio,\nsan Giuseppe, suo sposo,\ngli apostoli e tutti i santi che in ogni tempo ti furono graditi,\ne in Gesù Cristo tuo Figlio canteremo la tua lode e la tua gloria."
+            }
+          ],
+          "confermazione": [
+            {
+              "type": "title",
+              "text": "Per la Confermazione"
+            },
+            {
+              "type": "t",
+              "text": "Ricordati anche dei tuoi figli [N. e N.],\nche, rigenerati nel Battesimo,\noggi hai confermato con il sigillo dello Spirito Santo:\ncustodisci in loro il dono del tuo amore."
+            },
+            {
+              "type": "t",
+              "text": "Ricordati anche dei nostri fratelli e sorelle\nche si sono addormentati nella speranza della risurrezione,\ne, nella tua misericordia, di tutti i defunti:\nammettili alla luce del tuo volto."
+            },
+            {
+              "type": "t",
+              "text": "Di noi tutti abbi misericordia,\ndonaci di aver parte alla vita eterna,\ninsieme con la beata Maria, Vergine e Madre di Dio,\nsan Giuseppe, suo sposo,\ngli apostoli e tutti i santi che in ogni tempo ti furono graditi,\ne in Gesù Cristo tuo Figlio canteremo la tua lode e la tua gloria."
+            }
+          ],
+          "prima_comunione": [
+            {
+              "type": "title",
+              "text": "Per la Messa di Prima Comunione"
+            },
+            {
+              "type": "t",
+              "text": "Ricordati anche dei tuoi figli [N. e N.],\nche oggi per la prima volta raduni alla mensa della tua famiglia\nnella partecipazione al pane della vita\ne al calice della salvezza:\nconcedi loro di crescere sempre nella tua amicizia\ne nella comunione con la tua Chiesa."
+            },
+            {
+              "type": "t",
+              "text": "Ricordati anche dei nostri fratelli e sorelle\nche si sono addormentati nella speranza della risurrezione,\ne, nella tua misericordia, di tutti i defunti:\nammettili alla luce del tuo volto."
+            },
+            {
+              "type": "t",
+              "text": "Di noi tutti abbi misericordia,\ndonaci di aver parte alla vita eterna,\ninsieme con la beata Maria, Vergine e Madre di Dio,\nsan Giuseppe, suo sposo,\ngli apostoli e tutti i santi che in ogni tempo ti furono graditi,\ne in Gesù Cristo tuo Figlio canteremo la tua lode e la tua gloria."
+            }
+          ],
+          "matrimonio": [
+            {
+              "type": "title",
+              "text": "Per il Matrimonio"
+            },
+            {
+              "type": "t",
+              "text": "Ricordati anche di N. e N.,\nche hai voluto condurre al giorno delle nozze:\nper tua grazia vivano nell'amore vicendevole e nella pace."
+            },
+            {
+              "type": "t",
+              "text": "Ricordati anche dei nostri fratelli e sorelle\nche si sono addormentati nella speranza della risurrezione,\ne, nella tua misericordia, di tutti i defunti:\nammettili alla luce del tuo volto."
+            },
+            {
+              "type": "t",
+              "text": "Di noi tutti abbi misericordia,\ndonaci di aver parte alla vita eterna,\ninsieme con la beata Maria, Vergine e Madre di Dio,\nsan Giuseppe, suo sposo,\ngli apostoli e tutti i santi che in ogni tempo ti furono graditi,\ne in Gesù Cristo tuo Figlio canteremo la tua lode e la tua gloria."
+            }
+          ],
+          "defunti": [
+            {
+              "type": "title",
+              "text": "Messa per i defunti"
+            },
+            {
+              "type": "t",
+              "text": "Ricordati del nostro fratello [della nostra sorella] N.,\nche [oggi] hai chiamato a te da questa vita;\ne come per il Battesimo l'hai unito[a] alla morte di Cristo, tuo Figlio,\ncosì rendilo[a] partecipe della sua risurrezione."
+            },
+            {
+              "type": "t",
+              "text": "Ricordati anche dei nostri fratelli e sorelle\nche si sono addormentati nella speranza della risurrezione,\ne, nella tua misericordia, di tutti i defunti:\nammettili alla luce del tuo volto."
+            },
+            {
+              "type": "t",
+              "text": "Di noi tutti abbi misericordia,\ndonaci di aver parte alla vita eterna,\ninsieme con la beata Maria, Vergine e Madre di Dio,\nsan Giuseppe, suo sposo,\ngli apostoli e tutti i santi che in ogni tempo ti furono graditi,\ne in Gesù Cristo tuo Figlio canteremo la tua lode e la tua gloria."
+            }
+          ]
+        }
+      }
+    },
     "blocks": [
       {
         "type": "title",
@@ -583,20 +846,14 @@
         "text": "Ti preghiamo umilmente:\nper la comunione al Corpo e al Sangue di Cristo,\nlo Spirito Santo ci riunisca in un solo corpo."
       },
       {
-        "type": "title",
-        "text": "Intercessioni"
+        "type": "var",
+        "selector": "communicantes",
+        "title": "Intercessioni (Tempo)"
       },
       {
-        "type": "t",
-        "text": "Ricordati, Padre, della tua Chiesa diffusa su tutta la terra:\nrendila perfetta nell'amore\nin unione con il nostro Papa N.,\nil nostro Vescovo N., i presbiteri e i diaconi."
-      },
-      {
-        "type": "t",
-        "text": "Ricordati anche dei nostri fratelli e sorelle\nche si sono addormentati nella speranza della risurrezione\ne, nella tua misericordia, di tutti i defunti:\nammettili alla luce del tuo volto."
-      },
-      {
-        "type": "t",
-        "text": "Di noi tutti abbi misericordia,\ndonaci di aver parte alla vita eterna,\ninsieme con la beata Maria, Vergine e Madre di Dio,\nsan Giuseppe, suo sposo,\ngli apostoli e tutti i santi\nche in ogni tempo ti furono graditi,\ne in Gesù Cristo tuo Figlio canteremo la tua lode e la tua gloria."
+        "type": "var",
+        "selector": "rito",
+        "title": "Memoria dei defunti / Rito particolare"
       },
       {
         "type": "r",
