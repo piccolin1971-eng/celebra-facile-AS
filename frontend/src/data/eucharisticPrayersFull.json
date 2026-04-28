@@ -1625,6 +1625,10 @@
         "text": "Mentre cenava, prese il pane, ti rese grazie con la preghiera di benedizione, lo spezzò, lo diede loro e disse:"
       },
       {
+        "type": "title",
+        "text": "Consacrazione del pane"
+      },
+      {
         "type": "c",
         "text": "PRENDETE, E MANGIATENE TUTTI:\nQUESTO È IL MIO CORPO\nOFFERTO IN SACRIFICIO PER VOI."
       },
@@ -1633,8 +1637,16 @@
         "text": "Allo stesso modo, dopo aver cenato, sapendo che avrebbe riconciliato tutto in sé nel sangue sparso sulla croce, prese il calice colmo del frutto della vite, di nuovo ti rese grazie, lo diede ai suoi discepoli e disse:"
       },
       {
+        "type": "title",
+        "text": "Consacrazione del calice"
+      },
+      {
         "type": "c",
         "text": "PRENDETE, E BEVETENE TUTTI:\nQUESTO È IL CALICE DEL MIO SANGUE,\nPER LA NUOVA ED ETERNA ALLEANZA,\nVERSATO PER VOI E PER TUTTI\nIN REMISSIONE DEI PECCATI.\nFATE QUESTO IN MEMORIA DI ME."
+      },
+      {
+        "type": "title",
+        "text": "Mistero della fede"
       },
       {
         "type": "t",
@@ -1643,6 +1655,10 @@
       {
         "type": "acc",
         "text": "Annunciamo la tua morte, Signore, proclamiamo la tua risurrezione, nell'attesa della tua venuta."
+      },
+      {
+        "type": "title",
+        "text": "Anamnesi e intercessioni"
       },
       {
         "type": "t",
@@ -1655,6 +1671,10 @@
       {
         "type": "t",
         "text": "Custodisci tutti noi in comunione di fede e di amore con il nostro Papa N. e il nostro Vescovo N. Aiutaci ad attendere insieme l'avvento del tuo regno, fino al giorno in cui staremo davanti a te, santi tra i santi, nella dimora del cielo, con la beata Maria, Vergine e Madre di Dio, gli apostoli e tutti i santi, con i nostri fratelli e sorelle defunti che affidiamo alla tua misericordia. Allora, liberati ormai dalla ferita della colpa, e fatti pienamente nuova creatura, canteremo con gioia l'inno di ringraziamento che sale a te dal tuo Cristo vivente in eterno."
+      },
+      {
+        "type": "title",
+        "text": "Dossologia finale"
       },
       {
         "type": "c",
@@ -1714,6 +1734,10 @@
         "text": "Egli, venuta l'ora di dare la vita per la nostra liberazione, mentre cenava, prese il pane nelle sue mani, ti rese grazie con la preghiera di benedizione, lo spezzò, lo diede ai suoi discepoli e disse:"
       },
       {
+        "type": "title",
+        "text": "Consacrazione del pane"
+      },
+      {
         "type": "c",
         "text": "PRENDETE, E MANGIATENE TUTTI:\nQUESTO È IL MIO CORPO\nOFFERTO IN SACRIFICIO PER VOI."
       },
@@ -1722,8 +1746,16 @@
         "text": "Allo stesso modo, in quella sera, prese nelle sue mani il calice della benedizione e, confessando la tua misericordia, lo diede ai suoi discepoli e disse:"
       },
       {
+        "type": "title",
+        "text": "Consacrazione del calice"
+      },
+      {
         "type": "c",
         "text": "PRENDETE, E BEVETENE TUTTI:\nQUESTO È IL CALICE DEL MIO SANGUE,\nPER LA NUOVA ED ETERNA ALLEANZA,\nVERSATO PER VOI E PER TUTTI\nIN REMISSIONE DEI PECCATI.\nFATE QUESTO IN MEMORIA DI ME."
+      },
+      {
+        "type": "title",
+        "text": "Mistero della fede"
       },
       {
         "type": "t",
@@ -1732,6 +1764,10 @@
       {
         "type": "acc",
         "text": "Annunciamo la tua morte, Signore, proclamiamo la tua risurrezione, nell'attesa della tua venuta."
+      },
+      {
+        "type": "title",
+        "text": "Anamnesi e intercessioni"
       },
       {
         "type": "t",
@@ -1748,6 +1784,10 @@
       {
         "type": "t",
         "text": "Tu che ci hai convocati intorno alla mensa del tuo Figlio, raccogli in unità gli uomini di ogni stirpe e di ogni lingua, insieme con la Vergine Maria, gloriosa Madre di Dio, con gli apostoli e tutti i santi, nel convito della Gerusalemme nuova, dove splende la pienezza della tua pace, in Cristo Gesù, Signore nostro."
+      },
+      {
+        "type": "title",
+        "text": "Dossologia finale"
       },
       {
         "type": "c",
@@ -1799,6 +1839,10 @@
         "text": "La vigilia della sua passione, nella notte dell'ultima Cena, egli prese il pane e rese grazie, lo spezzò, lo diede ai suoi discepoli e disse:"
       },
       {
+        "type": "title",
+        "text": "Consacrazione del pane"
+      },
+      {
         "type": "c",
         "text": "PRENDETE, E MANGIATENE TUTTI:\nQUESTO È IL MIO CORPO\nOFFERTO IN SACRIFICIO PER VOI."
       },
@@ -1807,8 +1851,16 @@
         "text": "Allo stesso modo, dopo aver cenato, prese il calice, ti rese grazie, lo diede ai suoi discepoli e disse:"
       },
       {
+        "type": "title",
+        "text": "Consacrazione del calice"
+      },
+      {
         "type": "c",
         "text": "PRENDETE, E BEVETENE TUTTI:\nQUESTO È IL CALICE DEL MIO SANGUE,\nPER LA NUOVA ED ETERNA ALLEANZA,\nVERSATO PER VOI E PER TUTTI\nIN REMISSIONE DEI PECCATI.\nFATE QUESTO IN MEMORIA DI ME."
+      },
+      {
+        "type": "title",
+        "text": "Mistero della fede"
       },
       {
         "type": "t",
@@ -1817,6 +1869,10 @@
       {
         "type": "acc",
         "text": "Annunciamo la tua morte, Signore, proclamiamo la tua risurrezione, nell'attesa della tua venuta."
+      },
+      {
+        "type": "title",
+        "text": "Anamnesi e intercessioni"
       },
       {
         "type": "t",
@@ -1837,6 +1893,10 @@
       {
         "type": "t",
         "text": "Concedi anche a noi, al termine del pellegrinaggio terreno, di giungere alla dimora eterna, dove vivremo sempre con te; e in comunione con la beata Maria, Vergine e Madre di Dio, gli apostoli e i martiri, e tutti i santi, per Gesù Cristo, tuo Figlio, loderemo e proclameremo la tua grandezza."
+      },
+      {
+        "type": "title",
+        "text": "Dossologia finale"
       },
       {
         "type": "c",
@@ -1888,6 +1948,10 @@
         "text": "La vigilia della sua passione, nella notte dell'ultima Cena, egli prese il pane e rese grazie, lo spezzò, lo diede ai suoi discepoli e disse:"
       },
       {
+        "type": "title",
+        "text": "Consacrazione del pane"
+      },
+      {
         "type": "c",
         "text": "PRENDETE, E MANGIATENE TUTTI:\nQUESTO È IL MIO CORPO\nOFFERTO IN SACRIFICIO PER VOI."
       },
@@ -1896,8 +1960,16 @@
         "text": "Allo stesso modo, dopo aver cenato, prese il calice, ti rese grazie, lo diede ai suoi discepoli e disse:"
       },
       {
+        "type": "title",
+        "text": "Consacrazione del calice"
+      },
+      {
         "type": "c",
         "text": "PRENDETE, E BEVETENE TUTTI:\nQUESTO È IL CALICE DEL MIO SANGUE,\nPER LA NUOVA ED ETERNA ALLEANZA,\nVERSATO PER VOI E PER TUTTI\nIN REMISSIONE DEI PECCATI.\nFATE QUESTO IN MEMORIA DI ME."
+      },
+      {
+        "type": "title",
+        "text": "Mistero della fede"
       },
       {
         "type": "t",
@@ -1906,6 +1978,10 @@
       {
         "type": "acc",
         "text": "Annunciamo la tua morte, Signore, proclamiamo la tua risurrezione, nell'attesa della tua venuta."
+      },
+      {
+        "type": "title",
+        "text": "Anamnesi e intercessioni"
       },
       {
         "type": "t",
@@ -1926,6 +2002,10 @@
       {
         "type": "t",
         "text": "Concedi anche a noi, al termine del pellegrinaggio terreno, di giungere alla dimora eterna, dove vivremo sempre con te; e in comunione con la beata Maria, Vergine e Madre di Dio, gli apostoli e i martiri, e tutti i santi, per Gesù Cristo, tuo Figlio, loderemo e proclameremo la tua grandezza."
+      },
+      {
+        "type": "title",
+        "text": "Dossologia finale"
       },
       {
         "type": "c",
@@ -1981,6 +2061,10 @@
         "text": "La vigilia della sua passione, nella notte dell'ultima Cena, egli prese il pane e rese grazie, lo spezzò, lo diede ai suoi discepoli e disse:"
       },
       {
+        "type": "title",
+        "text": "Consacrazione del pane"
+      },
+      {
         "type": "c",
         "text": "PRENDETE, E MANGIATENE TUTTI:\nQUESTO È IL MIO CORPO\nOFFERTO IN SACRIFICIO PER VOI."
       },
@@ -1989,8 +2073,16 @@
         "text": "Allo stesso modo, dopo aver cenato, prese il calice, ti rese grazie, lo diede ai suoi discepoli e disse:"
       },
       {
+        "type": "title",
+        "text": "Consacrazione del calice"
+      },
+      {
         "type": "c",
         "text": "PRENDETE, E BEVETENE TUTTI:\nQUESTO È IL CALICE DEL MIO SANGUE,\nPER LA NUOVA ED ETERNA ALLEANZA,\nVERSATO PER VOI E PER TUTTI\nIN REMISSIONE DEI PECCATI.\nFATE QUESTO IN MEMORIA DI ME."
+      },
+      {
+        "type": "title",
+        "text": "Mistero della fede"
       },
       {
         "type": "t",
@@ -1999,6 +2091,10 @@
       {
         "type": "acc",
         "text": "Annunciamo la tua morte, Signore, proclamiamo la tua risurrezione, nell'attesa della tua venuta."
+      },
+      {
+        "type": "title",
+        "text": "Anamnesi e intercessioni"
       },
       {
         "type": "t",
@@ -2027,6 +2123,10 @@
       {
         "type": "t",
         "text": "Concedi anche a noi, al termine del pellegrinaggio terreno, di giungere alla dimora eterna, dove vivremo sempre con te; e in comunione con la beata Maria, Vergine e Madre di Dio, gli apostoli e i martiri, e tutti i santi, per Gesù Cristo, tuo Figlio, loderemo e proclameremo la tua grandezza."
+      },
+      {
+        "type": "title",
+        "text": "Dossologia finale"
       },
       {
         "type": "c",
@@ -2078,6 +2178,10 @@
         "text": "La vigilia della sua passione, nella notte dell'ultima Cena, egli prese il pane e rese grazie, lo spezzò, lo diede ai suoi discepoli e disse:"
       },
       {
+        "type": "title",
+        "text": "Consacrazione del pane"
+      },
+      {
         "type": "c",
         "text": "PRENDETE, E MANGIATENE TUTTI:\nQUESTO È IL MIO CORPO\nOFFERTO IN SACRIFICIO PER VOI."
       },
@@ -2086,8 +2190,16 @@
         "text": "Allo stesso modo, dopo aver cenato, prese il calice, ti rese grazie, lo diede ai suoi discepoli e disse:"
       },
       {
+        "type": "title",
+        "text": "Consacrazione del calice"
+      },
+      {
         "type": "c",
         "text": "PRENDETE, E BEVETENE TUTTI:\nQUESTO È IL CALICE DEL MIO SANGUE,\nPER LA NUOVA ED ETERNA ALLEANZA,\nVERSATO PER VOI E PER TUTTI\nIN REMISSIONE DEI PECCATI.\nFATE QUESTO IN MEMORIA DI ME."
+      },
+      {
+        "type": "title",
+        "text": "Mistero della fede"
       },
       {
         "type": "t",
@@ -2096,6 +2208,10 @@
       {
         "type": "acc",
         "text": "Annunciamo la tua morte, Signore, proclamiamo la tua risurrezione, nell'attesa della tua venuta."
+      },
+      {
+        "type": "title",
+        "text": "Anamnesi e intercessioni"
       },
       {
         "type": "t",
@@ -2120,6 +2236,10 @@
       {
         "type": "t",
         "text": "Concedi anche a noi, al termine del pellegrinaggio terreno, di giungere alla dimora eterna, dove vivremo sempre con te; e in comunione con la beata Maria, Vergine e Madre di Dio, gli apostoli e i martiri, e tutti i santi, per Gesù Cristo, tuo Figlio, loderemo e proclameremo la tua grandezza."
+      },
+      {
+        "type": "title",
+        "text": "Dossologia finale"
       },
       {
         "type": "c",
