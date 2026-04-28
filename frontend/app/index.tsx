@@ -169,7 +169,7 @@ export default function Home() {
 
         <View style={styles.heroRow} testID="hero-row">
           <TouchableOpacity
-            style={[styles.heroCard, { backgroundColor: colors.primary }]}
+            style={[styles.heroCardFull, { backgroundColor: colors.primary }]}
             onPress={openMessa}
             testID="btn-mass-of-the-day"
             accessibilityRole="button"
@@ -181,7 +181,9 @@ export default function Home() {
               {selectedDay === "today" ? "Letture di oggi" : `Letture di ${dayLabelFor(selectedDay, selectedDate)}`}
             </Text>
           </TouchableOpacity>
+        </View>
 
+        <View style={styles.heroRow} testID="hero-row-2">
           <TouchableOpacity
             style={[styles.heroCard, { backgroundColor: colors.liturgicalPurple }]}
             onPress={() => router.push("/orazionale" as any)}
@@ -189,9 +191,21 @@ export default function Home() {
             accessibilityRole="button"
             accessibilityLabel="Orazionale, Preghiera Universale"
           >
-            <MaterialCommunityIcons name="hands-pray" size={scaledFont(44)} color="#FFFFFF" />
+            <MaterialCommunityIcons name="hands-pray" size={scaledFont(40)} color="#FFFFFF" />
             <Text style={styles.heroTitle}>Orazionale</Text>
             <Text style={styles.heroSubtitle}>Preghiera Universale</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.heroCard, { backgroundColor: "#7B3F00" }]}
+            onPress={() => router.push("/preghiere-eucaristiche" as any)}
+            testID="btn-preghiere-eucaristiche"
+            accessibilityRole="button"
+            accessibilityLabel="Preghiere Eucaristiche complete con rubriche e propri"
+          >
+            <MaterialCommunityIcons name="book-open-variant" size={scaledFont(40)} color="#FFFFFF" />
+            <Text style={styles.heroTitle}>Preghiere{"\n"}Eucaristiche</Text>
+            <Text style={styles.heroSubtitle}>Con rubriche e propri</Text>
           </TouchableOpacity>
         </View>
 
@@ -362,6 +376,15 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     justifyContent: "center",
     gap: 8,
     minHeight: 160,
+  },
+  heroCardFull: {
+    width: "100%",
+    padding: 22,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    minHeight: 140,
   },
   heroTitle: { fontSize: Math.round(fontSize * 0.78), fontWeight: "700", color: "#FFFFFF", textAlign: "center" },
   heroSubtitle: { fontSize: Math.round(fontSize * 0.5), color: "#FFFFFF", opacity: 0.92, textAlign: "center" },
