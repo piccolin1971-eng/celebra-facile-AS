@@ -24,6 +24,10 @@ export type MassSession = {
   penitentialSeason?: string;
   selectedCredoId?: "niceno" | "apostolico";
   orateFratresId?: string;
+  // === Scelte per i propri della Preghiera Eucaristica (v2.5.0) ===
+  // Mappa selectorKey → optionId. Esempio: { communicantes: "domenica", hanc_igitur: "matrimonio" }
+  // Le chiavi dipendono dalla PE selezionata (vedi eucharisticPrayersFull.json)
+  peSelections?: Record<string, string>;
 };
 
 const KEY_PREFIX = "@messa_session_";

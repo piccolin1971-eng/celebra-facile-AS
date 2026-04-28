@@ -113,7 +113,7 @@ export default function PreghieraEucaristicaDetail() {
   if (!pe) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, justifyContent: "center", alignItems: "center" }}>
-        <Text style={{ color: colors.text, fontSize: 20 }}>PE non trovata</Text>
+        <Text style={{ color: colors.textPrimary, fontSize: 20 }}>PE non trovata</Text>
         <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 24 }}>
           <Text style={{ color: colors.primary, fontSize: 18 }}>← Indietro</Text>
         </TouchableOpacity>

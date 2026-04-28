@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Modal, Switch, Pressable, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -33,9 +33,11 @@ export default function MessaScreen() {
   const [penitentialSeason, setPenitentialSeason] = useState<string>("ordinario");
   const [selectedPrefaceId, setSelectedPrefaceId] = useState<string>("");
   const [selectedPrayerId, setSelectedPrayerId] = useState<string>("pe2");
-  // Selettori per i propri della PE (Tempo Liturgico / Communicantes, Rito Particolare / Hanc igitur)
-  const [peTempoId, setPeTempoId] = useState<string>("ordinario");
-  const [peRitoId, setPeRitoId] = useState<string>("nessuno");
+  // Selettori per i propri della PE: mappa selectorKey → optionId
+  // Per pe1: { communicantes, hanc_igitur }; per pe2/pe3: { communicantes, rito }; per pe4: { rito }
+  const [peSelections, setPeSelections] = useState<Record<string, string>>({});
+  // Modale per scegliere un'opzione di un selettore PE (es. "Tempo Liturgico")
+  const [pePickerKey, setPePickerKey] = useState<string | null>(null);
   const [selectedCredoId, setSelectedCredoId] = useState<"niceno" | "apostolico">("niceno");
   const [orateFratresId, setOrateFratresId] = useState<string>("A");
   const [padreNostroIntroId, setPadreNostroIntroId] = useState<string>("A");
@@ -129,8 +131,7 @@ export default function MessaScreen() {
           if (saved.selectedOrazionaleId) setSelectedOrazionaleId(saved.selectedOrazionaleId);
           if (saved.selectedPrefaceId) setSelectedPrefaceId(saved.selectedPrefaceId);
           if (saved.selectedPrayerId) setSelectedPrayerId(saved.selectedPrayerId);
-          if ((saved as any).peTempoId) setPeTempoId((saved as any).peTempoId);
-          if ((saved as any).peRitoId) setPeRitoId((saved as any).peRitoId);
+          if (saved.peSelections && typeof saved.peSelections === "object") setPeSelections(saved.peSelections);
           if (saved.benedizioneId) setBenedizioneId(saved.benedizioneId);
           if (saved.congedoId) setCongedoId(saved.congedoId);
           if (saved.acclamationId) setAcclamationId(saved.acclamationId);
@@ -164,13 +165,91 @@ export default function MessaScreen() {
       benedizioneId, congedoId, acclamationId, padreNostroIntroId,
       useSolemnBlessing, solemnBlessingId,
       penitentialForm, penitentialSeason, selectedCredoId, orateFratresId,
+      peSelections,
     };
     saveSession(sessionDate, session);
   }, [sessionLoaded, sessionDate, showGloria, showCredo, showOrazionalePray,
       selectedOrazionaleId, selectedPrefaceId, selectedPrayerId,
       benedizioneId, congedoId, acclamationId, padreNostroIntroId,
       useSolemnBlessing, solemnBlessingId,
-      penitentialForm, penitentialSeason, selectedCredoId, orateFratresId]);
+      penitentialForm, penitentialSeason, selectedCredoId, orateFratresId,
+      peSelections]);
+
+  // === PE FULL: espansione dei blocchi `var` in base a peSelections ===
+  // IMPORTANTE: questi hook devono stare PRIMA di qualunque early-return
+  // per rispettare le regole di React (stesso numero di hook ad ogni render).
+  type Block = { type: string; text?: string; selector?: string; title?: string };
+  const peFull = useMemo(() => {
+    return ((peFullData as any[]) || []).find((p) => p.id === selectedPrayerId) || null;
+  }, [selectedPrayerId]);
+
+  const peSelectorEntries = useMemo(() => {
+    if (!peFull?.selectors) return [] as { key: string; label: string; current: string; options: { id: string; label: string }[] }[];
+    return Object.entries(peFull.selectors as Record<string, any>).map(([key, def]: [string, any]) => {
+      const friendly =
+        key === "communicantes" ? "Tempo Liturgico"
+        : key === "hanc_igitur" ? "Rito Particolare"
+        : key === "rito" ? "Rito Particolare"
+        : (def.label || key);
+      const current = peSelections[key] || def.options?.[0]?.id || "";
+      return { key, label: friendly, current, options: def.options || [] };
+    });
+  }, [peFull, peSelections]);
+
+  // Inizializza i selettori PE con i default quando cambia la PE selezionata,
+  // se l'utente non ha già scelto qualcosa.
+  useEffect(() => {
+    if (!peFull?.selectors) return;
+    setPeSelections((prev) => {
+      const updated = { ...prev };
+      let changed = false;
+      Object.entries(peFull.selectors as Record<string, any>).forEach(([key, def]: [string, any]) => {
+        if (!updated[key]) {
+          updated[key] = def.options?.[0]?.id || "";
+          changed = true;
+        }
+      });
+      return changed ? updated : prev;
+    });
+  }, [peFull?.id]);
+
+  // Espande i blocchi `var` con la variante selezionata e converte tutto in
+  // un singolo testo piatto. Mantiene i marker `[rubric]` solo per pe1.
+  const expandedPrayerText = useMemo(() => {
+    if (!peFull) {
+      const apiText = prayers.find(p => p.id === selectedPrayerId)?.text || "";
+      // Stripping rubrics here in-line (non-pe1)
+      if (selectedPrayerId === "pe1") return apiText;
+      return apiText
+        .replace(/\[[^\]]*\]\s*\n?/g, "")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+    }
+    const out: Block[] = [];
+    for (const b of (peFull.blocks as Block[])) {
+      if (b.type === "var" && b.selector && peFull.selectors?.[b.selector]) {
+        const def = peFull.selectors[b.selector];
+        const optId = peSelections[b.selector] || def.options?.[0]?.id;
+        const variantBlocks: Block[] = def.variants?.[optId] || def.variants?.[def.options?.[0]?.id] || [];
+        out.push(...variantBlocks);
+      } else {
+        out.push(b);
+      }
+    }
+    const isPe1 = peFull.id === "pe1";
+    const parts: string[] = [];
+    for (const b of out) {
+      if (b.type === "title") continue;
+      const t = (b.text || "").trim();
+      if (!t) continue;
+      if (b.type === "r" || b.type === "rubric_section") {
+        if (isPe1) parts.push(`[${t}]`);
+      } else {
+        parts.push(t);
+      }
+    }
+    return parts.join("\n\n");
+  }, [peFull, peSelections, prayers, selectedPrayerId]);
 
   if (loading || !fixedParts) {
     return (
@@ -967,7 +1046,7 @@ export default function MessaScreen() {
         if (selectedPrayer) {
           const isPe1 = selectedPrayer.id === "pe1";
           const marker = "Mistero della fede.";
-          const text = processPrayerText(selectedPrayer.text, selectedPrayer.id);
+          const text = expandedPrayerText || processPrayerText(selectedPrayer.text, selectedPrayer.id);
           const idx = text.indexOf(marker);
           let beforePart = text;
           let afterPart = "";
@@ -996,6 +1075,29 @@ export default function MessaScreen() {
                         <Ionicons name="swap-horizontal" size={scaledFont(28)} color={colors.primary} />
                         <Text style={styles.selectorBtnText}>Scegli Preghiera Eucaristica</Text>
                       </TouchableOpacity>
+                      {/* Selettori per i propri della PE (Tempo Liturgico / Rito Particolare) */}
+                      {peSelectorEntries.length > 0 && (
+                        <View style={styles.peSelectorsRow}>
+                          {peSelectorEntries.map((sel) => {
+                            const opt = sel.options.find((o: { id: string; label: string }) => o.id === sel.current);
+                            return (
+                              <TouchableOpacity
+                                key={sel.key}
+                                style={styles.peSelectorBtn}
+                                onPress={() => setPePickerKey(sel.key)}
+                                testID={`btn-pe-selector-${sel.key}`}
+                                activeOpacity={0.7}
+                              >
+                                <Text style={styles.peSelectorLabel}>{sel.label}</Text>
+                                <View style={styles.peSelectorValueRow}>
+                                  <Text style={styles.peSelectorValue} numberOfLines={2}>{opt?.label || "—"}</Text>
+                                  <Ionicons name="chevron-down" size={scaledFont(22)} color="#7B3F00" />
+                                </View>
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </View>
+                      )}
                       <R kind="subtitle">{selectedPrayer.title}</R>
                     </>
                   ) : (
@@ -1385,6 +1487,58 @@ export default function MessaScreen() {
           </ScrollView>
         </SafeAreaView>
       </Modal>
+
+      {/* Modal selettore Tempo Liturgico / Rito Particolare per la PE */}
+      <Modal
+        visible={pePickerKey !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPePickerKey(null)}
+      >
+        <Pressable style={styles.peModalBackdrop} onPress={() => setPePickerKey(null)}>
+          <Pressable style={styles.peModalCard} onPress={() => { /* prevent close */ }}>
+            {(() => {
+              const def = pePickerKey && peFull?.selectors?.[pePickerKey];
+              if (!def) return null;
+              const friendly =
+                pePickerKey === "communicantes" ? "Tempo Liturgico"
+                : pePickerKey === "hanc_igitur" ? "Rito Particolare"
+                : pePickerKey === "rito" ? "Rito Particolare"
+                : (def.label || pePickerKey || "");
+              const currentId = peSelections[pePickerKey!] || def.options?.[0]?.id;
+              return (
+                <>
+                  <Text style={styles.peModalTitle}>{friendly}</Text>
+                  <ScrollView style={{ maxHeight: 460 }}>
+                    {def.options?.map((o: any) => {
+                      const isSel = currentId === o.id;
+                      return (
+                        <TouchableOpacity
+                          key={o.id}
+                          style={[styles.peModalOption, isSel && styles.peModalOptionActive]}
+                          onPress={() => {
+                            setPeSelections((prev) => ({ ...prev, [pePickerKey!]: o.id }));
+                            setPePickerKey(null);
+                          }}
+                          testID={`pe-picker-option-${o.id}`}
+                        >
+                          <Text style={[styles.peModalOptionText, isSel && { color: "#7B3F00", fontWeight: "800" }]}>
+                            {o.label}
+                          </Text>
+                          {isSel ? <Ionicons name="checkmark" size={scaledFont(28)} color="#7B3F00" /> : null}
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+                  <TouchableOpacity style={styles.peModalClose} onPress={() => setPePickerKey(null)}>
+                    <Text style={styles.peModalCloseText}>Chiudi</Text>
+                  </TouchableOpacity>
+                </>
+              );
+            })()}
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -1597,6 +1751,88 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     minHeight: 64,
   },
   selectorBtnText: { fontSize: Math.round(fontSize * 0.75), color: colors.primary, fontWeight: "700" },
+  // === Selettori Tempo Liturgico / Rito Particolare (PE) - colore ambra ===
+  peSelectorsRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 4,
+    marginBottom: 14,
+    flexWrap: "wrap",
+  },
+  peSelectorBtn: {
+    flex: 1,
+    minWidth: 180,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: "#FFF3CD",   // ambra chiaro di sfondo per alto contrasto
+    borderWidth: 3,
+    borderColor: "#FFA000",       // ambra/arancione bordo
+    minHeight: 76,
+  },
+  peSelectorLabel: {
+    fontSize: Math.round(fontSize * 0.5),
+    color: "#7B3F00",
+    fontWeight: "800",
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    marginBottom: 4,
+  },
+  peSelectorValueRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  peSelectorValue: {
+    color: "#7B3F00",
+    fontSize: Math.round(fontSize * 0.7),
+    fontWeight: "700",
+    flex: 1,
+  },
+  // Modale picker per i selettori PE
+  peModalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.75)",
+    justifyContent: "center",
+    padding: 24,
+  },
+  peModalCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: 24,
+    borderWidth: 3,
+    borderColor: "#FFA000",
+  },
+  peModalTitle: {
+    color: colors.textPrimary,
+    fontSize: Math.round(fontSize * 0.85),
+    fontWeight: "800",
+    marginBottom: 18,
+  },
+  peModalOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 18,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    minHeight: 64,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  peModalOptionActive: { backgroundColor: "#FFF3CD" },
+  peModalOptionText: { color: colors.textPrimary, fontSize: Math.round(fontSize * 0.75), flex: 1, fontWeight: "600" },
+  peModalClose: {
+    alignItems: "center",
+    paddingVertical: 16,
+    marginTop: 10,
+    backgroundColor: "#FFA000",
+    borderRadius: 10,
+    minHeight: 60,
+    justifyContent: "center",
+  },
+  peModalCloseText: { color: "#FFFFFF", fontWeight: "800", fontSize: Math.round(fontSize * 0.75) },
   listItem: {
     padding: 22,
     borderWidth: 2,

@@ -169,7 +169,7 @@ export default function Home() {
 
         <View style={styles.heroRow} testID="hero-row">
           <TouchableOpacity
-            style={[styles.heroCardFull, { backgroundColor: colors.primary }]}
+            style={[styles.heroCard, { backgroundColor: colors.primary }]}
             onPress={openMessa}
             testID="btn-mass-of-the-day"
             accessibilityRole="button"
@@ -181,9 +181,7 @@ export default function Home() {
               {selectedDay === "today" ? "Letture di oggi" : `Letture di ${dayLabelFor(selectedDay, selectedDate)}`}
             </Text>
           </TouchableOpacity>
-        </View>
 
-        <View style={styles.heroRow} testID="hero-row-2">
           <TouchableOpacity
             style={[styles.heroCard, { backgroundColor: colors.liturgicalPurple }]}
             onPress={() => router.push("/orazionale" as any)}
@@ -194,18 +192,6 @@ export default function Home() {
             <MaterialCommunityIcons name="hands-pray" size={scaledFont(40)} color="#FFFFFF" />
             <Text style={styles.heroTitle}>Orazionale</Text>
             <Text style={styles.heroSubtitle}>Preghiera Universale</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.heroCard, { backgroundColor: "#7B3F00" }]}
-            onPress={() => router.push("/preghiere-eucaristiche" as any)}
-            testID="btn-preghiere-eucaristiche"
-            accessibilityRole="button"
-            accessibilityLabel="Preghiere Eucaristiche complete con rubriche e propri"
-          >
-            <MaterialCommunityIcons name="book-open-variant" size={scaledFont(40)} color="#FFFFFF" />
-            <Text style={styles.heroTitle}>Preghiere{"\n"}Eucaristiche</Text>
-            <Text style={styles.heroSubtitle}>Con rubriche e propri</Text>
           </TouchableOpacity>
         </View>
 
