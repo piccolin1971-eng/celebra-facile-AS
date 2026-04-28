@@ -7,6 +7,7 @@ import { useSettings } from "../src/SettingsContext";
 import { api, Liturgy, Preface, EucharisticPrayer, MysteryAcclamation, SolemnBlessing } from "../src/api";
 import { getOrazionaleSections, getPrayerById, suggestPrayerForLiturgy, OrazionalePrayer } from "../src/orazionale";
 import { loadSession, saveSession, cleanupOldSessions, MassSession } from "../src/massSession";
+import peFullData from "../src/data/eucharisticPrayersFull.json";
 
 type ReadingType =
   | "antifona_ingresso" | "colletta"
@@ -32,6 +33,9 @@ export default function MessaScreen() {
   const [penitentialSeason, setPenitentialSeason] = useState<string>("ordinario");
   const [selectedPrefaceId, setSelectedPrefaceId] = useState<string>("");
   const [selectedPrayerId, setSelectedPrayerId] = useState<string>("pe2");
+  // Selettori per i propri della PE (Tempo Liturgico / Communicantes, Rito Particolare / Hanc igitur)
+  const [peTempoId, setPeTempoId] = useState<string>("ordinario");
+  const [peRitoId, setPeRitoId] = useState<string>("nessuno");
   const [selectedCredoId, setSelectedCredoId] = useState<"niceno" | "apostolico">("niceno");
   const [orateFratresId, setOrateFratresId] = useState<string>("A");
   const [padreNostroIntroId, setPadreNostroIntroId] = useState<string>("A");
@@ -125,6 +129,8 @@ export default function MessaScreen() {
           if (saved.selectedOrazionaleId) setSelectedOrazionaleId(saved.selectedOrazionaleId);
           if (saved.selectedPrefaceId) setSelectedPrefaceId(saved.selectedPrefaceId);
           if (saved.selectedPrayerId) setSelectedPrayerId(saved.selectedPrayerId);
+          if ((saved as any).peTempoId) setPeTempoId((saved as any).peTempoId);
+          if ((saved as any).peRitoId) setPeRitoId((saved as any).peRitoId);
           if (saved.benedizioneId) setBenedizioneId(saved.benedizioneId);
           if (saved.congedoId) setCongedoId(saved.congedoId);
           if (saved.acclamationId) setAcclamationId(saved.acclamationId);
