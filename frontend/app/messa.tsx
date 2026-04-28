@@ -240,6 +240,9 @@ export default function MessaScreen() {
     const parts: string[] = [];
     for (const b of out) {
       if (b.type === "title") continue;
+      // Salta i blocchi acclamazione: l'utente sceglie l'acclamazione separatamente
+      // nella pagina "Mistero della Fede" (3 forme), quindi includerle qui le duplica.
+      if (b.type === "acc") continue;
       const t = (b.text || "").trim();
       if (!t) continue;
       if (b.type === "r" || b.type === "rubric_section") {
