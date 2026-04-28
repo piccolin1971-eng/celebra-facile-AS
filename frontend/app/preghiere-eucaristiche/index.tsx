@@ -59,7 +59,7 @@ const makeStyles = (c: any, fs: number) => StyleSheet.create({
   header: { padding: 20, borderBottomWidth: 1, borderBottomColor: c.border },
   backBtn: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
   backText: { color: c.primary, fontSize: Math.max(18, fs * 0.55), marginLeft: 4, fontWeight: "600" },
-  title: { color: c.text, fontSize: Math.max(28, fs * 0.85), fontWeight: "700" },
+  title: { color: c.textPrimary, fontSize: Math.max(28, fs * 0.85), fontWeight: "700" },
   subtitle: { color: c.textSecondary, fontSize: Math.max(16, fs * 0.5), marginTop: 4 },
   card: {
     flexDirection: "row",
@@ -72,6 +72,6 @@ const makeStyles = (c: any, fs: number) => StyleSheet.create({
     borderWidth: 1,
     borderColor: c.border,
   },
-  cardTitle: { color: c.text, fontSize: Math.max(20, fs * 0.65), fontWeight: "700", marginBottom: 4 },
+  cardTitle: { color: c.textPrimary, fontSize: Math.max(20, fs * 0.65), fontWeight: "700", marginBottom: 4 },
   cardDesc: { color: c.textSecondary, fontSize: Math.max(15, fs * 0.45) },
 });

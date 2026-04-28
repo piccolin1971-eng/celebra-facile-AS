@@ -58,6 +58,11 @@ export default function PreghieraEucaristicaDetail() {
         const def = pe.selectors[b.selector];
         const optId = selections[b.selector] || def.options[0]?.id;
         const variantBlocks = def.variants[optId] || def.variants[def.options[0]?.id] || [];
+        // Se la variante non inizia già con un title e il var ha un title, anteponilo
+        const startsWithTitle = variantBlocks[0]?.type === "title";
+        if (!startsWithTitle && b.title) {
+          out.push({ type: "title", text: b.title });
+        }
         out.push(...variantBlocks);
       } else {
         out.push(b);
@@ -105,9 +110,12 @@ export default function PreghieraEucaristicaDetail() {
 
   const styles = makeStyles(colors, fontSize);
   const currentPage = pages[pageIdx] || [];
+  // Estrai il titolo della sezione corrente: il primo blocco "title" della pagina, se presente
+  const sectionTitle = currentPage.find((b) => b.type === "title")?.text || "";
+  // I blocchi da renderizzare: scartiamo il `title` perché lo mostriamo nel sub-header
+  const blocksToRender = currentPage.filter((b) => b.type !== "title");
 
   const renderBlock = (b: Block, key: string) => {
-    if (b.type === "title") return <Text key={key} style={styles.title}>{b.text || b.title}</Text>;
     if (b.type === "r") return <Text key={key} style={styles.rubric}>{b.text}</Text>;
     if (b.type === "rubric_section") return <Text key={key} style={styles.rubricSection}>{b.text}</Text>;
     if (b.type === "c") return <Text key={key} style={styles.consacrazione}>{b.text}</Text>;
@@ -120,37 +128,49 @@ export default function PreghieraEucaristicaDetail() {
       <StatusBar barStyle="light-content" backgroundColor={colors.background} />
       <Stack.Screen options={{ headerShown: false }} />
 
-      {/* Header */}
+      {/* Header con titolo PE in evidenza */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={20} testID="btn-back">
-          <Ionicons name="chevron-back" size={Math.max(28, fontSize * 0.85)} color={colors.primary} />
+          <Ionicons name="chevron-back" size={Math.max(32, fontSize * 0.9)} color={colors.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>{pe.shortTitle || pe.title}</Text>
-        <Text style={styles.pageIndicator}>{pageIdx + 1}/{pages.length}</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.headerTitle} numberOfLines={2}>{pe.title}</Text>
+        </View>
       </View>
 
-      {/* Selettori (se presenti) */}
+      {/* Selettori (se presenti) - più chiari con label esplicita */}
       {pe.selectors && Object.keys(pe.selectors).length > 0 ? (
         <View style={styles.selectorBar}>
           {Object.entries(pe.selectors).map(([key, def]) => {
             const optId = selections[key] || def.options[0]?.id;
             const opt = def.options.find((o) => o.id === optId);
+            const friendlyLabel = key === "communicantes" ? "Tempo Liturgico" : key === "hanc_igitur" ? "Rito Particolare" : def.label;
             return (
               <TouchableOpacity
                 key={key}
                 style={styles.selectorBtn}
                 onPress={() => setPickerOpen(key)}
                 testID={`selector-${key}`}
+                activeOpacity={0.7}
               >
-                <Text style={styles.selectorLabel}>{def.label}</Text>
-                <Text style={styles.selectorValue} numberOfLines={1}>
-                  {opt?.label || "—"} <Ionicons name="chevron-down" size={14} color={colors.primary} />
-                </Text>
+                <Text style={styles.selectorLabel}>{friendlyLabel}</Text>
+                <View style={styles.selectorValueRow}>
+                  <Text style={styles.selectorValue} numberOfLines={1}>{opt?.label || "—"}</Text>
+                  <Ionicons name="chevron-down" size={18} color={colors.primary} />
+                </View>
               </TouchableOpacity>
             );
           })}
         </View>
       ) : null}
+
+      {/* Sub-header: nome sezione + indicatore pagina */}
+      <View style={styles.subHeader}>
+        <Text style={styles.sectionName} numberOfLines={1}>
+          {sectionTitle || (pageIdx === 0 ? "Inizio" : "")}
+        </Text>
+        <Text style={styles.pageIndicator}>Pagina {pageIdx + 1} di {pages.length}</Text>
+      </View>
 
       {/* Pagina con tap zones */}
       <View style={styles.pageContainer}>
@@ -158,7 +178,7 @@ export default function PreghieraEucaristicaDetail() {
           contentContainerStyle={styles.pageContent}
           showsVerticalScrollIndicator={false}
         >
-          {currentPage.map((b, i) => renderBlock(b, `${pageIdx}-${i}`))}
+          {blocksToRender.map((b, i) => renderBlock(b, `${pageIdx}-${i}`))}
         </ScrollView>
 
         {/* Tap zones invisibili sopra il contenuto */}
@@ -240,26 +260,48 @@ const makeStyles = (c: any, fs: number) => StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: c.border,
+    paddingVertical: 16,
+    borderBottomWidth: 2,
+    borderBottomColor: c.primary,
+    backgroundColor: c.surface,
   },
-  backBtn: { padding: 4 },
-  headerTitle: { flex: 1, color: c.text, fontSize: Math.max(20, fs * 0.6), fontWeight: "700", marginLeft: 8 },
-  pageIndicator: { color: c.textSecondary, fontSize: Math.max(16, fs * 0.5), fontWeight: "600" },
+  backBtn: { padding: 4, marginRight: 8 },
+  headerTitle: { color: c.textPrimary, fontSize: Math.max(22, fs * 0.7), fontWeight: "800", lineHeight: Math.max(28, fs * 0.9) },
 
   selectorBar: {
     flexDirection: "row",
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 10,
     backgroundColor: c.surface,
     borderBottomWidth: 1,
     borderBottomColor: c.border,
-    gap: 8,
+    gap: 10,
   },
-  selectorBtn: { flex: 1, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10, backgroundColor: c.background, borderWidth: 1, borderColor: c.border },
-  selectorLabel: { color: c.textSecondary, fontSize: 12, marginBottom: 2 },
-  selectorValue: { color: c.primary, fontSize: 15, fontWeight: "600" },
+  selectorBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor: c.background,
+    borderWidth: 2,
+    borderColor: c.primary,
+  },
+  selectorLabel: { color: c.textSecondary, fontSize: 12, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 },
+  selectorValueRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  selectorValue: { color: c.primary, fontSize: 16, fontWeight: "700", flex: 1 },
+
+  subHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: c.background,
+    borderBottomWidth: 1,
+    borderBottomColor: c.border,
+  },
+  sectionName: { color: c.primary, fontSize: Math.max(18, fs * 0.55), fontWeight: "700", flex: 1, marginRight: 8 },
+  pageIndicator: { color: c.textSecondary, fontSize: Math.max(14, fs * 0.45), fontWeight: "600" },
 
   pageContainer: { flex: 1, position: "relative" },
   pageContent: { padding: 24, paddingBottom: 60 },
@@ -276,18 +318,17 @@ const makeStyles = (c: any, fs: number) => StyleSheet.create({
   footerHint: { color: c.textSecondary, fontSize: 13 },
 
   // Tipi blocco
-  title: { color: c.primary, fontSize: Math.max(22, fs * 0.7), fontWeight: "700", marginBottom: 14, marginTop: 4 },
-  rubric: { color: "#cc3333", fontSize: Math.max(13, fs * 0.4), fontStyle: "italic", marginVertical: 4, lineHeight: Math.max(18, fs * 0.55) },
-  rubricSection: { color: "#cc3333", fontSize: Math.max(13, fs * 0.4), fontStyle: "italic", marginVertical: 6, fontWeight: "600" },
-  text: { color: c.text, fontSize: fs, lineHeight: fs * 1.4, marginVertical: 8 },
-  consacrazione: { color: c.text, fontSize: fs, lineHeight: fs * 1.4, fontWeight: "700", marginVertical: 12 },
+  rubric: { color: "#cc3333", fontSize: Math.max(14, fs * 0.42), fontStyle: "italic", marginVertical: 4, lineHeight: Math.max(20, fs * 0.6) },
+  rubricSection: { color: "#cc3333", fontSize: Math.max(14, fs * 0.42), fontStyle: "italic", marginVertical: 6, fontWeight: "600" },
+  text: { color: c.textPrimary, fontSize: fs, lineHeight: fs * 1.4, marginVertical: 8 },
+  consacrazione: { color: c.textPrimary, fontSize: fs, lineHeight: fs * 1.4, fontWeight: "700", marginVertical: 12 },
   acclamazione: { color: c.primary, fontSize: fs, lineHeight: fs * 1.4, fontStyle: "italic", marginVertical: 10 },
 
   modalBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.7)", justifyContent: "center", padding: 24 },
   modalCard: { backgroundColor: c.surface, borderRadius: 16, padding: 20, borderWidth: 1, borderColor: c.border },
-  modalTitle: { color: c.text, fontSize: 22, fontWeight: "700", marginBottom: 16 },
+  modalTitle: { color: c.textPrimary, fontSize: 22, fontWeight: "700", marginBottom: 16 },
   modalOption: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 14, paddingHorizontal: 12, borderRadius: 10 },
   modalOptionActive: { backgroundColor: c.background },
-  modalOptionText: { color: c.text, fontSize: 18, flex: 1 },
+  modalOptionText: { color: c.textPrimary, fontSize: 18, flex: 1 },
   modalClose: { alignItems: "center", paddingVertical: 14, marginTop: 8, borderTopWidth: 1, borderTopColor: c.border },
 });

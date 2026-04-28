@@ -180,6 +180,10 @@
     },
     "blocks": [
       {
+        "type": "title",
+        "text": "Te ígitur — Inizio del Canone"
+      },
+      {
         "type": "r",
         "text": "Il sacerdote, con le braccia allargate, dice:"
       },
@@ -459,6 +463,10 @@
     "selectors": {},
     "blocks": [
       {
+        "type": "title",
+        "text": "Inizio della PE II (dopo il Santo)"
+      },
+      {
         "type": "r",
         "text": "Il sacerdote, con le braccia allargate, dice:"
       },
@@ -623,6 +631,10 @@
     "description": "Per le domeniche e le feste",
     "selectors": {},
     "blocks": [
+      {
+        "type": "title",
+        "text": "Inizio della PE III (dopo il Santo)"
+      },
       {
         "type": "r",
         "text": "Il sacerdote, con le braccia allargate, dice:"
@@ -1018,6 +1030,10 @@
     "selectors": {},
     "blocks": [
       {
+        "type": "title",
+        "text": "Inizio della Riconciliazione I"
+      },
+      {
         "type": "t",
         "text": "È veramente cosa buona e giusta rendere grazie sempre e in ogni luogo a te, Signore, Padre santo, Dio onnipotente ed eterno."
       },
@@ -1102,6 +1118,10 @@
     "description": "Dio riconcilia e raduna i suoi figli",
     "selectors": {},
     "blocks": [
+      {
+        "type": "title",
+        "text": "Inizio della Riconciliazione II"
+      },
       {
         "type": "t",
         "text": "È veramente cosa buona e giusta renderti grazie e innalzare a te le nostre lodi, Dio Padre onnipotente, per i prodigi che operi in questo mondo per mezzo di Gesù Cristo, Signore nostro."
@@ -1192,6 +1212,10 @@
     "selectors": {},
     "blocks": [
       {
+        "type": "title",
+        "text": "Inizio della Varie Necessità I"
+      },
+      {
         "type": "t",
         "text": "È veramente cosa buona e giusta renderti grazie e innalzare a te l'inno di benedizione e di lode, Signore, Padre di bontà infinita."
       },
@@ -1277,6 +1301,10 @@
     "selectors": {},
     "blocks": [
       {
+        "type": "title",
+        "text": "Inizio della Varie Necessità II"
+      },
+      {
         "type": "t",
         "text": "È veramente cosa buona e giusta, nostro dovere e fonte di salvezza, rendere grazie in ogni tempo e in ogni luogo a te, Signore, Padre santo, creatore del mondo e fonte di ogni vita."
       },
@@ -1361,6 +1389,10 @@
     "description": "Gesù via al Padre",
     "selectors": {},
     "blocks": [
+      {
+        "type": "title",
+        "text": "Inizio della Varie Necessità III"
+      },
       {
         "type": "t",
         "text": "È veramente cosa buona e giusta, nostro dovere e fonte di salvezza, rendere grazie in ogni tempo e in ogni luogo a te, Padre santo, Signore del cielo e della terra, per Gesù Cristo, Signore nostro."
@@ -1458,6 +1490,10 @@
     "description": "Gesù passò beneficando",
     "selectors": {},
     "blocks": [
+      {
+        "type": "title",
+        "text": "Inizio della Varie Necessità IV"
+      },
       {
         "type": "t",
         "text": "È veramente cosa buona e giusta, nostro dovere e fonte di salvezza, renderti grazie sempre e in ogni luogo, Padre di misericordia e Dio fedele, che ci hai donato Gesù Cristo, tuo Figlio, nostro Signore e redentore."
