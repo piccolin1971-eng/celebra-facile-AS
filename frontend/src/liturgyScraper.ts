@@ -162,6 +162,22 @@ function extractSections(html: string): Array<{ title: string; body: string }> {
 }
 
 function extractOgTitle(html: string): string {
+  // 1) Prima prova: <title>...</title> (contiene il nome del santo/celebrazione)
+  //    Es: "Liturgia del giorno 02 Maggio 2026 - SANT'ATANASIO, VESCOVO E DOTTORE DELLA CHIESA - MEMORIA - sito ufficiale della CEI - Chiesacattolica.it"
+  const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+  if (titleMatch) {
+    let t = decodeHtmlEntities(stripTags(titleMatch[1])).trim();
+    // Rimuovi suffisso "- sito ufficiale..."
+    t = t.replace(/\s*[-–—]\s*sito\s+ufficiale.*$/i, "").trim();
+    // Rimuovi prefisso "Liturgia del giorno DD Mese YYYY -"
+    t = t.replace(/^Liturgi[ae]?\s+del(?:l['’]a)?\s+giorno\s+\d{1,2}\s+\w+\s+\d{4}\s*[-–—]\s*/i, "").trim();
+    // Rimuovi "Chiesacattolica.it" finale se presente
+    t = t.replace(/\s*[-–—]\s*Chiesacattolica\.it\s*$/i, "").trim();
+    if (t && !/^\d{6,8}$/.test(t) && !/^Liturgi[ae]\s+del/i.test(t)) {
+      return t;
+    }
+  }
+  // 2) Fallback: og:title (di solito contiene solo la data)
   const m = html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i);
   if (!m) return "";
   let content = decodeHtmlEntities(m[1]).trim();
