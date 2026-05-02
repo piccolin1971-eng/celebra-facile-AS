@@ -2,7 +2,7 @@
   "expo": {
     "name": "Messa CEI",
     "slug": "frontend",
-    "version": "2.4.0",
+    "version": "2.6.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "frontend",
@@ -17,6 +17,7 @@
         "backgroundColor": "#000000"
       },
       "package": "it.messaparroco.app",
+      "versionCode": 261,
       "edgeToEdgeEnabled": true
     },
     "web": {
