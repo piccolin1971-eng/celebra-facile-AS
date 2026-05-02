@@ -11,6 +11,22 @@ type SaintEntry = { date: string; celebrations: { title: string; rank: string; c
 const MONTHS = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
                 "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
 
+// Calcola la prossima occorrenza di una memoria (date in formato MM-DD).
+// Se la data è passata nell'anno corrente, ritorna quella del prossimo anno.
+// Output formato YYYY-MM-DD.
+function computeNextOccurrence(mmdd: string): string {
+  const today = new Date();
+  const [mm, dd] = mmdd.split("-").map((s) => parseInt(s, 10));
+  const thisYear = new Date(today.getFullYear(), mm - 1, dd);
+  // Se la data è già passata di più di 1 giorno, vai al prossimo anno
+  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const target = thisYear < todayStart ? new Date(today.getFullYear() + 1, mm - 1, dd) : thisYear;
+  const y = target.getFullYear();
+  const m = String(target.getMonth() + 1).padStart(2, "0");
+  const d = String(target.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 export default function CalendarioScreen() {
   const router = useRouter();
   const { colors, fontSize, scaledFont } = useSettings();
@@ -106,24 +122,37 @@ export default function CalendarioScreen() {
           <ScrollView contentContainerStyle={styles.content}>
             {filteredEntries.length === 0 ? (
               <Text style={styles.empty}>Nessuna celebrazione fissa in questo mese.</Text>
-            ) : filteredEntries.map((entry) => (
-              <View key={entry.date} style={styles.saintCard} testID={`saint-card-${entry.date}`}>
-                <View style={styles.saintDateBox}>
-                  <Text style={styles.saintDay}>{entry.date.split("-")[1]}</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  {entry.celebrations.map((c, i) => (
-                    <View key={i} style={{ marginBottom: 6 }}>
-                      <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-                        <View style={[styles.colorDot, { backgroundColor: colorHex(c.color) }]} />
-                        <Text style={styles.saintRank}>{rankLabel(c.rank)}</Text>
+            ) : filteredEntries.map((entry) => {
+              const dateISO = computeNextOccurrence(entry.date);
+              return (
+                <TouchableOpacity
+                  key={entry.date}
+                  style={styles.saintCard}
+                  testID={`saint-card-${entry.date}`}
+                  onPress={() => router.push({ pathname: "/messa", params: { date: dateISO } })}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Celebra la messa del ${entry.date.split("-")[1]}/${entry.date.split("-")[0]}: ${entry.celebrations.map(c => c.title).join("; ")}`}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.saintDateBox}>
+                    <Text style={styles.saintDay}>{entry.date.split("-")[1]}</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    {entry.celebrations.map((c, i) => (
+                      <View key={i} style={{ marginBottom: 6 }}>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                          <View style={[styles.colorDot, { backgroundColor: colorHex(c.color) }]} />
+                          <Text style={styles.saintRank}>{rankLabel(c.rank)}</Text>
+                        </View>
+                        <Text style={styles.saintName}>{c.title}</Text>
                       </View>
-                      <Text style={styles.saintName}>{c.title}</Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
-            ))}
+                    ))}
+                    <Text style={styles.saintTapHint}>Tocca per celebrare la Messa</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={scaledFont(32)} color={colors.textSecondary} />
+                </TouchableOpacity>
+              );
+            })}
           </ScrollView>
         </View>
       ) : (
@@ -207,6 +236,7 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
   empty: { fontSize: Math.round(fontSize * 0.75), color: colors.textSecondary, textAlign: "center", marginTop: 40 },
   saintCard: {
     flexDirection: "row",
+    alignItems: "center",
     gap: 16,
     padding: 18,
     backgroundColor: colors.surface,
@@ -214,6 +244,15 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     borderColor: colors.border,
     borderRadius: 12,
     marginBottom: 12,
+    minHeight: 80,
+  },
+  saintTapHint: {
+    marginTop: 6,
+    fontSize: Math.round(fontSize * 0.5),
+    color: colors.primary,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   saintDateBox: {
     width: 70,

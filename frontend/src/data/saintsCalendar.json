@@ -10,6 +10,26 @@
     ]
   },
   {
+    "date": "01-02",
+    "celebrations": [
+      {
+        "title": "Santi Basilio Magno e Gregorio Nazianzeno, vescovi e dottori della Chiesa",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "01-03",
+    "celebrations": [
+      {
+        "title": "Santissimo Nome di Gesù",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
     "date": "01-06",
     "celebrations": [
       {
@@ -20,10 +40,30 @@
     ]
   },
   {
+    "date": "01-07",
+    "celebrations": [
+      {
+        "title": "San Raimondo de Penyafort, presbitero",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "01-13",
+    "celebrations": [
+      {
+        "title": "Sant'Ilario, vescovo e dottore della Chiesa",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
     "date": "01-17",
     "celebrations": [
       {
-        "title": "Sant'Antonio abate",
+        "title": "Sant'Antonio, abate",
         "rank": "memoria_obbligatoria",
         "color": "bianco"
       }
@@ -33,7 +73,7 @@
     "date": "01-20",
     "celebrations": [
       {
-        "title": "San Sebastiano, martire",
+        "title": "Santi Fabiano, papa, e Sebastiano, martiri",
         "rank": "memoria_facoltativa",
         "color": "rosso"
       }
@@ -50,11 +90,51 @@
     ]
   },
   {
+    "date": "01-22",
+    "celebrations": [
+      {
+        "title": "San Vincenzo, diacono e martire",
+        "rank": "memoria_facoltativa",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "01-24",
+    "celebrations": [
+      {
+        "title": "San Francesco di Sales, vescovo e dottore della Chiesa",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
     "date": "01-25",
     "celebrations": [
       {
-        "title": "Conversione di San Paolo apostolo",
+        "title": "Conversione di San Paolo, apostolo",
         "rank": "festa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "01-26",
+    "celebrations": [
+      {
+        "title": "Santi Timoteo e Tito, vescovi",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "01-27",
+    "celebrations": [
+      {
+        "title": "Sant'Angela Merici, vergine",
+        "rank": "memoria_facoltativa",
         "color": "bianco"
       }
     ]
@@ -63,7 +143,7 @@
     "date": "01-28",
     "celebrations": [
       {
-        "title": "San Tommaso d'Aquino, sacerdote e dottore della Chiesa",
+        "title": "San Tommaso d'Aquino, presbitero e dottore della Chiesa",
         "rank": "memoria_obbligatoria",
         "color": "bianco"
       }
@@ -73,7 +153,7 @@
     "date": "01-31",
     "celebrations": [
       {
-        "title": "San Giovanni Bosco, sacerdote",
+        "title": "San Giovanni Bosco, presbitero",
         "rank": "memoria_obbligatoria",
         "color": "bianco"
       }
@@ -90,12 +170,52 @@
     ]
   },
   {
+    "date": "02-03",
+    "celebrations": [
+      {
+        "title": "San Biagio, vescovo e martire",
+        "rank": "memoria_facoltativa",
+        "color": "rosso"
+      },
+      {
+        "title": "Sant'Oscar, vescovo",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
     "date": "02-05",
     "celebrations": [
       {
         "title": "Sant'Agata, vergine e martire",
         "rank": "memoria_obbligatoria",
         "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "02-06",
+    "celebrations": [
+      {
+        "title": "Santi Paolo Miki e compagni, martiri",
+        "rank": "memoria_obbligatoria",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "02-08",
+    "celebrations": [
+      {
+        "title": "San Girolamo Emiliani",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      },
+      {
+        "title": "Santa Giuseppina Bakhita, vergine",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
       }
     ]
   },
@@ -123,8 +243,28 @@
     "date": "02-14",
     "celebrations": [
       {
-        "title": "Santi Cirillo e Metodio, patroni d'Europa",
+        "title": "Santi Cirillo, monaco, e Metodio, vescovo, patroni d'Europa",
         "rank": "festa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "02-17",
+    "celebrations": [
+      {
+        "title": "Santi Sette Fondatori dell'Ordine dei Servi della Beata Vergine Maria",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "02-21",
+    "celebrations": [
+      {
+        "title": "San Pier Damiani, vescovo e dottore della Chiesa",
+        "rank": "memoria_facoltativa",
         "color": "bianco"
       }
     ]
@@ -133,8 +273,88 @@
     "date": "02-22",
     "celebrations": [
       {
-        "title": "Cattedra di San Pietro apostolo",
+        "title": "Cattedra di San Pietro, apostolo",
         "rank": "festa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "02-23",
+    "celebrations": [
+      {
+        "title": "San Policarpo, vescovo e martire",
+        "rank": "memoria_obbligatoria",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "02-27",
+    "celebrations": [
+      {
+        "title": "San Gabriele dell'Addolorata, religioso",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "03-04",
+    "celebrations": [
+      {
+        "title": "San Casimiro",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "03-07",
+    "celebrations": [
+      {
+        "title": "Sante Perpetua e Felicita, martiri",
+        "rank": "memoria_obbligatoria",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "03-08",
+    "celebrations": [
+      {
+        "title": "San Giovanni di Dio, religioso",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "03-09",
+    "celebrations": [
+      {
+        "title": "Santa Francesca Romana, religiosa",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "03-17",
+    "celebrations": [
+      {
+        "title": "San Patrizio, vescovo",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "03-18",
+    "celebrations": [
+      {
+        "title": "San Cirillo di Gerusalemme, vescovo e dottore della Chiesa",
+        "rank": "memoria_facoltativa",
         "color": "bianco"
       }
     ]
@@ -150,12 +370,117 @@
     ]
   },
   {
+    "date": "03-23",
+    "celebrations": [
+      {
+        "title": "San Turibio de Mogrovejo, vescovo",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
     "date": "03-25",
     "celebrations": [
       {
         "title": "Annunciazione del Signore",
         "rank": "solennita",
         "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "04-02",
+    "celebrations": [
+      {
+        "title": "San Francesco di Paola, eremita",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "04-04",
+    "celebrations": [
+      {
+        "title": "Sant'Isidoro, vescovo e dottore della Chiesa",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "04-05",
+    "celebrations": [
+      {
+        "title": "San Vincenzo Ferrer, presbitero",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "04-07",
+    "celebrations": [
+      {
+        "title": "San Giovanni Battista de la Salle, presbitero",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "04-11",
+    "celebrations": [
+      {
+        "title": "Sant'Stanislao, vescovo e martire",
+        "rank": "memoria_obbligatoria",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "04-13",
+    "celebrations": [
+      {
+        "title": "San Martino I, papa e martire",
+        "rank": "memoria_facoltativa",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "04-21",
+    "celebrations": [
+      {
+        "title": "Sant'Anselmo, vescovo e dottore della Chiesa",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "04-23",
+    "celebrations": [
+      {
+        "title": "San Giorgio, martire",
+        "rank": "memoria_facoltativa",
+        "color": "rosso"
+      },
+      {
+        "title": "Sant'Adalberto, vescovo e martire",
+        "rank": "memoria_facoltativa",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "04-24",
+    "celebrations": [
+      {
+        "title": "San Fedele da Sigmaringen, presbitero e martire",
+        "rank": "memoria_facoltativa",
+        "color": "rosso"
       }
     ]
   },
@@ -170,11 +495,36 @@
     ]
   },
   {
+    "date": "04-28",
+    "celebrations": [
+      {
+        "title": "San Pietro Chanel, presbitero e martire",
+        "rank": "memoria_facoltativa",
+        "color": "rosso"
+      },
+      {
+        "title": "San Luigi Maria Grignion da Montfort, presbitero",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
     "date": "04-29",
     "celebrations": [
       {
-        "title": "Santa Caterina da Siena, patrona d'Italia e d'Europa",
+        "title": "Santa Caterina da Siena, vergine e dottore della Chiesa, patrona d'Italia e d'Europa",
         "rank": "festa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "04-30",
+    "celebrations": [
+      {
+        "title": "San Pio V, papa",
+        "rank": "memoria_facoltativa",
         "color": "bianco"
       }
     ]
@@ -190,11 +540,36 @@
     ]
   },
   {
+    "date": "05-02",
+    "celebrations": [
+      {
+        "title": "Sant'Atanasio, vescovo e dottore della Chiesa",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
     "date": "05-03",
     "celebrations": [
       {
         "title": "Santi Filippo e Giacomo, apostoli",
         "rank": "festa",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "05-12",
+    "celebrations": [
+      {
+        "title": "Santi Nereo e Achilleo, martiri",
+        "rank": "memoria_facoltativa",
+        "color": "rosso"
+      },
+      {
+        "title": "San Pancrazio, martire",
+        "rank": "memoria_facoltativa",
         "color": "rosso"
       }
     ]
@@ -220,6 +595,86 @@
     ]
   },
   {
+    "date": "05-18",
+    "celebrations": [
+      {
+        "title": "San Giovanni I, papa e martire",
+        "rank": "memoria_facoltativa",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "05-20",
+    "celebrations": [
+      {
+        "title": "San Bernardino da Siena, presbitero",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "05-21",
+    "celebrations": [
+      {
+        "title": "San Cristoforo Magallanes e compagni, martiri",
+        "rank": "memoria_facoltativa",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "05-22",
+    "celebrations": [
+      {
+        "title": "Santa Rita da Cascia, religiosa",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "05-25",
+    "celebrations": [
+      {
+        "title": "San Beda Venerabile, presbitero e dottore della Chiesa",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      },
+      {
+        "title": "San Gregorio VII, papa",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      },
+      {
+        "title": "Santa Maria Maddalena de' Pazzi, vergine",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "05-26",
+    "celebrations": [
+      {
+        "title": "San Filippo Neri, presbitero",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "05-27",
+    "celebrations": [
+      {
+        "title": "Sant'Agostino di Canterbury, vescovo",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
     "date": "05-31",
     "celebrations": [
       {
@@ -230,11 +685,91 @@
     ]
   },
   {
+    "date": "06-01",
+    "celebrations": [
+      {
+        "title": "San Giustino, martire",
+        "rank": "memoria_obbligatoria",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "06-02",
+    "celebrations": [
+      {
+        "title": "Santi Marcellino e Pietro, martiri",
+        "rank": "memoria_facoltativa",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "06-03",
+    "celebrations": [
+      {
+        "title": "Santi Carlo Lwanga e compagni, martiri",
+        "rank": "memoria_obbligatoria",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "06-05",
+    "celebrations": [
+      {
+        "title": "San Bonifacio, vescovo e martire",
+        "rank": "memoria_obbligatoria",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "06-06",
+    "celebrations": [
+      {
+        "title": "San Norberto, vescovo",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "06-09",
+    "celebrations": [
+      {
+        "title": "Sant'Efrem, diacono e dottore della Chiesa",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "06-11",
+    "celebrations": [
+      {
+        "title": "San Barnaba, apostolo",
+        "rank": "memoria_obbligatoria",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
     "date": "06-13",
     "celebrations": [
       {
-        "title": "Sant'Antonio di Padova, sacerdote e dottore della Chiesa",
+        "title": "Sant'Antonio di Padova, presbitero e dottore della Chiesa",
         "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "06-19",
+    "celebrations": [
+      {
+        "title": "San Romualdo, abate",
+        "rank": "memoria_facoltativa",
         "color": "bianco"
       }
     ]
@@ -250,6 +785,21 @@
     ]
   },
   {
+    "date": "06-22",
+    "celebrations": [
+      {
+        "title": "San Paolino di Nola, vescovo",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      },
+      {
+        "title": "Santi Giovanni Fisher, vescovo, e Tommaso More, martiri",
+        "rank": "memoria_facoltativa",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
     "date": "06-24",
     "celebrations": [
       {
@@ -260,11 +810,41 @@
     ]
   },
   {
+    "date": "06-27",
+    "celebrations": [
+      {
+        "title": "San Cirillo d'Alessandria, vescovo e dottore della Chiesa",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "06-28",
+    "celebrations": [
+      {
+        "title": "Sant'Ireneo, vescovo, martire e dottore della Chiesa",
+        "rank": "memoria_obbligatoria",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
     "date": "06-29",
     "celebrations": [
       {
         "title": "Santi Pietro e Paolo, apostoli",
         "rank": "solennita",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "06-30",
+    "celebrations": [
+      {
+        "title": "Santi Primi Martiri della Chiesa di Roma",
+        "rank": "memoria_facoltativa",
         "color": "rosso"
       }
     ]
@@ -280,11 +860,111 @@
     ]
   },
   {
+    "date": "07-04",
+    "celebrations": [
+      {
+        "title": "Santa Elisabetta di Portogallo",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "07-05",
+    "celebrations": [
+      {
+        "title": "Sant'Antonio Maria Zaccaria, presbitero",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "07-06",
+    "celebrations": [
+      {
+        "title": "Santa Maria Goretti, vergine e martire",
+        "rank": "memoria_facoltativa",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "07-09",
+    "celebrations": [
+      {
+        "title": "Sant'Agostino Zhao Rong, presbitero, e compagni, martiri",
+        "rank": "memoria_facoltativa",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
     "date": "07-11",
     "celebrations": [
       {
         "title": "San Benedetto, abate, patrono d'Europa",
         "rank": "festa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "07-13",
+    "celebrations": [
+      {
+        "title": "Sant'Enrico",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "07-14",
+    "celebrations": [
+      {
+        "title": "San Camillo de Lellis, presbitero",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "07-15",
+    "celebrations": [
+      {
+        "title": "San Bonaventura, vescovo e dottore della Chiesa",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "07-16",
+    "celebrations": [
+      {
+        "title": "Beata Vergine Maria del Monte Carmelo",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "07-20",
+    "celebrations": [
+      {
+        "title": "Sant'Apollinare, vescovo e martire",
+        "rank": "memoria_facoltativa",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "07-21",
+    "celebrations": [
+      {
+        "title": "San Lorenzo da Brindisi, presbitero e dottore della Chiesa",
+        "rank": "memoria_facoltativa",
         "color": "bianco"
       }
     ]
@@ -303,8 +983,18 @@
     "date": "07-23",
     "celebrations": [
       {
-        "title": "Santa Brigida, patrona d'Europa",
+        "title": "Santa Brigida, religiosa, patrona d'Europa",
         "rank": "festa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "07-24",
+    "celebrations": [
+      {
+        "title": "San Charbel Makhlouf, presbitero",
+        "rank": "memoria_facoltativa",
         "color": "bianco"
       }
     ]
@@ -340,6 +1030,71 @@
     ]
   },
   {
+    "date": "07-30",
+    "celebrations": [
+      {
+        "title": "San Pietro Crisologo, vescovo e dottore della Chiesa",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "07-31",
+    "celebrations": [
+      {
+        "title": "Sant'Ignazio di Loyola, presbitero",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "08-01",
+    "celebrations": [
+      {
+        "title": "Sant'Alfonso Maria de' Liguori, vescovo e dottore della Chiesa",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "08-02",
+    "celebrations": [
+      {
+        "title": "Sant'Eusebio di Vercelli, vescovo",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      },
+      {
+        "title": "San Pier Giuliano Eymard, presbitero",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "08-04",
+    "celebrations": [
+      {
+        "title": "San Giovanni Maria Vianney, presbitero",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "08-05",
+    "celebrations": [
+      {
+        "title": "Dedicazione della Basilica di Santa Maria Maggiore",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
     "date": "08-06",
     "celebrations": [
       {
@@ -350,12 +1105,37 @@
     ]
   },
   {
+    "date": "08-07",
+    "celebrations": [
+      {
+        "title": "Santi Sisto II, papa, e compagni, martiri",
+        "rank": "memoria_facoltativa",
+        "color": "rosso"
+      },
+      {
+        "title": "San Gaetano, presbitero",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
     "date": "08-08",
     "celebrations": [
       {
-        "title": "San Domenico, sacerdote",
+        "title": "San Domenico, presbitero",
         "rank": "memoria_obbligatoria",
         "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "08-09",
+    "celebrations": [
+      {
+        "title": "Santa Teresa Benedetta della Croce, vergine e martire, patrona d'Europa",
+        "rank": "festa",
+        "color": "rosso"
       }
     ]
   },
@@ -380,10 +1160,30 @@
     ]
   },
   {
+    "date": "08-12",
+    "celebrations": [
+      {
+        "title": "Santa Giovanna Francesca de Chantal, religiosa",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "08-13",
+    "celebrations": [
+      {
+        "title": "Santi Ponziano, papa, e Ippolito, presbitero, martiri",
+        "rank": "memoria_facoltativa",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
     "date": "08-14",
     "celebrations": [
       {
-        "title": "San Massimiliano Maria Kolbe, sacerdote e martire",
+        "title": "San Massimiliano Maria Kolbe, presbitero e martire",
         "rank": "memoria_obbligatoria",
         "color": "rosso"
       }
@@ -400,12 +1200,87 @@
     ]
   },
   {
+    "date": "08-16",
+    "celebrations": [
+      {
+        "title": "Santo Stefano d'Ungheria",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "08-19",
+    "celebrations": [
+      {
+        "title": "San Giovanni Eudes, presbitero",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "08-20",
+    "celebrations": [
+      {
+        "title": "San Bernardo, abate e dottore della Chiesa",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "08-21",
+    "celebrations": [
+      {
+        "title": "San Pio X, papa",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "08-22",
+    "celebrations": [
+      {
+        "title": "Beata Vergine Maria Regina",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "08-23",
+    "celebrations": [
+      {
+        "title": "Santa Rosa da Lima, vergine",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
     "date": "08-24",
     "celebrations": [
       {
         "title": "San Bartolomeo, apostolo",
         "rank": "festa",
         "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "08-25",
+    "celebrations": [
+      {
+        "title": "San Luigi IX, re di Francia",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      },
+      {
+        "title": "San Giuseppe Calasanzio, presbitero",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
       }
     ]
   },
@@ -440,11 +1315,51 @@
     ]
   },
   {
+    "date": "09-03",
+    "celebrations": [
+      {
+        "title": "San Gregorio Magno, papa e dottore della Chiesa",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
     "date": "09-08",
     "celebrations": [
       {
         "title": "Natività della Beata Vergine Maria",
         "rank": "festa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "09-09",
+    "celebrations": [
+      {
+        "title": "San Pietro Claver, presbitero",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "09-12",
+    "celebrations": [
+      {
+        "title": "Santissimo Nome di Maria",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "09-13",
+    "celebrations": [
+      {
+        "title": "San Giovanni Crisostomo, vescovo e dottore della Chiesa",
+        "rank": "memoria_obbligatoria",
         "color": "bianco"
       }
     ]
@@ -470,6 +1385,51 @@
     ]
   },
   {
+    "date": "09-16",
+    "celebrations": [
+      {
+        "title": "Santi Cornelio, papa, e Cipriano, vescovo, martiri",
+        "rank": "memoria_obbligatoria",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "09-17",
+    "celebrations": [
+      {
+        "title": "San Roberto Bellarmino, vescovo e dottore della Chiesa",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      },
+      {
+        "title": "Santa Ildegarda di Bingen, vergine e dottore della Chiesa",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "09-19",
+    "celebrations": [
+      {
+        "title": "San Gennaro, vescovo e martire",
+        "rank": "memoria_facoltativa",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "09-20",
+    "celebrations": [
+      {
+        "title": "Santi Andrea Kim Taegon, presbitero, Paolo Chong Hasang e compagni, martiri",
+        "rank": "memoria_obbligatoria",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
     "date": "09-21",
     "celebrations": [
       {
@@ -483,9 +1443,44 @@
     "date": "09-23",
     "celebrations": [
       {
-        "title": "San Pio da Pietrelcina, sacerdote",
+        "title": "San Pio da Pietrelcina, presbitero",
         "rank": "memoria_obbligatoria",
         "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "09-26",
+    "celebrations": [
+      {
+        "title": "Santi Cosma e Damiano, martiri",
+        "rank": "memoria_facoltativa",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "09-27",
+    "celebrations": [
+      {
+        "title": "San Vincenzo de' Paoli, presbitero",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "09-28",
+    "celebrations": [
+      {
+        "title": "San Venceslao, martire",
+        "rank": "memoria_facoltativa",
+        "color": "rosso"
+      },
+      {
+        "title": "Santi Lorenzo Ruiz e compagni, martiri",
+        "rank": "memoria_facoltativa",
+        "color": "rosso"
       }
     ]
   },
@@ -493,8 +1488,28 @@
     "date": "09-29",
     "celebrations": [
       {
-        "title": "Santi Arcangeli Michele, Gabriele e Raffaele",
+        "title": "Santi Michele, Gabriele e Raffaele, arcangeli",
         "rank": "festa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "09-30",
+    "celebrations": [
+      {
+        "title": "San Girolamo, presbitero e dottore della Chiesa",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "10-01",
+    "celebrations": [
+      {
+        "title": "Santa Teresa di Gesù Bambino, vergine e dottore della Chiesa",
+        "rank": "memoria_obbligatoria",
         "color": "bianco"
       }
     ]
@@ -520,6 +1535,26 @@
     ]
   },
   {
+    "date": "10-05",
+    "celebrations": [
+      {
+        "title": "Santa Faustina Kowalska, vergine",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "10-06",
+    "celebrations": [
+      {
+        "title": "San Bruno, presbitero",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
     "date": "10-07",
     "celebrations": [
       {
@@ -530,12 +1565,72 @@
     ]
   },
   {
+    "date": "10-09",
+    "celebrations": [
+      {
+        "title": "San Dionigi, vescovo, e compagni, martiri",
+        "rank": "memoria_facoltativa",
+        "color": "rosso"
+      },
+      {
+        "title": "San Giovanni Leonardi, presbitero",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "10-11",
+    "celebrations": [
+      {
+        "title": "San Giovanni XXIII, papa",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "10-14",
+    "celebrations": [
+      {
+        "title": "San Callisto I, papa e martire",
+        "rank": "memoria_facoltativa",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
     "date": "10-15",
     "celebrations": [
       {
-        "title": "Santa Teresa di Gesù, vergine e dottore della Chiesa",
+        "title": "Santa Teresa di Gesù (di Avila), vergine e dottore della Chiesa",
         "rank": "memoria_obbligatoria",
         "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "10-16",
+    "celebrations": [
+      {
+        "title": "Santa Edvige, religiosa",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      },
+      {
+        "title": "Santa Margherita Maria Alacoque, vergine",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "10-17",
+    "celebrations": [
+      {
+        "title": "Sant'Ignazio di Antiochia, vescovo e martire",
+        "rank": "memoria_obbligatoria",
+        "color": "rosso"
       }
     ]
   },
@@ -546,6 +1641,51 @@
         "title": "San Luca, evangelista",
         "rank": "festa",
         "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "10-19",
+    "celebrations": [
+      {
+        "title": "Santi Giovanni de Brébeuf e Isacco Jogues, presbiteri, e compagni, martiri",
+        "rank": "memoria_facoltativa",
+        "color": "rosso"
+      },
+      {
+        "title": "San Paolo della Croce, presbitero",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "10-22",
+    "celebrations": [
+      {
+        "title": "San Giovanni Paolo II, papa",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "10-23",
+    "celebrations": [
+      {
+        "title": "San Giovanni da Capestrano, presbitero",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "10-24",
+    "celebrations": [
+      {
+        "title": "Sant'Antonio Maria Claret, vescovo",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
       }
     ]
   },
@@ -574,8 +1714,28 @@
     "celebrations": [
       {
         "title": "Commemorazione di tutti i fedeli defunti",
-        "rank": "solennita",
-        "color": "viola"
+        "rank": "memoria_obbligatoria",
+        "color": "verde"
+      }
+    ]
+  },
+  {
+    "date": "11-03",
+    "celebrations": [
+      {
+        "title": "San Martino de Porres, religioso",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "11-04",
+    "celebrations": [
+      {
+        "title": "San Carlo Borromeo, vescovo",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
       }
     ]
   },
@@ -590,11 +1750,76 @@
     ]
   },
   {
+    "date": "11-10",
+    "celebrations": [
+      {
+        "title": "San Leone Magno, papa e dottore della Chiesa",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
     "date": "11-11",
     "celebrations": [
       {
         "title": "San Martino di Tours, vescovo",
         "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "11-12",
+    "celebrations": [
+      {
+        "title": "San Giosafat, vescovo e martire",
+        "rank": "memoria_obbligatoria",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "11-15",
+    "celebrations": [
+      {
+        "title": "Sant'Alberto Magno, vescovo e dottore della Chiesa",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "11-16",
+    "celebrations": [
+      {
+        "title": "Santa Margherita di Scozia",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      },
+      {
+        "title": "Santa Gertrude, vergine",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "11-17",
+    "celebrations": [
+      {
+        "title": "Sant'Elisabetta di Ungheria, religiosa",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "11-18",
+    "celebrations": [
+      {
+        "title": "Dedicazione delle Basiliche di San Pietro e di San Paolo, apostoli",
+        "rank": "memoria_facoltativa",
         "color": "bianco"
       }
     ]
@@ -620,6 +1845,41 @@
     ]
   },
   {
+    "date": "11-23",
+    "celebrations": [
+      {
+        "title": "San Clemente I, papa e martire",
+        "rank": "memoria_facoltativa",
+        "color": "rosso"
+      },
+      {
+        "title": "San Colombano, abate",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "11-24",
+    "celebrations": [
+      {
+        "title": "Santi Andrea Dung-Lac, presbitero, e compagni, martiri",
+        "rank": "memoria_obbligatoria",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "11-25",
+    "celebrations": [
+      {
+        "title": "Santa Caterina di Alessandria, vergine e martire",
+        "rank": "memoria_facoltativa",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
     "date": "11-30",
     "celebrations": [
       {
@@ -633,8 +1893,28 @@
     "date": "12-03",
     "celebrations": [
       {
-        "title": "San Francesco Saverio, sacerdote",
+        "title": "San Francesco Saverio, presbitero",
         "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "12-04",
+    "celebrations": [
+      {
+        "title": "San Giovanni Damasceno, presbitero e dottore della Chiesa",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "12-06",
+    "celebrations": [
+      {
+        "title": "San Nicola, vescovo",
+        "rank": "memoria_facoltativa",
         "color": "bianco"
       }
     ]
@@ -660,6 +1940,36 @@
     ]
   },
   {
+    "date": "12-09",
+    "celebrations": [
+      {
+        "title": "San Juan Diego Cuauhtlatoatzin",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "12-10",
+    "celebrations": [
+      {
+        "title": "Beata Vergine Maria di Loreto",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "12-11",
+    "celebrations": [
+      {
+        "title": "San Damaso I, papa",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
     "date": "12-12",
     "celebrations": [
       {
@@ -680,10 +1990,40 @@
     ]
   },
   {
+    "date": "12-14",
+    "celebrations": [
+      {
+        "title": "San Giovanni della Croce, presbitero e dottore della Chiesa",
+        "rank": "memoria_obbligatoria",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "12-21",
+    "celebrations": [
+      {
+        "title": "San Pietro Canisio, presbitero e dottore della Chiesa",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
+    "date": "12-23",
+    "celebrations": [
+      {
+        "title": "San Giovanni da Kety, presbitero",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
+      }
+    ]
+  },
+  {
     "date": "12-25",
     "celebrations": [
       {
-        "title": "Natività del Signore",
+        "title": "Natale del Signore",
         "rank": "solennita",
         "color": "bianco"
       }
@@ -716,6 +2056,26 @@
         "title": "Santi Innocenti, martiri",
         "rank": "festa",
         "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "12-29",
+    "celebrations": [
+      {
+        "title": "San Tommaso Becket, vescovo e martire",
+        "rank": "memoria_facoltativa",
+        "color": "rosso"
+      }
+    ]
+  },
+  {
+    "date": "12-31",
+    "celebrations": [
+      {
+        "title": "San Silvestro I, papa",
+        "rank": "memoria_facoltativa",
+        "color": "bianco"
       }
     ]
   }
