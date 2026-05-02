@@ -197,13 +197,16 @@ function buildUrl(d: Date): string {
 // Su web (browser/preview Expo) il fetch cross-origin è bloccato dal CORS.
 // Su React Native (APK Android) non c'è CORS e il fetch è diretto.
 // Usiamo un proxy CORS pubblico solo quando siamo in ambiente browser.
-function fetchUrl(url: string): string {
+// Lista di proxy gratuiti tentati in ordine, fallback automatico.
+const CORS_PROXIES: Array<(u: string) => string> = [
+  (u) => `https://api.codetabs.com/v1/proxy?quest=${u}`,
+  (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+  (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+];
+
+function isWebEnvironment(): boolean {
   // @ts-ignore - "document" esiste solo nei browser
-  const isWeb = typeof document !== "undefined";
-  if (isWeb) {
-    return `https://corsproxy.io/?${encodeURIComponent(url)}`;
-  }
-  return url;
+  return typeof document !== "undefined";
 }
 
 export async function scrapeLiturgy(targetDate: Date): Promise<{
@@ -227,23 +230,41 @@ export async function scrapeLiturgy(targetDate: Date): Promise<{
     source_url: url,
   };
 
-  let html: string;
-  try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 25000);
-    const res = await fetch(fetchUrl(url), {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
-        "Accept-Language": "it-IT,it;q=0.9",
-        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-      },
-      signal: controller.signal,
-    });
-    clearTimeout(timer);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    html = await res.text();
-  } catch (e: any) {
-    return { ...result, error: `Impossibile connettersi a chiesacattolica.it: ${e?.message || e}` };
+  let html: string | null = null;
+  let lastErr: any = null;
+  // Sull'APK Android: fetch diretto. Sul web: tenta proxy CORS in cascata.
+  const candidates: string[] = isWebEnvironment()
+    ? CORS_PROXIES.map((p) => p(url))
+    : [url];
+  for (const candidate of candidates) {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 25000);
+      const res = await fetch(candidate, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+          "Accept-Language": "it-IT,it;q=0.9",
+          Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        },
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const txt = await res.text();
+      // Verifica che la risposta contenga effettivamente HTML del sito CEI
+      // (alcuni proxy gratuiti restituiscono JSON di errore con status 200)
+      if (txt.length < 500 || /\"error\":/i.test(txt.substring(0, 200))) {
+        throw new Error("Risposta proxy non valida");
+      }
+      html = txt;
+      break;
+    } catch (e: any) {
+      lastErr = e;
+      continue;
+    }
+  }
+  if (!html) {
+    return { ...result, error: `Impossibile connettersi a chiesacattolica.it: ${lastErr?.message || lastErr}` };
   }
 
   // Titolo
