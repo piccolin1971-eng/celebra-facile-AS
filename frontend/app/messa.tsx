@@ -723,66 +723,18 @@ export default function MessaScreen() {
     return opts;
   };
 
-  const renderConclusioneBenedizione = () => {
+  // Sotto-blocco riutilizzabile: Toggle "Usa benedizione solenne" + scelta semplice/solenne
+  // Viene mostrato:
+  //   - nella pagina "Benedizione" se l'orazione sul popolo NON è attiva
+  //   - nella pagina "Orazione sul popolo" se l'orazione sul popolo è attiva
+  //     (in entrambi i casi sotto al testo principale, prima del Congedo)
+  const renderBlessingChoiceBlock = () => {
     const rc = fixedParts["riti_conclusione"];
-    const dialogue = rc.sections[0];
     const benedChoice = rc.sections[1];
     const bened = benedChoice.options.find((o: any) => o.id === benedizioneId);
     const selectedSolemn = solemnBlessings.find(b => b.id === solemnBlessingId);
-    const selectedOrazPopolo = prayersOverPeople.find(p => p.id === orazionePopoloId);
-
     return (
-      <View testID="section-benedizione">
-        <R kind="title">Benedizione</R>
-        {renderSection(dialogue, 0)}
-
-        {/* Toggle Orazione sul popolo */}
-        {prayersOverPeople.length > 0 && (
-          <View style={[styles.block, styles.solemnToggle]} testID="orazione-popolo-toggle">
-            <View style={styles.toggleRow}>
-              <Text style={styles.toggleLabel}>Aggiungi orazione sul popolo</Text>
-              <Switch
-                value={useOrazionePopolo}
-                onValueChange={(v) => {
-                  setUseOrazionePopolo(v);
-                  // Auto-seleziona la 1a orazione se non c'è scelta
-                  if (v && !orazionePopoloId && prayersOverPeople.length > 0) {
-                    setOrazionePopoloId(prayersOverPeople[0].id);
-                  }
-                }}
-                trackColor={{ false: colors.border, true: colors.primary }}
-                thumbColor="#FFFFFF"
-                style={{ transform: [{ scaleX: 1.4 }, { scaleY: 1.4 }], marginLeft: 16 }}
-                testID="switch-orazione-popolo"
-              />
-            </View>
-            {useOrazionePopolo && (
-              <View style={{ marginTop: 14 }}>
-                <R kind="subtitle">Scegli orazione sul popolo (1-{prayersOverPeople.length})</R>
-                <View style={[styles.choiceRow, { flexWrap: "wrap" }]}>
-                  {prayersOverPeople.map(p => (
-                    <TouchableOpacity
-                      key={p.id}
-                      style={[styles.numChoiceBtn, orazionePopoloId === p.id && styles.choiceBtnActive]}
-                      onPress={() => setOrazionePopoloId(p.id)}
-                      testID={`btn-orazione-popolo-${p.id}`}
-                    >
-                      <Text style={[styles.numChoiceText, orazionePopoloId === p.id && { color: "#FFFFFF" }]}>
-                        {p.num}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-                {selectedOrazPopolo && (
-                  <Text style={styles.solemnHint}>
-                    Selezionata n. {selectedOrazPopolo.num}. Il testo apparirà nella prossima pagina.
-                  </Text>
-                )}
-              </View>
-            )}
-          </View>
-        )}
-
+      <>
         {/* Toggle Benedizione Solenne */}
         {solemnBlessings.length > 0 && (
           <View style={[styles.block, styles.solemnToggle]} testID="solemn-toggle">
@@ -848,6 +800,72 @@ export default function MessaScreen() {
             )}
           </View>
         )}
+      </>
+    );
+  };
+
+  const renderConclusioneBenedizione = () => {
+    const rc = fixedParts["riti_conclusione"];
+    const dialogue = rc.sections[0];
+    const selectedOrazPopolo = prayersOverPeople.find(p => p.id === orazionePopoloId);
+
+    return (
+      <View testID="section-benedizione">
+        <R kind="title">Benedizione</R>
+        {renderSection(dialogue, 0)}
+
+        {/* Toggle Orazione sul popolo */}
+        {prayersOverPeople.length > 0 && (
+          <View style={[styles.block, styles.solemnToggle]} testID="orazione-popolo-toggle">
+            <View style={styles.toggleRow}>
+              <Text style={styles.toggleLabel}>Aggiungi orazione sul popolo</Text>
+              <Switch
+                value={useOrazionePopolo}
+                onValueChange={(v) => {
+                  setUseOrazionePopolo(v);
+                  if (v && !orazionePopoloId && prayersOverPeople.length > 0) {
+                    setOrazionePopoloId(prayersOverPeople[0].id);
+                  }
+                }}
+                trackColor={{ false: colors.border, true: colors.primary }}
+                thumbColor="#FFFFFF"
+                style={{ transform: [{ scaleX: 1.4 }, { scaleY: 1.4 }], marginLeft: 16 }}
+                testID="switch-orazione-popolo"
+              />
+            </View>
+            {useOrazionePopolo && (
+              <View style={{ marginTop: 14 }}>
+                <R kind="subtitle">Scegli orazione sul popolo (1-{prayersOverPeople.length})</R>
+                <View style={[styles.choiceRow, { flexWrap: "wrap" }]}>
+                  {prayersOverPeople.map(p => (
+                    <TouchableOpacity
+                      key={p.id}
+                      style={[styles.numChoiceBtn, orazionePopoloId === p.id && styles.choiceBtnActive]}
+                      onPress={() => setOrazionePopoloId(p.id)}
+                      testID={`btn-orazione-popolo-${p.id}`}
+                    >
+                      <Text style={[styles.numChoiceText, orazionePopoloId === p.id && { color: "#FFFFFF" }]}>
+                        {p.num}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                {selectedOrazPopolo && (
+                  <Text style={styles.solemnHint}>
+                    Selezionata n. {selectedOrazPopolo.num}. Il testo apparirà nella prossima pagina,
+                    dove potrai anche scegliere la benedizione.
+                  </Text>
+                )}
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Quando l'orazione sul popolo NON è attiva, la scelta della benedizione
+            (semplice/solenne) appare qui, sotto al toggle. Quando è attiva, la
+            scelta viene spostata sulla pagina dedicata all'orazione, dopo il
+            testo, per rispettare la sequenza liturgica corretta. */}
+        {!useOrazionePopolo && renderBlessingChoiceBlock()}
       </View>
     );
   };
@@ -1475,6 +1493,9 @@ export default function MessaScreen() {
         });
 
         // PAGINA CONDIZIONALE: Orazione sul popolo (testo della formula scelta)
+        // Quando l'orazione sul popolo è attiva, in questa pagina mostriamo
+        // ANCHE la scelta della benedizione (semplice/solenne), spostata qui
+        // dalla pagina precedente per rispettare la sequenza liturgica.
         if (useOrazionePopolo && orazionePopoloId) {
           const sel = prayersOverPeople.find(p => p.id === orazionePopoloId);
           if (sel) {
@@ -1494,6 +1515,8 @@ export default function MessaScreen() {
                       <R kind="assemblea">A. Amen.</R>
                     </View>
                   </View>
+                  {/* Sotto al testo dell'orazione: scelta della benedizione */}
+                  {renderBlessingChoiceBlock()}
                 </View>
               ),
             });
