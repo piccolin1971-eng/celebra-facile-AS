@@ -77,87 +77,333 @@
             "label": "Formula C - Invocazioni (tropari)",
             "season_variants": {
               "ordinario": {
-                "label": "Tempo Ordinario",
-                "dialogue": [
+                "label": "Tempo Ordinario / ad libitum",
+                "formulas": [
                   {
-                    "c": "Signore, mandato dal Padre a salvare i contriti di cuore, abbi pietà di noi.",
-                    "a": "Signore, pietà."
+                    "id": "ord_intro",
+                    "label": "Formula introduttiva",
+                    "dialogue": [
+                      {
+                        "c": "Signore, mandato dal Padre a salvare i contriti di cuore, Kýrie, eléison.",
+                        "a": "Kýrie, eléison."
+                      },
+                      {
+                        "c": "Cristo, che sei venuto a chiamare i peccatori, Christe, eléison.",
+                        "a": "Christe, eléison."
+                      },
+                      {
+                        "c": "Signore, che siedi alla destra del Padre e intercedi per noi, Kýrie, eléison.",
+                        "a": "Kýrie, eléison."
+                      }
+                    ]
                   },
                   {
-                    "c": "Cristo, che sei venuto a chiamare i peccatori, abbi pietà di noi.",
-                    "a": "Cristo, pietà."
+                    "id": "ord_1",
+                    "label": "1. Via, Verità, Vita",
+                    "dialogue": [
+                      {
+                        "c": "Signore, via che riconduce al Padre, Kýrie, eléison.",
+                        "a": "Kýrie, eléison."
+                      },
+                      {
+                        "c": "Cristo, verità che illumina i popoli, Christe, eléison.",
+                        "a": "Christe, eléison."
+                      },
+                      {
+                        "c": "Signore, vita che rinnova il mondo, Kýrie, eléison.",
+                        "a": "Kýrie, eléison."
+                      }
+                    ]
                   },
                   {
-                    "c": "Signore, che siedi alla destra del Padre e intercedi per noi, abbi pietà di noi.",
-                    "a": "Signore, pietà."
+                    "id": "ord_2",
+                    "label": "2. Donna peccatrice, ladrone, Pietro",
+                    "dialogue": [
+                      {
+                        "c": "Signore, che alla donna peccatrice hai donato la tua misericordia, Kýrie, eléison.",
+                        "a": "Kýrie, eléison."
+                      },
+                      {
+                        "c": "Cristo, che al ladrone pentito hai promesso il paradiso, Christe, eléison.",
+                        "a": "Christe, eléison."
+                      },
+                      {
+                        "c": "Signore, che a Pietro hai offerto il tuo perdono, Kýrie, eléison.",
+                        "a": "Kýrie, eléison."
+                      }
+                    ]
+                  },
+                  {
+                    "id": "ord_3",
+                    "label": "3. Non a condannare ma a perdonare",
+                    "dialogue": [
+                      {
+                        "c": "Signore, che non sei venuto a condannare ma a perdonare, Kýrie, eléison.",
+                        "a": "Kýrie, eléison."
+                      },
+                      {
+                        "c": "Cristo, che fai festa per ogni peccatore pentito, Christe, eléison.",
+                        "a": "Christe, eléison."
+                      },
+                      {
+                        "c": "Signore, che perdoni molto a chi molto ama, Kýrie, eléison.",
+                        "a": "Kýrie, eléison."
+                      }
+                    ]
+                  },
+                  {
+                    "id": "ord_4",
+                    "label": "4. Cercare chi era perduto",
+                    "dialogue": [
+                      {
+                        "c": "Signore, che sei venuto a cercare chi era perduto, Kýrie, eléison.",
+                        "a": "Kýrie, eléison."
+                      },
+                      {
+                        "c": "Cristo, che hai dato la tua vita in riscatto per tutti, Christe, eléison.",
+                        "a": "Christe, eléison."
+                      },
+                      {
+                        "c": "Signore, che raccogli nell'unità i figli di Dio dispersi, Kýrie, eléison.",
+                        "a": "Kýrie, eléison."
+                      }
+                    ]
+                  },
+                  {
+                    "id": "ord_5",
+                    "label": "5. Pienezza di verità",
+                    "dialogue": [
+                      {
+                        "c": "Signore, pienezza di verità e di grazia, Kýrie, eléison.",
+                        "a": "Kýrie, eléison."
+                      },
+                      {
+                        "c": "Cristo, fatto povero per arricchirci, Christe, eléison.",
+                        "a": "Christe, eléison."
+                      },
+                      {
+                        "c": "Signore, venuto per radunare il tuo popolo santo, Kýrie, eléison.",
+                        "a": "Kýrie, eléison."
+                      }
+                    ]
                   }
                 ]
               },
               "avvento": {
-                "label": "Avvento",
-                "dialogue": [
+                "label": "Tempo di Avvento",
+                "formulas": [
                   {
-                    "c": "Signore, che vieni a visitare il tuo popolo nella pace, abbi pietà di noi.",
-                    "a": "Signore, pietà."
+                    "id": "avv_1",
+                    "label": "1. Sei venuto, vieni, verrai",
+                    "dialogue": [
+                      {
+                        "c": "Signore, che sei venuto nel mondo per salvarci, Kýrie, eléison.",
+                        "a": "Kýrie, eléison."
+                      },
+                      {
+                        "c": "Cristo, che vieni a visitarci con la grazia del tuo Spirito, Christe, eléison.",
+                        "a": "Christe, eléison."
+                      },
+                      {
+                        "c": "Signore, che verrai un giorno a giudicare le nostre opere, Kýrie, eléison.",
+                        "a": "Kýrie, eléison."
+                      }
+                    ]
                   },
                   {
-                    "c": "Cristo, che vieni a salvare ciò che era perduto, abbi pietà di noi.",
-                    "a": "Cristo, pietà."
+                    "id": "avv_2",
+                    "label": "2. Difensore dei poveri",
+                    "dialogue": [
+                      {
+                        "c": "Signore, difensore dei poveri, Kýrie, eléison.",
+                        "a": "Kýrie, eléison."
+                      },
+                      {
+                        "c": "Cristo, rifugio dei deboli, Christe, eléison.",
+                        "a": "Christe, eléison."
+                      },
+                      {
+                        "c": "Signore, speranza dei peccatori, Kýrie, eléison.",
+                        "a": "Kýrie, eléison."
+                      }
+                    ]
                   },
                   {
-                    "c": "Signore, che vieni nella gloria a giudicare il mondo, abbi pietà di noi.",
-                    "a": "Signore, pietà."
+                    "id": "avv_3",
+                    "label": "3. Vieni a visitare, salvare, creare",
+                    "dialogue": [
+                      {
+                        "c": "Signore, che vieni a visitare il tuo popolo nella pace, Kýrie, eléison.",
+                        "a": "Kýrie, eléison."
+                      },
+                      {
+                        "c": "Cristo, che vieni a salvare chi è perduto, Christe, eléison.",
+                        "a": "Christe, eléison."
+                      },
+                      {
+                        "c": "Signore, che vieni a creare un mondo nuovo, Kýrie, eléison.",
+                        "a": "Kýrie, eléison."
+                      }
+                    ]
                   }
                 ]
               },
               "natale": {
-                "label": "Natale",
-                "dialogue": [
+                "label": "Tempo di Natale",
+                "formulas": [
                   {
-                    "c": "Signore, Figlio dell'eterno Padre, nato dalla Vergine Maria, abbi pietà di noi.",
-                    "a": "Signore, pietà."
+                    "id": "nat_1",
+                    "label": "1. Figlio di Dio nato da Maria",
+                    "dialogue": [
+                      {
+                        "c": "Signore, Figlio di Dio, che nascendo da Maria Vergine ti sei fatto nostro fratello, Kýrie, eléison.",
+                        "a": "Kýrie, eléison."
+                      },
+                      {
+                        "c": "Cristo, Figlio dell'uomo, che conosci e comprendi la nostra debolezza, Christe, eléison.",
+                        "a": "Christe, eléison."
+                      },
+                      {
+                        "c": "Signore, Figlio primogenito del Padre, che fai di noi una sola famiglia, Kýrie, eléison.",
+                        "a": "Kýrie, eléison."
+                      }
+                    ]
                   },
                   {
-                    "c": "Cristo, Verbo fatto carne in mezzo a noi, abbi pietà di noi.",
-                    "a": "Cristo, pietà."
-                  },
-                  {
-                    "c": "Signore, principe della pace, luce che illumina ogni uomo, abbi pietà di noi.",
-                    "a": "Signore, pietà."
+                    "id": "nat_2",
+                    "label": "2. Re della pace, luce, immagine",
+                    "dialogue": [
+                      {
+                        "c": "Signore, re della pace, Kýrie, eléison.",
+                        "a": "Kýrie, eléison."
+                      },
+                      {
+                        "c": "Cristo, luce nelle tenebre, Christe, eléison.",
+                        "a": "Christe, eléison."
+                      },
+                      {
+                        "c": "Signore, immagine dell'uomo nuovo, Kýrie, eléison.",
+                        "a": "Kýrie, eléison."
+                      }
+                    ]
                   }
                 ]
               },
               "quaresima": {
-                "label": "Quaresima",
-                "dialogue": [
+                "label": "Tempo di Quaresima",
+                "formulas": [
                   {
-                    "c": "Signore, che sei stato mandato a sanare i contriti di cuore, abbi pietà di noi.",
-                    "a": "Signore, pietà."
+                    "id": "quar_1",
+                    "label": "1. Perdono, croce, Spirito",
+                    "dialogue": [
+                      {
+                        "c": "Signore, che ci inviti al perdono fraterno prima di presentarci al tuo altare, Kýrie, eléison.",
+                        "a": "Kýrie, eléison."
+                      },
+                      {
+                        "c": "Cristo, che sulla croce hai invocato il perdono per i peccatori, Christe, eléison.",
+                        "a": "Christe, eléison."
+                      },
+                      {
+                        "c": "Signore, che hai effuso lo Spirito per la remissione dei peccati, Kýrie, eléison.",
+                        "a": "Kýrie, eléison."
+                      }
+                    ]
                   },
                   {
-                    "c": "Cristo, che sei venuto a chiamare i peccatori, abbi pietà di noi.",
-                    "a": "Cristo, pietà."
+                    "id": "quar_2",
+                    "label": "2. Acqua e Spirito",
+                    "dialogue": [
+                      {
+                        "c": "Signore, che nell'acqua e nello Spirito ci hai rigenerato a tua immagine, Kýrie, eléison.",
+                        "a": "Kýrie, eléison."
+                      },
+                      {
+                        "c": "Cristo, che nel tuo Spirito crei in noi un cuore nuovo, Christe, eléison.",
+                        "a": "Christe, eléison."
+                      },
+                      {
+                        "c": "Signore, che nello Spirito Santo ci raduni in un solo corpo, Kýrie, eléison.",
+                        "a": "Kýrie, eléison."
+                      }
+                    ]
                   },
                   {
-                    "c": "Signore, che rimetti le colpe e sani le ferite del peccato, abbi pietà di noi.",
-                    "a": "Signore, pietà."
+                    "id": "quar_3",
+                    "label": "3. Dalla morte alla vita",
+                    "dialogue": [
+                      {
+                        "c": "Signore, che fai passare dalla morte alla vita chi ascolta la tua parola, Kýrie, eléison.",
+                        "a": "Kýrie, eléison."
+                      },
+                      {
+                        "c": "Cristo, che hai voluto essere innalzato da terra per attirarci a te, Christe, eléison.",
+                        "a": "Christe, eléison."
+                      },
+                      {
+                        "c": "Signore, che ci sottoponi al giudizio della tua croce, Kýrie, eléison.",
+                        "a": "Kýrie, eléison."
+                      }
+                    ]
                   }
                 ]
               },
               "pasqua": {
                 "label": "Tempo di Pasqua",
-                "dialogue": [
+                "formulas": [
                   {
-                    "c": "Signore, morto e risorto per noi, abbi pietà di noi.",
-                    "a": "Signore, pietà."
+                    "id": "pas_1",
+                    "label": "1. Pace, Pasqua, Vita",
+                    "dialogue": [
+                      {
+                        "c": "Signore, nostra pace, Kýrie, eléison.",
+                        "a": "Kýrie, eléison."
+                      },
+                      {
+                        "c": "Cristo, nostra Pasqua, Christe, eléison.",
+                        "a": "Christe, eléison."
+                      },
+                      {
+                        "c": "Signore, nostra vita, Kýrie, eléison.",
+                        "a": "Kýrie, eléison."
+                      }
+                    ]
                   },
                   {
-                    "c": "Cristo, vivente alla destra del Padre dove intercedi per noi, abbi pietà di noi.",
-                    "a": "Cristo, pietà."
+                    "id": "pas_2",
+                    "label": "2. Sacerdote, pietre vive, concittadini",
+                    "dialogue": [
+                      {
+                        "c": "Signore, che sei l'eterno sacerdote della nuova alleanza, Kýrie, eléison.",
+                        "a": "Kýrie, eléison."
+                      },
+                      {
+                        "c": "Cristo, che ci edifichi come pietre vive in tempio santo di Dio, Christe, eléison.",
+                        "a": "Christe, eléison."
+                      },
+                      {
+                        "c": "Signore, che ci fai concittadini dei santi nel regno dei cieli, Kýrie, eléison.",
+                        "a": "Kýrie, eléison."
+                      }
+                    ]
                   },
                   {
-                    "c": "Signore, che ci doni lo Spirito consolatore, abbi pietà di noi.",
-                    "a": "Signore, pietà."
+                    "id": "pas_3",
+                    "label": "3. Asceso alla destra del Padre",
+                    "dialogue": [
+                      {
+                        "c": "Signore, che asceso alla destra del Padre ci fai dono del tuo Spirito, Kýrie, eléison.",
+                        "a": "Kýrie, eléison."
+                      },
+                      {
+                        "c": "Cristo, che sostieni ogni cosa con la potenza della tua parola, Christe, eléison.",
+                        "a": "Christe, eléison."
+                      },
+                      {
+                        "c": "Signore, che hai vinto la morte e regni nei secoli, Kýrie, eléison.",
+                        "a": "Kýrie, eléison."
+                      }
+                    ]
                   }
                 ]
               }
@@ -288,24 +534,24 @@
         "label": "Monizione d'introduzione al Padre Nostro",
         "options": [
           {
-            "id": "A",
-            "label": "Forma A - Obbedienti alla parola",
+            "id": "I",
+            "label": "I",
             "text": "Obbedienti alla parola del Salvatore e formati al suo divino insegnamento, osiamo dire:"
           },
           {
-            "id": "B",
-            "label": "Forma B - Guidati dallo Spirito",
+            "id": "II",
+            "label": "II",
+            "text": "Il Signore ci ha donato il suo Spirito. Con la fiducia e la libertà dei figli preghiamo insieme:"
+          },
+          {
+            "id": "III",
+            "label": "III",
+            "text": "Prima di partecipare al banchetto dell'Eucaristia, segno di riconciliazione e vincolo di comunione fraterna, preghiamo insieme come il Signore ci ha insegnato:"
+          },
+          {
+            "id": "IV",
+            "label": "IV",
             "text": "Guidati dallo Spirito di Gesù e illuminati dalla sapienza del Vangelo, osiamo dire:"
-          },
-          {
-            "id": "C",
-            "label": "Forma C - Fedeli alla parola di Cristo",
-            "text": "Fedeli alla parola di Cristo e prendendo forza dal suo amore, osiamo dire:"
-          },
-          {
-            "id": "D",
-            "label": "Forma D - Prima del banchetto",
-            "text": "Prima di partecipare al banchetto dell'Eucaristia, segno di riconciliazione e vincolo di unione fraterna, preghiamo insieme come il Signore ci ha insegnato:"
           }
         ]
       },

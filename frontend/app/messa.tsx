@@ -559,6 +559,23 @@ export default function MessaScreen() {
                 <R kind="assemblea">A. {d.a}</R>
               </View>
             ))}
+            {/* Formula C: tutte le formule del tempo liturgico selezionato, una sotto l'altra */}
+            {seasonVariant?.formulas && Array.isArray(seasonVariant.formulas) && (
+              <>
+                {seasonVariant.formulas.map((formula: any, fi: number) => (
+                  <View key={`formula-${fi}`} style={styles.penitentialFormulaBox}>
+                    {formula.label && <R kind="subtitle">{formula.label}</R>}
+                    {formula.dialogue?.map((d: any, i: number) => (
+                      <View key={`f${fi}-${i}`} style={styles.dialogBlock}>
+                        <R kind="celebrante">C. {d.c}</R>
+                        <R kind="assemblea">A. {d.a}</R>
+                      </View>
+                    ))}
+                  </View>
+                ))}
+              </>
+            )}
+            {/* Compatibilità retro: vecchio schema con singola dialogue per stagione */}
             {seasonVariant?.dialogue && seasonVariant.dialogue.map((d: any, i: number) => (
               <View key={`sv-${i}`} style={styles.dialogBlock}>
                 <R kind="celebrante">C. {d.c}</R>
@@ -1763,6 +1780,14 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     lineHeight: fontSize * 1.5,
   },
   block: { marginVertical: 10 },
+  // Box per ogni formula dell'atto penitenziale C (separazione visiva)
+  penitentialFormulaBox: {
+    marginTop: 18,
+    paddingTop: 14,
+    paddingBottom: 6,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
   dialogBlock: { marginVertical: 6 },
   readingBlock: { marginVertical: 14 },
   pageStatusBar: {
