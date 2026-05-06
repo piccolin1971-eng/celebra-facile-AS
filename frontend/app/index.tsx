@@ -85,7 +85,7 @@ export default function Home() {
   return (
     <SafeAreaView style={styles.container} testID="home-screen">
       <View style={styles.topBar}>
-        <Text style={styles.appTitle} testID="app-title">Messale Digitale</Text>
+        <Text style={styles.appTitle} testID="app-title">Celebra facile</Text>
         <TouchableOpacity
           style={styles.settingsBtn}
           onPress={() => router.push("/impostazioni")}

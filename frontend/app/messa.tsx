@@ -442,34 +442,37 @@ export default function MessaScreen() {
   // Quando l'utente cambia il font size, il numero di pagine si aggiorna
   // automaticamente (ricalcolo nel render successivo).
   //
-  // Stima: usiamo lineHeight = fontSize * 1.4 (vedi styles.text)
-  // larghezza utile del testo = screenWidth - 2*padding (32) - 2*partBox margin (16)
-  // larghezza media di un carattere = fontSize * 0.55 (per font sans-serif italiani)
-  const HEADER_FOOTER_OVERHEAD = 220; // top header (60) + tap nav footer (80) + page title (60) + padding (20)
-  const TEXT_HORIZONTAL_PADDING = 64;  // 32 partBox + 32 outer
-  const lineHeightPx = Math.max(20, Math.round(fontSize * 1.4));
+  // Stima: usiamo lineHeight = fontSize * 1.55 (vedi styles.text)
+  // larghezza utile del testo = screenWidth - padding (32 outer + 32 partBox)
+  // larghezza media di un carattere = fontSize * 0.52 (sans-serif italiano)
+  const HEADER_FOOTER_OVERHEAD = 180; // top header (~58) + tap nav footer (~70) + page title (~50) + padding
+  const TEXT_HORIZONTAL_PADDING = 64;  // 32 outer + 32 partBox
+  const lineHeightPx = Math.max(20, Math.round(fontSize * 1.55));
   const usableHeightPx = Math.max(300, screenHeight - HEADER_FOOTER_OVERHEAD);
   const usableWidthPx = Math.max(280, screenWidth - TEXT_HORIZONTAL_PADDING);
   const linesPerPage = Math.max(4, Math.floor(usableHeightPx / lineHeightPx));
-  const avgCharWidthPx = Math.max(8, fontSize * 0.55);
+  const avgCharWidthPx = Math.max(8, fontSize * 0.52);
   const charsPerLine = Math.max(20, Math.floor(usableWidthPx / avgCharWidthPx));
-  // Safety factor 0.78: tiene conto di parole spezzate, paragrafi nuovi (\n),
+  // Safety factor 0.88: tiene conto di parole spezzate, paragrafi nuovi (\n),
   // titoli/subtitle che occupano riga intera, e variabilita' delle parole italiane.
-  const charsPerPage = Math.max(160, Math.round(linesPerPage * charsPerLine * 0.78));
+  // Più alto del precedente 0.78 per ridurre lo spazio bianco residuo.
+  const charsPerPage = Math.max(180, Math.round(linesPerPage * charsPerLine * 0.88));
 
   // Splitta un testo lungo in chunk rispettando i paragrafi (\n\n).
-  // Algoritmo "greedy fill": riempie ogni chunk il più possibile per minimizzare
-  // il numero di pagine ed evitare spazio vuoto in fondo.
+  // Algoritmo "greedy fill" Kindle-style: riempie ogni chunk il più possibile
+  // per minimizzare il numero di pagine ed evitare spazio vuoto in fondo.
   // Se un singolo paragrafo eccede maxChars, lo splitta su frasi (.) o virgole (,).
+  // BILANCIAMENTO FINALE: se l'ultimo chunk è molto vuoto (<35%), ridistribuisce
+  // gli ultimi due chunk per evitare di avere "una sola riga sull'ultima pagina".
   const splitTextIntoChunks = (text: string, maxChars = charsPerPage): string[] => {
     if (!text) return [];
     if (text.length <= maxChars) return [text];
     const paragraphs = text.split(/\n\n+/);
     const chunks: string[] = [];
     let current = "";
-    // Tolleranza: accetta lievi sforamenti per evitare pagine semi-vuote
-    const HARD_LIMIT = Math.round(maxChars * 1.15);
-    const MIN_FILL = Math.round(maxChars * 0.55); // se il chunk è < 55% pieno, prova a unire
+    // Tolleranza Kindle: accetta sforamenti moderati per riempire la pagina
+    const HARD_LIMIT = Math.round(maxChars * 1.10);
+    const MIN_FILL = Math.round(maxChars * 0.65); // se il chunk è < 65% pieno, prova ad unire
 
     const splitParagraphLong = (p: string): string[] => {
       const pieces: string[] = [];
@@ -504,7 +507,7 @@ export default function MessaScreen() {
       const candidate = current ? `${current}\n\n${p}` : p;
       if (candidate.length <= HARD_LIMIT) {
         current = candidate;
-      } else if (current.length < MIN_FILL && candidate.length <= HARD_LIMIT * 1.2) {
+      } else if (current.length < MIN_FILL && candidate.length <= Math.round(maxChars * 1.25)) {
         // Chunk attuale troppo vuoto: unisci anche se sfora un po'
         current = candidate;
       } else {
@@ -513,27 +516,65 @@ export default function MessaScreen() {
       }
     }
     if (current) chunks.push(current);
+
+    // Bilanciamento finale: se l'ultimo chunk è molto vuoto, prova a spostare
+    // un paragrafo dal penultimo all'ultimo (riduce "righe orfane" sull'ultima pagina).
+    if (chunks.length >= 2) {
+      const last = chunks[chunks.length - 1];
+      const prev = chunks[chunks.length - 2];
+      if (last.length < Math.round(maxChars * 0.35)) {
+        const prevParas = prev.split(/\n\n+/);
+        if (prevParas.length >= 2) {
+          // Sposta l'ultimo paragrafo dal penultimo all'ultimo
+          const moved = prevParas.pop()!;
+          const newPrev = prevParas.join("\n\n");
+          const newLast = `${moved}\n\n${last}`;
+          // Solo se il nuovo last non sfora troppo
+          if (newLast.length <= Math.round(maxChars * 1.20) && newPrev.length >= Math.round(maxChars * 0.40)) {
+            chunks[chunks.length - 2] = newPrev;
+            chunks[chunks.length - 1] = newLast;
+          }
+        }
+      }
+    }
     return chunks;
   };
 
   // === Reading renderer (daily) ===
   // Per il Salmo Responsoriale, evidenzia "R." (o "R/.") in rosso come ritornello.
+  // Renderizziamo l'intero salmo in UN singolo <Text> usando \n: in questo modo
+  // le righe usano la `lineHeight` dello stile (compatta) e non il `marginVertical`
+  // di ogni riga separata, che creava un doppio spazio tra le strofe.
   const renderSalmoText = (text: string) => {
     if (!text) return null;
-    const lines = text.split("\n");
-    return lines.map((ln, i) => {
-      const m = ln.match(/^(\s*)(R\/?\.)(.*)$/);
-      if (m) {
-        return (
-          <Text key={i} style={styles.text} selectable>
-            {m[1]}
-            <Text style={styles.salmoRit}>{m[2]}</Text>
-            <Text>{m[3]}</Text>
-          </Text>
-        );
-      }
-      return <Text key={i} style={styles.text} selectable>{ln}</Text>;
-    });
+    // Normalizza: collassa eventuali run di righe vuote a una sola riga vuota
+    // così le strofe restano separate, ma senza buchi giganti.
+    const normalized = text.replace(/\n{3,}/g, "\n\n");
+    const lines = normalized.split("\n");
+    return (
+      <Text style={styles.salmoText} selectable>
+        {lines.map((ln, i) => {
+          const m = ln.match(/^(\s*)(R\/?\.)(.*)$/);
+          const isLast = i === lines.length - 1;
+          if (m) {
+            return (
+              <Text key={i}>
+                {m[1]}
+                <Text style={styles.salmoRit}>{m[2]}</Text>
+                <Text>{m[3]}</Text>
+                {!isLast ? "\n" : ""}
+              </Text>
+            );
+          }
+          return (
+            <Text key={i}>
+              {ln}
+              {!isLast ? "\n" : ""}
+            </Text>
+          );
+        })}
+      </Text>
+    );
   };
 
   const renderReading = (type: ReadingType, titleOverride?: string) => {
@@ -2061,6 +2102,14 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
   salmoRit: {
     color: colors.rubrics,
     fontWeight: "800",
+  },
+  // Stile per il salmo responsoriale: usa un singolo <Text> multilinea
+  // così le strofe non hanno doppio spazio fra una riga e l'altra.
+  salmoText: {
+    fontSize: fontSize,
+    lineHeight: fontSize * 1.35,
+    color: colors.textPrimary,
+    marginVertical: 8,
   },
   celebrante: {
     fontSize: fontSize,
