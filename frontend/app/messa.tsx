@@ -1039,14 +1039,85 @@ export default function MessaScreen() {
           });
         }
 
-        // PAGINA: Offertorio
+        // PAGINE: Presentazione dei Doni (3 pagine)
+        // P1: Pane + acqua/vino + vino
+        // P2: "Umili e pentiti" + Lavabo + "Pregate fratelli e sorelle"
+        // P3: Sulle offerte (orazione)
+        const off = fixedParts["offertorio"];
+        const orateChoice = off.sections.find((s: any) => s.type === "choice_orate");
+        const selectedOrate = orateChoice?.options.find((o: any) => o.id === orateFratresId);
+        // Sezioni iniziali (rubriche + Benedetti) fino all'indice della "Umili e pentiti"
+        // La sezione 4 (in JSON) è "Umili e pentiti" col rubric "Inchinato..."
+        // Le sezioni precedenti (0-3) sono le offerte di pane e vino.
+        const allSections = off.sections;
+        const idxInchinato = allSections.findIndex((s: any) =>
+          s.type === "prayer" && s.rubric && /inchinato/i.test(s.rubric),
+        );
+        const headSections = idxInchinato > 0 ? allSections.slice(0, idxInchinato) : allSections.slice(0, 4);
+        const inchinatoSection = idxInchinato >= 0 ? allSections[idxInchinato] : null;
+
+        // P1: Presentazione doni (pane + vino)
         pages.push({
-          key: "offertorio",
+          key: "offertorio-1",
           title: "Presentazione dei Doni",
           render: () => (
-            <View style={styles.partBox}>
-              {renderOffertorio()}
-              {renderReading("sulle_offerte", "Sulle offerte")}
+            <View style={styles.partBox} testID="part-offertorio-1">
+              <R kind="title">Liturgia Eucaristica – Presentazione dei doni</R>
+              {headSections
+                .filter((s: any) => s.type !== "rubric" || true)  // mostra anche rubriche
+                .map(renderSection)}
+            </View>
+          ),
+        });
+
+        // P2: Inchinato + Lavabo + Pregate fratelli e sorelle
+        pages.push({
+          key: "offertorio-2",
+          title: "Inchinato e Pregate",
+          render: () => (
+            <View style={styles.partBox} testID="part-offertorio-2">
+              <R kind="title">Presentazione dei doni (continua)</R>
+              {inchinatoSection && renderSection(inchinatoSection, 0)}
+              {orateChoice && (
+                <View style={styles.block}>
+                  {orateChoice.rubric && <R kind="rubric">{orateChoice.rubric}</R>}
+                  <R kind="subtitle">Invito e risposta</R>
+                  <View style={styles.choiceRow}>
+                    {orateChoice.options.map((o: any) => (
+                      <TouchableOpacity
+                        key={o.id}
+                        style={[styles.choiceBtn, orateFratresId === o.id && styles.choiceBtnActive]}
+                        onPress={() => setOrateFratresId(o.id)}
+                        testID={`btn-orate-${o.id}`}
+                      >
+                        <Text style={[styles.choiceBtnText, orateFratresId === o.id && { color: "#FFFFFF" }]}>{o.label}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                  {selectedOrate && (
+                    <View style={styles.block}>
+                      <R kind="celebrante">C. {selectedOrate.celebrante}</R>
+                      <R kind="assemblea">A. {selectedOrate.assemblea}</R>
+                    </View>
+                  )}
+                </View>
+              )}
+            </View>
+          ),
+        });
+
+        // P3: Sulle offerte (orazione del giorno)
+        pages.push({
+          key: "offertorio-3",
+          title: "Sulle offerte",
+          render: () => (
+            <View style={styles.partBox} testID="part-offertorio-3">
+              {renderReading("sulle_offerte", "Sulle offerte") || (
+                <>
+                  <R kind="title">Sulle offerte</R>
+                  <R kind="rubric">Orazione non disponibile per oggi.</R>
+                </>
+              )}
             </View>
           ),
         });
