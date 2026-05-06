@@ -28,6 +28,9 @@ export type MassSession = {
   // Mappa selectorKey → optionId. Esempio: { communicantes: "domenica", hanc_igitur: "matrimonio" }
   // Le chiavi dipendono dalla PE selezionata (vedi eucharisticPrayersFull.json)
   peSelections?: Record<string, string>;
+  // === Orazione sul popolo (v2.7.1) ===
+  useOrazionePopolo?: boolean;
+  orazionePopoloId?: string;
 };
 
 const KEY_PREFIX = "@messa_session_";

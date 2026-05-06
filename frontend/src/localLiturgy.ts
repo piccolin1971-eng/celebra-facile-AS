@@ -129,9 +129,13 @@ export function getMysteryAcclamations(): { acclamations: any[] } {
   return { acclamations: mysteryAcclamations as any };
 }
 
-export function getSolemnBlessings(): { blessings: any[]; pasqua_dismissal: any } {
+export function getSolemnBlessings(): { blessings: any[]; pasqua_dismissal: any; prayersOverPeople: any[] } {
   const d: any = solemnBlessingsData;
-  return { blessings: d.blessings, pasqua_dismissal: d.pasqua_dismissal };
+  return {
+    blessings: d.blessings,
+    pasqua_dismissal: d.pasqua_dismissal,
+    prayersOverPeople: d.prayersOverPeople || [],
+  };
 }
 
 export function getPrefaces(season?: string): { prefaces: any[] } {

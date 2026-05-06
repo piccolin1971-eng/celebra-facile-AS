@@ -85,6 +85,10 @@ export default function MessaScreen() {
   const [acclamationId, setAcclamationId] = useState<string>("A");
   const [useSolemnBlessing, setUseSolemnBlessing] = useState<boolean>(false);
   const [solemnBlessingId, setSolemnBlessingId] = useState<string>("");
+  // Orazione sul popolo (Messale 2020, 28 formule)
+  const [useOrazionePopolo, setUseOrazionePopolo] = useState<boolean>(false);
+  const [orazionePopoloId, setOrazionePopoloId] = useState<string>("");
+  const [prayersOverPeople, setPrayersOverPeople] = useState<{ id: string; num: number; text: string }[]>([]);
   const [showGloria, setShowGloria] = useState<boolean>(true);
   const [showCredo, setShowCredo] = useState<boolean>(true);
   const [congedoId, setCongedoId] = useState("A");
@@ -131,6 +135,10 @@ export default function MessaScreen() {
         setAcclamations(acc.acclamations);
         setSolemnBlessings(bless.blessings);
         setPasquaDismissal(bless.pasqua_dismissal);
+        // Orazioni sul popolo (28 formule del Messale 2020)
+        if (Array.isArray((bless as any).prayersOverPeople)) {
+          setPrayersOverPeople((bless as any).prayersOverPeople);
+        }
         const seasonName = (lit?.season?.season || "").toLowerCase();
         const seasonKey = seasonName.includes("avvento") ? "avvento"
           : seasonName.includes("natale") ? "natale"
@@ -173,6 +181,8 @@ export default function MessaScreen() {
           if (saved.selectedPrefaceId) setSelectedPrefaceId(saved.selectedPrefaceId);
           if (saved.selectedPrayerId) setSelectedPrayerId(saved.selectedPrayerId);
           if (saved.peSelections && typeof saved.peSelections === "object") setPeSelections(saved.peSelections);
+          if (typeof (saved as any).useOrazionePopolo === "boolean") setUseOrazionePopolo((saved as any).useOrazionePopolo);
+          if ((saved as any).orazionePopoloId) setOrazionePopoloId((saved as any).orazionePopoloId);
           if (saved.benedizioneId) setBenedizioneId(saved.benedizioneId);
           if (saved.congedoId) setCongedoId(saved.congedoId);
           if (saved.acclamationId) setAcclamationId(saved.acclamationId);
@@ -207,14 +217,16 @@ export default function MessaScreen() {
       useSolemnBlessing, solemnBlessingId,
       penitentialForm, penitentialSeason, selectedCredoId, orateFratresId,
       peSelections,
-    };
+      useOrazionePopolo, orazionePopoloId,
+    } as any;
     saveSession(sessionDate, session);
   }, [sessionLoaded, sessionDate, showGloria, showCredo, showOrazionalePray,
       selectedOrazionaleId, selectedPrefaceId, selectedPrayerId,
       benedizioneId, congedoId, acclamationId, padreNostroIntroId,
       useSolemnBlessing, solemnBlessingId,
       penitentialForm, penitentialSeason, selectedCredoId, orateFratresId,
-      peSelections]);
+      peSelections,
+      useOrazionePopolo, orazionePopoloId]);
 
   // === PE FULL: espansione dei blocchi `var` in base a peSelections ===
   // IMPORTANTE: questi hook devono stare PRIMA di qualunque early-return
@@ -717,13 +729,61 @@ export default function MessaScreen() {
     const benedChoice = rc.sections[1];
     const bened = benedChoice.options.find((o: any) => o.id === benedizioneId);
     const selectedSolemn = solemnBlessings.find(b => b.id === solemnBlessingId);
+    const selectedOrazPopolo = prayersOverPeople.find(p => p.id === orazionePopoloId);
 
     return (
       <View testID="section-benedizione">
         <R kind="title">Benedizione</R>
         {renderSection(dialogue, 0)}
 
-        {/* Toggle benedizione solenne */}
+        {/* Toggle Orazione sul popolo */}
+        {prayersOverPeople.length > 0 && (
+          <View style={[styles.block, styles.solemnToggle]} testID="orazione-popolo-toggle">
+            <View style={styles.toggleRow}>
+              <Text style={styles.toggleLabel}>Aggiungi orazione sul popolo</Text>
+              <Switch
+                value={useOrazionePopolo}
+                onValueChange={(v) => {
+                  setUseOrazionePopolo(v);
+                  // Auto-seleziona la 1a orazione se non c'è scelta
+                  if (v && !orazionePopoloId && prayersOverPeople.length > 0) {
+                    setOrazionePopoloId(prayersOverPeople[0].id);
+                  }
+                }}
+                trackColor={{ false: colors.border, true: colors.primary }}
+                thumbColor="#FFFFFF"
+                style={{ transform: [{ scaleX: 1.4 }, { scaleY: 1.4 }], marginLeft: 16 }}
+                testID="switch-orazione-popolo"
+              />
+            </View>
+            {useOrazionePopolo && (
+              <View style={{ marginTop: 14 }}>
+                <R kind="subtitle">Scegli orazione sul popolo (1-{prayersOverPeople.length})</R>
+                <View style={[styles.choiceRow, { flexWrap: "wrap" }]}>
+                  {prayersOverPeople.map(p => (
+                    <TouchableOpacity
+                      key={p.id}
+                      style={[styles.numChoiceBtn, orazionePopoloId === p.id && styles.choiceBtnActive]}
+                      onPress={() => setOrazionePopoloId(p.id)}
+                      testID={`btn-orazione-popolo-${p.id}`}
+                    >
+                      <Text style={[styles.numChoiceText, orazionePopoloId === p.id && { color: "#FFFFFF" }]}>
+                        {p.num}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                {selectedOrazPopolo && (
+                  <Text style={styles.solemnHint}>
+                    Selezionata n. {selectedOrazPopolo.num}. Il testo apparirà nella prossima pagina.
+                  </Text>
+                )}
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Toggle Benedizione Solenne */}
         {solemnBlessings.length > 0 && (
           <View style={[styles.block, styles.solemnToggle]} testID="solemn-toggle">
             <View style={styles.toggleRow}>
@@ -759,20 +819,10 @@ export default function MessaScreen() {
               ))}
             </View>
             {selectedSolemn && (
-              <View style={styles.block}>
-                <R kind="subtitle">{selectedSolemn.num ? `${selectedSolemn.num}. ` : ""}{selectedSolemn.title}</R>
-                {(selectedSolemn as any).rubric ? <R kind="rubric">{(selectedSolemn as any).rubric}</R> : null}
-                {selectedSolemn.invocations.map((inv: any, i: number) => (
-                  <View key={i} style={styles.dialogBlock}>
-                    <R kind="celebrante">C. {inv.c}</R>
-                    <R kind="assemblea">A. {inv.a}</R>
-                  </View>
-                ))}
-                <View style={styles.dialogBlock}>
-                  <R kind="celebrante">C. {selectedSolemn.final.c}</R>
-                  <R kind="assemblea">A. {selectedSolemn.final.a}</R>
-                </View>
-              </View>
+              <Text style={styles.solemnHint}>
+                Selezionata: {selectedSolemn.num ? `${selectedSolemn.num}. ` : ""}{selectedSolemn.title}.
+                Il testo completo apparirà nella prossima pagina.
+              </Text>
             )}
           </View>
         ) : (
@@ -1417,12 +1467,65 @@ export default function MessaScreen() {
           render: () => <View style={styles.partBox}>{renderReading("dopo_comunione", "Dopo la Comunione")}</View>,
         });
 
-        // PAGINA: Riti di Conclusione - Benedizione (senza congedo)
+        // PAGINA: Riti di Conclusione - Benedizione (scelte: toggle + bottoni, NON il testo)
         pages.push({
           key: "conclusione-benedizione",
           title: "Benedizione",
           render: () => <View style={styles.partBox}>{renderConclusioneBenedizione()}</View>,
         });
+
+        // PAGINA CONDIZIONALE: Orazione sul popolo (testo della formula scelta)
+        if (useOrazionePopolo && orazionePopoloId) {
+          const sel = prayersOverPeople.find(p => p.id === orazionePopoloId);
+          if (sel) {
+            pages.push({
+              key: "conclusione-orazione-popolo",
+              title: "Orazione sul popolo",
+              render: () => (
+                <View style={styles.partBox} testID="part-orazione-popolo">
+                  <R kind="title">Orazione sul popolo</R>
+                  <R kind="rubric">
+                    Il sacerdote, allargando le braccia, dice l'orazione sul popolo:
+                  </R>
+                  <View style={styles.block}>
+                    <R kind="subtitle">{sel.num}.</R>
+                    <R>{sel.text}</R>
+                    <View style={styles.dialogBlock}>
+                      <R kind="assemblea">A. Amen.</R>
+                    </View>
+                  </View>
+                </View>
+              ),
+            });
+          }
+        }
+
+        // PAGINA CONDIZIONALE: Benedizione Solenne (testo completo)
+        if (useSolemnBlessing && solemnBlessingId) {
+          const sel = solemnBlessings.find(b => b.id === solemnBlessingId);
+          if (sel) {
+            pages.push({
+              key: "conclusione-benedizione-solenne",
+              title: "Benedizione Solenne",
+              render: () => (
+                <View style={styles.partBox} testID="part-benedizione-solenne">
+                  <R kind="title">{(sel as any).num ? `${(sel as any).num}. ` : ""}{sel.title}</R>
+                  {(sel as any).rubric ? <R kind="rubric">{(sel as any).rubric}</R> : null}
+                  {sel.invocations.map((inv: any, i: number) => (
+                    <View key={i} style={styles.dialogBlock}>
+                      <R kind="celebrante">C. {inv.c}</R>
+                      <R kind="assemblea">A. {inv.a}</R>
+                    </View>
+                  ))}
+                  <View style={styles.dialogBlock}>
+                    <R kind="celebrante">C. {sel.final.c}</R>
+                    <R kind="assemblea">A. {sel.final.a}</R>
+                  </View>
+                </View>
+              ),
+            });
+          }
+        }
 
         // PAGINA: Congedo (separata)
         pages.push({
@@ -1797,6 +1900,31 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     color: colors.textPrimary,
     fontSize: Math.round(fontSize * 0.55),
     fontWeight: "700",
+  },
+  // Bottoni numerati (per orazioni sul popolo 1-28): griglia compatta
+  numChoiceBtn: {
+    minWidth: 56,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderWidth: 2,
+    borderColor: colors.border,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 56,
+  },
+  numChoiceText: {
+    color: colors.textPrimary,
+    fontSize: Math.round(fontSize * 0.7),
+    fontWeight: "800",
+  },
+  // Suggerimento sulla prossima pagina
+  solemnHint: {
+    marginTop: 14,
+    color: colors.primary,
+    fontSize: Math.round(fontSize * 0.55),
+    fontStyle: "italic",
+    fontWeight: "600",
   },
   // Box per ogni formula dell'atto penitenziale C (separazione visiva)
   penitentialFormulaBox: {
