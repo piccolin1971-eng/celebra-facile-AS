@@ -20,8 +20,9 @@ interface SettingsState {
 const getColors = (theme: ThemeMode, highContrast: boolean) => {
   if (theme === "dark") {
     return {
-      background: highContrast ? "#000000" : "#0A0A0A",
-      surface: highContrast ? "#0A0A0A" : "#1A1A1A",
+      // Sfondo NERO ASSOLUTO per risparmio energia su schermi OLED
+      background: "#000000",
+      surface: highContrast ? "#000000" : "#0A0A0A",
       textPrimary: highContrast ? "#FFFFFF" : "#F5F5F5",
       textSecondary: highContrast ? "#E0E0E0" : "#CCCCCC",
       border: highContrast ? "#FFFFFF" : "#333333",

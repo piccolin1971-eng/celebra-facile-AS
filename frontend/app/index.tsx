@@ -7,7 +7,7 @@ import { useSettings } from "../src/SettingsContext";
 import { api, Liturgy } from "../src/api";
 import { localDateStr, italianDateLabel, addDays, parseLocalDate } from "../src/dateUtils";
 
-type DayChoice = "today" | "day1" | "day2" | "day3" | "day4";
+type DayChoice = "today" | "day1" | "day2" | "day3" | "day4" | "day5" | "day6" | "day7";
 
 const DAY_OFFSETS: Record<DayChoice, number> = {
   today: 0,
@@ -15,6 +15,9 @@ const DAY_OFFSETS: Record<DayChoice, number> = {
   day2: 2,
   day3: 3,
   day4: 4,
+  day5: 5,
+  day6: 6,
+  day7: 7,
 };
 
 const WEEKDAYS_SHORT = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"];
@@ -121,7 +124,11 @@ export default function Home() {
         {/* Selettore giorno */}
         <View style={styles.daySelector} testID="day-selector">
           <Text style={styles.daySelectorLabel}>Giorno da celebrare</Text>
-          <View style={styles.dayButtonsRow}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.dayButtonsRow}
+          >
             {(Object.keys(DAY_OFFSETS) as DayChoice[]).map((day) => {
               const isActive = selectedDay === day;
               const d = addDays(new Date(), DAY_OFFSETS[day]);
@@ -146,7 +153,7 @@ export default function Home() {
                 </TouchableOpacity>
               );
             })}
-          </View>
+          </ScrollView>
         </View>
 
         {liturgy?.fromLocalCache ? (
@@ -309,10 +316,11 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
   daySelectorLabel: { fontSize: Math.round(fontSize * 0.7), fontWeight: "600", color: colors.textSecondary },
   dayButtonsRow: {
     flexDirection: "row",
-    gap: 6,
+    gap: 8,
+    paddingRight: 12,
   },
   dayButton: {
-    flex: 1,
+    width: 88,
     paddingVertical: 12,
     paddingHorizontal: 4,
     borderWidth: 2,

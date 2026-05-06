@@ -1113,7 +1113,10 @@ export default function MessaScreen() {
           const selAcc = acclamations.find(x => x.id === acclamationId);
 
           // Pagina 1+: Selettore + parte iniziale fino alla Consacrazione (chunked se lungo)
-          const beforeChunks = splitTextIntoChunks(beforePart);
+          // Per la PE usiamo un chunk size più piccolo (~50%) per evitare scroll
+          // e avere più pagine da tappare, come richiesto.
+          const peCharsPerPage = Math.round(charsPerPage * 0.50);
+          const beforeChunks = splitTextIntoChunks(beforePart, peCharsPerPage);
           beforeChunks.forEach((_, i) => {
             pages.push({
               key: `pe-cons-${i}`,
@@ -1165,7 +1168,8 @@ export default function MessaScreen() {
 
           // Pagina Acclamazione + Mistero della Fede + Anamnesi/Dossologia (chunked se lungo)
           if (afterPart || acclamations.length > 0) {
-            const afterChunks = splitTextIntoChunks(afterPart);
+            // Pagine seguenti: anamnesi + dossologia (chunked con stesso fattore aggressivo della consacrazione)
+            const afterChunks = splitTextIntoChunks(afterPart, peCharsPerPage);
             // Prima pagina: acclamazione (selettore + dialogo)
             if (acclamations.length > 0) {
               pages.push({
