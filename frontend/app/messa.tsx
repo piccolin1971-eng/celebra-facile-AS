@@ -742,25 +742,27 @@ export default function MessaScreen() {
 
         {useSolemnBlessing ? (
           <View testID="section-solemn-blessing">
-            <R kind="subtitle">Benedizione Solenne</R>
-            <View style={styles.choiceRow}>
-              {solemnBlessings.map(b => (
+            <R kind="subtitle">Scegli Benedizione Solenne (Messale 2020)</R>
+            <View style={[styles.choiceRow, { flexWrap: "wrap" }]}>
+              {solemnBlessings.map((b: any) => (
                 <TouchableOpacity
                   key={b.id}
-                  style={[styles.choiceBtn, solemnBlessingId === b.id && styles.choiceBtnActive]}
+                  style={[styles.solemnChoiceBtn, solemnBlessingId === b.id && styles.choiceBtnActive]}
                   onPress={() => setSolemnBlessingId(b.id)}
                   testID={`btn-solemn-${b.id}`}
+                  activeOpacity={0.7}
                 >
-                  <Text style={[styles.choiceBtnText, solemnBlessingId === b.id && { color: "#FFFFFF" }]}>
-                    {b.id.charAt(0).toUpperCase() + b.id.slice(1)}
+                  <Text style={[styles.solemnChoiceText, solemnBlessingId === b.id && { color: "#FFFFFF" }]} numberOfLines={2}>
+                    {b.num ? `${b.num}. ` : ""}{b.title}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
             {selectedSolemn && (
               <View style={styles.block}>
-                <R kind="subtitle">{selectedSolemn.title}</R>
-                {selectedSolemn.invocations.map((inv, i) => (
+                <R kind="subtitle">{selectedSolemn.num ? `${selectedSolemn.num}. ` : ""}{selectedSolemn.title}</R>
+                {(selectedSolemn as any).rubric ? <R kind="rubric">{(selectedSolemn as any).rubric}</R> : null}
+                {selectedSolemn.invocations.map((inv: any, i: number) => (
                   <View key={i} style={styles.dialogBlock}>
                     <R kind="celebrante">C. {inv.c}</R>
                     <R kind="assemblea">A. {inv.a}</R>
@@ -1780,6 +1782,22 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     lineHeight: fontSize * 1.5,
   },
   block: { marginVertical: 10 },
+  // Bottoni per scegliere fra 26 benedizioni solenni: layout flex-wrap
+  solemnChoiceBtn: {
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderWidth: 2,
+    borderColor: colors.border,
+    borderRadius: 10,
+    minHeight: 56,
+    flexBasis: "48%",
+    flexGrow: 1,
+  },
+  solemnChoiceText: {
+    color: colors.textPrimary,
+    fontSize: Math.round(fontSize * 0.55),
+    fontWeight: "700",
+  },
   // Box per ogni formula dell'atto penitenziale C (separazione visiva)
   penitentialFormulaBox: {
     marginTop: 18,

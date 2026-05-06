@@ -1,148 +1,784 @@
 {
   "blessings": [
     {
-      "id": "avvento",
+      "id": "sb1",
+      "num": 1,
       "season": "avvento",
-      "title": "Benedizione Solenne dell'Avvento",
-      "rubric": "Nelle domeniche e nelle celebrazioni più solenni dell'Avvento.",
+      "title": "Nell'Avvento",
+      "rubric": "",
       "invocations": [
         {
-          "c": "Il Dio della fedeltà che ha mantenuto le sue promesse con l'invio del suo Figlio unigenito, vi conceda la gioia della sua venuta e vi renda forti nella fede.",
+          "c": "Dio, che vi dà la grazia di celebrare\nla prima venuta del suo Figlio unigenito\ne di attenderne l'avvento glorioso,\nvi santifichi con la luce della sua visita.",
           "a": "Amen."
         },
         {
-          "c": "La sua parola, che si è fatta carne per la nostra salvezza, guidi i vostri passi e illumini il vostro cammino nella luce del Vangelo.",
+          "c": "Nel cammino di questa vita,\nDio vi renda saldi nella fede,\ngioiosi nella speranza, operosi nella carità.",
           "a": "Amen."
         },
         {
-          "c": "Cristo, che vive in mezzo a noi, vi aiuti a riconoscerlo nel volto del prossimo e a vivere con speranza l'attesa della sua venuta nella gloria.",
+          "c": "Voi, che vi rallegrate\nper la venuta nella carne del nostro Redentore,\npossiate godere la gioia della vita eterna\nquando egli verrà nella sua gloria.",
           "a": "Amen."
         }
       ],
       "final": {
-        "c": "E la benedizione di Dio onnipotente, Padre e Figlio ✠ e Spirito Santo, discenda su di voi e con voi rimanga sempre.",
+        "c": "E la benedizione di Dio onnipotente,\nPadre e Figlio ✠ e Spirito Santo,\ndiscenda su di voi e con voi rimanga sempre.",
         "a": "Amen."
       }
     },
     {
-      "id": "natale",
+      "id": "sb2",
+      "num": 2,
       "season": "natale",
-      "title": "Benedizione Solenne del Natale",
-      "rubric": "Nella Messa del giorno e nelle domeniche del tempo di Natale.",
+      "title": "Nel Natale del Signore",
+      "rubric": "",
       "invocations": [
         {
-          "c": "Dio, Padre infinitamente buono, che nell'incarnazione del suo Figlio ha dissipato le tenebre del mondo e con la sua nascita gloriosa ha illuminato questa notte santissima (questo giorno santissimo), dissipi da voi le tenebre del peccato e vi irradi con la luce della sua santità.",
+          "c": "Dio infinitamente buono, che nella nascita del suo Figlio\nha inondato di luce questa notte santissima\n[giorno santissimo], allontani da voi le tenebre del male\ne illumini i vostri cuori con la luce del bene.",
           "a": "Amen."
         },
         {
-          "c": "Dio, che ha voluto con il mistero del Natale iniziare la riconciliazione del cielo con la terra, vi colmi della sua pace e del suo amore, e vi renda partecipi della comunione della Chiesa.",
+          "c": "Dio, che inviò gli angeli ad annunciare ai pastori\nla grande gioia del Natale del Salvatore,\nvi ricolmi della sua beatitudine\ne vi faccia messaggeri del suo Vangelo.",
           "a": "Amen."
         },
         {
-          "c": "Cristo, Figlio di Dio fatto uomo, che si è posto nell'umiltà di un bambino per noi, vi conceda la gioia che viene dalla pace profonda del cuore, e vi faccia servi della giustizia nella vita di ogni giorno.",
+          "c": "Dio, che nell'incarnazione del suo Figlio\nha congiunto la terra al cielo,\nvi conceda il dono della sua pace e della sua benevolenza\ne vi renda partecipi dell'assemblea celeste.",
           "a": "Amen."
         }
       ],
       "final": {
-        "c": "E la benedizione di Dio onnipotente, Padre e Figlio ✠ e Spirito Santo, discenda su di voi e con voi rimanga sempre.",
+        "c": "E la benedizione di Dio onnipotente,\nPadre e Figlio ✠ e Spirito Santo,\ndiscenda su di voi e con voi rimanga sempre.",
         "a": "Amen."
       }
     },
     {
-      "id": "quaresima",
+      "id": "sb3",
+      "num": 3,
+      "season": "natale",
+      "title": "All'inizio dell'anno",
+      "rubric": "",
+      "invocations": [
+        {
+          "c": "Dio, sorgente e principio di ogni benedizione,\neΩonda su di voi la sua grazia\ne vi doni per tutto l'anno vita e salute.",
+          "a": "Amen."
+        },
+        {
+          "c": "Vi custodisca integri nella fede,\ncostanti nella speranza,\nperseveranti e pazienti\nsino alla fine nella carità.",
+          "a": "Amen."
+        },
+        {
+          "c": "Dio disponga opere e giorni nella sua pace,\nascolti qui e in ogni luogo le vostre preghiere\ne vi conduca alla felicità eterna.",
+          "a": "Amen."
+        },
+        {
+          "c": "E la benedizione di Dio onnipotente,\nPadre e Figlio ✠ e Spirito Santo,\ndiscenda su di voi e con voi rimanga sempre.",
+          "a": "Amen."
+        }
+      ],
+      "final": {
+        "c": "458 Rito della Messa con il popolo",
+        "a": "Amen."
+      }
+    },
+    {
+      "id": "sb4",
+      "num": 4,
+      "season": "natale",
+      "title": "Nell'Epifania del Signore",
+      "rubric": "",
+      "invocations": [
+        {
+          "c": "Dio, che dalle tenebre vi ha chiamati\nalla sua luce meravigliosa,\neΩonda su di voi la sua benedizione\ne renda stabili nella fede, nella speranza\ne nella carità i vostri cuori.",
+          "a": "Amen."
+        },
+        {
+          "c": "A voi che seguite con fiducia Cristo,\noggi apparso nel mondo come luce che splende nelle tenebre,\nconceda il Signore di essere luce per i vostri fratelli.",
+          "a": "Amen."
+        },
+        {
+          "c": "Come i santi Magi guidati dalla stella,\nal termine del vostro pellegrinaggio terreno\npossiate trovare, con immensa gioia,\nCristo Signore, Luce da Luce.",
+          "a": "Amen."
+        }
+      ],
+      "final": {
+        "c": "E la benedizione di Dio onnipotente,\nPadre e Figlio ✠ e Spirito Santo,\ndiscenda su di voi e con voi rimanga sempre.",
+        "a": "Amen."
+      }
+    },
+    {
+      "id": "sb5",
+      "num": 5,
       "season": "quaresima",
-      "title": "Benedizione Solenne della Quaresima",
-      "rubric": "Nelle domeniche di Quaresima e nelle celebrazioni più solenni.",
+      "title": "Nella Quaresima",
+      "rubric": "",
       "invocations": [
         {
-          "c": "Dio, Padre di misericordia, che nel suo Figlio ci ha dato l'esempio di un amore senza misura, vi conceda, con il dono della sua benedizione, di perseverare con gioia nelle opere della penitenza.",
+          "c": "Dio, Padre misericordioso,\nconceda a tutti voi, come al figlio prodigo,\nla gioia del ritorno nella sua casa.",
           "a": "Amen."
         },
         {
-          "c": "Coloro che si dispongono con cuore sincero alla Pasqua possano rinnovare sé stessi in questo tempo di grazia, e perseverare nel bene.",
+          "c": "Cristo, modello di preghiera e di vita,\nvi guidi nel cammino della Quaresima.",
           "a": "Amen."
         },
         {
-          "c": "A tutti voi, pellegrini sulla terra, che camminate verso la Pasqua eterna, Dio conceda la pace del cuore, la gioia dello Spirito e la partecipazione piena al mistero della redenzione.",
+          "c": "Lo Spirito di sapienza e di fortezza\nvi sostenga nella lotta contro il maligno,\nperché possiate celebrare con Cristo la vittoria pasquale.",
           "a": "Amen."
         }
       ],
       "final": {
-        "c": "E la benedizione di Dio onnipotente, Padre e Figlio ✠ e Spirito Santo, discenda su di voi e con voi rimanga sempre.",
+        "c": "E la benedizione di Dio onnipotente,\nPadre e Figlio ✠ e Spirito Santo,\ndiscenda su di voi e con voi rimanga sempre.",
         "a": "Amen."
       }
     },
     {
-      "id": "pasqua",
-      "season": "pasqua",
-      "title": "Benedizione Solenne di Pasqua",
-      "rubric": "Nella Veglia Pasquale, nel giorno di Pasqua e in tutta l'ottava.",
+      "id": "sb6",
+      "num": 6,
+      "season": "quaresima",
+      "title": "Nella Passione del Signore",
+      "rubric": "",
       "invocations": [
         {
-          "c": "Dio, che con la risurrezione del suo unico Figlio vi ha aperto la porta della vita eterna, vi conceda il dono della sua benedizione pasquale.",
+          "c": "Dio, Padre di misericordia,\nche nella passione del suo Figlio\nci ha dato il modello dell'amore,\nvi faccia gustare l'ineΩabile dono della sua benedizione\nnell'umile servizio a Dio e ai fratelli.",
           "a": "Amen."
         },
         {
-          "c": "Dio, che nella risurrezione del suo Figlio ci ha ridato la vera libertà e la gioia dello Spirito, vi conceda di vivere pienamente la Pasqua di Cristo nell'attesa della vita eterna.",
+          "c": "Possiate ottenere da Cristo il dono della vita eterna\nper la vostra fede nella sua morte salvifica.",
           "a": "Amen."
         },
         {
-          "c": "Voi, che per la celebrazione del mistero pasquale avete concluso i giorni della passione, partecipiate alla gioia della Pasqua e giungiate con esultanza alla festa senza fine.",
+          "c": "Voi, che seguite l'esempio di umiltà lasciato da Cristo,\npossiate aver parte alla sua risurrezione.",
+          "a": "Amen."
+        },
+        {
+          "c": "E la benedizione di Dio onnipotente,\nPadre e Figlio ✠ e Spirito Santo,\ndiscenda su di voi e con voi rimanga sempre.",
           "a": "Amen."
         }
       ],
       "final": {
-        "c": "E la benedizione di Dio onnipotente, Padre e Figlio ✠ e Spirito Santo, discenda su di voi e con voi rimanga sempre.",
+        "c": "460 Rito della Messa con il popolo",
         "a": "Amen."
       }
     },
     {
-      "id": "ascensione",
+      "id": "sb7",
+      "num": 7,
       "season": "pasqua",
-      "title": "Benedizione Solenne dell'Ascensione",
-      "rubric": "Nella solennità dell'Ascensione del Signore.",
+      "title": "Nel Tempo Pasquale",
+      "rubric": "",
       "invocations": [
         {
-          "c": "Dio, Re della gloria, Signore di potenza, che oggi ha innalzato al cielo nella gloria del trionfo il Cristo suo Figlio vincitore del peccato e della morte, vi conceda la gioia di seguirlo nel suo regno di vita.",
+          "c": "Dio, che nella risurrezione del suo Figlio unigenito\nci ha donato la grazia della redenzione\ne ha fatto di noi i suoi figli,\nvi dia la gioia della sua benedizione.",
           "a": "Amen."
         },
         {
-          "c": "Cristo, che dopo la sua risurrezione si è manifestato ai discepoli, oggi sale al cielo, dove vi attende nel giorno della promessa: egli vi conceda, con i suoi doni spirituali, di essere nel mondo testimoni fedeli della sua vita nuova.",
+          "c": "Il Redentore,\nche ci ha donato la libertà senza fine,\nvi renda partecipi dell'eredità eterna.",
           "a": "Amen."
         },
         {
-          "c": "Il Signore, che è asceso sopra tutti i cieli, a tutti e a ciascuno di voi doni il suo Spirito, perché possiate conseguire la dimora eterna, dove egli è andato a prepararvi un posto.",
+          "c": "E voi, che per la fede in Cristo\nsiete risorti nel Battesimo,\npossiate crescere in santità di vita\nper incontrarlo un giorno nella patria del cielo.",
           "a": "Amen."
         }
       ],
       "final": {
-        "c": "E la benedizione di Dio onnipotente, Padre e Figlio ✠ e Spirito Santo, discenda su di voi e con voi rimanga sempre.",
+        "c": "E la benedizione di Dio onnipotente,\nPadre e Figlio ✠ e Spirito Santo,\ndiscenda su di voi e con voi rimanga sempre.",
         "a": "Amen."
       }
     },
     {
-      "id": "pentecoste",
+      "id": "sb8",
+      "num": 8,
       "season": "pasqua",
-      "title": "Benedizione Solenne di Pentecoste",
-      "rubric": "Nella solennità di Pentecoste.",
+      "title": "Nell'Ascensione del Signore",
+      "rubric": "",
       "invocations": [
         {
-          "c": "Dio, Padre della luce, che ha illuminato le menti dei discepoli con l'effusione dello Spirito Paraclito, vi conceda la gioia della sua benedizione e vi renda sempre ricolmi dei suoi doni.",
+          "c": "Nel giorno in cui Cristo è asceso nella gloria\ne ci ha aperto la via del cielo,\nDio vi riempia della sua benedizione.",
           "a": "Amen."
         },
         {
-          "c": "Il fuoco che apparve sopra i discepoli purifichi i vostri cuori da ogni male e li riempia del suo ardore di luce.",
+          "c": "Cristo, che dopo la sua risurrezione\napparve visibilmente ai suoi discepoli,\nsi mostri a voi misericordioso\nquando verrà come giudice.",
           "a": "Amen."
         },
         {
-          "c": "Lo Spirito Santo, che ha riunito i popoli diversi nell'unica fede, vi renda perseveranti nella fede stessa e vi faccia passare, nella speranza, dalla fede alla visione.",
+          "c": "Voi, che riconoscete\nCristo assiso alla gloria del Padre,\npossiate sperimentare la sua presenza in mezzo a noi\nsino alla fine dei secoli.",
           "a": "Amen."
         }
       ],
       "final": {
-        "c": "E la benedizione di Dio onnipotente, Padre e Figlio ✠ e Spirito Santo, discenda su di voi e con voi rimanga sempre.",
+        "c": "E la benedizione di Dio onnipotente,\nPadre e Figlio ✠ e Spirito Santo,\ndiscenda su di voi e con voi rimanga sempre.",
         "a": "Amen."
       }
+    },
+    {
+      "id": "sb9",
+      "num": 9,
+      "season": "pasqua",
+      "title": "Nella domenica di Pentecoste",
+      "rubric": "",
+      "invocations": [
+        {
+          "c": "Dio, sorgente di ogni luce,\nche ha illuminato i discepoli\ncon l'eΩusione dello Spirito consolatore,\nvi rallegri con la sua benedizione\ne vi colmi sempre dei doni del suo Spirito.",
+          "a": "Amen."
+        },
+        {
+          "c": "Il Signore risorto\nvi comunichi il fuoco dello Spirito\ne vi illumini con la sua sapienza.",
+          "a": "Amen."
+        },
+        {
+          "c": "Lo Spirito Santo,\nche ha riunito i popoli diversi nell'unica Chiesa,\nvi renda perseveranti nella fede\ne gioiosi nella speranza\nfino alla visione beata nel cielo.",
+          "a": "Amen."
+        },
+        {
+          "c": "E la benedizione di Dio onnipotente,\nPadre e Figlio ✠ e Spirito Santo,\ndiscenda su di voi e con voi rimanga sempre.",
+          "a": "Amen."
+        }
+      ],
+      "final": {
+        "c": "462 Rito della Messa con il popolo",
+        "a": "Amen."
+      }
+    },
+    {
+      "id": "sb10",
+      "num": 10,
+      "season": "ordinario",
+      "title": "Nel Tempo Ordinario I",
+      "rubric": "",
+      "invocations": [
+        {
+          "c": "Benedizione di Aronne: Nm 6, 24-26\nIl Signore vi benedica e vi custodisca.",
+          "a": "Amen."
+        },
+        {
+          "c": "Faccia risplendere per voi il suo volto\ne vi faccia grazia.",
+          "a": "Amen."
+        },
+        {
+          "c": "Rivolga a voi il suo volto\ne vi conceda la sua pace.",
+          "a": "Amen."
+        }
+      ],
+      "final": {
+        "c": "E la benedizione di Dio onnipotente,\nPadre e Figlio ✠ e Spirito Santo,\ndiscenda su di voi e con voi rimanga sempre.",
+        "a": "Amen."
+      }
+    },
+    {
+      "id": "sb11",
+      "num": 11,
+      "season": "ordinario",
+      "title": "Nel Tempo Ordinario II",
+      "rubric": "",
+      "invocations": [
+        {
+          "c": "Fil 4, 7\nLa pace di Dio, che supera ogni intelligenza,\ncustodisca i vostri cuori e le vostre menti\nnella conoscenza e nell'amore del Padre\ne del suo Figlio, il Signore nostro Gesù Cristo.",
+          "a": "Amen."
+        }
+      ],
+      "final": {
+        "c": "E la benedizione di Dio onnipotente,\nPadre e Figlio ✠ e Spirito Santo,\ndiscenda su di voi e con voi rimanga sempre.",
+        "a": "Amen."
+      }
+    },
+    {
+      "id": "sb12",
+      "num": 12,
+      "season": "ordinario",
+      "title": "Nel Tempo Ordinario III",
+      "rubric": "",
+      "invocations": [
+        {
+          "c": "Dio onnipotente e misericordioso vi benedica\ne vi dia il dono della vera sapienza,\napportatrice di salvezza.",
+          "a": "Amen."
+        },
+        {
+          "c": "Vi illumini sempre\ncon gli insegnamenti della fede\ne vi aiuti a perseverare nel bene.",
+          "a": "Amen."
+        },
+        {
+          "c": "Guidi i vostri passi nel cammino verso di lui\ne vi mostri la via della carità e della pace.",
+          "a": "Amen."
+        }
+      ],
+      "final": {
+        "c": "E la benedizione di Dio onnipotente,\nPadre e Figlio ✠ e Spirito Santo,\ndiscenda su di voi e con voi rimanga sempre.",
+        "a": "Amen."
+      }
+    },
+    {
+      "id": "sb13",
+      "num": 13,
+      "season": "ordinario",
+      "title": "Nel Tempo Ordinario IV",
+      "rubric": "",
+      "invocations": [
+        {
+          "c": "Il Dio di ogni consolazione\ndisponga nella sua pace i vostri giorni\ne vi conceda i doni della sua benedizione.",
+          "a": "Amen."
+        },
+        {
+          "c": "Vi liberi sempre da ogni pericolo\ne confermi nel suo amore i vostri cuori.",
+          "a": "Amen."
+        },
+        {
+          "c": "Vi colmi di fede, speranza e carità,\nperché sia ricca di opere buone la vostra vita terrena,\ne possiate giungere alla gioia della vita eterna.",
+          "a": "Amen."
+        },
+        {
+          "c": "E la benedizione di Dio onnipotente,\nPadre e Figlio ✠ e Spirito Santo,\ndiscenda su di voi e con voi rimanga sempre.",
+          "a": "Amen."
+        }
+      ],
+      "final": {
+        "c": "464 Rito della Messa con il popolo",
+        "a": "Amen."
+      }
+    },
+    {
+      "id": "sb14",
+      "num": 14,
+      "season": "ordinario",
+      "title": "Nel Tempo Ordinario V",
+      "rubric": "",
+      "invocations": [
+        {
+          "c": "Dio onnipotente allontani da voi ogni male\ne vi conceda con benevolenza i doni della sua benedizione.",
+          "a": "Amen."
+        },
+        {
+          "c": "Renda attenti i vostri cuori alla sua parola,\nperché possiate godere della gioia senza fine.",
+          "a": "Amen."
+        },
+        {
+          "c": "Vi aiuti a comprendere ciò che è buono e giusto,\nperché, camminando sempre sulla via dei suoi precetti,\npossiate diventare coeredi dei santi.",
+          "a": "Amen."
+        }
+      ],
+      "final": {
+        "c": "E la benedizione di Dio onnipotente,\nPadre e Figlio ✠ e Spirito Santo,\ndiscenda su di voi e con voi rimanga sempre.",
+        "a": "Amen."
+      }
+    },
+    {
+      "id": "sb15",
+      "num": 15,
+      "season": "ordinario",
+      "title": "Nel Tempo Ordinario VI",
+      "rubric": "",
+      "invocations": [
+        {
+          "c": "Dio vi benedica con ogni benedizione del cielo\ne vi renda puri e santi ai suoi occhi;\neΩonda su di voi le ricchezze della sua gloria,\nvi istruisca con le parole di verità,\nvi illumini col Vangelo di salvezza,\nvi faccia lieti nella carità fraterna.",
+          "a": "Amen."
+        }
+      ],
+      "final": {
+        "c": "E la benedizione di Dio onnipotente,\nPadre e Figlio ✠ e Spirito Santo,\ndiscenda su di voi e con voi rimanga sempre.",
+        "a": "Amen."
+      }
+    },
+    {
+      "id": "sb16",
+      "num": 16,
+      "season": "ordinario",
+      "title": "Nel Tempo Ordinario VII",
+      "rubric": "",
+      "invocations": [
+        {
+          "c": "Cf. 2 Ts 2, 16-17\nIl Signore nostro Gesù Cristo e Dio, Padre nostro,\nche ci ha amati e ci ha dato, per sua grazia,\nuna consolazione eterna e una buona speranza,\nconfortino i vostri cuori e li confermino\nin ogni opera e parola di bene.",
+          "a": "Amen."
+        }
+      ],
+      "final": {
+        "c": "E la benedizione di Dio onnipotente,\nPadre e Figlio ✠ e Spirito Santo,\ndiscenda su di voi e con voi rimanga sempre.",
+        "a": "Amen."
+      }
+    },
+    {
+      "id": "sb17",
+      "num": 17,
+      "season": "ordinario",
+      "title": "Nel Tempo Ordinario VIII",
+      "rubric": "",
+      "invocations": [
+        {
+          "c": "Cf. 1 Ts 5, 23-24\nIl Dio della pace vi santifichi interamente,\ne tutta la vostra persona, spirito, anima e corpo,\nsi conservi irreprensibile\nper la venuta del Signore nostro Gesù Cristo.",
+          "a": "Amen."
+        },
+        {
+          "c": "E la benedizione di Dio onnipotente,\nPadre e Figlio ✠ e Spirito Santo,\ndiscenda su di voi e con voi rimanga sempre.",
+          "a": "Amen."
+        }
+      ],
+      "final": {
+        "c": "466 Rito della Messa con il popolo",
+        "a": "Amen."
+      }
+    },
+    {
+      "id": "sb18",
+      "num": 18,
+      "season": "ordinario",
+      "title": "Nel Tempo Ordinario IX",
+      "rubric": "",
+      "invocations": [
+        {
+          "c": "Cf. Eb 13, 20-21\nIl Dio della pace, che ha ricondotto dai morti\nil pastore grande delle pecore, il Signore nostro Gesù,\nin virtù del sangue di un'alleanza eterna,\nvi renda perfetti in ogni bene,\nperché possiate compiere la sua volontà,\noperando in voi ciò che a lui è gradito.",
+          "a": "Amen."
+        }
+      ],
+      "final": {
+        "c": "E la benedizione di Dio onnipotente,\nPadre e Figlio ✠ e Spirito Santo,\ndiscenda su di voi e con voi rimanga sempre.",
+        "a": "Amen."
+      }
+    },
+    {
+      "id": "sb19",
+      "num": 19,
+      "season": "ordinario",
+      "title": "Nel Tempo Ordinario X",
+      "rubric": "",
+      "invocations": [
+        {
+          "c": "Cf. 1 Pt 5, 10\nIl Dio di ogni grazia,\nil quale vi ha chiamati alla sua gloria eterna in Cristo,\nvi confermi e vi renda forti e saldi nella fede.",
+          "a": "Amen."
+        },
+        {
+          "c": "E la benedizione di Dio onnipotente,\nPadre e Figlio ✠ e Spirito Santo,\ndiscenda su di voi e con voi rimanga sempre.",
+          "a": "Amen."
+        }
+      ],
+      "final": {
+        "c": "II. Nelle celebrazioni dei santi",
+        "a": "Amen."
+      }
+    },
+    {
+      "id": "sb20",
+      "num": 20,
+      "season": "ordinario",
+      "title": "Nelle feste della beata Vergine Maria",
+      "rubric": "",
+      "invocations": [
+        {
+          "c": "Dio misericordioso,\nche per mezzo del suo Figlio, nato dalla Vergine,\nha redento il mondo,\nvi colmi della sua benedizione.",
+          "a": "Amen."
+        },
+        {
+          "c": "Dio vi protegga sempre e in ogni luogo\nper intercessione di Maria, Vergine e Madre,\nche ha dato al mondo l'autore della vita.",
+          "a": "Amen."
+        },
+        {
+          "c": "A tutti voi,\nche celebrate con fede la festa ...,\nconceda il Signore la salute del corpo\ne la gioia dello spirito.",
+          "a": "Amen."
+        }
+      ],
+      "final": {
+        "c": "E la benedizione di Dio onnipotente,\nPadre e Figlio ✠ e Spirito Santo,\ndiscenda su di voi e con voi rimanga sempre.",
+        "a": "Amen."
+      }
+    },
+    {
+      "id": "sb21",
+      "num": 21,
+      "season": "ordinario",
+      "title": "Santi Pietro e Paolo",
+      "rubric": "",
+      "invocations": [
+        {
+          "c": "Dio onnipotente, che ha fondato la Chiesa\nsulla fede dell'apostolo Pietro,\nvi renda saldi nell'adesione a Cristo\ne vi colmi della sua benedizione.",
+          "a": "Amen."
+        },
+        {
+          "c": "Dio, che ci ha illuminato con la predicazione di san Paolo,\nvi insegni con l'esempio dell'apostolo\na condurre a Cristo i fratelli.",
+          "a": "Amen."
+        },
+        {
+          "c": "Pietro con il potere delle chiavi,\nPaolo con la sua parola\nintercedano per noi\ne ci accompagnino a quella patria\nche essi hanno raggiunto\ncon il martirio della croce e della spada.",
+          "a": "Amen."
+        },
+        {
+          "c": "E la benedizione di Dio onnipotente,\nPadre e Figlio ✠ e Spirito Santo,\ndiscenda su di voi e con voi rimanga sempre.",
+          "a": "Amen."
+        }
+      ],
+      "final": {
+        "c": "468 Rito della Messa con il popolo",
+        "a": "Amen."
+      }
+    },
+    {
+      "id": "sb22",
+      "num": 22,
+      "season": "ordinario",
+      "title": "Nelle feste degli apostoli",
+      "rubric": "",
+      "invocations": [
+        {
+          "c": "Dio, che ha fondato la nostra fede\nsulla testimonianza apostolica,\nper i meriti del santo apostolo N.\n[dei santi apostoli N. e N.]\nvi colmi della sua benedizione.",
+          "a": "Amen."
+        },
+        {
+          "c": "Dio, che ci ha arricchito\ncon gli insegnamenti e gli esempi degli apostoli,\nvi renda dinanzi a tutti\ntestimoni della verità.",
+          "a": "Amen."
+        },
+        {
+          "c": "L'intercessione dei santi apostoli,\nche ci hanno insegnato a rimanere saldi nella fede,\nvi ottenga di giungere all'eredità\ndella patria eterna.",
+          "a": "Amen."
+        }
+      ],
+      "final": {
+        "c": "E la benedizione di Dio onnipotente,\nPadre e Figlio ✠ e Spirito Santo,\ndiscenda su di voi e con voi rimanga sempre.",
+        "a": "Amen."
+      }
+    },
+    {
+      "id": "sb23",
+      "num": 23,
+      "season": "ordinario",
+      "title": "Nella solennità di Tutti i Santi",
+      "rubric": "",
+      "invocations": [
+        {
+          "c": "Dio, gloria e letizia dei santi,\nche vi raΩorza con la loro incessante preghiera,\nvi doni la sua perenne benedizione.",
+          "a": "Amen."
+        },
+        {
+          "c": "Liberati dai mali presenti\nper l'intercessione di tutti i santi,\ne istruiti dal loro esempio di vita,\npossiate essere trovati sempre fedeli\nnel servizio di Dio e dei fratelli.",
+          "a": "Amen."
+        },
+        {
+          "c": "Possiate godere con tutti i santi\nla gioia eterna di quella patria\nnella quale la Chiesa esulta in eterno\nper la comunione gloriosa di tutti i suoi figli.",
+          "a": "Amen."
+        }
+      ],
+      "final": {
+        "c": "E la benedizione di Dio onnipotente,\nPadre e Figlio ✠ e Spirito Santo,\ndiscenda su di voi e con voi rimanga sempre.",
+        "a": "Amen."
+      }
+    },
+    {
+      "id": "sb24",
+      "num": 24,
+      "season": "ordinario",
+      "title": "Nella festa di un santo",
+      "rubric": "",
+      "invocations": [
+        {
+          "c": "Dio nostro Padre,\nche ci ha riuniti per celebrare oggi\nla festa di san N.,\n[patrono della nostra comunità\nparrocchiale o diocesana o nazionale di N.],\nvi benedica, vi protegga,\ne vi confermi nella sua pace.",
+          "a": "Amen."
+        },
+        {
+          "c": "Cristo Signore,\nche ha manifestato in san N.\nla forza rinnovatrice della Pasqua,\nvi renda autentici testimoni del suo Vangelo.",
+          "a": "Amen."
+        },
+        {
+          "c": "Lo Spirito Santo, che in san N.\nci ha oΩerto un segno di solidarietà fraterna,\nvi renda capaci di attuare una vera comunione\ndi fede e di amore nella sua Chiesa.",
+          "a": "Amen."
+        },
+        {
+          "c": "E la benedizione di Dio onnipotente,\nPadre e Figlio ✠ e Spirito Santo,\ndiscenda su di voi e con voi rimanga sempre.",
+          "a": "Amen."
+        }
+      ],
+      "final": {
+        "c": "470 Rito della Messa con il popolo\nIII. Altre benedizioni",
+        "a": "Amen."
+      }
+    },
+    {
+      "id": "sb25",
+      "num": 25,
+      "season": "ordinario",
+      "title": "Nella dedicazione di una chiesa",
+      "rubric": "",
+      "invocations": [
+        {
+          "c": "Dio, Signore del cielo e della terra,\nche oggi ci ha riuniti per la dedicazione di questa casa,\n[che oggi ci ha riuniti\nnell'anniversario della dedicazione di questa casa,]\nvi colmi di ogni benedizione del cielo.",
+          "a": "Amen."
+        },
+        {
+          "c": "Dio, che ha voluto radunare nel suo Figlio\ntutti i figli dispersi,\nfaccia di voi il suo tempio\ne l'abitazione dello Spirito Santo.",
+          "a": "Amen."
+        },
+        {
+          "c": "Dio vi purifichi,\nponga in voi la sua dimora,\ne vi conceda con tutti i santi\nil possesso della beatitudine eterna.",
+          "a": "Amen."
+        }
+      ],
+      "final": {
+        "c": "E la benedizione di Dio onnipotente,\nPadre e Figlio ✠ e Spirito Santo,\ndiscenda su di voi e con voi rimanga sempre.",
+        "a": "Amen."
+      }
+    },
+    {
+      "id": "sb26",
+      "num": 26,
+      "season": "ordinario",
+      "title": "Nelle celebrazioni dei defunti",
+      "rubric": "",
+      "invocations": [
+        {
+          "c": "Il Dio di ogni consolazione,\nche nella sua bontà ineΩabile ha creato l'uomo\ne nella risurrezione del suo Figlio unigenito\nha concesso ai credenti la speranza di risorgere,\neΩonda su di voi la sua benedizione.",
+          "a": "Amen."
+        },
+        {
+          "c": "A noi, ancora pellegrini sulla terra,\nconceda il Signore il perdono dei peccati,\ne a tutti i defunti la dimora della luce e della pace.",
+          "a": "Amen."
+        },
+        {
+          "c": "Doni a tutti noi,\nche crediamo in Cristo risorto dai morti,\ndi vivere con lui nella felicità senza fine.",
+          "a": "Amen."
+        },
+        {
+          "c": "E la benedizione di Dio onnipotente,\nPadre e Figlio ✠ e Spirito Santo,\ndiscenda su di voi e con voi rimanga sempre.",
+          "a": "Amen."
+        }
+      ],
+      "final": {
+        "c": "472 Rito della Messa con il popolo\nPreghiere di benedizione sul popolo\nLe seguenti orazioni si possono utilizzare, a giudizio del sacerdote, al termine della\ncelebrazione della Messa, di una Liturgia della Parola, della Liturgia delle Ore, o dei\nSacramenti.\nIl diacono o, in sua assenza, lo stesso sacerdote può invitare i fedeli con queste parole o\ncon altre simili:\nInchinatevi per la benedizione.\nQuindi il sacerdote, con le mani stese sul popolo, dice la preghiera, alla quale tutti\nrispondono:\nAmen.\nDopo la preghiera, il sacerdote conclude sempre:\nE la benedizione di Dio onnipotente,\nPadre e Figlio ✠ e Spirito Santo,\ndiscenda su di voi e con voi rimanga sempre.",
+        "a": "Amen."
+      }
+    }
+  ],
+  "prayersOverPeople": [
+    {
+      "id": "pp1",
+      "num": 1,
+      "text": "Assisti con bontà il tuo popolo, o Signore,\ne non privare mai della tua consolazione sulla terra\ncoloro che chiami ai beni eterni.\nPer Cristo nostro Signore."
+    },
+    {
+      "id": "pp2",
+      "num": 2,
+      "text": "Concedi al popolo cristiano, o Signore,\ndi conoscere profondamente la verità che professa\ne di amare il mistero che celebra.\nPer Cristo nostro Signore."
+    },
+    {
+      "id": "pp3",
+      "num": 3,
+      "text": "Il dono della tua santa benedizione, o Signore,\nallontani questo popolo da ogni male\ne compia i suoi giusti desideri.\nPer Cristo nostro Signore."
+    },
+    {
+      "id": "pp4",
+      "num": 4,
+      "text": "Converti a te, o Signore, il tuo popolo,\ntu che difendi anche i peccatori\ne proteggi con grande amore\ncoloro che ti cercano con cuore sincero.\nPer Cristo nostro Signore."
+    },
+    {
+      "id": "pp5",
+      "num": 5,
+      "text": "Fa' splendere su questa tua famiglia\nla luce del tuo volto, o Signore,\nperché aderisca alla tua volontà\ne compia il bene che le ispiri.\nPer Cristo nostro Signore."
+    },
+    {
+      "id": "pp6",
+      "num": 6,
+      "text": "Concedi benigno ai tuoi fedeli,\no Signore, il perdono e la pace,\nperché siano purificati da ogni colpa\ne ti servano nella serenità dello spirito.\nPer Cristo nostro Signore."
+    },
+    {
+      "id": "pp7",
+      "num": 7,
+      "text": "La tua misericordia, o Dio,\nfaccia crescere nella fede il popolo\nche ti riconosce suo Signore\ne lo sostenga nell'osservanza dei tuoi comandamenti.\nPer Cristo nostro Signore."
+    },
+    {
+      "id": "pp8",
+      "num": 8,
+      "text": "Guarda con bontà il tuo popolo, o Dio,\nperché, liberato da ogni male,\nti serva con tutto il cuore\ne viva sempre sotto la tua protezione.\nPer Cristo nostro Signore."
+    },
+    {
+      "id": "pp9",
+      "num": 9,
+      "text": "Si allieti sempre la tua famiglia, o Dio,\nnella celebrazione dei misteri della redenzione\ne con la sua perseveranza\nne ottenga pienamente i frutti.\nPer Cristo nostro Signore."
+    },
+    {
+      "id": "pp10",
+      "num": 10,
+      "text": "Signore Dio, per l'abbondanza della tua misericordia\narricchisci di doni i tuoi servi\ne liberali da ogni timore,\nperché, fortificati dalle tue benedizioni,\nsiano sempre pronti a renderti grazie\ne a benedirti con perenne esultanza.\nPer Cristo nostro Signore.\n474 Rito della Messa con il popolo"
+    },
+    {
+      "id": "pp11",
+      "num": 11,
+      "text": "Custodisci con infinita misericordia, o Signore,\nla tua famiglia,\nperché con la tua protezione\nsia libera da ogni pericolo\ne con le buone opere dia lode al tuo nome.\nPer Cristo nostro Signore."
+    },
+    {
+      "id": "pp12",
+      "num": 12,
+      "text": "Purifica nel corpo e nella mente\ni tuoi fedeli, o Signore,\nperché, trasformati dall'azione del tuo Spirito,\nvincano le suggestioni del male\ne gustino la soavità del tuo amore.\nPer Cristo nostro Signore."
+    },
+    {
+      "id": "pp13",
+      "num": 13,
+      "text": "Scenda sui tuoi fedeli, o Signore,\nla grazia della tua benedizione\ne disponga gli animi di tutti alla crescita spirituale,\nperché dalla potenza della tua carità\nricevano forza per compiere la loro opera.\nPer Cristo nostro Signore."
+    },
+    {
+      "id": "pp14",
+      "num": 14,
+      "text": "I cuori dei fedeli,\npronti a servire il tuo nome,\ninvocano il tuo aiuto, o Signore;\ne poiché senza di te\nnon possono compiere nulla di giusto,\nper tua misericordia\nfa' che conoscano i sentieri della rettitudine\ne comprendano tutto ciò che per loro è fonte di bene.\nPer Cristo nostro Signore."
+    },
+    {
+      "id": "pp15",
+      "num": 15,
+      "text": "Esaudisci, o Signore, le invocazioni del popolo a te fedele:\ntu, che sei benevolo verso l'umana fragilità,\nconcedi il tuo aiuto, perché la tua famiglia,\nrendendoti culto con animo sincero,\npossa godere dei rimedi della vita presente\ne di quella futura.\nPer Cristo nostro Signore."
+    },
+    {
+      "id": "pp16",
+      "num": 16,
+      "text": "Volgi lo sguardo, o Signore, sulla tua famiglia\ne donale in abbondanza l'implorata misericordia,\nsenza la quale nulla di giusto può compiere davanti a te:\ncon questa grazia ottenga di adempiere i tuoi precetti\nche conducono alla salvezza.\nPer Cristo nostro Signore."
+    },
+    {
+      "id": "pp17",
+      "num": 17,
+      "text": "Riversa con abbondanza sui tuoi fedeli, o Signore,\nla grazia del cielo:\nti lodino le nostre labbra, ti lodi la nostra anima\ne ti lodino anche le nostre opere,\ne poiché è tuo dono ciò che siamo,\nappartenga a te tutta la nostra vita.\nPer Cristo nostro Signore."
+    },
+    {
+      "id": "pp18",
+      "num": 18,
+      "text": "Guida con gli insegnamenti del cielo il tuo popolo,\no Signore, perché, rifuggendo ogni male\ne ricercando il bene,\nnon meriti il tuo sdegno,\nma ottenga sempre la tua misericordia.\nPer Cristo nostro Signore."
+    },
+    {
+      "id": "pp19",
+      "num": 19,
+      "text": "Volgi il tuo sguardo, o Signore,\na coloro che ti supplicano\ne custodisci con bontà quanti ripongono\nla loro speranza nella tua misericordia,\nperché in una vita santa rimangano a te fedeli,\ne, avendo sempre il necessario in tutto,\nsiano per l'eternità eredi della tua promessa.\nPer Cristo nostro Signore."
+    },
+    {
+      "id": "pp20",
+      "num": 20,
+      "text": "Concedi, o Signore, al popolo che ti supplica\nla grazia della tua misericordia,\nperché l'uomo da te creato e redento\nsia sempre raggiunto dalla tua opera di salvezza.\nPer Cristo nostro Signore.\n476 Rito della Messa con il popolo"
+    },
+    {
+      "id": "pp21",
+      "num": 21,
+      "text": "Concedi, o Signore,\nche il popolo fedele proceda\nsospinto dal tuo amore\ne, mosso da un salutare pentimento,\ncompia con gioia ciò che comandi,\nper ricevere ciò che prometti.\nPer Cristo nostro Signore."
+    },
+    {
+      "id": "pp22",
+      "num": 22,
+      "text": "La fragilità del popolo a te fedele, o Signore,\nmuova la tua compassione,\ne la preghiera fatta con fede ottenga la tua misericordia,\nperché ciò che non osa sperare per i propri meriti\nlo riceva dall'abbondanza del tuo perdono.\nPer Cristo nostro Signore."
+    },
+    {
+      "id": "pp23",
+      "num": 23,
+      "text": "Stendi la tua mano potente\ne difendi i tuoi figli, o Signore:\ncoloro che obbediscono al tuo volere di Padre\nsiano resi forti dalla continua protezione del tuo amore.\nPer Cristo nostro Signore."
+    },
+    {
+      "id": "pp24",
+      "num": 24,
+      "text": "Guarda, o Signore, alle preghiere della tua famiglia,\ned esaudisci chi ti supplica,\nperché, ricevendo forza dal tuo aiuto,\nperseveri nella confessione del tuo nome.\nPer Cristo nostro Signore."
+    },
+    {
+      "id": "pp25",
+      "num": 25,
+      "text": "Custodisci la tua famiglia, o Signore,\ne nella tua bontà concedile l'abbondanza\ndella tua misericordia perché si accresca\ngrazie agli insegnamenti e ai doni del cielo.\nPer Cristo nostro Signore."
+    },
+    {
+      "id": "pp26",
+      "num": 26,
+      "text": "Gioisca per il tuo aiuto, o Signore,\nil popolo a te fedele,\ne, camminando nella vita cristiana,\npossa godere dei beni presenti e di quelli futuri.\nPer Cristo nostro Signore."
+    },
+    {
+      "id": "pp27",
+      "num": 27,
+      "text": "Esulti, o Signore, il popolo cristiano\nnel ricordo dei santi,\nmembra gloriose del corpo del tuo Figlio,\ne possa aver parte con loro alla tua eredità\nper lodarti eternamente nella liturgia del cielo.\nPer Cristo nostro Signore."
+    },
+    {
+      "id": "pp28",
+      "num": 28,
+      "text": "Converti sempre a te i cuori dei tuoi fedeli, o Signore,\ne per l'intercessione dei santi [di san N.]\naccompagnaci sempre con la tua protezione.\nPer Cristo nostro Signore."
     }
   ],
   "pasqua_dismissal": {

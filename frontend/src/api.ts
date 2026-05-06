@@ -44,6 +44,7 @@ export type VotiveMass = { id: string; title: string; color: string };
 export type MysteryAcclamation = { id: string; label: string; celebrante: string; assemblea: string };
 export type SolemnBlessing = {
   id: string;
+  num?: number;
   season: string;
   title: string;
   rubric: string;
