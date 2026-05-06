@@ -434,9 +434,28 @@ export default function MessaScreen() {
   // === Helpers paginazione automatica testo ===
   // Stima quanti caratteri possono stare in una schermata dato il fontSize attuale.
   // Più aggressivo per evitare overflow oltre il fondo schermo con font grandi.
-  // Stima caratteri per schermata per modalità tap.
-  // Aumentato per riempire meglio lo schermo senza spazi vuoti inutili.
-  const charsPerPage = Math.max(280, Math.min(2000, Math.round(18000 / Math.max(16, fontSize))));
+  // === Stima Kindle-style del testo che sta in una pagina (NO scroll, solo tap) ===
+  // Calcoliamo dinamicamente i caratteri-per-pagina in base a:
+  //   - dimensioni effettive dello schermo (useWindowDimensions)
+  //   - dimensione del font scelta dall'utente (Settings)
+  //   - padding/header/footer dell'app
+  // Quando l'utente cambia il font size, il numero di pagine si aggiorna
+  // automaticamente (ricalcolo nel render successivo).
+  //
+  // Stima: usiamo lineHeight = fontSize * 1.4 (vedi styles.text)
+  // larghezza utile del testo = screenWidth - 2*padding (32) - 2*partBox margin (16)
+  // larghezza media di un carattere = fontSize * 0.55 (per font sans-serif italiani)
+  const HEADER_FOOTER_OVERHEAD = 220; // top header (60) + tap nav footer (80) + page title (60) + padding (20)
+  const TEXT_HORIZONTAL_PADDING = 64;  // 32 partBox + 32 outer
+  const lineHeightPx = Math.max(20, Math.round(fontSize * 1.4));
+  const usableHeightPx = Math.max(300, screenHeight - HEADER_FOOTER_OVERHEAD);
+  const usableWidthPx = Math.max(280, screenWidth - TEXT_HORIZONTAL_PADDING);
+  const linesPerPage = Math.max(4, Math.floor(usableHeightPx / lineHeightPx));
+  const avgCharWidthPx = Math.max(8, fontSize * 0.55);
+  const charsPerLine = Math.max(20, Math.floor(usableWidthPx / avgCharWidthPx));
+  // Safety factor 0.78: tiene conto di parole spezzate, paragrafi nuovi (\n),
+  // titoli/subtitle che occupano riga intera, e variabilita' delle parole italiane.
+  const charsPerPage = Math.max(160, Math.round(linesPerPage * charsPerLine * 0.78));
 
   // Splitta un testo lungo in chunk rispettando i paragrafi (\n\n).
   // Algoritmo "greedy fill": riempie ogni chunk il più possibile per minimizzare
@@ -1310,25 +1329,35 @@ export default function MessaScreen() {
           const selAcc = acclamations.find(x => x.id === acclamationId);
 
           // Split intelligente della PE basato su MARKER LITURGICI per produrre
-          // pagine compatte (poco spazio vuoto) e ben tagliate. Niente più
-          // chunking 50% character-based.
+          // pagine compatte (poco spazio vuoto) e ben tagliate.
+          // Inoltre, se un chunk dovesse superare la capacità della pagina
+          // (calcolata dinamicamente in base allo schermo + font scelto),
+          // viene sub-splittato automaticamente per evitare scroll.
           //
-          // CONSACRAZIONE: split in 2-3 pagine al massimo:
-          //   Pag.1: Pre-consacrazione (testo iniziale + invocazione Spirito + consacrazione PANE)
-          //   Pag.2: Consacrazione CALICE ("Allo stesso modo, dopo aver cenato...")
-          // ANAMNESI/DOSSOLOGIA: split in 2 pagine massimo:
-          //   Pag.1: Anamnesi + intercessioni
-          //   Pag.2: Dossologia ("Per Cristo, con Cristo e in Cristo...")
+          // CONSACRAZIONE:
+          //   marker: "Allo stesso modo, dopo aver cenato" (consacrazione CALICE)
+          // ANAMNESI/DOSSOLOGIA:
+          //   marker: "Per Cristo, con Cristo" (dossologia finale)
           const splitAtMarker = (txt: string, marker: string): [string, string] => {
             const idx = txt.indexOf(marker);
             if (idx < 0) return [txt, ""];
             return [txt.substring(0, idx).trim(), txt.substring(idx).trim()];
           };
+          // Ricava chunk macro dai marker, poi sub-divide se troppo grandi
+          const expandIfTooBig = (chunks: string[]): string[] => {
+            const out: string[] = [];
+            const HARD = Math.round(charsPerPage * 1.15);
+            for (const c of chunks) {
+              if (!c) continue;
+              if (c.length <= HARD) { out.push(c); continue; }
+              out.push(...splitTextIntoChunks(c, charsPerPage));
+            }
+            return out;
+          };
           // Marker calice: "Allo stesso modo, dopo aver cenato"
           const [beforeBread, beforeCalice] = splitAtMarker(beforePart, "Allo stesso modo, dopo aver cenato");
-          const beforeChunks = beforeCalice
-            ? [beforeBread, beforeCalice].filter(Boolean)
-            : [beforePart];
+          const beforeRaw = beforeCalice ? [beforeBread, beforeCalice] : [beforePart];
+          const beforeChunks = expandIfTooBig(beforeRaw);
           beforeChunks.forEach((_, i) => {
             pages.push({
               key: `pe-cons-${i}`,
@@ -1380,13 +1409,14 @@ export default function MessaScreen() {
 
           // Pagina Acclamazione + Mistero della Fede + Anamnesi/Dossologia (chunked se lungo)
           if (afterPart || acclamations.length > 0) {
-            // Anamnesi/Dossologia: split su "Per Cristo, con Cristo"
-            // (dossologia finale). Se non trovato, una sola pagina.
+            // Anamnesi/Dossologia: split su "Per Cristo, con Cristo" (dossologia)
+            // poi sub-divide se troppo grande per la pagina (font grande).
             const dossologyMarker = /Per Cristo, con Cristo/i;
             const dossIdx = afterPart.search(dossologyMarker);
-            const afterChunks = dossIdx > 0
-              ? [afterPart.substring(0, dossIdx).trim(), afterPart.substring(dossIdx).trim()].filter(Boolean)
+            const afterRaw = dossIdx > 0
+              ? [afterPart.substring(0, dossIdx).trim(), afterPart.substring(dossIdx).trim()]
               : [afterPart];
+            const afterChunks = expandIfTooBig(afterRaw);
             // Prima pagina: acclamazione (selettore + dialogo)
             if (acclamations.length > 0) {
               pages.push({
