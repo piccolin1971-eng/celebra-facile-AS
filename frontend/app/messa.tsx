@@ -331,14 +331,26 @@ export default function MessaScreen() {
   const getReading = (type: ReadingType) => liturgy?.readings?.find(r => r.type === type);
 
   // Basic text renderers
-  const R = ({ children, kind = "normal" }: { children: React.ReactNode; kind?: "normal" | "rubric" | "celebrante" | "assemblea" | "title" | "subtitle" }) => {
+  const R = ({ children, kind = "normal" }: { children: React.ReactNode; kind?: "normal" | "rubric" | "celebrante" | "assemblea" | "title" | "subtitle" | "antifonaTitle" | "readingTitle" | "orazioneTitle" | "ritoTitle" | "umili" }) => {
     const s = kind === "rubric" ? styles.rubric
       : kind === "celebrante" ? styles.celebrante
       : kind === "assemblea" ? styles.assemblea
       : kind === "title" ? styles.sectionTitle
       : kind === "subtitle" ? styles.subtitle
+      : kind === "antifonaTitle" ? styles.antifonaTitle
+      : kind === "readingTitle" ? styles.readingTitle
+      : kind === "orazioneTitle" ? styles.orazioneTitle
+      : kind === "ritoTitle" ? styles.ritoTitle
+      : kind === "umili" ? styles.umili
       : styles.text;
     return <Text style={s} selectable>{children}</Text>;
+  };
+
+  // Determina il kind del titolo in base al type della reading
+  const readingTitleKind = (t: ReadingType): "antifonaTitle" | "readingTitle" | "orazioneTitle" => {
+    if (t === "antifona_ingresso" || t === "antifona_comunione" || t === "sequenza" || t === "acclamazione") return "antifonaTitle";
+    if (t === "colletta" || t === "sulle_offerte" || t === "dopo_comunione") return "orazioneTitle";
+    return "readingTitle";
   };
 
   const renderSection = (section: any, idx: number) => {
@@ -486,14 +498,34 @@ export default function MessaScreen() {
   };
 
   // === Reading renderer (daily) ===
+  // Per il Salmo Responsoriale, evidenzia "R." (o "R/.") in rosso come ritornello.
+  const renderSalmoText = (text: string) => {
+    if (!text) return null;
+    const lines = text.split("\n");
+    return lines.map((ln, i) => {
+      const m = ln.match(/^(\s*)(R\/?\.)(.*)$/);
+      if (m) {
+        return (
+          <Text key={i} style={styles.text} selectable>
+            {m[1]}
+            <Text style={styles.salmoRit}>{m[2]}</Text>
+            <Text>{m[3]}</Text>
+          </Text>
+        );
+      }
+      return <Text key={i} style={styles.text} selectable>{ln}</Text>;
+    });
+  };
+
   const renderReading = (type: ReadingType, titleOverride?: string) => {
     const r = getReading(type);
     if (!r || !r.text) return null;
+    const titleKind = readingTitleKind(type);
     return (
       <View style={styles.readingBlock} testID={`reading-${type}`}>
-        <R kind="subtitle">{titleOverride || r.title}</R>
+        <R kind={titleKind}>{titleOverride || r.title}</R>
         {r.reference ? <R kind="rubric">{r.reference}</R> : null}
-        <R>{r.text}</R>
+        {type === "salmo" ? renderSalmoText(r.text) : <R>{r.text}</R>}
       </View>
     );
   };
@@ -1144,6 +1176,8 @@ export default function MessaScreen() {
         const inchinatoSection = idxInchinato >= 0 ? allSections[idxInchinato] : null;
 
         // P1: Presentazione doni (pane + vino)
+        // Le rubriche rosse sono nascoste su richiesta utente — il sacerdote
+        // conosce già i gesti; vengono mostrate solo le orazioni "Benedetto sei tu".
         pages.push({
           key: "offertorio-1",
           title: "Presentazione dei Doni",
@@ -1151,7 +1185,7 @@ export default function MessaScreen() {
             <View style={styles.partBox} testID="part-offertorio-1">
               <R kind="title">Liturgia Eucaristica – Presentazione dei doni</R>
               {headSections
-                .filter((s: any) => s.type !== "rubric" || true)  // mostra anche rubriche
+                .filter((s: any) => s.type !== "rubric")
                 .map(renderSection)}
             </View>
           ),
@@ -1164,10 +1198,15 @@ export default function MessaScreen() {
           render: () => (
             <View style={styles.partBox} testID="part-offertorio-2">
               <R kind="title">Presentazione dei doni (continua)</R>
-              {inchinatoSection && renderSection(inchinatoSection, 0)}
+              {/* "Umili e pentiti" — testo della preghiera silenziosa, in rosso (rubrica) */}
+              {inchinatoSection && (
+                <View style={styles.block}>
+                  <R kind="umili">{inchinatoSection.text}</R>
+                </View>
+              )}
               {orateChoice && (
                 <View style={styles.block}>
-                  {orateChoice.rubric && <R kind="rubric">{orateChoice.rubric}</R>}
+                  {/* Niente più rubrica rossa qui — solo i bottoni di scelta + dialogo */}
                   <R kind="subtitle">Invito e risposta</R>
                   <View style={styles.choiceRow}>
                     {orateChoice.options.map((o: any) => (
@@ -1270,11 +1309,26 @@ export default function MessaScreen() {
           }
           const selAcc = acclamations.find(x => x.id === acclamationId);
 
-          // Pagina 1+: Selettore + parte iniziale fino alla Consacrazione (chunked se lungo)
-          // Per la PE usiamo un chunk size più piccolo (~50%) per evitare scroll
-          // e avere più pagine da tappare, come richiesto.
-          const peCharsPerPage = Math.round(charsPerPage * 0.50);
-          const beforeChunks = splitTextIntoChunks(beforePart, peCharsPerPage);
+          // Split intelligente della PE basato su MARKER LITURGICI per produrre
+          // pagine compatte (poco spazio vuoto) e ben tagliate. Niente più
+          // chunking 50% character-based.
+          //
+          // CONSACRAZIONE: split in 2-3 pagine al massimo:
+          //   Pag.1: Pre-consacrazione (testo iniziale + invocazione Spirito + consacrazione PANE)
+          //   Pag.2: Consacrazione CALICE ("Allo stesso modo, dopo aver cenato...")
+          // ANAMNESI/DOSSOLOGIA: split in 2 pagine massimo:
+          //   Pag.1: Anamnesi + intercessioni
+          //   Pag.2: Dossologia ("Per Cristo, con Cristo e in Cristo...")
+          const splitAtMarker = (txt: string, marker: string): [string, string] => {
+            const idx = txt.indexOf(marker);
+            if (idx < 0) return [txt, ""];
+            return [txt.substring(0, idx).trim(), txt.substring(idx).trim()];
+          };
+          // Marker calice: "Allo stesso modo, dopo aver cenato"
+          const [beforeBread, beforeCalice] = splitAtMarker(beforePart, "Allo stesso modo, dopo aver cenato");
+          const beforeChunks = beforeCalice
+            ? [beforeBread, beforeCalice].filter(Boolean)
+            : [beforePart];
           beforeChunks.forEach((_, i) => {
             pages.push({
               key: `pe-cons-${i}`,
@@ -1326,8 +1380,13 @@ export default function MessaScreen() {
 
           // Pagina Acclamazione + Mistero della Fede + Anamnesi/Dossologia (chunked se lungo)
           if (afterPart || acclamations.length > 0) {
-            // Pagine seguenti: anamnesi + dossologia (chunked con stesso fattore aggressivo della consacrazione)
-            const afterChunks = splitTextIntoChunks(afterPart, peCharsPerPage);
+            // Anamnesi/Dossologia: split su "Per Cristo, con Cristo"
+            // (dossologia finale). Se non trovato, una sola pagina.
+            const dossologyMarker = /Per Cristo, con Cristo/i;
+            const dossIdx = afterPart.search(dossologyMarker);
+            const afterChunks = dossIdx > 0
+              ? [afterPart.substring(0, dossIdx).trim(), afterPart.substring(dossIdx).trim()].filter(Boolean)
+              : [afterPart];
             // Prima pagina: acclamazione (selettore + dialogo)
             if (acclamations.length > 0) {
               pages.push({
@@ -1356,16 +1415,20 @@ export default function MessaScreen() {
                 ),
               });
             }
-            // Pagine seguenti: anamnesi + dossologia (chunked)
+            // Pagine seguenti: split su "Per Cristo, con Cristo" (dossologia)
+            // - se 2 pagine: Anamnesi (pag1) + Dossologia (pag2)
+            // - se 1 pagina: Anamnesi e Dossologia insieme
             afterChunks.forEach((_, i) => {
+              const isLastDossology = afterChunks.length > 1 && i === afterChunks.length - 1;
+              const pageTitle = afterChunks.length > 1
+                ? (isLastDossology ? "Dossologia" : "Anamnesi e Intercessioni")
+                : "Anamnesi e Dossologia";
               pages.push({
                 key: `pe-after-${i}`,
-                title: afterChunks.length > 1
-                  ? `Anamnesi e Dossologia (${i + 1}/${afterChunks.length})`
-                  : "Anamnesi e Dossologia",
+                title: pageTitle,
                 render: () => (
                   <View style={styles.partBox}>
-                    <R kind="title">{i === 0 ? "Anamnesi e Dossologia" : "Anamnesi e Dossologia (continua)"}</R>
+                    <R kind="title">{pageTitle}</R>
                     {isPe1 ? renderPe1Chunk(afterChunks[i], `pe1-a${i}`) : <R>{afterChunks[i]}</R>}
                   </View>
                 ),
@@ -1897,10 +1960,44 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
   },
   sectionTitle: {
     fontSize: Math.round(fontSize * 1.1),
-    fontWeight: "700",
-    color: colors.textPrimary,
+    fontWeight: "800",
+    color: "#4DA8DA",      // Azzurro: titoli grandi delle parti della messa (es. "Atto Penitenziale", "Gloria", "Benedizione")
     marginBottom: 14,
     marginTop: 8,
+  },
+  // Titolo per sezioni rituali macro (Riti Introduzione, Liturgia Parola, ecc.)
+  ritoTitle: {
+    fontSize: Math.round(fontSize * 1.0),
+    fontWeight: "800",
+    color: "#FFC107",      // Giallo/oro: macro-sezioni
+    marginBottom: 12,
+    marginTop: 6,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
+  // Titolo per antifone d'ingresso/comunione, sequenza, acclamazione al Vangelo
+  antifonaTitle: {
+    fontSize: Math.round(fontSize * 0.85),
+    fontWeight: "800",
+    color: "#FFB74D",      // Ambra/oro chiaro: antifone e acclamazioni
+    marginTop: 14,
+    marginBottom: 8,
+  },
+  // Titolo per le letture (Prima, Salmo, Seconda, Vangelo)
+  readingTitle: {
+    fontSize: Math.round(fontSize * 0.85),
+    fontWeight: "800",
+    color: "#81C784",      // Verde chiaro: letture
+    marginTop: 14,
+    marginBottom: 8,
+  },
+  // Titolo per orazioni proprie (Colletta, Sulle offerte, Dopo la comunione)
+  orazioneTitle: {
+    fontSize: Math.round(fontSize * 0.85),
+    fontWeight: "800",
+    color: "#CE93D8",      // Lavanda: orazioni proprie del giorno
+    marginTop: 14,
+    marginBottom: 8,
   },
   subtitle: {
     fontSize: Math.round(fontSize * 0.85),
@@ -1908,6 +2005,14 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     color: colors.textPrimary,
     marginTop: 14,
     marginBottom: 8,
+  },
+  // Stile per "Umili e pentiti" - testo della preghiera in rosso (rubrica)
+  umili: {
+    fontSize: Math.round(fontSize * 0.85),
+    fontStyle: "italic",
+    color: colors.rubrics,
+    marginVertical: 10,
+    lineHeight: fontSize * 1.4,
   },
   text: {
     fontSize: fontSize,
@@ -1921,6 +2026,11 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     color: colors.rubrics,
     marginVertical: 8,
     lineHeight: fontSize * 1.3,
+  },
+  // Inline "R." rosso per il ritornello del Salmo Responsoriale
+  salmoRit: {
+    color: colors.rubrics,
+    fontWeight: "800",
   },
   celebrante: {
     fontSize: fontSize,
