@@ -1595,6 +1595,34 @@ export default function MessaScreen() {
         const tapLeftWidth = Math.round(screenWidth * TAP_LEFT_RATIO);
 
         const handlePagePress = (e: any) => {
+          // Su web (browser/preview Expo), il Pressable parent riceve il click
+          // anche dopo che un controllo interattivo (Switch, Button, TouchableOpacity)
+          // è stato toccato, causando avanzamento di pagina indesiderato.
+          // Filtra: se il target del tap è un controllo interattivo (o discendente),
+          // NON avanzare/indietreggiare.
+          // Su React Native nativo, il deeper touchable wins di default e questo
+          // controllo è no-op.
+          const target: any = e?.nativeEvent?.target ?? (e as any)?.target;
+          if (target && typeof target === "object") {
+            try {
+              // DOM check (web)
+              const closest = (target as any).closest;
+              if (typeof closest === "function") {
+                const interactive = closest.call(
+                  target,
+                  'input, button, a, select, textarea, [role="switch"], [role="button"], [role="checkbox"], [role="radio"], [data-tap-stop="true"]',
+                );
+                if (interactive) return;
+              }
+              // Fallback per check su tagName/role
+              const tag = ((target as any).tagName || "").toLowerCase();
+              if (tag === "input" || tag === "button" || tag === "a" || tag === "select" || tag === "textarea") return;
+              const role = (target as any).getAttribute?.("role");
+              if (role === "switch" || role === "button" || role === "checkbox" || role === "radio") return;
+            } catch (_e) {
+              // non-web environment: continua con il tap-advance
+            }
+          }
           const x = e?.nativeEvent?.pageX ?? e?.nativeEvent?.locationX ?? 0;
           if (x < tapLeftWidth) prev();
           else advance();
