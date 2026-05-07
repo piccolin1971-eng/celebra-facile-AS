@@ -58,7 +58,7 @@ type ReadingType =
 export default function MessaScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ date?: string; preface?: string; votive?: string }>();
-  const { colors, fontSize, scaledFont, readingMode, autoScrollDelaySec } = useSettings();
+  const { colors, fontSize, scaledFont, readingMode, autoScrollDelaySec, autoScrollPxPerSec } = useSettings();
   const [liturgy, setLiturgy] = useState<Liturgy | null>(null);
   const [fixedParts, setFixedParts] = useState<Record<string, any> | null>(null);
   const [prefaces, setPrefaces] = useState<Preface[]>([]);
@@ -108,13 +108,10 @@ export default function MessaScreen() {
   const scrollRef = React.useRef<ScrollView | null>(null);
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
-  // Auto-scroll PE (Kindle-style): velocità in pixel/secondo
-  // Ciclo bottone: Lento (default) → Off → Medio → Off → Lento ...
-  // 0=off, 1=lento (10 px/s), 2=medio (22 px/s)
+  // Auto-scroll PE: toggle ON/OFF.
+  // Default: ON ("Auto"). Tap → "Off". La velocità è impostata in Impostazioni.
   // Si attiva solo nelle pagine della Preghiera Eucaristica.
-  const AUTO_SCROLL_CYCLE: (0 | 1 | 2)[] = [1, 0, 2, 0]; // Lento, Off, Medio, Off
-  const [autoScrollCycleIdx, setAutoScrollCycleIdx] = useState<number>(0);
-  const peAutoScrollSpeed: 0 | 1 | 2 = AUTO_SCROLL_CYCLE[autoScrollCycleIdx % AUTO_SCROLL_CYCLE.length];
+  const [peAutoScrollEnabled, setPeAutoScrollEnabled] = useState<boolean>(true);
   // Ref aggiornato durante il render con la chiave della pagina corrente.
   // Usato per attivare l'auto-scroll SOLO sulle pagine della Preghiera Eucaristica
   // (chiavi `pe-cons-*`, `pe-after-*`, `pe-acclamazione`).
@@ -209,7 +206,12 @@ export default function MessaScreen() {
           if (saved.penitentialSeason) setPenitentialSeason(saved.penitentialSeason);
           if (saved.selectedCredoId) setSelectedCredoId(saved.selectedCredoId);
           if (saved.orateFratresId) setOrateFratresId(saved.orateFratresId);
-          if (typeof saved.autoScrollCycleIdx === "number") setAutoScrollCycleIdx(saved.autoScrollCycleIdx);
+          // Migrazione del nuovo toggle dal vecchio cycleIdx (0=Lento ON, 2=Medio ON, 1/3=Off).
+          if (typeof (saved as any).peAutoScrollEnabled === "boolean") {
+            setPeAutoScrollEnabled((saved as any).peAutoScrollEnabled);
+          } else if (typeof saved.autoScrollCycleIdx === "number") {
+            setPeAutoScrollEnabled(saved.autoScrollCycleIdx === 0 || saved.autoScrollCycleIdx === 2);
+          }
         }
         // Pulisce sessioni vecchie in background
         cleanupOldSessions();
@@ -235,7 +237,7 @@ export default function MessaScreen() {
       penitentialForm, penitentialSeason, selectedCredoId, orateFratresId,
       peSelections,
       useOrazionePopolo, orazionePopoloId,
-      autoScrollCycleIdx,
+      peAutoScrollEnabled,
     } as any;
     saveSession(sessionDate, session);
   }, [sessionLoaded, sessionDate, showGloria, showCredo, showOrazionalePray,
@@ -245,13 +247,12 @@ export default function MessaScreen() {
       penitentialForm, penitentialSeason, selectedCredoId, orateFratresId,
       peSelections,
       useOrazionePopolo, orazionePopoloId,
-      autoScrollCycleIdx]);
+      peAutoScrollEnabled]);
 
   // === AUTO-SCROLL PE ===
-  // Quando l'utente attiva l'auto-scroll (velocità 1/2), parte un timer che
-  // fa scorrere la ScrollView verso il basso a velocità costante.
-  // Si ferma da solo quando si raggiunge il fondo o quando l'utente cambia pagina.
-  // Velocità: 1=lento (5 px/s), 2=medio (10 px/s) — molto rilassate per consentire una lettura serena.
+  // Se attivo (peAutoScrollEnabled), scorre la ScrollView verso il basso a velocità
+  // costante (autoScrollPxPerSec px/s, dalle Impostazioni utente).
+  // Si ferma da solo a fine pagina o al cambio pagina/spegnimento.
   // ATTIVO SOLO sulle pagine della Preghiera Eucaristica
   // (chiavi `pe-cons-*`, `pe-after-*`, `pe-acclamazione`).
   useEffect(() => {
@@ -263,12 +264,12 @@ export default function MessaScreen() {
       clearInterval(autoScrollTimerRef.current);
       autoScrollTimerRef.current = null;
     }
-    if (peAutoScrollSpeed === 0) return;
+    if (!peAutoScrollEnabled) return;
     // Verifica che siamo davvero su una pagina della Preghiera Eucaristica
     const k = currentPageKeyRef.current || "";
     const isPePage = k.startsWith("pe-cons-") || k.startsWith("pe-after-") || k === "pe-acclamazione";
     if (!isPePage) return;
-    const pps = peAutoScrollSpeed === 1 ? 5 : 10;
+    const pps = Math.max(1, autoScrollPxPerSec);
     const intervalMs = 50;
     const stepPx = pps * (intervalMs / 1000);
     // Delay iniziale: attesa configurabile dall'utente (3..10 sec) per dare
@@ -278,7 +279,6 @@ export default function MessaScreen() {
         const maxY = Math.max(0, contentHeightRef.current - containerHeightRef.current);
         const next = Math.min(maxY, scrollYRef.current + stepPx);
         if (next >= maxY) {
-          // raggiunto il fondo: ferma il timer
           if (autoScrollTimerRef.current) {
             clearInterval(autoScrollTimerRef.current);
             autoScrollTimerRef.current = null;
@@ -296,7 +296,7 @@ export default function MessaScreen() {
         autoScrollTimerRef.current = null;
       }
     };
-  }, [currentPage, autoScrollCycleIdx, autoScrollDelaySec]);
+  }, [currentPage, peAutoScrollEnabled, autoScrollDelaySec, autoScrollPxPerSec]);
 
   // === PE FULL: espansione dei blocchi `var` in base a peSelections ===
   // IMPORTANTE: questi hook devono stare PRIMA di qualunque early-return
@@ -1488,30 +1488,24 @@ export default function MessaScreen() {
                         <TouchableOpacity
                           style={[
                             styles.autoScrollBtn,
-                            peAutoScrollSpeed > 0 && styles.autoScrollBtnActive,
+                            peAutoScrollEnabled && styles.autoScrollBtnActive,
                           ]}
-                          onPress={() => setAutoScrollCycleIdx((autoScrollCycleIdx + 1) % AUTO_SCROLL_CYCLE.length)}
+                          onPress={() => setPeAutoScrollEnabled(!peAutoScrollEnabled)}
                           testID="btn-autoscroll"
-                          accessibilityLabel={
-                            peAutoScrollSpeed === 0 ? "Attiva scorrimento automatico" :
-                            peAutoScrollSpeed === 1 ? "Scorrimento lento" :
-                            "Scorrimento medio"
-                          }
+                          accessibilityLabel={peAutoScrollEnabled ? "Disattiva scorrimento automatico" : "Attiva scorrimento automatico"}
                         >
                           <Ionicons
-                            name={peAutoScrollSpeed === 0 ? "play-outline" : "play"}
+                            name={peAutoScrollEnabled ? "play" : "pause"}
                             size={scaledFont(16)}
-                            color={peAutoScrollSpeed > 0 ? "#FFFFFF" : colors.textPrimary}
+                            color={peAutoScrollEnabled ? "#FFFFFF" : colors.textPrimary}
                           />
                           <Text
                             style={[
                               styles.autoScrollBtnText,
-                              peAutoScrollSpeed > 0 && { color: "#FFFFFF" },
+                              peAutoScrollEnabled && { color: "#FFFFFF" },
                             ]}
                           >
-                            {peAutoScrollSpeed === 0 ? "Auto" :
-                             peAutoScrollSpeed === 1 ? "Lento" :
-                             "Medio"}
+                            {peAutoScrollEnabled ? "Auto" : "Off"}
                           </Text>
                         </TouchableOpacity>
                       </View>

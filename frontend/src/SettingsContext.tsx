@@ -11,11 +11,14 @@ interface SettingsState {
   readingMode: ReadingMode;
   // Tempo (in secondi) prima che parta l'auto-scroll dopo il cambio pagina (3..10)
   autoScrollDelaySec: number;
+  // Velocità auto-scroll nelle Preghiere Eucaristiche, in pixel al secondo (2..15)
+  autoScrollPxPerSec: number;
   setTheme: (t: ThemeMode) => void;
   setFontSize: (n: number) => void;
   setHighContrast: (v: boolean) => void;
   setReadingMode: (m: ReadingMode) => void;
   setAutoScrollDelaySec: (n: number) => void;
+  setAutoScrollPxPerSec: (n: number) => void;
   colors: ReturnType<typeof getColors>;
   scaledFont: (base: number) => number;
 }
@@ -64,6 +67,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   const [highContrast, setHighContrastState] = useState(false);
   const [readingMode, setReadingModeState] = useState<ReadingMode>("tap");
   const [autoScrollDelaySec, setAutoScrollDelaySecState] = useState<number>(7);
+  const [autoScrollPxPerSec, setAutoScrollPxPerSecState] = useState<number>(5);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -92,6 +96,9 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
               setAutoScrollDelaySecState(s.autoScrollDelaySec);
             }
           }
+          if (typeof s.autoScrollPxPerSec === "number" && s.autoScrollPxPerSec >= 2 && s.autoScrollPxPerSec <= 15) {
+            setAutoScrollPxPerSecState(s.autoScrollPxPerSec);
+          }
         }
         if (!migrationDone) {
           await AsyncStorage.setItem("messale_settings_migrated_v3", "1");
@@ -104,8 +111,8 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     })();
   }, []);
 
-  const persist = async (patch: Partial<{ theme: ThemeMode; fontSize: number; highContrast: boolean; readingMode: ReadingMode; autoScrollDelaySec: number }>) => {
-    const next = { theme, fontSize, highContrast, readingMode, autoScrollDelaySec, ...patch };
+  const persist = async (patch: Partial<{ theme: ThemeMode; fontSize: number; highContrast: boolean; readingMode: ReadingMode; autoScrollDelaySec: number; autoScrollPxPerSec: number }>) => {
+    const next = { theme, fontSize, highContrast, readingMode, autoScrollDelaySec, autoScrollPxPerSec, ...patch };
     await AsyncStorage.setItem("messale_settings", JSON.stringify(next));
   };
 
@@ -118,6 +125,11 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     setAutoScrollDelaySecState(clamped);
     persist({ autoScrollDelaySec: clamped });
   };
+  const setAutoScrollPxPerSec = (n: number) => {
+    const clamped = Math.max(2, Math.min(15, Math.round(n)));
+    setAutoScrollPxPerSecState(clamped);
+    persist({ autoScrollPxPerSec: clamped });
+  };
 
   const colors = getColors(theme, highContrast);
   // scaledFont: UI elements scale proportionally based on reading font
@@ -129,7 +141,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   if (!loaded) return null;
 
   return (
-    <SettingsContext.Provider value={{ theme, fontSize, highContrast, readingMode, autoScrollDelaySec, setTheme, setFontSize, setHighContrast, setReadingMode, setAutoScrollDelaySec, colors, scaledFont }}>
+    <SettingsContext.Provider value={{ theme, fontSize, highContrast, readingMode, autoScrollDelaySec, autoScrollPxPerSec, setTheme, setFontSize, setHighContrast, setReadingMode, setAutoScrollDelaySec, setAutoScrollPxPerSec, colors, scaledFont }}>
       {children}
     </SettingsContext.Provider>
   );
