@@ -438,6 +438,54 @@ export default function MessaScreen() {
     return <Text style={s} selectable>{children}</Text>;
   };
 
+  // Renderer dedicato per il testo delle Preghiere Eucaristiche.
+  // Le righe COMPLETAMENTE in maiuscolo (parole della consacrazione, es.
+  // "PRENDETE, E MANGIATENE TUTTI...", "QUESTO È IL MIO CORPO...") vengono
+  // colorate in azzurro brillante saturo (#29B6F6), per essere ben distinte
+  // dalle altre parole. Le righe normali restano bianche.
+  // Inoltre viene aggiunto un piccolo spazio (riga vuota) PRIMA del blocco
+  // di consacrazione, per dare il giusto risalto al momento più sacro.
+  const isUpperLitLine = (ln: string): boolean => {
+    const alphaChars = ln.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ]/g, "");
+    return alphaChars.length >= 5 && alphaChars === alphaChars.toUpperCase();
+  };
+  const renderPeText = (text: string, keyPrefix = "pe") => {
+    if (!text) return null;
+    const lines = text.split("\n");
+    return (
+      <Text style={styles.text} selectable key={keyPrefix}>
+        {lines.map((ln, i) => {
+          const isCon = isUpperLitLine(ln);
+          const prevWasCon = i > 0 && isUpperLitLine(lines[i - 1]);
+          const nextIsCon = i < lines.length - 1 && isUpperLitLine(lines[i + 1]);
+          const isLast = i === lines.length - 1;
+          // Spazio (riga vuota) PRIMA della prima riga di consacrazione del blocco
+          // quando non è già la prima riga del chunk.
+          const needSpaceBefore = isCon && !prevWasCon && i > 0;
+          // Spazio (riga vuota) DOPO l'ultima riga di consacrazione del blocco
+          // quando non è già l'ultima riga del chunk.
+          const needSpaceAfter = isCon && !nextIsCon && !isLast;
+          const tail = isLast ? "" : (needSpaceAfter ? "\n\n" : "\n");
+          if (isCon) {
+            return (
+              <Text key={i}>
+                {needSpaceBefore ? "\n" : ""}
+                <Text style={styles.peConsecration}>{ln}</Text>
+                {tail}
+              </Text>
+            );
+          }
+          return (
+            <Text key={i}>
+              {ln}
+              {tail}
+            </Text>
+          );
+        })}
+      </Text>
+    );
+  };
+
   // Determina il kind del titolo in base al type della reading
   const readingTitleKind = (t: ReadingType): "antifonaTitle" | "readingTitle" | "orazioneTitle" => {
     if (t === "antifona_ingresso" || t === "antifona_comunione" || t === "sequenza" || t === "acclamazione") return "antifonaTitle";
@@ -519,7 +567,8 @@ export default function MessaScreen() {
       }
       const trimmed = part.replace(/^\n+|\n+$/g, "");
       if (!trimmed) return null;
-      return <R key={`${keyPrefix}-t-${i}`}>{trimmed}</R>;
+      // Usa renderPeText per ottenere parole della consacrazione in azzurro + spazio prima.
+      return <View key={`${keyPrefix}-t-${i}`}>{renderPeText(trimmed, `${keyPrefix}-pt-${i}`)}</View>;
     });
   };
 
@@ -1605,7 +1654,7 @@ export default function MessaScreen() {
                   ) : (
                     <R kind="peTitle">{selectedPrayer.title} (continua)</R>
                   )}
-                  {isPe1 ? renderPe1Chunk(beforeChunks[i], `pe1-b${i}`) : <R>{beforeChunks[i]}</R>}
+                  {isPe1 ? renderPe1Chunk(beforeChunks[i], `pe1-b${i}`) : renderPeText(beforeChunks[i], `pe-b${i}`)}
                 </View>
               ),
             });
@@ -1663,7 +1712,7 @@ export default function MessaScreen() {
                 render: () => (
                   <View style={styles.partBox}>
                     <R kind="title">{pageTitle}</R>
-                    {isPe1 ? renderPe1Chunk(afterChunks[i], `pe1-a${i}`) : <R>{afterChunks[i]}</R>}
+                    {isPe1 ? renderPe1Chunk(afterChunks[i], `pe1-a${i}`) : renderPeText(afterChunks[i], `pe-a${i}`)}
                   </View>
                 ),
               });
@@ -2265,6 +2314,14 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     marginTop: 0,
     marginBottom: 8,
     lineHeight: Math.round(fontSize * 1.15),
+  },
+  // Parole della Consacrazione nelle PE: righe in MAIUSCOLO ("PRENDETE,
+  // E MANGIATENE TUTTI..." / "QUESTO È IL MIO CORPO..." / "PRENDETE, E
+  // BEVETENE TUTTI..." / "QUESTO È IL CALICE DEL MIO SANGUE..."). Azzurro
+  // brillante saturo per massima visibilità sull'OLED nero.
+  peConsecration: {
+    color: "#29B6F6",
+    fontWeight: "800",
   },
   // Stile per "Umili e pentiti" - testo della preghiera in rosso (rubrica)
   umili: {
