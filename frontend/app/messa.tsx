@@ -379,10 +379,15 @@ export default function MessaScreen() {
     }
     const isPe1 = peFull.id === "pe1";
     const hasProperPreface = PE_WITH_PROPER_PREFACE.includes(peFull.id);
-    // Testo del Santo da inserire dopo la chiusura del prefazio incorporato.
-    // Le PE Riconciliazione e Varie Necessità non hanno il Santo nei dati JSON,
-    // mentre PE4 ce l'ha come blocco `acc` ma per uniformità lo sostituiamo
-    // con quello inserito manualmente (anche per garantire la riga vuota prima).
+    // Override per PE specifiche: regex che identifica l'esatta frase di chiusura
+    // del prefazio dopo cui inserire il Santo. Necessario quando l'algoritmo
+    // generico (inserimento prima della prima consacrazione) non basta perché
+    // tra il prefazio e la consacrazione ci sono altri blocchi (es. epiclesi).
+    const PE_SANTO_OVERRIDE: Record<string, RegExp> = {
+      "per_r2": /l'inno di benedizione e di lode/i,
+      "pvn_3": /cantando con gioia/i,
+    };
+    const santoOverrideRe = PE_SANTO_OVERRIDE[peFull.id];
     const SANTO_TEXT = "Santo, Santo, Santo il Signore Dio dell'universo.\nI cieli e la terra sono pieni della tua gloria.\nOsanna nell'alto dei cieli.\nBenedetto colui che viene nel nome del Signore.\nOsanna nell'alto dei cieli.";
     const parts: string[] = [];
     if (hasProperPreface) {
@@ -423,7 +428,8 @@ export default function MessaScreen() {
           // Se la PE ha prefazio incorporato e il Santo non è stato ancora
           // inserito, lo inseriamo qui PRIMA della consacrazione: questo è
           // l'ultimo punto sicuro dopo la chiusura del prefazio integrato.
-          if (hasProperPreface && !santoInserted) {
+          // (Se c'era un override ID-specifico, quello ha già inserito il Santo.)
+          if (hasProperPreface && !santoInserted && !santoOverrideRe) {
             parts.push("<<SANTO_BLANK>>" + SANTO_TEXT);
             santoInserted = true;
           }
@@ -438,9 +444,17 @@ export default function MessaScreen() {
         continue;
       }
       parts.push(t);
+      // Override per ID-specifici: se la regex `santoOverrideRe` matcha l'ultimo
+      // pezzo di questo blocco, inserisci il Santo subito dopo. Prevale sulla
+      // logica generica (inserimento prima della prima Consacrazione).
+      if (hasProperPreface && !santoInserted && santoOverrideRe && santoOverrideRe.test(t)) {
+        parts.push("<<SANTO_BLANK>>" + SANTO_TEXT);
+        santoInserted = true;
+        continue;
+      }
       // Fallback aggiuntivo: se il blocco appena pushato termina con "cantiamo..."
       // (chiusura tipica del prefazio integrato), inseriamo subito il Santo.
-      if (hasProperPreface && !santoInserted) {
+      if (hasProperPreface && !santoInserted && !santoOverrideRe) {
         if (/cantiamo\b[^.]{0,80}[:\.\,]?\s*$/i.test(t)) {
           parts.push("<<SANTO_BLANK>>" + SANTO_TEXT);
           santoInserted = true;
