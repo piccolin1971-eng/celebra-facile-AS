@@ -1060,7 +1060,20 @@ function paginate(
     };
     const marginTop = titleMarginTop[seg.kind] || 0;
     const fs = Math.round(fontSize * m[seg.kind]);
-    const segLineH = Math.max(20, Math.round(fs * 1.45));
+    // Line-height stimato: 1.65× per testi del corpo (riflette il nuovo
+    // 1.7× applicato negli stili a text/celebrante/assemblea/peText/dossologia
+    // — tenuto leggermente più basso per non sprecare pagine), 1.45× per
+    // titoli e rubriche che hanno line-height più stretto.
+    const isBody =
+      seg.kind === "normal" ||
+      seg.kind === "celebrante" ||
+      seg.kind === "assemblea" ||
+      seg.kind === "peText" ||
+      seg.kind === "peDossologia" ||
+      seg.kind === "salmo" ||
+      seg.kind === "umili";
+    const lhFactor = isBody ? 1.65 : 1.4;
+    const segLineH = Math.max(20, Math.round(fs * lhFactor));
     // Char per linea ricalcolato per font size del segmento
     const segCharsPerLine = Math.max(
       20,
@@ -1367,7 +1380,7 @@ const makeStyles = (
     },
     peDossologia: {
       fontSize: fontSize,
-      lineHeight: fontSize * 1.45,
+      lineHeight: fontSize * 1.7,
       color: colors.textPrimary,
       fontWeight: "400",
       fontFamily,
@@ -1380,11 +1393,11 @@ const makeStyles = (
       color: colors.rubrics,
       fontFamily,
       marginVertical: 6,
-      lineHeight: fontSize * 1.35,
+      lineHeight: fontSize * 1.55,
     },
     text: {
       fontSize: fontSize,
-      lineHeight: fontSize * 1.45,
+      lineHeight: fontSize * 1.7,
       color: colors.textPrimary,
       fontFamily,
       marginTop: 0,
@@ -1403,7 +1416,7 @@ const makeStyles = (
     },
     salmoText: {
       fontSize: fontSize,
-      lineHeight: fontSize * 1.3,
+      lineHeight: fontSize * 1.55,
       color: colors.textPrimary,
       fontFamily,
       marginVertical: 4,
@@ -1413,7 +1426,7 @@ const makeStyles = (
       color: colors.textPrimary,
       fontFamily,
       marginVertical: 6,
-      lineHeight: fontSize * 1.5,
+      lineHeight: fontSize * 1.7,
     },
     assemblea: {
       fontSize: fontSize,
@@ -1421,7 +1434,7 @@ const makeStyles = (
       color: colors.textPrimary,
       fontFamily,
       marginVertical: 6,
-      lineHeight: fontSize * 1.5,
+      lineHeight: fontSize * 1.7,
     },
     // ----- Empty state -----
     emptyBox: {
