@@ -251,7 +251,7 @@ export default function MessaScreen() {
   // Quando l'utente attiva l'auto-scroll (velocità 1/2), parte un timer che
   // fa scorrere la ScrollView verso il basso a velocità costante.
   // Si ferma da solo quando si raggiunge il fondo o quando l'utente cambia pagina.
-  // Velocità: 1=lento (10 px/s), 2=medio (22 px/s).
+  // Velocità: 1=lento (7 px/s), 2=medio (15 px/s) — ~30% più lente per dare tempo di leggere.
   // ATTIVO SOLO sulle pagine della Preghiera Eucaristica
   // (chiavi `pe-cons-*`, `pe-after-*`, `pe-acclamazione`).
   useEffect(() => {
@@ -268,7 +268,7 @@ export default function MessaScreen() {
     const k = currentPageKeyRef.current || "";
     const isPePage = k.startsWith("pe-cons-") || k.startsWith("pe-after-") || k === "pe-acclamazione";
     if (!isPePage) return;
-    const pps = peAutoScrollSpeed === 1 ? 10 : 22;
+    const pps = peAutoScrollSpeed === 1 ? 7 : 15;
     const intervalMs = 50;
     const stepPx = pps * (intervalMs / 1000);
     // Delay iniziale: attesa configurabile dall'utente (3..10 sec) per dare
@@ -2400,50 +2400,50 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
   selectorBtn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    gap: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 18,
     borderWidth: 2,
     borderColor: colors.primary,
     borderRadius: 10,
-    marginVertical: 6,
-    minHeight: 48,
+    marginVertical: 8,
+    minHeight: 56,
   },
-  selectorBtnText: { fontSize: Math.round(fontSize * 0.7), color: colors.primary, fontWeight: "700" },
+  selectorBtnText: { fontSize: Math.round(fontSize * 0.9), color: colors.primary, fontWeight: "700" },
   // Variante compatta inline (es. accanto al titolo "Preghiera Eucaristica")
   selectorBtnInline: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     borderWidth: 2,
     borderColor: colors.primary,
     borderRadius: 8,
     marginLeft: 16,
-    minHeight: 42,
+    minHeight: 50,
   },
-  selectorBtnInlineText: { fontSize: Math.round(fontSize * 0.62), color: colors.primary, fontWeight: "700" },
-  // Bottone auto-scroll (Off → Lento → Medio → Veloce). Ciclico al tap.
+  selectorBtnInlineText: { fontSize: Math.round(fontSize * 0.8), color: colors.primary, fontWeight: "700" },
+  // Bottone auto-scroll (Off → Lento → Medio → Off). Ciclico al tap.
   autoScrollBtn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
+    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     borderWidth: 2,
     borderColor: "#FFA000",
     borderRadius: 8,
     marginLeft: 12,
     backgroundColor: "transparent",
-    minHeight: 42,
+    minHeight: 50,
   },
   autoScrollBtnActive: {
     backgroundColor: "#FFA000",
     borderColor: "#FFA000",
   },
   autoScrollBtnText: {
-    fontSize: Math.round(fontSize * 0.6),
+    fontSize: Math.round(fontSize * 0.78),
     color: "#FFB74D",
     fontWeight: "700",
   },
@@ -2452,35 +2452,35 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     flexWrap: "wrap",
-    marginBottom: 8,
-    gap: 4,
+    marginBottom: 10,
+    gap: 6,
   },
   // === Selettori Tempo Liturgico / Rito Particolare (PE) ===
   peSelectorsRow: {
     flexDirection: "row",
-    gap: 12,
-    marginTop: 4,
-    marginBottom: 12,
+    gap: 14,
+    marginTop: 6,
+    marginBottom: 14,
     flexWrap: "wrap",
   },
   peSelectorBtn: {
     flex: 1,
-    minWidth: 180,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
+    minWidth: 200,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     borderRadius: 10,
     backgroundColor: "transparent",
     borderWidth: 1.5,
     borderColor: "#FFA000",
-    minHeight: 56,
+    minHeight: 70,
   },
   peSelectorLabel: {
-    fontSize: Math.round(fontSize * 0.5),
+    fontSize: Math.round(fontSize * 0.65),
     color: "#FFB74D",
     fontWeight: "700",
     textTransform: "uppercase",
     letterSpacing: 0.6,
-    marginBottom: 4,
+    marginBottom: 6,
   },
   peSelectorValueRow: {
     flexDirection: "row",
@@ -2490,7 +2490,7 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
   },
   peSelectorValue: {
     color: "#FFE0B2",
-    fontSize: Math.round(fontSize * 0.65),
+    fontSize: Math.round(fontSize * 0.85),
     fontWeight: "600",
     flex: 1,
   },
