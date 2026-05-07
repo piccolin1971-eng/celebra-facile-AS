@@ -81,7 +81,7 @@ export default function MessaScreen() {
   const [pePickerKey, setPePickerKey] = useState<string | null>(null);
   const [selectedCredoId, setSelectedCredoId] = useState<"niceno" | "apostolico">("niceno");
   const [orateFratresId, setOrateFratresId] = useState<string>("A");
-  const [padreNostroIntroId, setPadreNostroIntroId] = useState<string>("A");
+  const [padreNostroIntroId, setPadreNostroIntroId] = useState<string>("I");
   const [acclamationId, setAcclamationId] = useState<string>("A");
   const [useSolemnBlessing, setUseSolemnBlessing] = useState<boolean>(false);
   const [solemnBlessingId, setSolemnBlessingId] = useState<string>("");
@@ -348,6 +348,14 @@ export default function MessaScreen() {
 
   // Espande i blocchi `var` con la variante selezionata e converte tutto in
   // un singolo testo piatto. Mantiene i marker `[rubric]` solo per pe1.
+  // Introduzione dialogica al Prefazio (parte fissa che precede il "È veramente cosa buona...")
+  // Viene mostrata sia prima del prefazio scelto, sia all'inizio delle 7 PE con prefazio incorporato.
+  const PREFACE_INTRO = "Il Signore sia con voi.\nE con il tuo spirito.\n\nIn alto i nostri cuori.\nSono rivolti al Signore.\n\nRendiamo grazie al Signore, nostro Dio.\nÈ cosa buona e giusta.";
+
+  // Le 7 PE con prefazio incorporato (Messale Romano 2020).
+  // In queste PE l'introduzione + il Santo sono parte integrante della preghiera.
+  const PE_WITH_PROPER_PREFACE = ["pe4", "per_r1", "per_r2", "pvn_1", "pvn_2", "pvn_3", "pvn_4"];
+
   const expandedPrayerText = useMemo(() => {
     if (!peFull) {
       const apiText = prayers.find(p => p.id === selectedPrayerId)?.text || "";
@@ -370,12 +378,57 @@ export default function MessaScreen() {
       }
     }
     const isPe1 = peFull.id === "pe1";
+    const hasProperPreface = PE_WITH_PROPER_PREFACE.includes(peFull.id);
     const parts: string[] = [];
+    // Per le 7 PE con prefazio incorporato: aggiungi il dialogo iniziale.
+    if (hasProperPreface) {
+      parts.push(PREFACE_INTRO);
+    }
+    let firstAccSeen = false;
+    let dossologiaSeen = false;
     for (const b of out) {
-      if (b.type === "title") continue;
-      // Salta i blocchi acclamazione: l'utente sceglie l'acclamazione separatamente
-      // nella pagina "Mistero della Fede" (3 forme), quindi includerle qui le duplica.
-      if (b.type === "acc") continue;
+      if (b.type === "title") {
+        // Riconosci il titolo "Dossologia finale" come marker per la sezione
+        // finale: in tal modo il rendering può mostrare "Dossologia" in azzurro
+        // e il "Per Cristo, con Cristo..." in bianco maiuscolo bold.
+        const tt = (b.text || "").trim().toLowerCase();
+        if (tt.includes("dossologia") && !dossologiaSeen) {
+          parts.push("<<DOSSOLOGIA>>");
+          dossologiaSeen = true;
+        }
+        continue;
+      }
+      if (b.type === "acc") {
+        // Per le PE con prefazio incorporato, INCLUDI il primo `acc` (è il Santo
+        // della conclusione del prefazio integrato). Salta gli `acc` successivi
+        // (eventuali acclamazioni "Mistero della fede" gestite altrove).
+        if (hasProperPreface && !firstAccSeen) {
+          firstAccSeen = true;
+          const t = (b.text || "").trim();
+          if (t) parts.push(t);
+        }
+        continue;
+      }
+      if (b.type === "c") {
+        const t = (b.text || "").trim();
+        if (!t) continue;
+        // Distinguo i blocchi `c`:
+        //  - "PER CRISTO, CON CRISTO ..." → DOSSOLOGIA finale (inserisci marker)
+        //  - altrimenti (es. "PRENDETE, E MANGIATENE TUTTI...") → consacrazione
+        //    già in maiuscolo: lo passo come testo normale (sarà reso in azzurro
+        //    dalla regola "linee maiuscole = parole consacrazione").
+        const isDossology = /^per cristo, con cristo/i.test(t);
+        if (isDossology) {
+          if (!dossologiaSeen) {
+            parts.push("<<DOSSOLOGIA>>");
+            dossologiaSeen = true;
+          }
+          parts.push(t.toUpperCase());
+        } else {
+          parts.push(t);
+        }
+        continue;
+      }
       const t = (b.text || "").trim();
       if (!t) continue;
       if (b.type === "r" || b.type === "rubric_section") {
@@ -449,7 +502,32 @@ export default function MessaScreen() {
     const alphaChars = ln.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ]/g, "");
     return alphaChars.length >= 5 && alphaChars === alphaChars.toUpperCase();
   };
+  // Renderer del testo PE che riconosce in più il marker <<DOSSOLOGIA>>:
+  // splitta il testo in PRIMA-DOSSOLOGIA / TITOLO / DOPO-DOSSOLOGIA, e renderizza:
+  //  - PRIMA: testo normale (con righe maiuscole = parole consacrazione blu)
+  //  - TITOLO: "Dossologia" in azzurro (sectionTitle)
+  //  - DOPO: testo BIANCO MAIUSCOLO BOLD (peDossologia), uniforme per tutte le PE
   const renderPeText = (text: string, keyPrefix = "pe") => {
+    if (!text) return null;
+    const dosMarker = "<<DOSSOLOGIA>>";
+    const dosIdx = text.indexOf(dosMarker);
+    if (dosIdx >= 0) {
+      const before = text.slice(0, dosIdx).replace(/\n+$/, "");
+      const after = text.slice(dosIdx + dosMarker.length).replace(/^\n+/, "");
+      // Nota: il titolo "Dossologia" è già renderizzato dal `pageTitle` del page,
+      // quindi qui NON aggiungiamo un secondo titolo per evitare duplicati.
+      return (
+        <View key={keyPrefix}>
+          {before ? renderPeTextNormal(before, `${keyPrefix}-pre`) : null}
+          {after ? <Text style={[styles.peDossologia, { color: "#F5F5F5" }]} selectable>{after}</Text> : null}
+        </View>
+      );
+    }
+    return renderPeTextNormal(text, keyPrefix);
+  };
+  // Renderer base: gestisce le righe maiuscole come parole della Consacrazione
+  // (azzurro brillante #29B6F6) con piccolo spazio prima/dopo.
+  const renderPeTextNormal = (text: string, keyPrefix = "pe") => {
     if (!text) return null;
     const lines = text.split("\n");
     return (
@@ -459,11 +537,7 @@ export default function MessaScreen() {
           const prevWasCon = i > 0 && isUpperLitLine(lines[i - 1]);
           const nextIsCon = i < lines.length - 1 && isUpperLitLine(lines[i + 1]);
           const isLast = i === lines.length - 1;
-          // Spazio (riga vuota) PRIMA della prima riga di consacrazione del blocco
-          // quando non è già la prima riga del chunk.
           const needSpaceBefore = isCon && !prevWasCon && i > 0;
-          // Spazio (riga vuota) DOPO l'ultima riga di consacrazione del blocco
-          // quando non è già l'ultima riga del chunk.
           const needSpaceAfter = isCon && !nextIsCon && !isLast;
           const tail = isLast ? "" : (needSpaceAfter ? "\n\n" : "\n");
           if (isCon) {
@@ -1499,7 +1573,8 @@ export default function MessaScreen() {
         // sull'ultima pagina del prefazio o appena dopo se non entra)
         if (selectedPreface) {
           const SANTO_TEXT = "Santo, Santo, Santo il Signore Dio dell'universo.\nI cieli e la terra sono pieni della tua gloria.\nOsanna nell'alto dei cieli.\nBenedetto colui che viene nel nome del Signore.\nOsanna nell'alto dei cieli.";
-          const fullText = selectedPreface.text.trimEnd() + "\n\n" + SANTO_TEXT;
+          // L'introduzione dialogica (Il Signore sia con voi…) precede ogni prefazio.
+          const fullText = PREFACE_INTRO + "\n\n" + selectedPreface.text.trimEnd() + "\n\n" + SANTO_TEXT;
           const prefChunks = splitTextIntoChunks(fullText);
           prefChunks.forEach((_, i) => {
             pages.push({
@@ -1662,13 +1737,25 @@ export default function MessaScreen() {
 
           // Pagina Acclamazione + Mistero della Fede + Anamnesi/Dossologia (chunked se lungo)
           if (afterPart || acclamations.length > 0) {
-            // Anamnesi/Dossologia: split su "Per Cristo, con Cristo" (dossologia)
-            // poi sub-divide se troppo grande per la pagina (font grande).
-            const dossologyMarker = /Per Cristo, con Cristo/i;
-            const dossIdx = afterPart.search(dossologyMarker);
-            const afterRaw = dossIdx > 0
-              ? [afterPart.substring(0, dossIdx).trim(), afterPart.substring(dossIdx).trim()]
-              : [afterPart];
+            // Anamnesi/Dossologia: split sul marker `<<DOSSOLOGIA>>` (inserito da
+            // expandedPrayerText prima del blocco "c"). Se non presente, ricade
+            // sul testo "PER CRISTO, CON CRISTO" (PE1 e fallback).
+            const dossMarkerLit = "<<DOSSOLOGIA>>";
+            let dossIdx = afterPart.indexOf(dossMarkerLit);
+            let afterRaw: string[];
+            if (dossIdx > 0) {
+              afterRaw = [
+                afterPart.substring(0, dossIdx).trim(),
+                afterPart.substring(dossIdx).trim(), // mantieni il marker nel chunk Dossologia
+              ];
+            } else {
+              const fallbackRe = /PER CRISTO, CON CRISTO|Per Cristo, con Cristo/;
+              const m = afterPart.match(fallbackRe);
+              const fallbackIdx = m ? afterPart.indexOf(m[0]) : -1;
+              afterRaw = fallbackIdx > 0
+                ? [afterPart.substring(0, fallbackIdx).trim(), afterPart.substring(fallbackIdx).trim()]
+                : [afterPart];
+            }
             const afterChunks = expandIfTooBig(afterRaw);
             // Prima pagina: acclamazione (selettore + dialogo)
             if (acclamations.length > 0) {
@@ -2322,6 +2409,16 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
   peConsecration: {
     color: "#29B6F6",
     fontWeight: "800",
+  },
+  // Dossologia conclusiva ("PER CRISTO, CON CRISTO E IN CRISTO..."): stile
+  // uniforme per tutte le PE — bianco, maiuscolo, bold, grande quanto il testo PE.
+  peDossologia: {
+    fontSize: fontSize,
+    lineHeight: fontSize * 1.45,
+    color: colors.textPrimary,
+    fontWeight: "800",
+    marginTop: 4,
+    marginBottom: 8,
   },
   // Stile per "Umili e pentiti" - testo della preghiera in rosso (rubrica)
   umili: {
