@@ -445,9 +445,9 @@ export default function MessaScreen() {
   // Stima: usiamo lineHeight = fontSize * 1.55 (vedi styles.text)
   // larghezza utile del testo = screenWidth - padding (32 outer + 32 partBox)
   // larghezza media di un carattere = fontSize * 0.52 (sans-serif italiano)
-  const HEADER_FOOTER_OVERHEAD = 180; // top header (~58) + tap nav footer (~70) + page title (~50) + padding
-  const TEXT_HORIZONTAL_PADDING = 64;  // 32 outer + 32 partBox
-  const lineHeightPx = Math.max(20, Math.round(fontSize * 1.55));
+  const HEADER_FOOTER_OVERHEAD = 130; // top header (~36) + tap nav footer (~60) + page title (~24) + padding
+  const TEXT_HORIZONTAL_PADDING = 32;  // 16 outer (content padding ridotto)
+  const lineHeightPx = Math.max(20, Math.round(fontSize * 1.45));
   const usableHeightPx = Math.max(300, screenHeight - HEADER_FOOTER_OVERHEAD);
   const usableWidthPx = Math.max(280, screenWidth - TEXT_HORIZONTAL_PADDING);
   const linesPerPage = Math.max(4, Math.floor(usableHeightPx / lineHeightPx));
@@ -1409,11 +1409,13 @@ export default function MessaScreen() {
                 <View style={styles.partBox}>
                   {i === 0 ? (
                     <>
-                      <R kind="title">Preghiera Eucaristica</R>
-                      <TouchableOpacity style={styles.selectorBtn} onPress={() => setShowPrayers(true)} testID="btn-select-prayer">
-                        <Ionicons name="swap-horizontal" size={scaledFont(28)} color={colors.primary} />
-                        <Text style={styles.selectorBtnText}>Scegli Preghiera Eucaristica</Text>
-                      </TouchableOpacity>
+                      <View style={styles.titleRow}>
+                        <R kind="title">Preghiera Eucaristica</R>
+                        <TouchableOpacity style={styles.selectorBtnInline} onPress={() => setShowPrayers(true)} testID="btn-select-prayer">
+                          <Ionicons name="swap-horizontal" size={scaledFont(18)} color={colors.primary} />
+                          <Text style={styles.selectorBtnInlineText}>Scegli</Text>
+                        </TouchableOpacity>
+                      </View>
                       {/* Selettori per i propri della PE (Tempo Liturgico / Rito Particolare) */}
                       {peSelectorEntries.length > 0 && (
                         <View style={styles.peSelectorsRow}>
@@ -1430,7 +1432,7 @@ export default function MessaScreen() {
                                 <Text style={styles.peSelectorLabel}>{sel.label}</Text>
                                 <View style={styles.peSelectorValueRow}>
                                   <Text style={styles.peSelectorValue} numberOfLines={2}>{opt?.label || "—"}</Text>
-                                  <Ionicons name="chevron-down" size={scaledFont(22)} color="#7B3F00" />
+                                  <Ionicons name="chevron-down" size={scaledFont(14)} color="#FFB74D" />
                                 </View>
                               </TouchableOpacity>
                             );
@@ -1985,23 +1987,23 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderBottomWidth: 2,
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+    borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
   backBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    minHeight: 64,
-    minWidth: 100,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    minHeight: 44,
+    minWidth: 88,
   },
-  backBtnText: { fontSize: Math.round(fontSize * 0.65), color: colors.textPrimary, fontWeight: "600" },
-  title: { fontSize: Math.round(fontSize * 0.85), fontWeight: "700", color: colors.textPrimary },
-  content: { padding: 20, paddingBottom: 40 },
+  backBtnText: { fontSize: Math.round(fontSize * 0.6), color: colors.textPrimary, fontWeight: "600" },
+  title: { fontSize: Math.round(fontSize * 0.78), fontWeight: "700", color: colors.textPrimary },
+  content: { padding: 16, paddingTop: 8, paddingBottom: 32 },
   dayHeader: {
     padding: 20,
     borderWidth: 3,
@@ -2024,25 +2026,24 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
   toggleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   toggleLabel: { fontSize: Math.round(fontSize * 0.75), color: colors.textPrimary, fontWeight: "600" },
   partBox: {
-    marginBottom: 28,
-    paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    marginBottom: 12,
+    paddingBottom: 8,
+    borderBottomWidth: 0,
   },
   sectionTitle: {
-    fontSize: Math.round(fontSize * 1.1),
+    fontSize: Math.round(fontSize * 1.05),
     fontWeight: "800",
     color: "#4DA8DA",      // Azzurro: titoli grandi delle parti della messa (es. "Atto Penitenziale", "Gloria", "Benedizione")
-    marginBottom: 14,
-    marginTop: 8,
+    marginBottom: 6,
+    marginTop: 0,
   },
   // Titolo per sezioni rituali macro (Riti Introduzione, Liturgia Parola, ecc.)
   ritoTitle: {
-    fontSize: Math.round(fontSize * 1.0),
+    fontSize: Math.round(fontSize * 0.95),
     fontWeight: "800",
     color: "#FFC107",      // Giallo/oro: macro-sezioni
-    marginBottom: 12,
-    marginTop: 6,
+    marginBottom: 6,
+    marginTop: 0,
     textTransform: "uppercase",
     letterSpacing: 1,
   },
@@ -2051,52 +2052,52 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     fontSize: Math.round(fontSize * 0.85),
     fontWeight: "800",
     color: "#FFB74D",      // Ambra/oro chiaro: antifone e acclamazioni
-    marginTop: 14,
-    marginBottom: 8,
+    marginTop: 6,
+    marginBottom: 4,
   },
   // Titolo per le letture (Prima, Salmo, Seconda, Vangelo)
   readingTitle: {
     fontSize: Math.round(fontSize * 0.85),
     fontWeight: "800",
     color: "#81C784",      // Verde chiaro: letture
-    marginTop: 14,
-    marginBottom: 8,
+    marginTop: 6,
+    marginBottom: 4,
   },
   // Titolo per orazioni proprie (Colletta, Sulle offerte, Dopo la comunione)
   orazioneTitle: {
     fontSize: Math.round(fontSize * 0.85),
     fontWeight: "800",
     color: "#CE93D8",      // Lavanda: orazioni proprie del giorno
-    marginTop: 14,
-    marginBottom: 8,
+    marginTop: 6,
+    marginBottom: 4,
   },
   subtitle: {
     fontSize: Math.round(fontSize * 0.85),
     fontWeight: "700",
     color: colors.textPrimary,
-    marginTop: 14,
-    marginBottom: 8,
+    marginTop: 6,
+    marginBottom: 4,
   },
   // Stile per "Umili e pentiti" - testo della preghiera in rosso (rubrica)
   umili: {
     fontSize: Math.round(fontSize * 0.85),
     fontStyle: "italic",
     color: colors.rubrics,
-    marginVertical: 10,
-    lineHeight: fontSize * 1.4,
+    marginVertical: 6,
+    lineHeight: fontSize * 1.35,
   },
   text: {
     fontSize: fontSize,
-    lineHeight: fontSize * 1.55,
+    lineHeight: fontSize * 1.45,
     color: colors.textPrimary,
-    marginVertical: 8,
+    marginVertical: 4,
   },
   rubric: {
-    fontSize: Math.round(fontSize * 0.75),
+    fontSize: Math.round(fontSize * 0.7),
     fontStyle: "italic",
     color: colors.rubrics,
-    marginVertical: 8,
-    lineHeight: fontSize * 1.3,
+    marginVertical: 4,
+    lineHeight: fontSize * 1.2,
   },
   // Inline "R." rosso per il ritornello del Salmo Responsoriale
   salmoRit: {
@@ -2107,9 +2108,9 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
   // così le strofe non hanno doppio spazio fra una riga e l'altra.
   salmoText: {
     fontSize: fontSize,
-    lineHeight: fontSize * 1.35,
+    lineHeight: fontSize * 1.3,
     color: colors.textPrimary,
-    marginVertical: 8,
+    marginVertical: 4,
   },
   celebrante: {
     fontSize: fontSize,
@@ -2175,7 +2176,7 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     borderTopColor: colors.border,
   },
   dialogBlock: { marginVertical: 6 },
-  readingBlock: { marginVertical: 14 },
+  readingBlock: { marginVertical: 6 },
   pageStatusBar: {
     paddingHorizontal: 20,
     paddingVertical: 10,
@@ -2282,52 +2283,73 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
   selectorBtn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    padding: 18,
-    borderWidth: 2,
+    gap: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderWidth: 1.5,
     borderColor: colors.primary,
-    borderRadius: 10,
-    marginVertical: 10,
-    minHeight: 64,
+    borderRadius: 8,
+    marginVertical: 4,
+    minHeight: 40,
   },
-  selectorBtnText: { fontSize: Math.round(fontSize * 0.75), color: colors.primary, fontWeight: "700" },
-  // === Selettori Tempo Liturgico / Rito Particolare (PE) - colore ambra ===
+  selectorBtnText: { fontSize: Math.round(fontSize * 0.55), color: colors.primary, fontWeight: "700" },
+  // Variante compatta inline (es. accanto al titolo "Preghiera Eucaristica")
+  selectorBtnInline: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    borderRadius: 8,
+    marginLeft: 12,
+  },
+  selectorBtnInlineText: { fontSize: Math.round(fontSize * 0.5), color: colors.primary, fontWeight: "700" },
+  // Riga flex per affiancare titolo + bottone "Scegli ..."
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    marginBottom: 6,
+  },
+  // === Selettori Tempo Liturgico / Rito Particolare (PE) - più discreti ===
   peSelectorsRow: {
     flexDirection: "row",
-    gap: 10,
-    marginTop: 4,
-    marginBottom: 14,
+    gap: 6,
+    marginTop: 2,
+    marginBottom: 8,
     flexWrap: "wrap",
   },
   peSelectorBtn: {
     flex: 1,
-    minWidth: 180,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    backgroundColor: "#FFF3CD",   // ambra chiaro di sfondo per alto contrasto
-    borderWidth: 3,
-    borderColor: "#FFA000",       // ambra/arancione bordo
-    minHeight: 76,
+    minWidth: 140,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: "#FFA000",
+    minHeight: 40,
   },
   peSelectorLabel: {
-    fontSize: Math.round(fontSize * 0.5),
-    color: "#7B3F00",
-    fontWeight: "800",
+    fontSize: Math.round(fontSize * 0.4),
+    color: "#FFB74D",
+    fontWeight: "700",
     textTransform: "uppercase",
-    letterSpacing: 0.6,
-    marginBottom: 4,
+    letterSpacing: 0.4,
+    marginBottom: 1,
   },
   peSelectorValueRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 8,
+    gap: 4,
   },
   peSelectorValue: {
-    color: "#7B3F00",
-    fontSize: Math.round(fontSize * 0.7),
-    fontWeight: "700",
+    color: "#FFE0B2",
+    fontSize: Math.round(fontSize * 0.55),
+    fontWeight: "600",
     flex: 1,
   },
   // Modale picker per i selettori PE

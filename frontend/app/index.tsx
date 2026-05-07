@@ -182,11 +182,10 @@ export default function Home() {
             accessibilityRole="button"
             accessibilityLabel={`Celebra la Messa di ${dayLabelFor(selectedDay, selectedDate).toLowerCase()}`}
           >
-            <Ionicons name="book" size={scaledFont(44)} color="#FFFFFF" />
-            <Text style={styles.heroTitle}>Celebra la Messa</Text>
-            <Text style={styles.heroSubtitle}>
-              {selectedDay === "today" ? "Letture di oggi" : `Letture di ${dayLabelFor(selectedDay, selectedDate)}`}
-            </Text>
+            <View style={styles.heroIconRow}>
+              <Ionicons name="book" size={scaledFont(28)} color="#FFFFFF" />
+              <Text style={styles.heroTitle}>Celebra la Messa</Text>
+            </View>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -196,9 +195,10 @@ export default function Home() {
             accessibilityRole="button"
             accessibilityLabel="Orazionale, Preghiera Universale"
           >
-            <MaterialCommunityIcons name="hands-pray" size={scaledFont(40)} color="#FFFFFF" />
-            <Text style={styles.heroTitle}>Orazionale</Text>
-            <Text style={styles.heroSubtitle}>Preghiera Universale</Text>
+            <View style={styles.heroIconRow}>
+              <MaterialCommunityIcons name="hands-pray" size={scaledFont(28)} color="#FFFFFF" />
+              <Text style={styles.heroTitle}>Orazionale</Text>
+            </View>
           </TouchableOpacity>
         </View>
 
@@ -364,12 +364,13 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
   },
   heroCard: {
     flex: 1,
-    padding: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-    minHeight: 160,
+    gap: 4,
+    minHeight: 96,
   },
   heroCardFull: {
     width: "100%",
@@ -380,7 +381,14 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     gap: 8,
     minHeight: 140,
   },
-  heroTitle: { fontSize: Math.round(fontSize * 0.78), fontWeight: "700", color: "#FFFFFF", textAlign: "center" },
+  heroTitle: { fontSize: Math.round(fontSize * 0.78), fontWeight: "700", color: "#FFFFFF", textAlign: "center", flexShrink: 1 },
+  heroIconRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    flexWrap: "wrap",
+  },
   heroSubtitle: { fontSize: Math.round(fontSize * 0.5), color: "#FFFFFF", opacity: 0.92, textAlign: "center" },
   secondaryCard: {
     flexDirection: "row",

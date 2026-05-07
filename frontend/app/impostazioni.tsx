@@ -8,7 +8,7 @@ import { useSettings } from "../src/SettingsContext";
 
 export default function Impostazioni() {
   const router = useRouter();
-  const { theme, setTheme, fontSize, setFontSize, highContrast, setHighContrast, readingMode, setReadingMode, colors, scaledFont } = useSettings();
+  const { theme, setTheme, fontSize, setFontSize, highContrast, setHighContrast, colors, scaledFont } = useSettings();
   const styles = makeStyles(colors, fontSize);
 
   return (
@@ -103,60 +103,6 @@ export default function Impostazioni() {
               testID="switch-high-contrast"
             />
           </View>
-        </View>
-
-        <View style={styles.section} testID="section-reading-mode">
-          <Text style={styles.sectionTitle}>Modalità di lettura</Text>
-          <Text style={styles.sectionDesc}>Scegli come navigare durante la celebrazione</Text>
-          <View style={[styles.sliderRow, { gap: 12, marginTop: 16 }]}>
-            <TouchableOpacity
-              style={[
-                styles.fontBtn,
-                { flex: 1, height: 80 },
-                readingMode === "scroll" && { backgroundColor: colors.primary, borderColor: colors.primary },
-              ]}
-              onPress={() => setReadingMode("scroll")}
-              testID="btn-mode-scroll"
-              accessibilityRole="button"
-              accessibilityState={{ selected: readingMode === "scroll" }}
-            >
-              <Text
-                style={[
-                  styles.fontBtnText,
-                  readingMode === "scroll" && { color: "#FFFFFF" },
-                  { fontSize: Math.round(fontSize * 0.75) },
-                ]}
-              >
-                Scorrimento
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.fontBtn,
-                { flex: 1, height: 80 },
-                readingMode === "tap" && { backgroundColor: colors.primary, borderColor: colors.primary },
-              ]}
-              onPress={() => setReadingMode("tap")}
-              testID="btn-mode-tap"
-              accessibilityRole="button"
-              accessibilityState={{ selected: readingMode === "tap" }}
-            >
-              <Text
-                style={[
-                  styles.fontBtnText,
-                  readingMode === "tap" && { color: "#FFFFFF" },
-                  { fontSize: Math.round(fontSize * 0.75) },
-                ]}
-              >
-                Tocca per avanzare
-              </Text>
-            </TouchableOpacity>
-          </View>
-          <Text style={[styles.info, { marginTop: 14 }]}>
-            {readingMode === "scroll"
-              ? "Tutta la messa è in un'unica pagina. Scorri verso il basso con il dito per leggere le sezioni successive."
-              : "Ogni sezione della messa è in una pagina separata. Tocca lo schermo o il bottone «Avanti» per andare alla sezione successiva."}
-          </Text>
         </View>
 
         <View style={styles.section}>
