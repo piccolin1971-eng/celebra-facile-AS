@@ -70,15 +70,32 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     (async () => {
       try {
         const saved = await AsyncStorage.getItem("messale_settings");
+        let migrationDone = false;
+        try {
+          const flag = await AsyncStorage.getItem("messale_settings_migrated_v2");
+          migrationDone = flag === "1";
+        } catch {}
         if (saved) {
           const s = JSON.parse(saved);
           if (s.theme) setThemeState(s.theme);
           if (s.fontSize) setFontSizeState(s.fontSize);
           if (typeof s.highContrast === "boolean") setHighContrastState(s.highContrast);
           if (s.readingMode === "tap" || s.readingMode === "scroll") setReadingModeState(s.readingMode);
+          // Migrazione v2: chi aveva il vecchio default 5s viene aggiornato a 6s una sola volta.
+          // L'utente può comunque cambiare manualmente in Impostazioni.
           if (typeof s.autoScrollDelaySec === "number" && s.autoScrollDelaySec >= 3 && s.autoScrollDelaySec <= 10) {
-            setAutoScrollDelaySecState(s.autoScrollDelaySec);
+            if (!migrationDone && s.autoScrollDelaySec === 5) {
+              setAutoScrollDelaySecState(6);
+              // persist nuovo valore + flag migrazione
+              const next = { ...s, autoScrollDelaySec: 6 };
+              await AsyncStorage.setItem("messale_settings", JSON.stringify(next));
+            } else {
+              setAutoScrollDelaySecState(s.autoScrollDelaySec);
+            }
           }
+        }
+        if (!migrationDone) {
+          await AsyncStorage.setItem("messale_settings_migrated_v2", "1");
         }
       } catch (e) {
         console.log("Impossibile caricare settings:", e);
