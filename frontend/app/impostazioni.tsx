@@ -5,10 +5,11 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
 import { useSettings } from "../src/SettingsContext";
+import { FONT_OPTIONS, FontFamilyId } from "../src/fontFamily";
 
 export default function Impostazioni() {
   const router = useRouter();
-  const { theme, setTheme, fontSize, setFontSize, highContrast, setHighContrast, autoScrollDelaySec, setAutoScrollDelaySec, autoScrollPxPerSec, setAutoScrollPxPerSec, colors, scaledFont } = useSettings();
+  const { theme, setTheme, fontSize, setFontSize, highContrast, setHighContrast, autoScrollDelaySec, setAutoScrollDelaySec, autoScrollPxPerSec, setAutoScrollPxPerSec, fontFamilyId, setFontFamilyId, colors, scaledFont } = useSettings();
   const styles = makeStyles(colors, fontSize);
 
   return (
@@ -107,6 +108,54 @@ export default function Impostazioni() {
               testID="slider-autoscroll-delay"
             />
             <Text style={[styles.fontBtnText, { width: 56, textAlign: "center" }]}>10 s</Text>
+          </View>
+        </View>
+
+        <View style={styles.section} testID="section-font-family">
+          <Text style={styles.sectionTitle}>Carattere</Text>
+          <Text style={styles.sectionDesc}>
+            Scegli il tipo di carattere per il testo della celebrazione. Tocca un'opzione per applicarla — l'anteprima sotto mostra come apparirà.
+          </Text>
+          <View style={styles.fontFamilyList}>
+            {FONT_OPTIONS.map((opt) => {
+              const active = opt.id === fontFamilyId;
+              return (
+                <TouchableOpacity
+                  key={opt.id}
+                  style={[styles.fontFamilyCard, active && styles.fontFamilyCardActive]}
+                  onPress={() => setFontFamilyId(opt.id as FontFamilyId)}
+                  testID={`btn-font-${opt.id}`}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Carattere ${opt.label}`}
+                >
+                  <View style={styles.fontFamilyHeader}>
+                    <Ionicons
+                      name={active ? "radio-button-on" : "radio-button-off"}
+                      size={scaledFont(28)}
+                      color={active ? colors.primary : colors.textSecondary}
+                    />
+                    <Text
+                      style={[
+                        styles.fontFamilyLabel,
+                        active && { color: colors.primary },
+                        opt.family ? { fontFamily: opt.family } : null,
+                      ]}
+                    >
+                      {opt.label}
+                    </Text>
+                  </View>
+                  <Text
+                    style={[
+                      styles.fontFamilySample,
+                      opt.family ? { fontFamily: opt.family } : null,
+                    ]}
+                  >
+                    {opt.sample}
+                  </Text>
+                  <Text style={styles.fontFamilyDesc}>{opt.description}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
 
@@ -230,4 +279,42 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
   themeCardText: { fontSize: Math.round(fontSize * 0.7), fontWeight: "600", color: colors.textPrimary },
   switchRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   info: { fontSize: Math.round(fontSize * 0.6), color: colors.textSecondary, marginTop: 6, lineHeight: fontSize * 0.85 },
+  // ----- Sezione Carattere -----
+  fontFamilyList: { gap: 12, marginTop: 12 },
+  fontFamilyCard: {
+    borderWidth: 2,
+    borderColor: colors.border,
+    borderRadius: 12,
+    padding: 14,
+    backgroundColor: colors.background,
+  },
+  fontFamilyCardActive: {
+    borderColor: colors.primary,
+    borderWidth: 3,
+  },
+  fontFamilyHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 6,
+  },
+  fontFamilyLabel: {
+    fontSize: Math.round(fontSize * 0.78),
+    fontWeight: "700",
+    color: colors.textPrimary,
+    flex: 1,
+  },
+  fontFamilySample: {
+    fontSize: Math.round(fontSize * 1.0),
+    color: colors.textPrimary,
+    marginTop: 4,
+    marginBottom: 6,
+    lineHeight: fontSize * 1.4,
+  },
+  fontFamilyDesc: {
+    fontSize: Math.round(fontSize * 0.55),
+    color: colors.textSecondary,
+    fontStyle: "italic",
+    lineHeight: fontSize * 0.8,
+  },
 });

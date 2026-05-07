@@ -58,7 +58,7 @@ type ReadingType =
 export default function MessaScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ date?: string; preface?: string; votive?: string }>();
-  const { colors, fontSize, scaledFont, readingMode, autoScrollDelaySec, autoScrollPxPerSec } = useSettings();
+  const { colors, fontSize, scaledFont, readingMode, autoScrollDelaySec, autoScrollPxPerSec, fontFamily } = useSettings();
   const [liturgy, setLiturgy] = useState<Liturgy | null>(null);
   const [fixedParts, setFixedParts] = useState<Record<string, any> | null>(null);
   const [prefaces, setPrefaces] = useState<Preface[]>([]);
@@ -127,7 +127,7 @@ export default function MessaScreen() {
   // Solo dopo questo flag, il save automatico è attivo.
   const [sessionLoaded, setSessionLoaded] = useState(false);
 
-  const styles = makeStyles(colors, fontSize);
+  const styles = makeStyles(colors, fontSize, fontFamily);
 
   useEffect(() => {
     (async () => {
@@ -2333,7 +2333,7 @@ export default function MessaScreen() {
   );
 }
 
-const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
+const makeStyles = (colors: any, fontSize: number, fontFamily?: string) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   topBar: {
     flexDirection: "row",
@@ -2466,6 +2466,7 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     lineHeight: fontSize * 1.45,
     color: colors.textPrimary,
     fontWeight: "400",
+    fontFamily,
     marginTop: 4,
     marginBottom: 8,
   },
@@ -2474,6 +2475,7 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     fontSize: Math.round(fontSize * 0.85),
     fontStyle: "italic",
     color: colors.rubrics,
+    fontFamily,
     marginVertical: 6,
     lineHeight: fontSize * 1.35,
   },
@@ -2481,6 +2483,7 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     fontSize: fontSize,
     lineHeight: fontSize * 1.45,
     color: colors.textPrimary,
+    fontFamily,
     marginTop: 0,
     marginBottom: 8,
   },
@@ -2502,11 +2505,13 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     fontSize: fontSize,
     lineHeight: fontSize * 1.3,
     color: colors.textPrimary,
+    fontFamily,
     marginVertical: 4,
   },
   celebrante: {
     fontSize: fontSize,
     color: colors.textPrimary,
+    fontFamily,
     marginVertical: 6,
     lineHeight: fontSize * 1.5,
   },
@@ -2514,6 +2519,7 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     fontSize: fontSize,
     fontWeight: "700",
     color: colors.textPrimary,
+    fontFamily,
     marginVertical: 6,
     lineHeight: fontSize * 1.5,
   },

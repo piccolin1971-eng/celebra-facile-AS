@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { FontFamilyId, getFontFamilyString } from "./fontFamily";
 
 type ThemeMode = "light" | "dark";
 type ReadingMode = "scroll" | "tap";
@@ -13,12 +14,17 @@ interface SettingsState {
   autoScrollDelaySec: number;
   // Velocità auto-scroll nelle Preghiere Eucaristiche, in pixel al secondo (2..15)
   autoScrollPxPerSec: number;
+  // Famiglia di carattere scelta dall'utente per il testo della celebrazione
+  fontFamilyId: FontFamilyId;
+  // Stringa fontFamily da passare ai componenti Text (undefined per il sistema)
+  fontFamily: string | undefined;
   setTheme: (t: ThemeMode) => void;
   setFontSize: (n: number) => void;
   setHighContrast: (v: boolean) => void;
   setReadingMode: (m: ReadingMode) => void;
   setAutoScrollDelaySec: (n: number) => void;
   setAutoScrollPxPerSec: (n: number) => void;
+  setFontFamilyId: (id: FontFamilyId) => void;
   colors: ReturnType<typeof getColors>;
   scaledFont: (base: number) => number;
 }
@@ -68,6 +74,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   const [readingMode, setReadingModeState] = useState<ReadingMode>("tap");
   const [autoScrollDelaySec, setAutoScrollDelaySecState] = useState<number>(7);
   const [autoScrollPxPerSec, setAutoScrollPxPerSecState] = useState<number>(6);
+  const [fontFamilyId, setFontFamilyIdState] = useState<FontFamilyId>("system");
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -109,6 +116,16 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
               setAutoScrollPxPerSecState(s.autoScrollPxPerSec);
             }
           }
+          // Carattere (font family) — opzionale, default "system"
+          if (
+            s.fontFamilyId === "system" ||
+            s.fontFamilyId === "atkinson" ||
+            s.fontFamilyId === "lora" ||
+            s.fontFamilyId === "garamond" ||
+            s.fontFamilyId === "cormorant"
+          ) {
+            setFontFamilyIdState(s.fontFamilyId);
+          }
         }
         if (!migrationDoneV3) {
           await AsyncStorage.setItem("messale_settings_migrated_v3", "1");
@@ -124,8 +141,8 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     })();
   }, []);
 
-  const persist = async (patch: Partial<{ theme: ThemeMode; fontSize: number; highContrast: boolean; readingMode: ReadingMode; autoScrollDelaySec: number; autoScrollPxPerSec: number }>) => {
-    const next = { theme, fontSize, highContrast, readingMode, autoScrollDelaySec, autoScrollPxPerSec, ...patch };
+  const persist = async (patch: Partial<{ theme: ThemeMode; fontSize: number; highContrast: boolean; readingMode: ReadingMode; autoScrollDelaySec: number; autoScrollPxPerSec: number; fontFamilyId: FontFamilyId }>) => {
+    const next = { theme, fontSize, highContrast, readingMode, autoScrollDelaySec, autoScrollPxPerSec, fontFamilyId, ...patch };
     await AsyncStorage.setItem("messale_settings", JSON.stringify(next));
   };
 
@@ -143,8 +160,13 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     setAutoScrollPxPerSecState(clamped);
     persist({ autoScrollPxPerSec: clamped });
   };
+  const setFontFamilyId = (id: FontFamilyId) => {
+    setFontFamilyIdState(id);
+    persist({ fontFamilyId: id });
+  };
 
   const colors = getColors(theme, highContrast);
+  const fontFamily = getFontFamilyString(fontFamilyId);
   // scaledFont: UI elements scale proportionally based on reading font
   const scaledFont = (base: number) => {
     const ratio = fontSize / 32; // 32 is default
@@ -154,7 +176,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   if (!loaded) return null;
 
   return (
-    <SettingsContext.Provider value={{ theme, fontSize, highContrast, readingMode, autoScrollDelaySec, autoScrollPxPerSec, setTheme, setFontSize, setHighContrast, setReadingMode, setAutoScrollDelaySec, setAutoScrollPxPerSec, colors, scaledFont }}>
+    <SettingsContext.Provider value={{ theme, fontSize, highContrast, readingMode, autoScrollDelaySec, autoScrollPxPerSec, fontFamilyId, fontFamily, setTheme, setFontSize, setHighContrast, setReadingMode, setAutoScrollDelaySec, setAutoScrollPxPerSec, setFontFamilyId, colors, scaledFont }}>
       {children}
     </SettingsContext.Provider>
   );

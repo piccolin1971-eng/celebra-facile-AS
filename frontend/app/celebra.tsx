@@ -197,7 +197,7 @@ function expandPrayerText(
 export default function CelebraScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ date?: string }>();
-  const { colors, fontSize, scaledFont } = useSettings();
+  const { colors, fontSize, scaledFont, fontFamily } = useSettings();
   const { width: screenWidth } = useWindowDimensions();
 
   const [liturgy, setLiturgy] = useState<Liturgy | null>(null);
@@ -219,7 +219,7 @@ export default function CelebraScreen() {
   const [currentPage, setCurrentPage] = useState(0);
   const [containerH, setContainerH] = useState(0);
 
-  const styles = makeStyles(colors, fontSize);
+  const styles = makeStyles(colors, fontSize, fontFamily);
 
   // ----- Caricamento dati -----
   useEffect(() => {
@@ -1250,7 +1250,14 @@ function paginate(
 // ===========================================================================
 // Stili (allineati a quelli di /messa.tsx)
 // ===========================================================================
-const makeStyles = (colors: any, fontSize: number) =>
+// fontFamily si applica SOLO ai testi del corpo della celebrazione (text,
+// celebrante, assemblea, peText, peDossologia, salmo, umili). I titoli/UI
+// restano nel font di sistema per coerenza con le altre schermate.
+const makeStyles = (
+  colors: any,
+  fontSize: number,
+  fontFamily: string | undefined,
+) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
     topBar: {
@@ -1363,6 +1370,7 @@ const makeStyles = (colors: any, fontSize: number) =>
       lineHeight: fontSize * 1.45,
       color: colors.textPrimary,
       fontWeight: "400",
+      fontFamily,
       marginTop: 4,
       marginBottom: 8,
     },
@@ -1370,6 +1378,7 @@ const makeStyles = (colors: any, fontSize: number) =>
       fontSize: Math.round(fontSize * 0.85),
       fontStyle: "italic",
       color: colors.rubrics,
+      fontFamily,
       marginVertical: 6,
       lineHeight: fontSize * 1.35,
     },
@@ -1377,6 +1386,7 @@ const makeStyles = (colors: any, fontSize: number) =>
       fontSize: fontSize,
       lineHeight: fontSize * 1.45,
       color: colors.textPrimary,
+      fontFamily,
       marginTop: 0,
       marginBottom: 8,
     },
@@ -1395,11 +1405,13 @@ const makeStyles = (colors: any, fontSize: number) =>
       fontSize: fontSize,
       lineHeight: fontSize * 1.3,
       color: colors.textPrimary,
+      fontFamily,
       marginVertical: 4,
     },
     celebrante: {
       fontSize: fontSize,
       color: colors.textPrimary,
+      fontFamily,
       marginVertical: 6,
       lineHeight: fontSize * 1.5,
     },
@@ -1407,6 +1419,7 @@ const makeStyles = (colors: any, fontSize: number) =>
       fontSize: fontSize,
       fontWeight: "700",
       color: colors.textPrimary,
+      fontFamily,
       marginVertical: 6,
       lineHeight: fontSize * 1.5,
     },
