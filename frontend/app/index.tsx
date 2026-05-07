@@ -82,6 +82,14 @@ export default function Home() {
     }
   };
 
+  const openCelebra = () => {
+    if (selectedDay === "today") {
+      router.push("/celebra" as any);
+    } else {
+      router.push({ pathname: "/celebra" as any, params: { date: selectedDateStr } });
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container} testID="home-screen">
       <View style={styles.topBar}>
@@ -180,27 +188,42 @@ export default function Home() {
             onPress={openMessa}
             testID="btn-mass-of-the-day"
             accessibilityRole="button"
-            accessibilityLabel={`Celebra la Messa di ${dayLabelFor(selectedDay, selectedDate).toLowerCase()}`}
+            accessibilityLabel="Scegli la liturgia"
+          >
+            <View style={styles.heroIconRow}>
+              <Ionicons name="settings" size={scaledFont(28)} color="#FFFFFF" />
+              <Text style={styles.heroTitle}>Scegli la liturgia</Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.heroCard, { backgroundColor: colors.liturgicalGreen }]}
+            onPress={openCelebra}
+            testID="btn-celebrate-clean"
+            accessibilityRole="button"
+            accessibilityLabel="Celebra la Messa, modalità lettura per l'altare"
           >
             <View style={styles.heroIconRow}>
               <Ionicons name="book" size={scaledFont(28)} color="#FFFFFF" />
               <Text style={styles.heroTitle}>Celebra la Messa</Text>
             </View>
           </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.heroCard, { backgroundColor: colors.liturgicalPurple }]}
-            onPress={() => router.push("/orazionale" as any)}
-            testID="btn-orazionale"
-            accessibilityRole="button"
-            accessibilityLabel="Orazionale, Preghiera Universale"
-          >
-            <View style={styles.heroIconRow}>
-              <MaterialCommunityIcons name="hands-pray" size={scaledFont(28)} color="#FFFFFF" />
-              <Text style={styles.heroTitle}>Orazionale</Text>
-            </View>
-          </TouchableOpacity>
         </View>
+
+        <TouchableOpacity
+          style={[styles.secondaryCard, { borderColor: colors.liturgicalPurple, borderWidth: 2 }]}
+          onPress={() => router.push("/orazionale" as any)}
+          testID="btn-orazionale"
+          accessibilityRole="button"
+          accessibilityLabel="Orazionale, Preghiera Universale"
+        >
+          <MaterialCommunityIcons name="hands-pray" size={scaledFont(40)} color={colors.liturgicalPurple} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.secondaryCardTitle}>Orazionale</Text>
+            <Text style={styles.secondaryCardSubtitle}>Preghiera Universale</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={scaledFont(40)} color={colors.textSecondary} />
+        </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.secondaryCard}

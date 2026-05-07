@@ -1284,6 +1284,20 @@ export default function MessaScreen() {
             <R kind="assemblea">A. {selectedCongedo.assemblea}</R>
           </View>
         )}
+
+        {/* Pulsante per passare in modalità "Celebra la Messa" (lettura pulita) */}
+        <TouchableOpacity
+          style={styles.celebrateNowBtn}
+          onPress={() => router.replace(sessionDate ? { pathname: "/celebra" as any, params: { date: sessionDate } } : "/celebra" as any)}
+          testID="btn-go-celebrate"
+          accessibilityRole="button"
+          accessibilityLabel="Scelte per la liturgia odierna completate, passa alla modalità lettura"
+        >
+          <Ionicons name="checkmark-circle" size={scaledFont(36)} color="#FFFFFF" />
+          <Text style={styles.celebrateNowBtnText}>
+            Scelte per la liturgia odierna completate
+          </Text>
+        </TouchableOpacity>
       </View>
     );
   };
@@ -2504,6 +2518,29 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     lineHeight: fontSize * 1.5,
   },
   block: { marginVertical: 10 },
+  // Pulsante grande sulla pagina del Congedo: passa alla modalità "Celebra la
+  // Messa" (lettura pulita per l'altare). Pensato per essere ben visibile e
+  // facile da centrare con il dito anche per chi ha la vista debole.
+  celebrateNowBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    marginTop: 28,
+    marginBottom: 12,
+    paddingVertical: 18,
+    paddingHorizontal: 20,
+    borderRadius: 14,
+    backgroundColor: colors.liturgicalGreen,
+    minHeight: 72,
+  },
+  celebrateNowBtnText: {
+    fontSize: Math.round(fontSize * 0.7),
+    fontWeight: "800",
+    color: "#FFFFFF",
+    textAlign: "center",
+    flexShrink: 1,
+  },
   // Bottoni per scegliere fra 26 benedizioni solenni: layout flex-wrap
   solemnChoiceBtn: {
     paddingVertical: 12,
