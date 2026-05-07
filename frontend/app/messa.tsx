@@ -109,9 +109,12 @@ export default function MessaScreen() {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
   // Auto-scroll PE (Kindle-style): velocità in pixel/secondo
-  // 0=off, 1=lento (10 px/s), 2=medio (22 px/s), 3=veloce (40 px/s)
+  // Ciclo bottone: Lento (default) → Off → Medio → Off → Lento ...
+  // 0=off, 1=lento (10 px/s), 2=medio (22 px/s)
   // Si attiva solo nelle pagine della Preghiera Eucaristica.
-  const [peAutoScrollSpeed, setPeAutoScrollSpeed] = useState<0 | 1 | 2 | 3>(0);
+  const AUTO_SCROLL_CYCLE: (0 | 1 | 2)[] = [1, 0, 2, 0]; // Lento, Off, Medio, Off
+  const [autoScrollCycleIdx, setAutoScrollCycleIdx] = useState<number>(0);
+  const peAutoScrollSpeed: 0 | 1 | 2 = AUTO_SCROLL_CYCLE[autoScrollCycleIdx % AUTO_SCROLL_CYCLE.length];
   const scrollYRef = React.useRef(0);
   const contentHeightRef = React.useRef(0);
   const containerHeightRef = React.useRef(0);
@@ -252,7 +255,7 @@ export default function MessaScreen() {
       autoScrollTimerRef.current = null;
     }
     if (peAutoScrollSpeed === 0) return;
-    const pps = peAutoScrollSpeed === 1 ? 10 : peAutoScrollSpeed === 2 ? 22 : 40;
+    const pps = peAutoScrollSpeed === 1 ? 10 : 22;
     const intervalMs = 50;
     const stepPx = pps * (intervalMs / 1000);
     // Piccolo delay iniziale per dare tempo all'utente di leggere l'inizio
@@ -279,7 +282,7 @@ export default function MessaScreen() {
         autoScrollTimerRef.current = null;
       }
     };
-  }, [currentPage, peAutoScrollSpeed]);
+  }, [currentPage, autoScrollCycleIdx]);
 
   // === PE FULL: espansione dei blocchi `var` in base a peSelections ===
   // IMPORTANTE: questi hook devono stare PRIMA di qualunque early-return
@@ -1473,12 +1476,12 @@ export default function MessaScreen() {
                             styles.autoScrollBtn,
                             peAutoScrollSpeed > 0 && styles.autoScrollBtnActive,
                           ]}
-                          onPress={() => setPeAutoScrollSpeed(((peAutoScrollSpeed + 1) % 4) as 0|1|2|3)}
+                          onPress={() => setAutoScrollCycleIdx((autoScrollCycleIdx + 1) % AUTO_SCROLL_CYCLE.length)}
                           testID="btn-autoscroll"
                           accessibilityLabel={
                             peAutoScrollSpeed === 0 ? "Attiva scorrimento automatico" :
                             peAutoScrollSpeed === 1 ? "Scorrimento lento" :
-                            peAutoScrollSpeed === 2 ? "Scorrimento medio" : "Scorrimento veloce"
+                            "Scorrimento medio"
                           }
                         >
                           <Ionicons
@@ -1494,7 +1497,7 @@ export default function MessaScreen() {
                           >
                             {peAutoScrollSpeed === 0 ? "Auto" :
                              peAutoScrollSpeed === 1 ? "Lento" :
-                             peAutoScrollSpeed === 2 ? "Medio" : "Veloce"}
+                             "Medio"}
                           </Text>
                         </TouchableOpacity>
                       </View>
@@ -2112,24 +2115,26 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
   toggleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   toggleLabel: { fontSize: Math.round(fontSize * 0.75), color: colors.textPrimary, fontWeight: "600" },
   partBox: {
-    marginBottom: 6,
-    paddingBottom: 4,
+    marginBottom: 2,
+    paddingBottom: 0,
     borderBottomWidth: 0,
   },
   sectionTitle: {
     fontSize: Math.round(fontSize * 1.05),
     fontWeight: "800",
     color: "#4DA8DA",      // Azzurro: titoli grandi delle parti della messa (es. "Atto Penitenziale", "Gloria", "Benedizione")
-    marginBottom: 2,
+    marginBottom: 0,
     marginTop: 0,
+    lineHeight: Math.round(fontSize * 1.15),
   },
   // Titolo per sezioni rituali macro (Riti Introduzione, Liturgia Parola, ecc.)
   ritoTitle: {
     fontSize: Math.round(fontSize * 0.95),
     fontWeight: "800",
     color: "#FFC107",      // Giallo/oro: macro-sezioni
-    marginBottom: 2,
+    marginBottom: 0,
     marginTop: 0,
+    lineHeight: Math.round(fontSize * 1.05),
     textTransform: "uppercase",
     letterSpacing: 1,
   },
@@ -2139,7 +2144,8 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     fontWeight: "800",
     color: "#FFB74D",      // Ambra/oro chiaro: antifone e acclamazioni
     marginTop: 0,
-    marginBottom: 2,
+    marginBottom: 0,
+    lineHeight: Math.round(fontSize * 0.95),
   },
   // Titolo per le letture (Prima, Salmo, Seconda, Vangelo)
   readingTitle: {
@@ -2147,7 +2153,8 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     fontWeight: "800",
     color: "#81C784",      // Verde chiaro: letture
     marginTop: 0,
-    marginBottom: 2,
+    marginBottom: 0,
+    lineHeight: Math.round(fontSize * 0.95),
   },
   // Titolo per orazioni proprie (Colletta, Sulle offerte, Dopo la comunione)
   orazioneTitle: {
@@ -2155,14 +2162,16 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     fontWeight: "800",
     color: "#CE93D8",      // Lavanda: orazioni proprie del giorno
     marginTop: 0,
-    marginBottom: 2,
+    marginBottom: 0,
+    lineHeight: Math.round(fontSize * 0.95),
   },
   subtitle: {
     fontSize: Math.round(fontSize * 0.85),
     fontWeight: "700",
     color: colors.textPrimary,
     marginTop: 0,
-    marginBottom: 2,
+    marginBottom: 0,
+    lineHeight: Math.round(fontSize * 0.95),
   },
   // Stile per "Umili e pentiti" - testo della preghiera in rosso (rubrica)
   umili: {
