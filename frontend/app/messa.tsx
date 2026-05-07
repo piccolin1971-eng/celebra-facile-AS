@@ -384,7 +384,28 @@ export default function MessaScreen() {
         parts.push(t);
       }
     }
-    return parts.join("\n\n");
+    // Concatenazione intelligente: se un blocco di testo NON termina con un
+    // terminatore di frase (. ! ? :), allora unisce al successivo con \n
+    // (riga semplice) invece di \n\n (paragrafo). Questo evita che il
+    // chunker per pagine spezzi una frase liturgica continua come
+    // "...santificare questi doni" + (rubrica) + "perché diventino il Corpo..."
+    // dove la rubrica intermedia è solo gestuale.
+    const sentenceEnders = /[\.\!\?]$/;
+    let result = "";
+    for (let i = 0; i < parts.length; i++) {
+      const cur = parts[i];
+      if (i === 0) {
+        result = cur;
+        continue;
+      }
+      const prev = parts[i - 1];
+      const prevLast = prev.replace(/\s+$/, "").slice(-1);
+      // Se il precedente termina con un terminatore di frase, paragrafo nuovo;
+      // altrimenti continua sulla stessa frase (newline singolo).
+      const sep = sentenceEnders.test(prevLast) ? "\n\n" : "\n";
+      result += sep + cur;
+    }
+    return result;
   }, [peFull, peSelections, prayers, selectedPrayerId]);
 
   if (loading || !fixedParts) {
@@ -546,8 +567,9 @@ export default function MessaScreen() {
     const MIN_FILL = Math.round(maxChars * 0.65); // se il chunk è < 65% pieno, prova ad unire
 
     const splitParagraphLong = (p: string): string[] => {
+      // Step 1: prova a dividere sulle frasi (.,?,!,:)
+      const sentences = p.split(/(?<=[\.\?\!\:])\s+/);
       const pieces: string[] = [];
-      const sentences = p.split(/(?<=[\.\?\!])\s+/);
       let buf = "";
       for (const s of sentences) {
         const cand = buf ? `${buf} ${s}` : s;
@@ -559,7 +581,52 @@ export default function MessaScreen() {
         }
       }
       if (buf) pieces.push(buf.trim());
-      return pieces;
+
+      // Step 2: se un piece è ancora troppo lungo (frase enorme),
+      // prova a dividere su virgole/punti-e-virgola.
+      const afterCommas: string[] = [];
+      for (const piece of pieces) {
+        if (piece.length <= HARD_LIMIT) {
+          afterCommas.push(piece);
+          continue;
+        }
+        const subs = piece.split(/(?<=[,;])\s+/);
+        let b2 = "";
+        for (const ss of subs) {
+          const c2 = b2 ? `${b2} ${ss}` : ss;
+          if (c2.length > maxChars && b2) {
+            afterCommas.push(b2.trim());
+            b2 = ss;
+          } else {
+            b2 = c2;
+          }
+        }
+        if (b2) afterCommas.push(b2.trim());
+      }
+
+      // Step 3: ultimo fallback - dividere su newline singoli (a capo
+      // tra versi/righe della preghiera) per evitare break a metà parola.
+      const finalPieces: string[] = [];
+      for (const piece of afterCommas) {
+        if (piece.length <= HARD_LIMIT) {
+          finalPieces.push(piece);
+          continue;
+        }
+        const lines = piece.split(/\n/);
+        let b3 = "";
+        for (const ln of lines) {
+          const c3 = b3 ? `${b3}\n${ln}` : ln;
+          if (c3.length > maxChars && b3) {
+            finalPieces.push(b3.trim());
+            b3 = ln;
+          } else {
+            b3 = c3;
+          }
+        }
+        if (b3) finalPieces.push(b3.trim());
+      }
+
+      return finalPieces;
     };
 
     for (const p of paragraphs) {
