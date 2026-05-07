@@ -2445,12 +2445,13 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     fontWeight: "800",
   },
   // Dossologia conclusiva ("PER CRISTO, CON CRISTO E IN CRISTO..."): stile
-  // uniforme per tutte le PE — bianco, maiuscolo, bold, grande quanto il testo PE.
+  // uniforme per tutte le PE — bianco, maiuscolo, peso REGULAR (alleggerito
+  // su richiesta utente: il bold rendeva il testo troppo pesante a video).
   peDossologia: {
     fontSize: fontSize,
     lineHeight: fontSize * 1.45,
     color: colors.textPrimary,
-    fontWeight: "800",
+    fontWeight: "400",
     marginTop: 4,
     marginBottom: 8,
   },
