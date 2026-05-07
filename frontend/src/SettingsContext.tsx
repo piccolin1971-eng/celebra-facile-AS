@@ -67,17 +67,20 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   const [highContrast, setHighContrastState] = useState(false);
   const [readingMode, setReadingModeState] = useState<ReadingMode>("tap");
   const [autoScrollDelaySec, setAutoScrollDelaySecState] = useState<number>(7);
-  const [autoScrollPxPerSec, setAutoScrollPxPerSecState] = useState<number>(5);
+  const [autoScrollPxPerSec, setAutoScrollPxPerSecState] = useState<number>(6);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     (async () => {
       try {
         const saved = await AsyncStorage.getItem("messale_settings");
-        let migrationDone = false;
+        let migrationDoneV3 = false;
+        let migrationDoneV4 = false;
         try {
-          const flag = await AsyncStorage.getItem("messale_settings_migrated_v3");
-          migrationDone = flag === "1";
+          const flagV3 = await AsyncStorage.getItem("messale_settings_migrated_v3");
+          migrationDoneV3 = flagV3 === "1";
+          const flagV4 = await AsyncStorage.getItem("messale_settings_migrated_v4");
+          migrationDoneV4 = flagV4 === "1";
         } catch {}
         if (saved) {
           const s = JSON.parse(saved);
@@ -86,22 +89,32 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
           if (typeof s.highContrast === "boolean") setHighContrastState(s.highContrast);
           if (s.readingMode === "tap" || s.readingMode === "scroll") setReadingModeState(s.readingMode);
           // Migrazione v3: chi aveva i vecchi default (5s o 6s) viene aggiornato a 7s una sola volta.
-          // L'utente può comunque cambiare manualmente in Impostazioni.
           if (typeof s.autoScrollDelaySec === "number" && s.autoScrollDelaySec >= 3 && s.autoScrollDelaySec <= 10) {
-            if (!migrationDone && (s.autoScrollDelaySec === 5 || s.autoScrollDelaySec === 6)) {
+            if (!migrationDoneV3 && (s.autoScrollDelaySec === 5 || s.autoScrollDelaySec === 6)) {
               setAutoScrollDelaySecState(7);
               const next = { ...s, autoScrollDelaySec: 7 };
               await AsyncStorage.setItem("messale_settings", JSON.stringify(next));
+              s.autoScrollDelaySec = 7;
             } else {
               setAutoScrollDelaySecState(s.autoScrollDelaySec);
             }
           }
+          // Migrazione v4: chi aveva il vecchio default 5 px/s viene aggiornato a 6 px/s una sola volta.
           if (typeof s.autoScrollPxPerSec === "number" && s.autoScrollPxPerSec >= 2 && s.autoScrollPxPerSec <= 15) {
-            setAutoScrollPxPerSecState(s.autoScrollPxPerSec);
+            if (!migrationDoneV4 && s.autoScrollPxPerSec === 5) {
+              setAutoScrollPxPerSecState(6);
+              const next = { ...s, autoScrollPxPerSec: 6 };
+              await AsyncStorage.setItem("messale_settings", JSON.stringify(next));
+            } else {
+              setAutoScrollPxPerSecState(s.autoScrollPxPerSec);
+            }
           }
         }
-        if (!migrationDone) {
+        if (!migrationDoneV3) {
           await AsyncStorage.setItem("messale_settings_migrated_v3", "1");
+        }
+        if (!migrationDoneV4) {
+          await AsyncStorage.setItem("messale_settings_migrated_v4", "1");
         }
       } catch (e) {
         console.log("Impossibile caricare settings:", e);
