@@ -6,8 +6,8 @@ import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
 import { AtkinsonHyperlegible_400Regular } from "@expo-google-fonts/atkinson-hyperlegible";
 import { Lora_400Regular } from "@expo-google-fonts/lora";
-import { EBGaramond_400Regular } from "@expo-google-fonts/eb-garamond";
-import { Cormorant_400Regular } from "@expo-google-fonts/cormorant";
+import { VarelaRound_400Regular } from "@expo-google-fonts/varela-round";
+import { PatrickHand_400Regular } from "@expo-google-fonts/patrick-hand";
 
 export default function RootLayout() {
   // Carica i 4 font selezionabili dall'utente in Impostazioni → Carattere.
@@ -16,8 +16,8 @@ export default function RootLayout() {
   const [loaded] = useFonts({
     AtkinsonHyperlegible_400Regular,
     Lora_400Regular,
-    EBGaramond_400Regular,
-    Cormorant_400Regular,
+    VarelaRound_400Regular,
+    PatrickHand_400Regular,
   });
 
   if (!loaded) {

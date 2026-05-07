@@ -5,8 +5,8 @@
  *  - "system"   → font di sistema (default)
  *  - "atkinson" → Atkinson Hyperlegible (disegnato per ipovisione)
  *  - "lora"     → Lora (serif moderno per lettura schermo)
- *  - "garamond" → EB Garamond (serif classico, sapore liturgico)
- *  - "cormorant"→ Cormorant (serif elegante, alternativa Google Fonts a Rosemary)
+ *  - "varela"   → Varela Round (sans morbido, lettere arrotondate)
+ *  - "patrick"  → Patrick Hand (calligrafico/scritto a mano)
  *
  * Ogni opzione carica il font Regular (peso 400). Per i bold (consacrazione,
  * dossologia in maiuscolo, ecc.) si usa fontWeight: "700"/"800" con il font
@@ -16,8 +16,8 @@ export type FontFamilyId =
   | "system"
   | "atkinson"
   | "lora"
-  | "garamond"
-  | "cormorant";
+  | "varela"
+  | "patrick";
 
 export const FONT_OPTIONS: {
   id: FontFamilyId;
@@ -48,17 +48,17 @@ export const FONT_OPTIONS: {
     sample: "Padre nostro, che sei nei cieli",
   },
   {
-    id: "garamond",
-    label: "EB Garamond",
-    description: "Serif classico, sapore liturgico tradizionale",
-    family: "EBGaramond_400Regular",
+    id: "varela",
+    label: "Varela Round",
+    description: "Sans morbido, lettere arrotondate e amichevoli",
+    family: "VarelaRound_400Regular",
     sample: "Padre nostro, che sei nei cieli",
   },
   {
-    id: "cormorant",
-    label: "Cormorant",
-    description: "Serif elegante (alternativa Google Fonts a Rosemary)",
-    family: "Cormorant_400Regular",
+    id: "patrick",
+    label: "Patrick Hand",
+    description: "Stile manoscritto, sapore di appunti a mano",
+    family: "PatrickHand_400Regular",
     sample: "Padre nostro, che sei nei cieli",
   },
 ];

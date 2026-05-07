@@ -116,13 +116,15 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
               setAutoScrollPxPerSecState(s.autoScrollPxPerSec);
             }
           }
-          // Carattere (font family) — opzionale, default "system"
+          // Carattere (font family) — opzionale, default "system".
+          // I vecchi ID "garamond"/"cormorant" sono stati rimossi: chi li
+          // aveva selezionati torna automaticamente a "system".
           if (
             s.fontFamilyId === "system" ||
             s.fontFamilyId === "atkinson" ||
             s.fontFamilyId === "lora" ||
-            s.fontFamilyId === "garamond" ||
-            s.fontFamilyId === "cormorant"
+            s.fontFamilyId === "varela" ||
+            s.fontFamilyId === "patrick"
           ) {
             setFontFamilyIdState(s.fontFamilyId);
           }
