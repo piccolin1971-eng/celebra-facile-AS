@@ -8,7 +8,7 @@ import { useSettings } from "../src/SettingsContext";
 
 export default function Impostazioni() {
   const router = useRouter();
-  const { theme, setTheme, fontSize, setFontSize, highContrast, setHighContrast, colors, scaledFont } = useSettings();
+  const { theme, setTheme, fontSize, setFontSize, highContrast, setHighContrast, autoScrollDelaySec, setAutoScrollDelaySec, colors, scaledFont } = useSettings();
   const styles = makeStyles(colors, fontSize);
 
   return (
@@ -103,6 +103,32 @@ export default function Impostazioni() {
               testID="switch-high-contrast"
             />
           </View>
+        </View>
+
+        <View style={styles.section} testID="section-autoscroll-delay">
+          <Text style={styles.sectionTitle}>Attesa prima dell'auto-scroll</Text>
+          <Text style={styles.sectionDesc}>
+            Tempo (in secondi) prima che parta lo scorrimento automatico nella Preghiera Eucaristica, per leggere con calma l'inizio della pagina ({autoScrollDelaySec} sec.)
+          </Text>
+          <View style={styles.sliderRow}>
+            <Text style={[styles.fontBtnText, { width: 56, textAlign: "center" }]}>3 s</Text>
+            <Slider
+              style={{ flex: 1, height: 60 }}
+              minimumValue={3}
+              maximumValue={10}
+              step={1}
+              value={autoScrollDelaySec}
+              onValueChange={(v) => setAutoScrollDelaySec(Math.round(v))}
+              minimumTrackTintColor={colors.primary}
+              maximumTrackTintColor={colors.border}
+              thumbTintColor={colors.primary}
+              testID="slider-autoscroll-delay"
+            />
+            <Text style={[styles.fontBtnText, { width: 56, textAlign: "center" }]}>10 s</Text>
+          </View>
+          <Text style={styles.previewText}>
+            Attualmente: {autoScrollDelaySec} secondi di attesa
+          </Text>
         </View>
 
         <View style={styles.section}>

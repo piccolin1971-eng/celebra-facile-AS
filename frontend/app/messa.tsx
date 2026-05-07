@@ -58,7 +58,7 @@ type ReadingType =
 export default function MessaScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ date?: string; preface?: string; votive?: string }>();
-  const { colors, fontSize, scaledFont, readingMode } = useSettings();
+  const { colors, fontSize, scaledFont, readingMode, autoScrollDelaySec } = useSettings();
   const [liturgy, setLiturgy] = useState<Liturgy | null>(null);
   const [fixedParts, setFixedParts] = useState<Record<string, any> | null>(null);
   const [prefaces, setPrefaces] = useState<Preface[]>([]);
@@ -271,7 +271,8 @@ export default function MessaScreen() {
     const pps = peAutoScrollSpeed === 1 ? 10 : 22;
     const intervalMs = 50;
     const stepPx = pps * (intervalMs / 1000);
-    // Piccolo delay iniziale per dare tempo all'utente di leggere l'inizio
+    // Delay iniziale: attesa configurabile dall'utente (3..10 sec) per dare
+    // il tempo di leggere con calma l'inizio della pagina prima dello scroll auto.
     const startDelay = setTimeout(() => {
       autoScrollTimerRef.current = setInterval(() => {
         const maxY = Math.max(0, contentHeightRef.current - containerHeightRef.current);
@@ -287,7 +288,7 @@ export default function MessaScreen() {
         scrollYRef.current = next;
         scrollRef.current?.scrollTo({ y: next, animated: false });
       }, intervalMs);
-    }, 1500);
+    }, autoScrollDelaySec * 1000);
     return () => {
       clearTimeout(startDelay);
       if (autoScrollTimerRef.current) {
@@ -295,7 +296,7 @@ export default function MessaScreen() {
         autoScrollTimerRef.current = null;
       }
     };
-  }, [currentPage, autoScrollCycleIdx]);
+  }, [currentPage, autoScrollCycleIdx, autoScrollDelaySec]);
 
   // === PE FULL: espansione dei blocchi `var` in base a peSelections ===
   // IMPORTANTE: questi hook devono stare PRIMA di qualunque early-return
@@ -2135,22 +2136,26 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     paddingBottom: 0,
     borderBottomWidth: 0,
   },
+  // === Tutti i titoli condividono la stessa "regola di spazio" ===
+  // marginBottom: 6 fissa la distanza titolo→testo.
+  // lineHeight = fontSize del titolo (no extra leading) per un gap visivo uniforme.
+  // marginTop: 0 (lo spazio sopra è gestito dal partBox).
   sectionTitle: {
     fontSize: Math.round(fontSize * 1.05),
     fontWeight: "800",
     color: "#4DA8DA",      // Azzurro: titoli grandi delle parti della messa (es. "Atto Penitenziale", "Gloria", "Benedizione")
-    marginBottom: 0,
     marginTop: 0,
-    lineHeight: Math.round(fontSize * 1.15),
+    marginBottom: 6,
+    lineHeight: Math.round(fontSize * 1.05),
   },
   // Titolo per sezioni rituali macro (Riti Introduzione, Liturgia Parola, ecc.)
   ritoTitle: {
     fontSize: Math.round(fontSize * 0.95),
     fontWeight: "800",
     color: "#FFC107",      // Giallo/oro: macro-sezioni
-    marginBottom: 0,
     marginTop: 0,
-    lineHeight: Math.round(fontSize * 1.05),
+    marginBottom: 6,
+    lineHeight: Math.round(fontSize * 0.95),
     textTransform: "uppercase",
     letterSpacing: 1,
   },
@@ -2160,8 +2165,8 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     fontWeight: "800",
     color: "#FFB74D",      // Ambra/oro chiaro: antifone e acclamazioni
     marginTop: 0,
-    marginBottom: 0,
-    lineHeight: Math.round(fontSize * 0.95),
+    marginBottom: 6,
+    lineHeight: Math.round(fontSize * 0.85),
   },
   // Titolo per le letture (Prima, Salmo, Seconda, Vangelo)
   readingTitle: {
@@ -2169,8 +2174,8 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     fontWeight: "800",
     color: "#81C784",      // Verde chiaro: letture
     marginTop: 0,
-    marginBottom: 0,
-    lineHeight: Math.round(fontSize * 0.95),
+    marginBottom: 6,
+    lineHeight: Math.round(fontSize * 0.85),
   },
   // Titolo per orazioni proprie (Colletta, Sulle offerte, Dopo la comunione)
   orazioneTitle: {
@@ -2178,16 +2183,16 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     fontWeight: "800",
     color: "#CE93D8",      // Lavanda: orazioni proprie del giorno
     marginTop: 0,
-    marginBottom: 0,
-    lineHeight: Math.round(fontSize * 0.95),
+    marginBottom: 6,
+    lineHeight: Math.round(fontSize * 0.85),
   },
   subtitle: {
     fontSize: Math.round(fontSize * 0.85),
     fontWeight: "700",
     color: colors.textPrimary,
     marginTop: 0,
-    marginBottom: 0,
-    lineHeight: Math.round(fontSize * 0.95),
+    marginBottom: 6,
+    lineHeight: Math.round(fontSize * 0.85),
   },
   // Stile per "Umili e pentiti" - testo della preghiera in rosso (rubrica)
   umili: {
@@ -2201,7 +2206,8 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     fontSize: fontSize,
     lineHeight: fontSize * 1.45,
     color: colors.textPrimary,
-    marginVertical: 4,
+    marginTop: 0,
+    marginBottom: 8,
   },
   rubric: {
     fontSize: Math.round(fontSize * 0.7),
@@ -2394,48 +2400,50 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
   selectorBtn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderWidth: 1.5,
+    gap: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderWidth: 2,
     borderColor: colors.primary,
-    borderRadius: 8,
-    marginVertical: 4,
-    minHeight: 40,
+    borderRadius: 10,
+    marginVertical: 6,
+    minHeight: 48,
   },
-  selectorBtnText: { fontSize: Math.round(fontSize * 0.55), color: colors.primary, fontWeight: "700" },
+  selectorBtnText: { fontSize: Math.round(fontSize * 0.7), color: colors.primary, fontWeight: "700" },
   // Variante compatta inline (es. accanto al titolo "Preghiera Eucaristica")
   selectorBtnInline: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderWidth: 1.5,
+    gap: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderWidth: 2,
     borderColor: colors.primary,
     borderRadius: 8,
-    marginLeft: 12,
+    marginLeft: 16,
+    minHeight: 42,
   },
-  selectorBtnInlineText: { fontSize: Math.round(fontSize * 0.5), color: colors.primary, fontWeight: "700" },
+  selectorBtnInlineText: { fontSize: Math.round(fontSize * 0.62), color: colors.primary, fontWeight: "700" },
   // Bottone auto-scroll (Off → Lento → Medio → Veloce). Ciclico al tap.
   autoScrollBtn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderWidth: 1.5,
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderWidth: 2,
     borderColor: "#FFA000",
     borderRadius: 8,
-    marginLeft: 8,
+    marginLeft: 12,
     backgroundColor: "transparent",
+    minHeight: 42,
   },
   autoScrollBtnActive: {
     backgroundColor: "#FFA000",
     borderColor: "#FFA000",
   },
   autoScrollBtnText: {
-    fontSize: Math.round(fontSize * 0.45),
+    fontSize: Math.round(fontSize * 0.6),
     color: "#FFB74D",
     fontWeight: "700",
   },
@@ -2444,44 +2452,45 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     flexWrap: "wrap",
-    marginBottom: 6,
+    marginBottom: 8,
+    gap: 4,
   },
-  // === Selettori Tempo Liturgico / Rito Particolare (PE) - più discreti ===
+  // === Selettori Tempo Liturgico / Rito Particolare (PE) ===
   peSelectorsRow: {
     flexDirection: "row",
-    gap: 6,
-    marginTop: 2,
-    marginBottom: 8,
+    gap: 12,
+    marginTop: 4,
+    marginBottom: 12,
     flexWrap: "wrap",
   },
   peSelectorBtn: {
     flex: 1,
-    minWidth: 140,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 8,
+    minWidth: 180,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 10,
     backgroundColor: "transparent",
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: "#FFA000",
-    minHeight: 40,
+    minHeight: 56,
   },
   peSelectorLabel: {
-    fontSize: Math.round(fontSize * 0.4),
+    fontSize: Math.round(fontSize * 0.5),
     color: "#FFB74D",
     fontWeight: "700",
     textTransform: "uppercase",
-    letterSpacing: 0.4,
-    marginBottom: 1,
+    letterSpacing: 0.6,
+    marginBottom: 4,
   },
   peSelectorValueRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 4,
+    gap: 6,
   },
   peSelectorValue: {
     color: "#FFE0B2",
-    fontSize: Math.round(fontSize * 0.55),
+    fontSize: Math.round(fontSize * 0.65),
     fontWeight: "600",
     flex: 1,
   },

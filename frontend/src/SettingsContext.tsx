@@ -9,10 +9,13 @@ interface SettingsState {
   fontSize: number; // reading text size in pt
   highContrast: boolean;
   readingMode: ReadingMode;
+  // Tempo (in secondi) prima che parta l'auto-scroll dopo il cambio pagina (3..10)
+  autoScrollDelaySec: number;
   setTheme: (t: ThemeMode) => void;
   setFontSize: (n: number) => void;
   setHighContrast: (v: boolean) => void;
   setReadingMode: (m: ReadingMode) => void;
+  setAutoScrollDelaySec: (n: number) => void;
   colors: ReturnType<typeof getColors>;
   scaledFont: (base: number) => number;
 }
@@ -60,6 +63,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   const [fontSize, setFontSizeState] = useState(32);
   const [highContrast, setHighContrastState] = useState(false);
   const [readingMode, setReadingModeState] = useState<ReadingMode>("tap");
+  const [autoScrollDelaySec, setAutoScrollDelaySecState] = useState<number>(5);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -72,6 +76,9 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
           if (s.fontSize) setFontSizeState(s.fontSize);
           if (typeof s.highContrast === "boolean") setHighContrastState(s.highContrast);
           if (s.readingMode === "tap" || s.readingMode === "scroll") setReadingModeState(s.readingMode);
+          if (typeof s.autoScrollDelaySec === "number" && s.autoScrollDelaySec >= 3 && s.autoScrollDelaySec <= 10) {
+            setAutoScrollDelaySecState(s.autoScrollDelaySec);
+          }
         }
       } catch (e) {
         console.log("Impossibile caricare settings:", e);
@@ -81,8 +88,8 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     })();
   }, []);
 
-  const persist = async (patch: Partial<{ theme: ThemeMode; fontSize: number; highContrast: boolean; readingMode: ReadingMode }>) => {
-    const next = { theme, fontSize, highContrast, readingMode, ...patch };
+  const persist = async (patch: Partial<{ theme: ThemeMode; fontSize: number; highContrast: boolean; readingMode: ReadingMode; autoScrollDelaySec: number }>) => {
+    const next = { theme, fontSize, highContrast, readingMode, autoScrollDelaySec, ...patch };
     await AsyncStorage.setItem("messale_settings", JSON.stringify(next));
   };
 
@@ -90,6 +97,11 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   const setFontSize = (n: number) => { setFontSizeState(n); persist({ fontSize: n }); };
   const setHighContrast = (v: boolean) => { setHighContrastState(v); persist({ highContrast: v }); };
   const setReadingMode = (m: ReadingMode) => { setReadingModeState(m); persist({ readingMode: m }); };
+  const setAutoScrollDelaySec = (n: number) => {
+    const clamped = Math.max(3, Math.min(10, Math.round(n)));
+    setAutoScrollDelaySecState(clamped);
+    persist({ autoScrollDelaySec: clamped });
+  };
 
   const colors = getColors(theme, highContrast);
   // scaledFont: UI elements scale proportionally based on reading font
@@ -101,7 +113,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   if (!loaded) return null;
 
   return (
-    <SettingsContext.Provider value={{ theme, fontSize, highContrast, readingMode, setTheme, setFontSize, setHighContrast, setReadingMode, colors, scaledFont }}>
+    <SettingsContext.Provider value={{ theme, fontSize, highContrast, readingMode, autoScrollDelaySec, setTheme, setFontSize, setHighContrast, setReadingMode, setAutoScrollDelaySec, colors, scaledFont }}>
       {children}
     </SettingsContext.Provider>
   );
