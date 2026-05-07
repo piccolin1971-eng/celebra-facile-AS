@@ -627,7 +627,12 @@ function buildSegments(args: BuildArgs): Segment[] {
     }
     if (s.type === "kyrie") {
       if (s.rubric && !opts?.skipRubric) push("rubric", s.rubric);
-      for (const d of s.dialogue || []) {
+      const pairs = s.dialogue || [];
+      for (let i = 0; i < pairs.length; i++) {
+        // Spazio tra le tre coppie del Kyrie (Signore pietà / Cristo pietà /
+        // Signore pietà) per separazione visiva, come da richiesta utente.
+        if (i > 0) sp();
+        const d = pairs[i];
         push("celebrante", `C. ${d.c}`);
         push("assemblea", `A. ${d.a}`);
       }
@@ -697,7 +702,10 @@ function buildSegments(args: BuildArgs): Segment[] {
       }
       const seasonVariant = selectedOpt.season_variants?.[penSeason];
       if (seasonVariant?.formulas && Array.isArray(seasonVariant.formulas)) {
-        for (const formula of seasonVariant.formulas) {
+        for (let fi = 0; fi < seasonVariant.formulas.length; fi++) {
+          // Spazio tra le formule (1, 2, 3...) per separazione visiva
+          if (fi > 0) sp();
+          const formula = seasonVariant.formulas[fi];
           if (formula.label) push("subtitle", formula.label);
           for (const d of formula.dialogue || []) {
             push("celebrante", `C. ${d.c}`);
@@ -945,11 +953,15 @@ function buildSegments(args: BuildArgs): Segment[] {
           `Benedizione Solenne — ${(sb as any).num ? `${(sb as any).num}. ` : ""}${sb.title}`,
         );
         if ((sb as any).rubric) push("rubric", (sb as any).rubric);
-        for (const inv of sb.invocations || []) {
+        const invs = sb.invocations || [];
+        for (let ii = 0; ii < invs.length; ii++) {
+          if (ii > 0) sp();
+          const inv = invs[ii];
           push("celebrante", `C. ${inv.c}`);
           push("assemblea", `A. ${inv.a}`);
         }
         if (sb.final) {
+          sp();
           push("celebrante", `C. ${sb.final.c}`);
           push("assemblea", `A. ${sb.final.a}`);
         }
@@ -1164,19 +1176,49 @@ function paginate(
         // sulla pagina successiva insieme al loro testo. Anche eventuali
         // <spacer> finali vengono scartati (non ha senso uno spacer in fondo).
         const orphans: Segment[] = [];
-        // Prima: rimuovi spacer in coda
+        // 1) rimuovi spacer in coda (estetica)
         while (
           curPage.length > 0 &&
           curPage[curPage.length - 1].kind === "spacer"
         ) {
           curPage.pop();
         }
-        // Poi: titoli in coda → orphans
-        while (
-          curPage.length > 0 &&
-          isTitle(curPage[curPage.length - 1].kind)
-        ) {
-          orphans.unshift(curPage.pop()!);
+        // 2) coppia [titolo + rubrica] in coda → entrambi orfani
+        //    (esempio: "Prima Lettura" + "Dagli Atti degli Apostoli (At ...)")
+        //    Senza questo, il riferimento bibblico resterebbe attaccato al
+        //    titolo ma il testo della lettura partirebbe dalla pagina dopo.
+        let peeling = true;
+        while (peeling && curPage.length > 0) {
+          const last = curPage[curPage.length - 1];
+          if (isTitle(last.kind)) {
+            orphans.unshift(curPage.pop()!);
+            // dopo aver rimosso un titolo, eventuale spacer prima → rimuovi
+            while (
+              curPage.length > 0 &&
+              curPage[curPage.length - 1].kind === "spacer"
+            ) {
+              curPage.pop();
+            }
+            continue;
+          }
+          if (
+            last.kind === "rubric" &&
+            curPage.length >= 2 &&
+            isTitle(curPage[curPage.length - 2].kind)
+          ) {
+            // rubrica subito dopo un titolo → fa parte del "blocco header",
+            // muovilo insieme al titolo.
+            orphans.unshift(curPage.pop()!); // rubrica
+            orphans.unshift(curPage.pop()!); // titolo
+            while (
+              curPage.length > 0 &&
+              curPage[curPage.length - 1].kind === "spacer"
+            ) {
+              curPage.pop();
+            }
+            continue;
+          }
+          peeling = false;
         }
         if (curPage.length > 0) {
           flushSimple(curPage);
