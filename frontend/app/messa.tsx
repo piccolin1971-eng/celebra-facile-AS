@@ -251,7 +251,7 @@ export default function MessaScreen() {
   // Quando l'utente attiva l'auto-scroll (velocità 1/2), parte un timer che
   // fa scorrere la ScrollView verso il basso a velocità costante.
   // Si ferma da solo quando si raggiunge il fondo o quando l'utente cambia pagina.
-  // Velocità: 1=lento (7 px/s), 2=medio (15 px/s) — ~30% più lente per dare tempo di leggere.
+  // Velocità: 1=lento (5 px/s), 2=medio (10 px/s) — molto rilassate per consentire una lettura serena.
   // ATTIVO SOLO sulle pagine della Preghiera Eucaristica
   // (chiavi `pe-cons-*`, `pe-after-*`, `pe-acclamazione`).
   useEffect(() => {
@@ -268,7 +268,7 @@ export default function MessaScreen() {
     const k = currentPageKeyRef.current || "";
     const isPePage = k.startsWith("pe-cons-") || k.startsWith("pe-after-") || k === "pe-acclamazione";
     if (!isPePage) return;
-    const pps = peAutoScrollSpeed === 1 ? 7 : 15;
+    const pps = peAutoScrollSpeed === 1 ? 5 : 10;
     const intervalMs = 50;
     const stepPx = pps * (intervalMs / 1000);
     // Delay iniziale: attesa configurabile dall'utente (3..10 sec) per dare

@@ -63,7 +63,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   const [fontSize, setFontSizeState] = useState(32);
   const [highContrast, setHighContrastState] = useState(false);
   const [readingMode, setReadingModeState] = useState<ReadingMode>("tap");
-  const [autoScrollDelaySec, setAutoScrollDelaySecState] = useState<number>(6);
+  const [autoScrollDelaySec, setAutoScrollDelaySecState] = useState<number>(7);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -72,7 +72,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         const saved = await AsyncStorage.getItem("messale_settings");
         let migrationDone = false;
         try {
-          const flag = await AsyncStorage.getItem("messale_settings_migrated_v2");
+          const flag = await AsyncStorage.getItem("messale_settings_migrated_v3");
           migrationDone = flag === "1";
         } catch {}
         if (saved) {
@@ -81,13 +81,12 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
           if (s.fontSize) setFontSizeState(s.fontSize);
           if (typeof s.highContrast === "boolean") setHighContrastState(s.highContrast);
           if (s.readingMode === "tap" || s.readingMode === "scroll") setReadingModeState(s.readingMode);
-          // Migrazione v2: chi aveva il vecchio default 5s viene aggiornato a 6s una sola volta.
+          // Migrazione v3: chi aveva i vecchi default (5s o 6s) viene aggiornato a 7s una sola volta.
           // L'utente può comunque cambiare manualmente in Impostazioni.
           if (typeof s.autoScrollDelaySec === "number" && s.autoScrollDelaySec >= 3 && s.autoScrollDelaySec <= 10) {
-            if (!migrationDone && s.autoScrollDelaySec === 5) {
-              setAutoScrollDelaySecState(6);
-              // persist nuovo valore + flag migrazione
-              const next = { ...s, autoScrollDelaySec: 6 };
+            if (!migrationDone && (s.autoScrollDelaySec === 5 || s.autoScrollDelaySec === 6)) {
+              setAutoScrollDelaySecState(7);
+              const next = { ...s, autoScrollDelaySec: 7 };
               await AsyncStorage.setItem("messale_settings", JSON.stringify(next));
             } else {
               setAutoScrollDelaySecState(s.autoScrollDelaySec);
@@ -95,7 +94,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
           }
         }
         if (!migrationDone) {
-          await AsyncStorage.setItem("messale_settings_migrated_v2", "1");
+          await AsyncStorage.setItem("messale_settings_migrated_v3", "1");
         }
       } catch (e) {
         console.log("Impossibile caricare settings:", e);
