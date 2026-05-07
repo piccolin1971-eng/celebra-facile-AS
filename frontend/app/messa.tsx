@@ -205,6 +205,7 @@ export default function MessaScreen() {
           if (saved.penitentialSeason) setPenitentialSeason(saved.penitentialSeason);
           if (saved.selectedCredoId) setSelectedCredoId(saved.selectedCredoId);
           if (saved.orateFratresId) setOrateFratresId(saved.orateFratresId);
+          if (typeof saved.autoScrollCycleIdx === "number") setAutoScrollCycleIdx(saved.autoScrollCycleIdx);
         }
         // Pulisce sessioni vecchie in background
         cleanupOldSessions();
@@ -230,6 +231,7 @@ export default function MessaScreen() {
       penitentialForm, penitentialSeason, selectedCredoId, orateFratresId,
       peSelections,
       useOrazionePopolo, orazionePopoloId,
+      autoScrollCycleIdx,
     } as any;
     saveSession(sessionDate, session);
   }, [sessionLoaded, sessionDate, showGloria, showCredo, showOrazionalePray,
@@ -238,7 +240,8 @@ export default function MessaScreen() {
       useSolemnBlessing, solemnBlessingId,
       penitentialForm, penitentialSeason, selectedCredoId, orateFratresId,
       peSelections,
-      useOrazionePopolo, orazionePopoloId]);
+      useOrazionePopolo, orazionePopoloId,
+      autoScrollCycleIdx]);
 
   // === AUTO-SCROLL PE ===
   // Quando l'utente attiva l'auto-scroll (velocità 1/2/3), parte un timer che

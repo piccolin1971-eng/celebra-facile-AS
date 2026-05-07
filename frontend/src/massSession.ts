@@ -31,6 +31,9 @@ export type MassSession = {
   // === Orazione sul popolo (v2.7.1) ===
   useOrazionePopolo?: boolean;
   orazionePopoloId?: string;
+  // === Auto-scroll PE (v2.6.0) ===
+  // Indice ciclo bottone auto-scroll: 0=Lento, 1=Off, 2=Medio, 3=Off
+  autoScrollCycleIdx?: number;
 };
 
 const KEY_PREFIX = "@messa_session_";
