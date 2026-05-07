@@ -115,6 +115,10 @@ export default function MessaScreen() {
   const AUTO_SCROLL_CYCLE: (0 | 1 | 2)[] = [1, 0, 2, 0]; // Lento, Off, Medio, Off
   const [autoScrollCycleIdx, setAutoScrollCycleIdx] = useState<number>(0);
   const peAutoScrollSpeed: 0 | 1 | 2 = AUTO_SCROLL_CYCLE[autoScrollCycleIdx % AUTO_SCROLL_CYCLE.length];
+  // Ref aggiornato durante il render con la chiave della pagina corrente.
+  // Usato per attivare l'auto-scroll SOLO sulle pagine della Preghiera Eucaristica
+  // (chiavi `pe-cons-*`, `pe-after-*`, `pe-acclamazione`).
+  const currentPageKeyRef = React.useRef<string>("");
   const scrollYRef = React.useRef(0);
   const contentHeightRef = React.useRef(0);
   const containerHeightRef = React.useRef(0);
@@ -244,10 +248,12 @@ export default function MessaScreen() {
       autoScrollCycleIdx]);
 
   // === AUTO-SCROLL PE ===
-  // Quando l'utente attiva l'auto-scroll (velocità 1/2/3), parte un timer che
+  // Quando l'utente attiva l'auto-scroll (velocità 1/2), parte un timer che
   // fa scorrere la ScrollView verso il basso a velocità costante.
   // Si ferma da solo quando si raggiunge il fondo o quando l'utente cambia pagina.
-  // Velocità: 1=lento (10 px/s), 2=medio (22 px/s), 3=veloce (40 px/s).
+  // Velocità: 1=lento (10 px/s), 2=medio (22 px/s).
+  // ATTIVO SOLO sulle pagine della Preghiera Eucaristica
+  // (chiavi `pe-cons-*`, `pe-after-*`, `pe-acclamazione`).
   useEffect(() => {
     // Reset scroll a inizio pagina ad ogni cambio
     scrollYRef.current = 0;
@@ -258,6 +264,10 @@ export default function MessaScreen() {
       autoScrollTimerRef.current = null;
     }
     if (peAutoScrollSpeed === 0) return;
+    // Verifica che siamo davvero su una pagina della Preghiera Eucaristica
+    const k = currentPageKeyRef.current || "";
+    const isPePage = k.startsWith("pe-cons-") || k.startsWith("pe-after-") || k === "pe-acclamazione";
+    if (!isPePage) return;
     const pps = peAutoScrollSpeed === 1 ? 10 : 22;
     const intervalMs = 50;
     const stepPx = pps * (intervalMs / 1000);
@@ -1784,6 +1794,9 @@ export default function MessaScreen() {
         const total = pages.length;
         const safeIdx = Math.max(0, Math.min(currentPage, total - 1));
         const cur = pages[safeIdx];
+        // Aggiorna il ref della chiave pagina corrente: serve all'useEffect
+        // dell'auto-scroll per attivarsi solo sulle pagine della Preghiera Eucaristica.
+        currentPageKeyRef.current = cur?.key || "";
         const prev = () => {
           const next = Math.max(0, safeIdx - 1);
           setCurrentPage(next);
