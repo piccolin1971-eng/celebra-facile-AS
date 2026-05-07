@@ -36,7 +36,12 @@ jobs:
 
       - name: Install dependencies
         working-directory: ./frontend
-        run: yarn install --frozen-lockfile
+        # NOTA: NON usiamo --frozen-lockfile perché il workflow di
+        # "Save to GitHub" di Emergent a volte non include yarn.lock
+        # nel commit (specialmente quando viene aggiornato in seguito a
+        # yarn add/remove). Con yarn install standard, in caso di
+        # disallineamento minore, yarn aggiorna il lock e prosegue.
+        run: yarn install --network-timeout 600000
 
       - name: Generate debug keystore for signing (sideload-friendly)
         run: |
