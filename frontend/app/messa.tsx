@@ -108,6 +108,15 @@ export default function MessaScreen() {
   const scrollRef = React.useRef<ScrollView | null>(null);
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
+  // Auto-scroll PE (Kindle-style): velocità in pixel/secondo
+  // 0=off, 1=lento (10 px/s), 2=medio (22 px/s), 3=veloce (40 px/s)
+  // Si attiva solo nelle pagine della Preghiera Eucaristica.
+  const [peAutoScrollSpeed, setPeAutoScrollSpeed] = useState<0 | 1 | 2 | 3>(0);
+  const scrollYRef = React.useRef(0);
+  const contentHeightRef = React.useRef(0);
+  const containerHeightRef = React.useRef(0);
+  const autoScrollTimerRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
+
   // Date corrente per session storage (key: data ISO)
   const [sessionDate, setSessionDate] = useState<string>("");
   // True quando le scelte iniziali sono state caricate (default + sessione salvata).
@@ -227,6 +236,50 @@ export default function MessaScreen() {
       penitentialForm, penitentialSeason, selectedCredoId, orateFratresId,
       peSelections,
       useOrazionePopolo, orazionePopoloId]);
+
+  // === AUTO-SCROLL PE ===
+  // Quando l'utente attiva l'auto-scroll (velocità 1/2/3), parte un timer che
+  // fa scorrere la ScrollView verso il basso a velocità costante.
+  // Si ferma da solo quando si raggiunge il fondo o quando l'utente cambia pagina.
+  // Velocità: 1=lento (10 px/s), 2=medio (22 px/s), 3=veloce (40 px/s).
+  useEffect(() => {
+    // Reset scroll a inizio pagina ad ogni cambio
+    scrollYRef.current = 0;
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+    // Pulisci timer precedente
+    if (autoScrollTimerRef.current) {
+      clearInterval(autoScrollTimerRef.current);
+      autoScrollTimerRef.current = null;
+    }
+    if (peAutoScrollSpeed === 0) return;
+    const pps = peAutoScrollSpeed === 1 ? 10 : peAutoScrollSpeed === 2 ? 22 : 40;
+    const intervalMs = 50;
+    const stepPx = pps * (intervalMs / 1000);
+    // Piccolo delay iniziale per dare tempo all'utente di leggere l'inizio
+    const startDelay = setTimeout(() => {
+      autoScrollTimerRef.current = setInterval(() => {
+        const maxY = Math.max(0, contentHeightRef.current - containerHeightRef.current);
+        const next = Math.min(maxY, scrollYRef.current + stepPx);
+        if (next >= maxY) {
+          // raggiunto il fondo: ferma il timer
+          if (autoScrollTimerRef.current) {
+            clearInterval(autoScrollTimerRef.current);
+            autoScrollTimerRef.current = null;
+          }
+          return;
+        }
+        scrollYRef.current = next;
+        scrollRef.current?.scrollTo({ y: next, animated: false });
+      }, intervalMs);
+    }, 1500);
+    return () => {
+      clearTimeout(startDelay);
+      if (autoScrollTimerRef.current) {
+        clearInterval(autoScrollTimerRef.current);
+        autoScrollTimerRef.current = null;
+      }
+    };
+  }, [currentPage, peAutoScrollSpeed]);
 
   // === PE FULL: espansione dei blocchi `var` in base a peSelections ===
   // IMPORTANTE: questi hook devono stare PRIMA di qualunque early-return
@@ -1415,6 +1468,35 @@ export default function MessaScreen() {
                           <Ionicons name="swap-horizontal" size={scaledFont(18)} color={colors.primary} />
                           <Text style={styles.selectorBtnInlineText}>Scegli</Text>
                         </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[
+                            styles.autoScrollBtn,
+                            peAutoScrollSpeed > 0 && styles.autoScrollBtnActive,
+                          ]}
+                          onPress={() => setPeAutoScrollSpeed(((peAutoScrollSpeed + 1) % 4) as 0|1|2|3)}
+                          testID="btn-autoscroll"
+                          accessibilityLabel={
+                            peAutoScrollSpeed === 0 ? "Attiva scorrimento automatico" :
+                            peAutoScrollSpeed === 1 ? "Scorrimento lento" :
+                            peAutoScrollSpeed === 2 ? "Scorrimento medio" : "Scorrimento veloce"
+                          }
+                        >
+                          <Ionicons
+                            name={peAutoScrollSpeed === 0 ? "play-outline" : "play"}
+                            size={scaledFont(16)}
+                            color={peAutoScrollSpeed > 0 ? "#FFFFFF" : colors.textPrimary}
+                          />
+                          <Text
+                            style={[
+                              styles.autoScrollBtnText,
+                              peAutoScrollSpeed > 0 && { color: "#FFFFFF" },
+                            ]}
+                          >
+                            {peAutoScrollSpeed === 0 ? "Auto" :
+                             peAutoScrollSpeed === 1 ? "Lento" :
+                             peAutoScrollSpeed === 2 ? "Medio" : "Veloce"}
+                          </Text>
+                        </TouchableOpacity>
                       </View>
                       {/* Selettori per i propri della PE (Tempo Liturgico / Rito Particolare) */}
                       {peSelectorEntries.length > 0 && (
@@ -1774,6 +1856,10 @@ export default function MessaScreen() {
               testID="mass-scroll"
               showsVerticalScrollIndicator
               keyboardShouldPersistTaps="handled"
+              scrollEventThrottle={16}
+              onScroll={(e) => { scrollYRef.current = e.nativeEvent.contentOffset.y; }}
+              onContentSizeChange={(_, h) => { contentHeightRef.current = h; }}
+              onLayout={(e) => { containerHeightRef.current = e.nativeEvent.layout.height; }}
             >
               {cur.disableTapAdvance ? (
                 <View testID="page-no-tap">
@@ -2026,15 +2112,15 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
   toggleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   toggleLabel: { fontSize: Math.round(fontSize * 0.75), color: colors.textPrimary, fontWeight: "600" },
   partBox: {
-    marginBottom: 12,
-    paddingBottom: 8,
+    marginBottom: 6,
+    paddingBottom: 4,
     borderBottomWidth: 0,
   },
   sectionTitle: {
     fontSize: Math.round(fontSize * 1.05),
     fontWeight: "800",
     color: "#4DA8DA",      // Azzurro: titoli grandi delle parti della messa (es. "Atto Penitenziale", "Gloria", "Benedizione")
-    marginBottom: 6,
+    marginBottom: 2,
     marginTop: 0,
   },
   // Titolo per sezioni rituali macro (Riti Introduzione, Liturgia Parola, ecc.)
@@ -2042,7 +2128,7 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     fontSize: Math.round(fontSize * 0.95),
     fontWeight: "800",
     color: "#FFC107",      // Giallo/oro: macro-sezioni
-    marginBottom: 6,
+    marginBottom: 2,
     marginTop: 0,
     textTransform: "uppercase",
     letterSpacing: 1,
@@ -2052,31 +2138,31 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     fontSize: Math.round(fontSize * 0.85),
     fontWeight: "800",
     color: "#FFB74D",      // Ambra/oro chiaro: antifone e acclamazioni
-    marginTop: 6,
-    marginBottom: 4,
+    marginTop: 0,
+    marginBottom: 2,
   },
   // Titolo per le letture (Prima, Salmo, Seconda, Vangelo)
   readingTitle: {
     fontSize: Math.round(fontSize * 0.85),
     fontWeight: "800",
     color: "#81C784",      // Verde chiaro: letture
-    marginTop: 6,
-    marginBottom: 4,
+    marginTop: 0,
+    marginBottom: 2,
   },
   // Titolo per orazioni proprie (Colletta, Sulle offerte, Dopo la comunione)
   orazioneTitle: {
     fontSize: Math.round(fontSize * 0.85),
     fontWeight: "800",
     color: "#CE93D8",      // Lavanda: orazioni proprie del giorno
-    marginTop: 6,
-    marginBottom: 4,
+    marginTop: 0,
+    marginBottom: 2,
   },
   subtitle: {
     fontSize: Math.round(fontSize * 0.85),
     fontWeight: "700",
     color: colors.textPrimary,
-    marginTop: 6,
-    marginBottom: 4,
+    marginTop: 0,
+    marginBottom: 2,
   },
   // Stile per "Umili e pentiti" - testo della preghiera in rosso (rubrica)
   umili: {
@@ -2306,6 +2392,28 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     marginLeft: 12,
   },
   selectorBtnInlineText: { fontSize: Math.round(fontSize * 0.5), color: colors.primary, fontWeight: "700" },
+  // Bottone auto-scroll (Off → Lento → Medio → Veloce). Ciclico al tap.
+  autoScrollBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderWidth: 1.5,
+    borderColor: "#FFA000",
+    borderRadius: 8,
+    marginLeft: 8,
+    backgroundColor: "transparent",
+  },
+  autoScrollBtnActive: {
+    backgroundColor: "#FFA000",
+    borderColor: "#FFA000",
+  },
+  autoScrollBtnText: {
+    fontSize: Math.round(fontSize * 0.45),
+    color: "#FFB74D",
+    fontWeight: "700",
+  },
   // Riga flex per affiancare titolo + bottone "Scegli ..."
   titleRow: {
     flexDirection: "row",
