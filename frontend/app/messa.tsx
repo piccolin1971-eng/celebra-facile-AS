@@ -401,7 +401,7 @@ export default function MessaScreen() {
   const getReading = (type: ReadingType) => liturgy?.readings?.find(r => r.type === type);
 
   // Basic text renderers
-  const R = ({ children, kind = "normal" }: { children: React.ReactNode; kind?: "normal" | "rubric" | "celebrante" | "assemblea" | "title" | "subtitle" | "antifonaTitle" | "readingTitle" | "orazioneTitle" | "ritoTitle" | "umili" }) => {
+  const R = ({ children, kind = "normal" }: { children: React.ReactNode; kind?: "normal" | "rubric" | "celebrante" | "assemblea" | "title" | "subtitle" | "antifonaTitle" | "readingTitle" | "orazioneTitle" | "ritoTitle" | "umili" | "peTitle" }) => {
     const s = kind === "rubric" ? styles.rubric
       : kind === "celebrante" ? styles.celebrante
       : kind === "assemblea" ? styles.assemblea
@@ -412,6 +412,7 @@ export default function MessaScreen() {
       : kind === "orazioneTitle" ? styles.orazioneTitle
       : kind === "ritoTitle" ? styles.ritoTitle
       : kind === "umili" ? styles.umili
+      : kind === "peTitle" ? styles.peTitle
       : styles.text;
     return <Text style={s} selectable>{children}</Text>;
   };
@@ -1532,10 +1533,10 @@ export default function MessaScreen() {
                           })}
                         </View>
                       )}
-                      <R kind="subtitle">{selectedPrayer.title}</R>
+                      <R kind="peTitle">{selectedPrayer.title}</R>
                     </>
                   ) : (
-                    <R kind="subtitle">{selectedPrayer.title} (continua)</R>
+                    <R kind="peTitle">{selectedPrayer.title} (continua)</R>
                   )}
                   {isPe1 ? renderPe1Chunk(beforeChunks[i], `pe1-b${i}`) : <R>{beforeChunks[i]}</R>}
                 </View>
@@ -2187,6 +2188,16 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     marginTop: 0,
     marginBottom: 6,
     lineHeight: Math.round(fontSize * 0.85),
+  },
+  // Titolo della Preghiera Eucaristica scelta (es. "Preghiera Eucaristica IV")
+  // Verde acceso, leggermente più grande del testo PE per essere ben evidente.
+  peTitle: {
+    fontSize: Math.round(fontSize * 1.1),
+    fontWeight: "800",
+    color: "#66BB6A",      // Verde liturgico acceso, ben distinguibile
+    marginTop: 0,
+    marginBottom: 8,
+    lineHeight: Math.round(fontSize * 1.15),
   },
   // Stile per "Umili e pentiti" - testo della preghiera in rosso (rubrica)
   umili: {
