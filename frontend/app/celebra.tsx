@@ -427,7 +427,7 @@ export default function CelebraScreen() {
 // ===========================================================================
 function SegmentRenderer({ seg, styles }: { seg: Segment; styles: any }) {
   if (seg.kind === "spacer") {
-    return <View style={{ height: 8 }} />;
+    return <View style={{ height: 22 }} />;
   }
   if (seg.kind === "salmo") {
     return <SalmoRenderer text={seg.text} styles={styles} />;
@@ -1016,7 +1016,7 @@ function paginate(
   //   - un margin verticale (mb)
   // Per stima: convertiamo tutto in pixel.
   const segHeightPx = (seg: Segment): number => {
-    if (seg.kind === "spacer") return 8;
+    if (seg.kind === "spacer") return 22;
 
     // fontSize multiplier per kind
     const m: Record<SegKind, number> = {
@@ -1036,6 +1036,17 @@ function paginate(
       salmo: 1.0,
       spacer: 1.0,
     };
+    // Margin top extra per i titoli (per riflettere i marginTop reali degli
+    // stili e dare alla paginazione una stima accurata dell'altezza occupata).
+    const titleMarginTop: Record<string, number> = {
+      sectionTitle: 14,
+      antifonaTitle: 10,
+      readingTitle: 10,
+      orazioneTitle: 10,
+      subtitle: 8,
+      peTitle: 6,
+    };
+    const marginTop = titleMarginTop[seg.kind] || 0;
     const fs = Math.round(fontSize * m[seg.kind]);
     const segLineH = Math.max(20, Math.round(fs * 1.45));
     // Char per linea ricalcolato per font size del segmento
@@ -1055,7 +1066,7 @@ function paginate(
       totalLines += Math.max(1, Math.ceil(ln.length / segCharsPerLine));
     }
     const margin = 8; // marginBottom medio
-    return totalLines * segLineH + margin;
+    return marginTop + totalLines * segLineH + margin;
   };
 
   // Spezza un segmento di testo lungo in più segmenti dello stesso kind,
@@ -1120,14 +1131,24 @@ function paginate(
   };
 
   // ----- Pacchetta segmenti in pagine -----
+  // ORPHAN PROTECTION: se l'ultima cosa che abbiamo messo nella pagina
+  // corrente è un titolo (sezione/sottotitolo/titolo lettura, ecc.) e il
+  // segmento successivo non ci sta, spostiamo il titolo nella pagina
+  // successiva insieme al suo testo. Evita "titoli orfani" in fondo.
+  const isTitle = (k: SegKind): boolean =>
+    k === "sectionTitle" ||
+    k === "subtitle" ||
+    k === "antifonaTitle" ||
+    k === "readingTitle" ||
+    k === "orazioneTitle" ||
+    k === "peTitle";
+
   const pages: Segment[][] = [];
   let curPage: Segment[] = [];
   let curH = 0;
 
-  const flush = () => {
-    if (curPage.length > 0) pages.push(curPage);
-    curPage = [];
-    curH = 0;
+  const flushSimple = (toPush: Segment[]) => {
+    if (toPush.length > 0) pages.push(toPush);
   };
 
   for (const seg of segments) {
@@ -1139,13 +1160,47 @@ function paginate(
     for (const p of parts) {
       const h = segHeightPx(p);
       if (curH + h > usableH && curPage.length > 0) {
-        flush();
+        // Strip dei titoli/spacer in coda (orphan protection): li spostiamo
+        // sulla pagina successiva insieme al loro testo. Anche eventuali
+        // <spacer> finali vengono scartati (non ha senso uno spacer in fondo).
+        const orphans: Segment[] = [];
+        // Prima: rimuovi spacer in coda
+        while (
+          curPage.length > 0 &&
+          curPage[curPage.length - 1].kind === "spacer"
+        ) {
+          curPage.pop();
+        }
+        // Poi: titoli in coda → orphans
+        while (
+          curPage.length > 0 &&
+          isTitle(curPage[curPage.length - 1].kind)
+        ) {
+          orphans.unshift(curPage.pop()!);
+        }
+        if (curPage.length > 0) {
+          flushSimple(curPage);
+        } else {
+          // Se la pagina sarebbe vuota senza i titoli, mantieni i titoli
+          // (caso raro: pagina iniziata con un titolo + segmento gigante).
+          flushSimple(orphans);
+          orphans.length = 0;
+        }
+        curPage = orphans;
+        curH = orphans.reduce((acc, s) => acc + segHeightPx(s), 0);
       }
       curPage.push(p);
       curH += h;
     }
   }
-  flush();
+  // Ultima pagina: rimuovi spacer in coda (estetica)
+  while (
+    curPage.length > 0 &&
+    curPage[curPage.length - 1].kind === "spacer"
+  ) {
+    curPage.pop();
+  }
+  if (curPage.length > 0) flushSimple(curPage);
 
   return pages;
 }
@@ -1206,53 +1261,56 @@ const makeStyles = (colors: any, fontSize: number) =>
       paddingBottom: 8,
     },
     // ----- Tipografia (stessi colori/taglie di /messa) -----
+    // I titoli sezione e PE hanno marginTop per respiro visivo quando seguono
+    // testo precedente (l'orphan protection garantisce che il titolo non
+    // resti mai solo in fondo a una pagina).
     sectionTitle: {
       fontSize: Math.round(fontSize * 1.05),
       fontWeight: "800",
       color: "#4DA8DA",
-      marginTop: 0,
-      marginBottom: 6,
-      lineHeight: Math.round(fontSize * 1.05),
+      marginTop: 14,
+      marginBottom: 8,
+      lineHeight: Math.round(fontSize * 1.15),
     },
     antifonaTitle: {
       fontSize: Math.round(fontSize * 0.85),
       fontWeight: "800",
       color: "#FFB74D",
-      marginTop: 0,
+      marginTop: 10,
       marginBottom: 6,
-      lineHeight: Math.round(fontSize * 0.85),
+      lineHeight: Math.round(fontSize * 0.95),
     },
     readingTitle: {
       fontSize: Math.round(fontSize * 0.85),
       fontWeight: "800",
       color: "#81C784",
-      marginTop: 0,
+      marginTop: 10,
       marginBottom: 6,
-      lineHeight: Math.round(fontSize * 0.85),
+      lineHeight: Math.round(fontSize * 0.95),
     },
     orazioneTitle: {
       fontSize: Math.round(fontSize * 0.85),
       fontWeight: "800",
       color: "#CE93D8",
-      marginTop: 0,
+      marginTop: 10,
       marginBottom: 6,
-      lineHeight: Math.round(fontSize * 0.85),
+      lineHeight: Math.round(fontSize * 0.95),
     },
     subtitle: {
       fontSize: Math.round(fontSize * 0.85),
       fontWeight: "700",
       color: colors.textPrimary,
-      marginTop: 0,
+      marginTop: 8,
       marginBottom: 6,
-      lineHeight: Math.round(fontSize * 0.85),
+      lineHeight: Math.round(fontSize * 0.95),
     },
     peTitle: {
       fontSize: Math.round(fontSize * 1.1),
       fontWeight: "800",
       color: "#66BB6A",
-      marginTop: 0,
-      marginBottom: 8,
-      lineHeight: Math.round(fontSize * 1.15),
+      marginTop: 6,
+      marginBottom: 10,
+      lineHeight: Math.round(fontSize * 1.2),
     },
     peConsecration: {
       color: "#29B6F6",
