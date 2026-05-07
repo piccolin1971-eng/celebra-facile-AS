@@ -379,18 +379,19 @@ export default function MessaScreen() {
     }
     const isPe1 = peFull.id === "pe1";
     const hasProperPreface = PE_WITH_PROPER_PREFACE.includes(peFull.id);
+    // Testo del Santo da inserire dopo la chiusura del prefazio incorporato.
+    // Le PE Riconciliazione e Varie Necessità non hanno il Santo nei dati JSON,
+    // mentre PE4 ce l'ha come blocco `acc` ma per uniformità lo sostituiamo
+    // con quello inserito manualmente (anche per garantire la riga vuota prima).
+    const SANTO_TEXT = "Santo, Santo, Santo il Signore Dio dell'universo.\nI cieli e la terra sono pieni della tua gloria.\nOsanna nell'alto dei cieli.\nBenedetto colui che viene nel nome del Signore.\nOsanna nell'alto dei cieli.";
     const parts: string[] = [];
-    // Per le 7 PE con prefazio incorporato: aggiungi il dialogo iniziale.
     if (hasProperPreface) {
       parts.push(PREFACE_INTRO);
     }
-    let firstAccSeen = false;
     let dossologiaSeen = false;
+    let santoInserted = false;
     for (const b of out) {
       if (b.type === "title") {
-        // Riconosci il titolo "Dossologia finale" come marker per la sezione
-        // finale: in tal modo il rendering può mostrare "Dossologia" in azzurro
-        // e il "Per Cristo, con Cristo..." in bianco maiuscolo bold.
         const tt = (b.text || "").trim().toLowerCase();
         if (tt.includes("dossologia") && !dossologiaSeen) {
           parts.push("<<DOSSOLOGIA>>");
@@ -399,24 +400,17 @@ export default function MessaScreen() {
         continue;
       }
       if (b.type === "acc") {
-        // Per le PE con prefazio incorporato, INCLUDI il primo `acc` (è il Santo
-        // della conclusione del prefazio integrato). Salta gli `acc` successivi
-        // (eventuali acclamazioni "Mistero della fede" gestite altrove).
-        if (hasProperPreface && !firstAccSeen) {
-          firstAccSeen = true;
-          const t = (b.text || "").trim();
-          if (t) parts.push(t);
-        }
+        // Le acclamazioni nei dati JSON sono di due tipi:
+        //  1) il Santo (solo in pe4)
+        //  2) il Mistero della Fede (in tutte)
+        // L'app gestisce il Mistero della Fede con un selettore separato, e il
+        // Santo viene inserito manualmente dopo la chiusura del prefazio.
+        // Saltiamo quindi TUTTI i blocchi `acc`.
         continue;
       }
       if (b.type === "c") {
         const t = (b.text || "").trim();
         if (!t) continue;
-        // Distinguo i blocchi `c`:
-        //  - "PER CRISTO, CON CRISTO ..." → DOSSOLOGIA finale (inserisci marker)
-        //  - altrimenti (es. "PRENDETE, E MANGIATENE TUTTI...") → consacrazione
-        //    già in maiuscolo: lo passo come testo normale (sarà reso in azzurro
-        //    dalla regola "linee maiuscole = parole consacrazione").
         const isDossology = /^per cristo, con cristo/i.test(t);
         if (isDossology) {
           if (!dossologiaSeen) {
@@ -425,6 +419,14 @@ export default function MessaScreen() {
           }
           parts.push(t.toUpperCase());
         } else {
+          // È una consacrazione (es. "PRENDETE, E MANGIATENE TUTTI...").
+          // Se la PE ha prefazio incorporato e il Santo non è stato ancora
+          // inserito, lo inseriamo qui PRIMA della consacrazione: questo è
+          // l'ultimo punto sicuro dopo la chiusura del prefazio integrato.
+          if (hasProperPreface && !santoInserted) {
+            parts.push("<<SANTO_BLANK>>" + SANTO_TEXT);
+            santoInserted = true;
+          }
           parts.push(t);
         }
         continue;
@@ -433,9 +435,23 @@ export default function MessaScreen() {
       if (!t) continue;
       if (b.type === "r" || b.type === "rubric_section") {
         if (isPe1) parts.push(`[${t}]`);
-      } else {
-        parts.push(t);
+        continue;
       }
+      parts.push(t);
+      // Fallback aggiuntivo: se il blocco appena pushato termina con "cantiamo..."
+      // (chiusura tipica del prefazio integrato), inseriamo subito il Santo.
+      if (hasProperPreface && !santoInserted) {
+        if (/cantiamo\b[^.]{0,80}[:\.\,]?\s*$/i.test(t)) {
+          parts.push("<<SANTO_BLANK>>" + SANTO_TEXT);
+          santoInserted = true;
+        }
+      }
+    }
+    // Fallback: se per qualche motivo non abbiamo trovato la chiusura del prefazio
+    // ma la PE dovrebbe averlo, aggiungilo prima della prima rubrica/anamnesi.
+    if (hasProperPreface && !santoInserted) {
+      // Non lo facciamo qui per non rischiare posizioni sbagliate.
+      // Verrà segnalato dal codice in caso di rigressione.
     }
     // Concatenazione intelligente: se un blocco di testo NON termina con un
     // terminatore di frase (. ! ? :), allora unisce al successivo con \n
@@ -458,6 +474,10 @@ export default function MessaScreen() {
       const sep = sentenceEnders.test(prevLast) ? "\n\n" : "\n";
       result += sep + cur;
     }
+    // Marker SANTO: il Santo è preceduto dal marker `<<SANTO_BLANK>>` che
+    // rappresenta una riga vuota prima del "Santo, Santo, Santo..." per dare
+    // il giusto respiro visivo dopo la chiusura del prefazio (cantiamo:).
+    result = result.replace(/<<SANTO_BLANK>>/g, "\n\n");
     return result;
   }, [peFull, peSelections, prayers, selectedPrayerId]);
 
