@@ -44,7 +44,7 @@ export default function CalendarioScreen() {
         setCalendar(c.calendar);
         setVotive(v.masses);
       } catch (e) {
-        console.log("Errore:", e);
+        if (__DEV__) console.log("Errore:", e);
       } finally {
         setLoading(false);
       }

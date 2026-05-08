@@ -238,7 +238,7 @@ export default function MessaScreen() {
         cleanupOldSessions();
         setSessionLoaded(true);
       } catch (e) {
-        console.log("Errore:", e);
+        if (__DEV__) console.log("Errore:", e);
       } finally {
         setLoading(false);
       }

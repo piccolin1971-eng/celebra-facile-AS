@@ -45,7 +45,7 @@ export default function Home() {
       const data = await api.liturgyForDate(dateStr);
       setLiturgy(data);
     } catch (e: any) {
-      console.log("Errore caricamento liturgia:", e);
+      if (__DEV__) console.log("Errore caricamento liturgia:", e);
       setLoadError(
         "Nessuna connessione a Internet e nessuna lettura scaricata per questa data. Collegati a Internet o usa 'Scarica letture'.",
       );
