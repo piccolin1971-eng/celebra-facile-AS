@@ -1569,12 +1569,12 @@ const makeStyles = (
       lineHeight: Math.round(fontSize * 0.95),
     },
     peTitle: {
-      fontSize: Math.round(fontSize * 1.1),
+      fontSize: Math.round(fontSize * 0.78),
       fontWeight: "800",
       color: "#66BB6A",
       marginTop: 6,
       marginBottom: 10,
-      lineHeight: Math.round(fontSize * 1.2),
+      lineHeight: Math.round(fontSize * 0.95),
     },
     peConsecration: {
       color: "#29B6F6",

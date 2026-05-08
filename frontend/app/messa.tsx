@@ -2442,25 +2442,25 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string) => Style
     lineHeight: Math.round(fontSize * 0.85),
   },
   // Titolo della Preghiera Eucaristica scelta (es. "Preghiera Eucaristica IV")
-  // Verde acceso, ridotto su richiesta utente (era 1.1× → ora 0.95× del testo).
+  // Verde acceso, ridotto su richiesta utente (era 1.1× → 0.95× → 0.78× del testo).
   peTitle: {
-    fontSize: Math.round(fontSize * 0.95),
+    fontSize: Math.round(fontSize * 0.78),
     fontWeight: "800",
     color: "#66BB6A",      // Verde liturgico acceso, ben distinguibile
     marginTop: 0,
     marginBottom: 8,
-    lineHeight: Math.round(fontSize * 1.0),
+    lineHeight: Math.round(fontSize * 0.95),
   },
   // Titolo del prefazio scelto (es. "Prefazio Pasquale I - Il mistero pasquale").
   // Stesso verde delle PE ma dimensione subtitle, per coerenza visiva con la
   // sezione "Preghiera Eucaristica" successiva.
   prefaceTitle: {
-    fontSize: Math.round(fontSize * 0.95),
+    fontSize: Math.round(fontSize * 0.78),
     fontWeight: "800",
     color: "#66BB6A",
     marginTop: 0,
     marginBottom: 8,
-    lineHeight: Math.round(fontSize * 1.0),
+    lineHeight: Math.round(fontSize * 0.95),
   },
   // Parole della Consacrazione nelle PE: righe in MAIUSCOLO ("PRENDETE,
   // E MANGIATENE TUTTI..." / "QUESTO È IL MIO CORPO..." / "PRENDETE, E
