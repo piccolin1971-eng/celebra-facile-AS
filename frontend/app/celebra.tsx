@@ -25,13 +25,13 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
-  Pressable,
-  FlatList,
+  Platform,
   useWindowDimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { WebView } from "react-native-webview";
 import { useSettings } from "../src/SettingsContext";
 import {
   api,
@@ -226,8 +226,8 @@ export default function CelebraScreen() {
   const [currentPage, setCurrentPage] = useState(0);
   const [containerH, setContainerH] = useState(0);
 
-  // Ref alla FlatList orizzontale (per scrollToIndex programmatico al tap).
-  const flatListRef = useRef<FlatList | null>(null);
+  // Ref alla WebView (per future injectJavaScript se necessario).
+  const webViewRef = useRef<WebView | null>(null);
 
   const styles = makeStyles(colors, fontSize, fontFamily);
 
@@ -312,31 +312,53 @@ export default function CelebraScreen() {
     session,
   ]);
 
-  // ----- Paginazione "Kindle": pacchettizza i segmenti in pagine ottimizzate
-  // per altezza schermo. Le pagine NON spezzano frasi; preferiscono andare in
-  // overflow piuttosto che perdere coerenza. L'overflow si gestisce con lo
-  // scroll automatico nella ScrollView della pagina corrente.
-  const pages: Segment[][] = useMemo(() => {
-    if (!segments.length || containerH < 100) return [];
-    return paginate(segments, containerH, fontSize, screenWidth);
-  }, [segments, containerH, fontSize, screenWidth]);
+  // ----- HTML completo per la WebView (CSS columns) -----
+  // Il browser interno alla WebView impagina il testo in colonne larghe 100vw,
+  // riempiendo perfettamente ogni pagina. Tap a sinistra/destra → scroll
+  // orizzontale di una larghezza schermo. La WebView posta {page, total} via
+  // postMessage; React Native aggiorna currentPage/totalPages per la barra
+  // di progresso nativa.
+  const html: string = useMemo(() => {
+    if (!segments.length) return "";
+    return segmentsToHtml(segments, fontSize, fontFamily, colors);
+  }, [segments, fontSize, fontFamily, colors]);
 
-  // Reset pagina (e scroll auto) quando il numero di pagine cambia.
-  useEffect(() => {
-    if (currentPage >= pages.length && pages.length > 0) {
-      setCurrentPage(0);
-    }
-  }, [pages.length, currentPage]);
+  // Stato pagina/totale: aggiornato dai messaggi postati dalla WebView.
+  const [totalPages, setTotalPages] = useState(0);
 
-  // ----- Scroll programmatico verso la pagina corrente quando cambia.
-  // Usa scrollToOffset per garantire snap perfetto a screenWidth × index.
+  // Reset pagina quando l'HTML cambia (nuovo testo da impaginare)
   useEffect(() => {
-    if (!flatListRef.current || pages.length === 0) return;
-    flatListRef.current.scrollToOffset({
-      offset: currentPage * screenWidth,
-      animated: true,
-    });
-  }, [currentPage, pages.length, screenWidth]);
+    setCurrentPage(0);
+    setTotalPages(0);
+  }, [html]);
+
+  // Listener per messaggi dall'iframe (solo web). Ascolta i postMessage che
+  // l'HTML interno alla WebView/iframe invia per aggiornare la barra di
+  // progresso nativa. Su native questo è gestito dalla prop onMessage della
+  // WebView; su web (iframe) serve window.addEventListener('message').
+  // IMPORTANTE: deve essere dichiarato PRIMA degli early return per rispettare
+  // le regole degli hook (stesso ordine ad ogni render).
+  useEffect(() => {
+    if (Platform.OS !== "web" || typeof window === "undefined") return;
+    const handler = (ev: MessageEvent) => {
+      try {
+        const data =
+          typeof ev.data === "string" ? JSON.parse(ev.data) : ev.data;
+        if (data && data.type === "state") {
+          if (typeof data.total === "number" && data.total > 0) {
+            setTotalPages(data.total);
+          }
+          if (typeof data.page === "number" && data.page >= 0) {
+            setCurrentPage(data.page);
+          }
+        }
+      } catch {
+        // ignora
+      }
+    };
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
+  }, []);
 
   // ----- Rendering -----
   if (loading) {
@@ -386,17 +408,8 @@ export default function CelebraScreen() {
     );
   }
 
-  const total = pages.length;
+  const total = totalPages;
   const safeIdx = Math.max(0, Math.min(currentPage, Math.max(0, total - 1)));
-
-  const prev = () => setCurrentPage(Math.max(0, safeIdx - 1));
-  const advance = () => setCurrentPage(Math.min(total - 1, safeIdx + 1));
-
-  // Tap zone: 50% sx → indietro, 50% dx → avanti.
-  // Implementato con un Pressable overlay assoluto sopra la FlatList:
-  // funziona sia su web (mouse click) che su mobile (touch).
-  const TAP_LEFT_RATIO = 0.5;
-  const tapLeftWidth = Math.round(screenWidth * TAP_LEFT_RATIO);
 
   return (
     <SafeAreaView style={styles.container} testID="celebra-screen">
@@ -420,72 +433,96 @@ export default function CelebraScreen() {
         </View>
       </View>
 
-      {/* Area di lettura: FlatList ORIZZONTALE con pagingEnabled +
-          Pressable overlay sopra per intercettare i tap (web e mobile).
-          - Ogni "pagina" è una slide larga screenWidth, con overflow nascosto.
-          - Snap netto tra pagine grazie a pagingEnabled.
-          - scrollEnabled={false}: lo scroll è solo programmatico (via tap).
-          - Tap dx 50% → pagina successiva, sx 50% → precedente.
-          - Niente scroll verticale: il contenuto deve entrare nella pagina. */}
+      {/* Area di lettura: WebView con HTML iniettato che usa CSS columns
+          (column-width: 100vw) per impaginare il testo PERFETTAMENTE. Il
+          motore CSS del browser calcola le colonne in modo nativo: nessuno
+          spazio vuoto, nessun chunking manuale. Tap dx/sx (gestiti dentro la
+          WebView via JS) → scrollBy(±100vw) con scroll-snap. La WebView
+          posta {page, total} via postMessage; React Native aggiorna
+          currentPage/totalPages per la barra di progresso nativa. */}
       <View
         style={styles.pageArea}
         onLayout={(e) => setContainerH(e.nativeEvent.layout.height)}
         testID="celebra-tap-area"
       >
-        {pages.length === 0 ? (
+        {!html ? (
           <ActivityIndicator size="large" color={colors.primary} />
         ) : (
           <>
-            <FlatList
-              ref={flatListRef}
-              data={pages}
-              keyExtractor={(_, i) => `page-${i}`}
-              horizontal
-              pagingEnabled
-              scrollEnabled={false}
-              showsHorizontalScrollIndicator={false}
-              showsVerticalScrollIndicator={false}
-              decelerationRate="fast"
-              snapToAlignment="start"
-              getItemLayout={(_, i) => ({
-                length: screenWidth,
-                offset: screenWidth * i,
-                index: i,
-              })}
-              initialNumToRender={3}
-              maxToRenderPerBatch={3}
-              windowSize={3}
-              renderItem={({ item, index }) => (
-                <View
-                  style={[styles.pageSlide, { width: screenWidth, height: containerH }]}
-                  testID={`celebra-page-${index}`}
-                >
-                  {item.map((seg, j) => (
-                    <SegmentRenderer key={j} seg={seg} styles={styles} />
-                  ))}
-                </View>
-              )}
-            />
-            {/* Pressable overlay assoluto sopra la FlatList: cattura
-                clicks/taps su web e mobile. Sceglie prev/next in base alla
-                posizione X relativa allo schermo. La FlatList sotto si sposta
-                solo via scrollToOffset programmatico (vedi useEffect). */}
-            <Pressable
-              style={StyleSheet.absoluteFill}
-              onPress={(e: any) => {
-                const ne = e?.nativeEvent;
-                // pageX (web/mobile assoluto) o locationX (relativo al View)
-                const x =
-                  typeof ne?.pageX === "number"
-                    ? ne.pageX
-                    : typeof ne?.locationX === "number"
-                    ? ne.locationX
-                    : 0;
-                if (x < tapLeftWidth) prev();
-                else advance();
-              }}
-              testID="celebra-tap-overlay"
-            />
+            {Platform.OS === "web" ? (
+              // Su web preview, react-native-webview non è supportato.
+              // Usa un iframe HTML diretto con srcDoc. Il JavaScript
+              // interno comunica via window.parent.postMessage (gestito
+              // dal listener 'message' nel useEffect sopra).
+              React.createElement("iframe", {
+                key: html.length, // forza rerender quando l'HTML cambia
+                srcDoc: html,
+                style: {
+                  flex: 1,
+                  width: "100%",
+                  height: "100%",
+                  border: 0,
+                  background: colors.background,
+                  display: "block",
+                },
+                title: "celebra",
+                "data-testid": "celebra-iframe",
+              })
+            ) : (
+              <WebView
+                ref={webViewRef}
+                originWhitelist={["*"]}
+                source={{ html }}
+                style={[styles.webview, { backgroundColor: colors.background }]}
+                containerStyle={{ backgroundColor: colors.background }}
+                androidLayerType="hardware"
+                scrollEnabled={false}
+                showsHorizontalScrollIndicator={false}
+                showsVerticalScrollIndicator={false}
+                bounces={false}
+                overScrollMode="never"
+                decelerationRate="fast"
+                setSupportMultipleWindows={false}
+                javaScriptEnabled
+                domStorageEnabled={false}
+                opaque={false}
+                allowsLinkPreview={false}
+                automaticallyAdjustContentInsets={false}
+                hideKeyboardAccessoryView
+                {...({ scalesPageToFit: false } as any)}
+                onMessage={(event) => {
+                  try {
+                    const data = JSON.parse(event.nativeEvent.data);
+                    if (data && data.type === "state") {
+                      if (typeof data.total === "number" && data.total > 0) {
+                        setTotalPages(data.total);
+                      }
+                      if (typeof data.page === "number" && data.page >= 0) {
+                        setCurrentPage(data.page);
+                      }
+                    }
+                  } catch {
+                    // ignora messaggi non JSON
+                  }
+                }}
+                testID="celebra-webview"
+              />
+            )}
+            {/* Barra di progresso fissa in fondo (3px di altezza, sollevata
+                di 10px dal bordo per non essere coperta dai tasti di sistema
+                Android). Sfondo grigio scuro, riempimento color oro. */}
+            <View style={styles.progressTrack} pointerEvents="none">
+              <View
+                style={[
+                  styles.progressFill,
+                  {
+                    width: `${
+                      total > 0 ? ((safeIdx + 1) / total) * 100 : 0
+                    }%`,
+                  },
+                ]}
+              />
+            </View>
           </>
         )}
       </View>
@@ -651,6 +688,215 @@ function PeTextNormal({ text, styles }: { text: string; styles: any }) {
 
 // ===========================================================================
 // buildSegments: costruisce l'intera Messa come array di Segment
+// ===========================================================================
+// segmentsToHtml: converte un array di Segment in stringa HTML completa
+// pronta per essere iniettata in una WebView con CSS columns.
+// ===========================================================================
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+// Renderizza un segmento "salmo": evidenzia la "R." iniziale in rosso.
+function salmoToHtml(text: string): string {
+  const lines = text.split("\n").map((ln) => {
+    const m = ln.match(/^(\s*)(R\.)(\s*)(.*)$/);
+    if (m) {
+      return `${escapeHtml(m[1])}<span class="salmo-r">${escapeHtml(m[2])}</span>${escapeHtml(m[3])}${escapeHtml(m[4])}`;
+    }
+    return escapeHtml(ln);
+  });
+  return lines.join("<br>");
+}
+
+// Renderizza il testo di una PE: estrae il marker <<DOSSOLOGIA>> e applica
+// stile speciale alle parole della Consacrazione (in azzurro).
+function peTextToHtml(text: string): string {
+  const parts = text.split("<<DOSSOLOGIA>>");
+  const main = parts[0] || "";
+  const doss = parts[1] || "";
+
+  const formatMain = (s: string): string => {
+    let out = escapeHtml(s);
+    const consPatterns = [
+      /(Prendete[^.]*?è il mio Corpo[^.]*?)\./gi,
+      /(Prendete[^.]*?è il calice del mio Sangue[^.]*?)\./gi,
+      /(Prendete[^.]*?dato per voi)\./gi,
+    ];
+    for (const p of consPatterns) {
+      out = out.replace(p, '<span class="pe-consacration">$1.</span>');
+    }
+    return out.replace(/\n/g, "<br>");
+  };
+
+  let html = `<div class="pe-main">${formatMain(main)}</div>`;
+  if (doss) {
+    html += `<div class="pe-dossologia-label">Dossologia</div>`;
+    html += `<div class="pe-dossologia">${escapeHtml(doss).replace(/\n/g, "<br>")}</div>`;
+  }
+  return html;
+}
+
+function segmentsToHtml(
+  segments: Segment[],
+  fontSize: number,
+  fontFamily: string | undefined,
+  colors: any,
+): string {
+  const body = segments
+    .map((seg) => {
+      switch (seg.kind) {
+        case "spacer":
+          return `<div class="spacer"></div>`;
+        case "sectionTitle":
+          return `<h2 class="section-title">${escapeHtml(seg.text)}</h2>`;
+        case "antifonaTitle":
+          return `<h3 class="antifona-title">${escapeHtml(seg.text)}</h3>`;
+        case "readingTitle":
+          return `<h3 class="reading-title">${escapeHtml(seg.text)}</h3>`;
+        case "orazioneTitle":
+          return `<h3 class="orazione-title">${escapeHtml(seg.text)}</h3>`;
+        case "subtitle":
+          return `<h3 class="subtitle">${escapeHtml(seg.text)}</h3>`;
+        case "peTitle":
+          return `<h3 class="pe-title">${escapeHtml(seg.text)}</h3>`;
+        case "rubric":
+          return `<p class="rubric">${escapeHtml(seg.text).replace(/\n/g, "<br>")}</p>`;
+        case "celebrante":
+          return `<p class="celebrante">${escapeHtml(seg.text).replace(/\n/g, "<br>")}</p>`;
+        case "assemblea":
+          return `<p class="assemblea">${escapeHtml(seg.text).replace(/\n/g, "<br>")}</p>`;
+        case "umili":
+          return `<p class="umili">${escapeHtml(seg.text).replace(/\n/g, "<br>")}</p>`;
+        case "salmo":
+          return `<p class="salmo">${salmoToHtml(seg.text)}</p>`;
+        case "peText":
+          return `<div class="pe-text">${peTextToHtml(seg.text)}</div>`;
+        case "peDossologia":
+          return `<p class="pe-dossologia">${escapeHtml(seg.text).replace(/\n/g, "<br>")}</p>`;
+        default:
+          return `<p>${escapeHtml(seg.text).replace(/\n/g, "<br>")}</p>`;
+      }
+    })
+    .join("");
+
+  const ff = fontFamily ? `'${fontFamily}', ` : "";
+  const bg = colors?.background || "#000000";
+  const textColor = colors?.textPrimary || "#FFFFFF";
+  const fs = Math.round(fontSize);
+
+  return `<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
+<style>
+  * { box-sizing: border-box; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }
+  html, body { margin: 0; padding: 0; height: 100vh; width: 100vw; overflow: hidden; background: ${bg}; color: ${textColor}; }
+  body {
+    font-family: ${ff}-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: ${fs}px;
+    line-height: 1.7;
+    overscroll-behavior: none;
+  }
+  #book {
+    height: 100vh;
+    width: 100vw;
+    column-width: 100vw;
+    column-gap: 0;
+    column-fill: auto;
+    padding: 0;
+    margin: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    touch-action: pan-x;
+    overscroll-behavior-x: contain;
+  }
+  #book::-webkit-scrollbar { display: none; height: 0; width: 0; }
+  #book > * { scroll-snap-align: start; padding-left: 16px; padding-right: 16px; }
+  /* Top/bottom spacing applied as margin on first/last so columns are always exactly 100vw wide */
+  #book > *:first-child { margin-top: 8px; }
+  #book > *:last-child { margin-bottom: 28px; }
+
+  h2.section-title { font-size: ${Math.round(fs * 1.05)}px; font-weight: 800; color: #4DA8DA; margin: 14px 0 8px 0; line-height: 1.15; break-after: avoid-column; }
+  h3.antifona-title { font-size: ${Math.round(fs * 0.85)}px; font-weight: 800; color: #FFB74D; margin: 10px 0 6px 0; line-height: 1.1; break-after: avoid-column; }
+  h3.reading-title { font-size: ${Math.round(fs * 0.85)}px; font-weight: 800; color: #81C784; margin: 10px 0 6px 0; line-height: 1.1; break-after: avoid-column; }
+  h3.orazione-title { font-size: ${Math.round(fs * 0.85)}px; font-weight: 800; color: #CE93D8; margin: 10px 0 6px 0; line-height: 1.1; break-after: avoid-column; }
+  h3.subtitle { font-size: ${Math.round(fs * 0.85)}px; font-weight: 700; color: ${textColor}; margin: 8px 0 6px 0; line-height: 1.1; break-after: avoid-column; }
+  h3.pe-title { font-size: ${Math.round(fs * 0.78)}px; font-weight: 800; color: #66BB6A; margin: 6px 0 10px 0; line-height: 1.1; break-after: avoid-column; }
+
+  p { margin: 4px 0 8px 0; }
+  p.rubric { color: #E57373; font-style: italic; font-size: ${Math.round(fs * 0.7)}px; line-height: 1.2; margin: 6px 0; }
+  p.celebrante { font-size: ${fs}px; color: ${textColor}; margin: 4px 0 10px 0; }
+  p.assemblea { font-size: ${Math.round(fs * 0.95)}px; color: ${textColor}; font-style: italic; margin: 4px 0 10px 0; }
+  p.umili { font-size: ${Math.round(fs * 0.85)}px; color: ${textColor}; margin: 4px 0 10px 0; line-height: 1.55; }
+  p.salmo { font-size: ${fs}px; color: ${textColor}; line-height: 1.55; margin: 6px 0; }
+  span.salmo-r { color: #E57373; font-weight: 700; }
+  div.pe-text { font-size: ${fs}px; color: ${textColor}; }
+  span.pe-consacration { color: #29B6F6; }
+  div.pe-dossologia-label { font-size: ${Math.round(fs * 0.8)}px; font-weight: 800; color: #29B6F6; margin: 12px 0 6px 0; }
+  div.pe-dossologia { font-size: ${fs}px; color: ${textColor}; text-transform: uppercase; line-height: 1.5; margin: 4px 0 12px 0; }
+  p.pe-dossologia { text-transform: uppercase; line-height: 1.5; }
+  div.spacer { height: 16px; }
+</style>
+</head>
+<body>
+<div id="book">${body}</div>
+<script>
+  (function() {
+    var book = document.getElementById('book');
+    function W() { return window.innerWidth; }
+    function totalPages() { return Math.max(1, Math.round(book.scrollWidth / W())); }
+    function currentPage() { return Math.round(book.scrollLeft / W()); }
+    function postState() {
+      var msg = JSON.stringify({
+        type: 'state',
+        page: currentPage(),
+        total: totalPages()
+      });
+      if (window.ReactNativeWebView) {
+        window.ReactNativeWebView.postMessage(msg);
+      } else if (window.parent && window.parent !== window) {
+        // Su web preview siamo in un iframe: postMessage al parent
+        try { window.parent.postMessage(msg, '*'); } catch (e) {}
+      }
+    }
+    document.addEventListener('click', function(e) {
+      var x = e.clientX;
+      var w = W();
+      if (x < w / 2) {
+        book.scrollBy({ left: -w, behavior: 'smooth' });
+      } else {
+        book.scrollBy({ left: w, behavior: 'smooth' });
+      }
+    }, { passive: true });
+    var scrollDebounce;
+    book.addEventListener('scroll', function() {
+      clearTimeout(scrollDebounce);
+      scrollDebounce = setTimeout(postState, 80);
+    }, { passive: true });
+    function initialPost() {
+      postState();
+      setTimeout(postState, 300);
+      setTimeout(postState, 800);
+    }
+    if (document.readyState === 'complete') initialPost();
+    else window.addEventListener('load', initialPost);
+    document.addEventListener('gesturestart', function(e) { e.preventDefault(); });
+    document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+  })();
+</script>
+</body></html>`;
+}
+
+
 // ===========================================================================
 type BuildArgs = {
   liturgy: Liturgy | null;
@@ -1099,16 +1345,18 @@ function paginate(
   screenW: number,
 ): Segment[][] {
   // ----- Stima caratteri-per-riga -----
+  // Parametri tunati per RIEMPIRE le pagine il più possibile (eliminare lo
+  // spazio vuoto in fondo). I valori sono leggermente "aggressivi" rispetto
+  // a quelli reali — preferiamo riempire bene la pagina e spostare al più
+  // mezza riga sulla pagina successiva, piuttosto che lasciare 30% di vuoto.
   const HORIZONTAL_PADDING = 32; // padding interno pageContent
   const usableW = Math.max(280, screenW - HORIZONTAL_PADDING);
-  const avgCharW = Math.max(8, fontSize * 0.52);
+  const avgCharW = Math.max(7, fontSize * 0.48); // era 0.52 → 0.48 (più caratteri per riga)
   const charsPerLine = Math.max(20, Math.floor(usableW / avgCharW));
   const lineH = Math.max(20, Math.round(fontSize * 1.45));
-  // Buffer di sicurezza: lasciamo 40px in fondo per essere certi che il
-  // contenuto entri nella slide orizzontale (no scroll verticale = no
-  // testo tagliato). Margine generoso per le diverse altezze di rendering
-  // e padding interno della slide (paddingTop 8 + paddingBottom 24 = 32).
-  const usableH = Math.max(200, containerH - 40);
+  // Buffer di sicurezza ridotto a 24px (era 40): lascia poco margine in fondo
+  // per riempire bene la pagina. Combina con i lhFactor più realistici sotto.
+  const usableH = Math.max(200, containerH - 24);
 
   // Altezza extra (titolo, paragrafo, spacer): in unità "righe equivalenti"
   // Ogni segmento ha:
@@ -1148,10 +1396,11 @@ function paginate(
     };
     const marginTop = titleMarginTop[seg.kind] || 0;
     const fs = Math.round(fontSize * m[seg.kind]);
-    // Line-height stimato: 1.65× per testi del corpo (riflette il nuovo
-    // 1.7× applicato negli stili a text/celebrante/assemblea/peText/dossologia
-    // — tenuto leggermente più basso per non sprecare pagine), 1.45× per
-    // titoli e rubriche che hanno line-height più stretto.
+    // Line-height stimato: 1.55× per testi del corpo (leggermente
+    // ottimistico per riempire bene la pagina; il line-height reale è 1.7×
+    // ma includendo il marginBottom medio l'occupazione effettiva totale è
+    // più vicina a 1.55×). 1.4× per titoli e rubriche con line-height più
+    // stretto.
     const isBody =
       seg.kind === "normal" ||
       seg.kind === "celebrante" ||
@@ -1160,7 +1409,7 @@ function paginate(
       seg.kind === "peDossologia" ||
       seg.kind === "salmo" ||
       seg.kind === "umili";
-    const lhFactor = isBody ? 1.65 : 1.4;
+    const lhFactor = isBody ? 1.55 : 1.35;
     const segLineH = Math.max(20, Math.round(fs * lhFactor));
     // Char per linea ricalcolato per font size del segmento
     const segCharsPerLine = Math.max(
@@ -1471,15 +1720,26 @@ const makeStyles = (
       flex: 1,
       overflow: "hidden",
     },
-    // Singola "pagina" (slide) della FlatList orizzontale.
-    // Larga screenWidth, altezza piena del pageArea, padding interno per il
-    // testo, overflow nascosto per evitare che il contenuto eccedente venga
-    // mostrato (paginazione conservativa garantisce che entri tutto).
-    pageSlide: {
-      paddingHorizontal: 16,
-      paddingTop: 8,
-      paddingBottom: 24,
-      overflow: "hidden",
+    // Stile della WebView: occupa tutta la pageArea, sfondo trasparente per
+    // evitare il flash bianco al caricamento (il colore di sfondo viene
+    // dato dal CSS interno della WebView via colors.background).
+    webview: {
+      flex: 1,
+      backgroundColor: "transparent",
+    },
+    // Barra di progresso fissa in fondo alla pageArea. Sollevata di 10px dal
+    // bordo per non essere coperta dai tasti di sistema su Android.
+    progressTrack: {
+      position: "absolute",
+      left: 0,
+      right: 0,
+      bottom: 10,
+      height: 3,
+      backgroundColor: "#2A2A2A", // grigio scuro elegante su sfondo nero
+    },
+    progressFill: {
+      height: 3,
+      backgroundColor: "#D4AF37", // oro liturgico, sobrio
     },
     // ----- Tipografia (stessi colori/taglie di /messa) -----
     // I titoli sezione e PE hanno marginTop per respiro visivo quando seguono
