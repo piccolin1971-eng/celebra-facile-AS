@@ -233,6 +233,9 @@ export default function CelebraScreen() {
   const containerHRef = useRef<number>(0);          // altezza viewport
   const lastUserActionRef = useRef<number>(Date.now());
   const lastTickRef = useRef<number>(Date.now());
+  // Tap tracking: registra inizio tocco per riconoscere tap "secchi"
+  // (movimento < 10px, durata < 350ms) vs drag verticali.
+  const touchStartRef = useRef<{ x: number; y: number; t: number } | null>(null);
 
   const styles = makeStyles(colors, fontSize, fontFamily);
 
@@ -422,16 +425,37 @@ export default function CelebraScreen() {
   const prev = () => setCurrentPage(Math.max(0, safeIdx - 1));
   const advance = () => setCurrentPage(Math.min(total - 1, safeIdx + 1));
 
-  // Tap zone: 30% sx → indietro, 70% dx → avanti. Replica del comportamento
-  // Kindle classico, già usato in v2.9. La tap-zone è sopra alla ScrollView
-  // ma lascia passare il drag verticale grazie a Pressable + pointerEvents.
+  // Tap zone: 30% sx → indietro, 70% dx → avanti. Implementato a basso livello
+  // con touch tracking (start/end) per evitare conflitti con il drag della
+  // ScrollView e con i Text `selectable` che catturerebbero i click di un
+  // Pressable. touchStartRef è dichiarato in alto insieme agli altri ref.
   const TAP_LEFT_RATIO = 0.3;
   const tapLeftWidth = Math.round(screenWidth * TAP_LEFT_RATIO);
 
-  const handleTap = (e: any) => {
-    const x = e?.nativeEvent?.pageX ?? e?.nativeEvent?.locationX ?? 0;
-    if (x < tapLeftWidth) prev();
-    else advance();
+  const onTouchStart = (e: any) => {
+    const t = e?.nativeEvent?.touches?.[0] ?? e?.nativeEvent;
+    touchStartRef.current = {
+      x: t?.pageX ?? 0,
+      y: t?.pageY ?? 0,
+      t: Date.now(),
+    };
+    lastUserActionRef.current = Date.now();
+  };
+  const onTouchEnd = (e: any) => {
+    const start = touchStartRef.current;
+    if (!start) return;
+    const t = e?.nativeEvent?.changedTouches?.[0] ?? e?.nativeEvent;
+    const endX = t?.pageX ?? 0;
+    const endY = t?.pageY ?? 0;
+    const dx = Math.abs(endX - start.x);
+    const dy = Math.abs(endY - start.y);
+    const dt = Date.now() - start.t;
+    touchStartRef.current = null;
+    // Riconoscimento tap "secco": meno di 10px di movimento, meno di 350ms.
+    if (dx < 10 && dy < 10 && dt < 350) {
+      if (endX < tapLeftWidth) prev();
+      else advance();
+    }
   };
 
   return (
@@ -485,14 +509,23 @@ export default function CelebraScreen() {
             onScrollBeginDrag={() => {
               lastUserActionRef.current = Date.now();
             }}
+            onTouchStart={onTouchStart}
+            onTouchEnd={onTouchEnd}
             scrollEventThrottle={50}
             testID={`celebra-page-${safeIdx}`}
           >
             {/* Pressable interno alla ScrollView: gestisce il tap a dx/sx
-                per cambiare pagina. Il drag verticale viene assorbito dalla
-                ScrollView, mentre i tap "secchi" sono catturati da Pressable. */}
+                per cambiare pagina su web (mouse click). Il drag verticale
+                viene assorbito dalla ScrollView. I Text figli sono
+                selectable={false} per non intercettare i click. */}
             <Pressable
-              onPress={handleTap}
+              style={{ flex: 1, minHeight: containerH }}
+              onPress={(e: any) => {
+                const x = e?.nativeEvent?.pageX ?? 0;
+                if (x < tapLeftWidth) prev();
+                else advance();
+                lastUserActionRef.current = Date.now();
+              }}
               testID="celebra-tap-pressable"
             >
               {currentSegments.map((seg, i) => (
@@ -536,8 +569,11 @@ function SegmentRenderer({ seg, styles }: { seg: Segment; styles: any }) {
     salmo: styles.text,
     spacer: {},
   };
+  // selectable={false} è IMPORTANTE: evita che Text catturi gli eventi mouse
+  // (su web) impedendo al Pressable di registrare il tap. In modalità
+  // celebrazione non serve selezionare il testo (è solo lettura).
   return (
-    <Text style={styleMap[seg.kind]} selectable>
+    <Text style={styleMap[seg.kind]} selectable={false}>
       {seg.text}
     </Text>
   );
@@ -547,7 +583,7 @@ function SegmentRenderer({ seg, styles }: { seg: Segment; styles: any }) {
 function SalmoRenderer({ text, styles }: { text: string; styles: any }) {
   const lines = text.replace(/\n{3,}/g, "\n\n").split("\n");
   return (
-    <Text style={styles.salmoText} selectable>
+    <Text style={styles.salmoText} selectable={false}>
       {lines.map((ln, i) => {
         const m = ln.match(/^(\s*)(R\/?\.)(.*)$/);
         const isLast = i === lines.length - 1;
@@ -585,7 +621,7 @@ function PeTextRenderer({ text, styles }: { text: string; styles: any }) {
       <View>
         {before ? <PeTextNormal text={before} styles={styles} /> : null}
         {after ? (
-          <Text style={styles.peDossologia} selectable>
+          <Text style={styles.peDossologia} selectable={false}>
             {after}
           </Text>
         ) : null}
@@ -609,7 +645,7 @@ function PeTextNormal({ text, styles }: { text: string; styles: any }) {
         const m = part.match(/^\[([^\]]+)\]$/);
         if (m) {
           return (
-            <Text key={idx} style={styles.rubric} selectable>
+            <Text key={idx} style={styles.rubric} selectable={false}>
               {m[1]}
             </Text>
           );
@@ -618,7 +654,7 @@ function PeTextNormal({ text, styles }: { text: string; styles: any }) {
         if (!trimmed) return null;
         const lines = trimmed.split("\n");
         return (
-          <Text style={styles.text} selectable key={idx}>
+          <Text style={styles.text} selectable={false} key={idx}>
             {lines.map((ln, i) => {
               const isCon = isUpperLitLine(ln);
               const prevWasCon = i > 0 && isUpperLitLine(lines[i - 1]);
@@ -1408,6 +1444,7 @@ const makeStyles = (
       flex: 1,
     },
     pageContent: {
+      flexGrow: 1,           // ← contentContainer riempie tutto lo spazio
       paddingHorizontal: 16,
       paddingTop: 8,
       paddingBottom: 24,
