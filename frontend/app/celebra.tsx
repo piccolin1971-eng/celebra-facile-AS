@@ -719,8 +719,10 @@ function salmoToHtml(text: string): string {
 // stile speciale alle parole della Consacrazione (in azzurro).
 function peTextToHtml(text: string): string {
   const parts = text.split("<<DOSSOLOGIA>>");
-  const main = parts[0] || "";
-  const doss = parts[1] || "";
+  // Trim newline iniziali/finali su entrambi i parts per evitare <br>
+  // fantasma all'inizio/fine (es. spazio sotto il titolo "Dossologia").
+  const main = (parts[0] || "").replace(/^\n+|\n+$/g, "");
+  const doss = (parts[1] || "").replace(/^\n+|\n+$/g, "");
 
   const formatMain = (s: string): string => {
     let out = escapeHtml(s);
@@ -740,7 +742,7 @@ function peTextToHtml(text: string): string {
   let html = `<div class="pe-main">${formatMain(main)}</div>`;
   if (doss) {
     html += `<div class="pe-dossologia-label">Dossologia</div>`;
-    html += `<div class="pe-dossologia">${escapeHtml(doss).replace(/\n/g, "<br>")}</div>`;
+    html += `<div class="pe-dossologia">${escapeHtml(doss).replace(/\n+/g, "<br>")}</div>`;
   }
   return html;
 }
