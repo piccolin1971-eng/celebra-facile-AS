@@ -702,8 +702,10 @@ function escapeHtml(s: string): string {
 }
 
 // Renderizza un segmento "salmo": evidenzia la "R." iniziale in rosso.
+// Consolida i newline multipli (es. "\n\n") in un singolo <br> per uniformità.
 function salmoToHtml(text: string): string {
-  const lines = text.split("\n").map((ln) => {
+  const cleaned = text.replace(/^\n+|\n+$/g, "").replace(/\n+/g, "\n");
+  const lines = cleaned.split("\n").map((ln) => {
     const m = ln.match(/^(\s*)(R\.)(\s*)(.*)$/);
     if (m) {
       return `${escapeHtml(m[1])}<span class="salmo-r">${escapeHtml(m[2])}</span>${escapeHtml(m[3])}${escapeHtml(m[4])}`;
@@ -726,11 +728,13 @@ function peTextToHtml(text: string): string {
       /(Prendete[^.]*?è il mio Corpo[^.]*?)\./gi,
       /(Prendete[^.]*?è il calice del mio Sangue[^.]*?)\./gi,
       /(Prendete[^.]*?dato per voi)\./gi,
+      /(Fate questo in memoria di me)\./gi,
     ];
     for (const p of consPatterns) {
       out = out.replace(p, '<span class="pe-consacration">$1.</span>');
     }
-    return out.replace(/\n/g, "<br>");
+    // Consolida newline multipli in un singolo <br> per uniformità
+    return out.replace(/\n+/g, "<br>");
   };
 
   let html = `<div class="pe-main">${formatMain(main)}</div>`;
@@ -747,11 +751,17 @@ function segmentsToHtml(
   fontFamily: string | undefined,
   colors: any,
 ): string {
+  // Helper: trim newline iniziali/finali e converte ogni sequenza di
+  // newline (uno o più) in un singolo <br>. Evita "righe vuote fantasma"
+  // tra strofe e tra titolo e testo seguente.
+  const txt = (s: string) =>
+    escapeHtml(s.replace(/^\n+|\n+$/g, "")).replace(/\n+/g, "<br>");
+
   const body = segments
     .map((seg) => {
       switch (seg.kind) {
         case "spacer":
-          return `<div class="spacer"></div>`;
+          return ``; // spacer rimosso: lo spacing è gestito dai margin dei titoli
         case "sectionTitle":
           return `<h2 class="section-title">${escapeHtml(seg.text)}</h2>`;
         case "antifonaTitle":
@@ -765,21 +775,21 @@ function segmentsToHtml(
         case "peTitle":
           return `<h3 class="pe-title">${escapeHtml(seg.text)}</h3>`;
         case "rubric":
-          return `<p class="rubric">${escapeHtml(seg.text).replace(/\n/g, "<br>")}</p>`;
+          return `<p class="rubric">${txt(seg.text)}</p>`;
         case "celebrante":
-          return `<p class="celebrante">${escapeHtml(seg.text).replace(/\n/g, "<br>")}</p>`;
+          return `<p class="celebrante">${txt(seg.text)}</p>`;
         case "assemblea":
-          return `<p class="assemblea">${escapeHtml(seg.text).replace(/\n/g, "<br>")}</p>`;
+          return `<p class="assemblea">${txt(seg.text)}</p>`;
         case "umili":
-          return `<p class="umili">${escapeHtml(seg.text).replace(/\n/g, "<br>")}</p>`;
+          return `<p class="umili">${txt(seg.text)}</p>`;
         case "salmo":
-          return `<p class="salmo">${salmoToHtml(seg.text)}</p>`;
+          return `<p class="salmo">${salmoToHtml(seg.text.replace(/^\n+|\n+$/g, ""))}</p>`;
         case "peText":
-          return `<div class="pe-text">${peTextToHtml(seg.text)}</div>`;
+          return `<div class="pe-text">${peTextToHtml(seg.text.replace(/^\n+|\n+$/g, ""))}</div>`;
         case "peDossologia":
-          return `<p class="pe-dossologia">${escapeHtml(seg.text).replace(/\n/g, "<br>")}</p>`;
+          return `<p class="pe-dossologia">${txt(seg.text)}</p>`;
         default:
-          return `<p>${escapeHtml(seg.text).replace(/\n/g, "<br>")}</p>`;
+          return `<p>${txt(seg.text)}</p>`;
       }
     })
     .join("");
@@ -825,12 +835,16 @@ function segmentsToHtml(
   #book > *:first-child { margin-top: 8px; }
   #book > *:last-child { margin-bottom: 28px; }
 
-  h2.section-title { font-size: ${Math.round(fs * 1.05)}px; font-weight: 800; color: #4DA8DA; margin: 14px 0 8px 0; line-height: 1.15; break-after: avoid-column; }
-  h3.antifona-title { font-size: ${Math.round(fs * 0.85)}px; font-weight: 800; color: #FFB74D; margin: 10px 0 6px 0; line-height: 1.1; break-after: avoid-column; }
-  h3.reading-title { font-size: ${Math.round(fs * 0.85)}px; font-weight: 800; color: #81C784; margin: 10px 0 6px 0; line-height: 1.1; break-after: avoid-column; }
-  h3.orazione-title { font-size: ${Math.round(fs * 0.85)}px; font-weight: 800; color: #CE93D8; margin: 10px 0 6px 0; line-height: 1.1; break-after: avoid-column; }
-  h3.subtitle { font-size: ${Math.round(fs * 0.85)}px; font-weight: 700; color: ${textColor}; margin: 8px 0 6px 0; line-height: 1.1; break-after: avoid-column; }
-  h3.pe-title { font-size: ${Math.round(fs * 0.78)}px; font-weight: 800; color: #66BB6A; margin: 6px 0 10px 0; line-height: 1.1; break-after: avoid-column; }
+  h2.section-title { font-size: ${Math.round(fs * 1.05)}px; font-weight: 800; color: #4DA8DA; margin: 16px 0 4px 0; line-height: 1.15; break-after: avoid-column; }
+  h3.antifona-title { font-size: ${Math.round(fs * 0.85)}px; font-weight: 800; color: #FFB74D; margin: 14px 0 4px 0; line-height: 1.1; break-after: avoid-column; }
+  h3.reading-title { font-size: ${Math.round(fs * 0.85)}px; font-weight: 800; color: #81C784; margin: 14px 0 4px 0; line-height: 1.1; break-after: avoid-column; }
+  h3.orazione-title { font-size: ${Math.round(fs * 0.85)}px; font-weight: 800; color: #CE93D8; margin: 14px 0 4px 0; line-height: 1.1; break-after: avoid-column; }
+  h3.subtitle { font-size: ${Math.round(fs * 0.85)}px; font-weight: 700; color: ${textColor}; margin: 12px 0 4px 0; line-height: 1.1; break-after: avoid-column; }
+  h3.pe-title { font-size: ${Math.round(fs * 0.78)}px; font-weight: 800; color: #66BB6A; margin: 12px 0 6px 0; line-height: 1.1; break-after: avoid-column; }
+  /* Primo elemento dopo un titolo: niente margin-top per attaccare il testo */
+  h2 + *, h3 + * { margin-top: 0 !important; }
+  /* Primo elemento del book: niente margin-top */
+  #book > *:first-child { margin-top: 0 !important; }
 
   p { margin: 4px 0 8px 0; }
   p.rubric { color: #E57373; font-style: italic; font-size: ${Math.round(fs * 0.7)}px; line-height: 1.2; margin: 6px 0; }
@@ -840,7 +854,9 @@ function segmentsToHtml(
   p.salmo { font-size: ${fs}px; color: ${textColor}; line-height: 1.55; margin: 6px 0; }
   span.salmo-r { color: #E57373; font-weight: 700; }
   div.pe-text { font-size: ${fs}px; color: ${textColor}; }
-  span.pe-consacration { color: #29B6F6; }
+  /* Consacrazione: azzurro acceso, leggermente in evidenza con padding
+     verticale e orizzontale per dare aria attorno alla frase. */
+  span.pe-consacration { color: #29B6F6; display: inline-block; padding: 4px 2px; margin: 2px 0; }
   div.pe-dossologia-label { font-size: ${Math.round(fs * 0.8)}px; font-weight: 800; color: #29B6F6; margin: 12px 0 6px 0; }
   div.pe-dossologia { font-size: ${fs}px; color: ${textColor}; text-transform: uppercase; line-height: 1.5; margin: 4px 0 12px 0; }
   p.pe-dossologia { text-transform: uppercase; line-height: 1.5; }
