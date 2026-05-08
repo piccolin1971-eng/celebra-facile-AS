@@ -25,6 +25,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
+  Pressable,
   FlatList,
   useWindowDimensions,
 } from "react-native";
@@ -227,9 +228,6 @@ export default function CelebraScreen() {
 
   // Ref alla FlatList orizzontale (per scrollToIndex programmatico al tap).
   const flatListRef = useRef<FlatList | null>(null);
-  // Tap tracking: registra inizio tocco per riconoscere tap "secchi"
-  // (movimento < 10px, durata < 350ms) vs swipe orizzontali.
-  const touchStartRef = useRef<{ x: number; y: number; t: number } | null>(null);
 
   const styles = makeStyles(colors, fontSize, fontFamily);
 
@@ -394,36 +392,11 @@ export default function CelebraScreen() {
   const prev = () => setCurrentPage(Math.max(0, safeIdx - 1));
   const advance = () => setCurrentPage(Math.min(total - 1, safeIdx + 1));
 
-  // Tap zone: 50% sx → indietro, 50% dx → avanti. Implementato a basso livello
-  // con touch tracking (start/end) per evitare conflitti con il drag della
-  // FlatList orizzontale. touchStartRef è dichiarato in alto insieme agli altri ref.
+  // Tap zone: 50% sx → indietro, 50% dx → avanti.
+  // Implementato con un Pressable overlay assoluto sopra la FlatList:
+  // funziona sia su web (mouse click) che su mobile (touch).
   const TAP_LEFT_RATIO = 0.5;
   const tapLeftWidth = Math.round(screenWidth * TAP_LEFT_RATIO);
-
-  const onTouchStart = (e: any) => {
-    const t = e?.nativeEvent?.touches?.[0] ?? e?.nativeEvent;
-    touchStartRef.current = {
-      x: t?.pageX ?? 0,
-      y: t?.pageY ?? 0,
-      t: Date.now(),
-    };
-  };
-  const onTouchEnd = (e: any) => {
-    const start = touchStartRef.current;
-    if (!start) return;
-    const t = e?.nativeEvent?.changedTouches?.[0] ?? e?.nativeEvent;
-    const endX = t?.pageX ?? 0;
-    const endY = t?.pageY ?? 0;
-    const dx = Math.abs(endX - start.x);
-    const dy = Math.abs(endY - start.y);
-    const dt = Date.now() - start.t;
-    touchStartRef.current = null;
-    // Riconoscimento tap "secco": meno di 10px di movimento, meno di 350ms.
-    if (dx < 10 && dy < 10 && dt < 350) {
-      if (endX < tapLeftWidth) prev();
-      else advance();
-    }
-  };
 
   return (
     <SafeAreaView style={styles.container} testID="celebra-screen">
@@ -447,59 +420,73 @@ export default function CelebraScreen() {
         </View>
       </View>
 
-      {/* Area di lettura: FlatList ORIZZONTALE con pagingEnabled.
+      {/* Area di lettura: FlatList ORIZZONTALE con pagingEnabled +
+          Pressable overlay sopra per intercettare i tap (web e mobile).
           - Ogni "pagina" è una slide larga screenWidth, con overflow nascosto.
           - Snap netto tra pagine grazie a pagingEnabled.
+          - scrollEnabled={false}: lo scroll è solo programmatico (via tap).
           - Tap dx 50% → pagina successiva, sx 50% → precedente.
-          - Swipe orizzontale anche supportato come bonus.
           - Niente scroll verticale: il contenuto deve entrare nella pagina. */}
       <View
         style={styles.pageArea}
         onLayout={(e) => setContainerH(e.nativeEvent.layout.height)}
         testID="celebra-tap-area"
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
       >
         {pages.length === 0 ? (
           <ActivityIndicator size="large" color={colors.primary} />
         ) : (
-          <FlatList
-            ref={flatListRef}
-            data={pages}
-            keyExtractor={(_, i) => `page-${i}`}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            showsVerticalScrollIndicator={false}
-            decelerationRate="fast"
-            snapToAlignment="start"
-            getItemLayout={(_, i) => ({
-              length: screenWidth,
-              offset: screenWidth * i,
-              index: i,
-            })}
-            initialNumToRender={3}
-            maxToRenderPerBatch={3}
-            windowSize={3}
-            onMomentumScrollEnd={(e) => {
-              const idx = Math.round(
-                e.nativeEvent.contentOffset.x / Math.max(1, screenWidth),
-              );
-              if (idx !== currentPage) {
-                setCurrentPage(Math.max(0, Math.min(pages.length - 1, idx)));
-              }
-            }}
-            renderItem={({ item, index }) => (
-              <View
-                style={[styles.pageSlide, { width: screenWidth, height: containerH }]}
-                testID={`celebra-page-${index}`}
-              >
-                {item.map((seg, j) => (
-                  <SegmentRenderer key={j} seg={seg} styles={styles} />
-                ))}
-              </View>
-            )}
-          />
+          <>
+            <FlatList
+              ref={flatListRef}
+              data={pages}
+              keyExtractor={(_, i) => `page-${i}`}
+              horizontal
+              pagingEnabled
+              scrollEnabled={false}
+              showsHorizontalScrollIndicator={false}
+              showsVerticalScrollIndicator={false}
+              decelerationRate="fast"
+              snapToAlignment="start"
+              getItemLayout={(_, i) => ({
+                length: screenWidth,
+                offset: screenWidth * i,
+                index: i,
+              })}
+              initialNumToRender={3}
+              maxToRenderPerBatch={3}
+              windowSize={3}
+              renderItem={({ item, index }) => (
+                <View
+                  style={[styles.pageSlide, { width: screenWidth, height: containerH }]}
+                  testID={`celebra-page-${index}`}
+                >
+                  {item.map((seg, j) => (
+                    <SegmentRenderer key={j} seg={seg} styles={styles} />
+                  ))}
+                </View>
+              )}
+            />
+            {/* Pressable overlay assoluto sopra la FlatList: cattura
+                clicks/taps su web e mobile. Sceglie prev/next in base alla
+                posizione X relativa allo schermo. La FlatList sotto si sposta
+                solo via scrollToOffset programmatico (vedi useEffect). */}
+            <Pressable
+              style={StyleSheet.absoluteFill}
+              onPress={(e: any) => {
+                const ne = e?.nativeEvent;
+                // pageX (web/mobile assoluto) o locationX (relativo al View)
+                const x =
+                  typeof ne?.pageX === "number"
+                    ? ne.pageX
+                    : typeof ne?.locationX === "number"
+                    ? ne.locationX
+                    : 0;
+                if (x < tapLeftWidth) prev();
+                else advance();
+              }}
+              testID="celebra-tap-overlay"
+            />
+          </>
         )}
       </View>
     </SafeAreaView>
