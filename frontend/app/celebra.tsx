@@ -2,19 +2,18 @@
  * /celebra — Modalità "Celebra la Messa" (lettura pulita per l'altare)
  *
  * Pensata per sacerdoti anziani ipovedenti: NESSUN toggle, NESSUN selettore,
- * NESSUNA scelta. Solo testo continuo in una colonna unica, scrollabile,
- * con AUTO-SCROLL automatico secondo le impostazioni dell'utente
- * (autoScrollPxPerSec, autoScrollDelaySec).
+ * NESSUNA scelta. Solo testo continuo distribuito in pagine orizzontali
+ * stile "lettore Kindle".
  *
- * Comportamento:
- *  - All'apertura, attende `autoScrollDelaySec` secondi → poi scorre da solo
- *    a `autoScrollPxPerSec` pixel al secondo.
- *  - Se il prete tocca lo schermo / scrolla a mano → l'auto-scroll si pausa.
- *  - Dopo `autoScrollDelaySec` secondi di inattività → riprende.
- *  - Quando arriva in fondo → si ferma (resta visibile l'ultima frase).
- *
- * Niente più paginazione (era fragile su dispositivi diversi). Tutto è una
- * lunga "pergamena" verticale che si srotola da sola.
+ * Comportamento (modalità Kindle):
+ *  - Il testo è pre-paginato in slide larghe esattamente quanto lo schermo.
+ *  - Le pagine sono affiancate orizzontalmente in una FlatList con
+ *    `pagingEnabled` (snap netto, niente scrollbar).
+ *  - Tap sulla metà sinistra → pagina precedente.
+ *  - Tap sulla metà destra → pagina successiva.
+ *  - Swipe orizzontale → cambia pagina (bonus).
+ *  - Niente scroll verticale: il testo entra sempre nella pagina.
+ *  - Niente testo tagliato: l'algoritmo paginate() spezza solo a fine frase.
  *
  * Le scelte (PE, prefazio, congedo, ecc.) vengono lette dalla sessione
  * giornaliera salvata da /messa (AsyncStorage).
@@ -26,8 +25,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
-  Pressable,
-  ScrollView,
+  FlatList,
   useWindowDimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -203,7 +201,7 @@ function expandPrayerText(
 export default function CelebraScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ date?: string }>();
-  const { colors, fontSize, scaledFont, fontFamily, autoScrollDelaySec, autoScrollPxPerSec } = useSettings();
+  const { colors, fontSize, scaledFont, fontFamily } = useSettings();
   const { width: screenWidth } = useWindowDimensions();
 
   const [liturgy, setLiturgy] = useState<Liturgy | null>(null);
@@ -221,20 +219,16 @@ export default function CelebraScreen() {
   const [hasSession, setHasSession] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Paginazione "Kindle": tap dx 70% = avanza, sx 30% = indietro.
+  // Paginazione "Kindle": tap dx 50% = avanza, sx 50% = indietro.
+  // Le pagine sono renderizzate come slide orizzontali in una FlatList con
+  // pagingEnabled (snap netto, niente scroll verticale, niente scrollbar).
   const [currentPage, setCurrentPage] = useState(0);
   const [containerH, setContainerH] = useState(0);
 
-  // Auto-scroll state (attivo SOLO quando la pagina corrente supera l'altezza
-  // del viewport, ovvero quando il contenuto eccede e va in overflow).
-  const scrollRef = useRef<ScrollView | null>(null);
-  const scrollYRef = useRef<number>(0);             // posizione corrente
-  const contentHRef = useRef<number>(0);            // altezza contenuto totale
-  const containerHRef = useRef<number>(0);          // altezza viewport
-  const lastUserActionRef = useRef<number>(Date.now());
-  const lastTickRef = useRef<number>(Date.now());
+  // Ref alla FlatList orizzontale (per scrollToIndex programmatico al tap).
+  const flatListRef = useRef<FlatList | null>(null);
   // Tap tracking: registra inizio tocco per riconoscere tap "secchi"
-  // (movimento < 10px, durata < 350ms) vs drag verticali.
+  // (movimento < 10px, durata < 350ms) vs swipe orizzontali.
   const touchStartRef = useRef<{ x: number; y: number; t: number } | null>(null);
 
   const styles = makeStyles(colors, fontSize, fontFamily);
@@ -336,39 +330,15 @@ export default function CelebraScreen() {
     }
   }, [pages.length, currentPage]);
 
-  // Reset scroll alla cima quando si cambia pagina + reset timer auto-scroll.
+  // ----- Scroll programmatico verso la pagina corrente quando cambia.
+  // Usa scrollToOffset per garantire snap perfetto a screenWidth × index.
   useEffect(() => {
-    scrollYRef.current = 0;
-    contentHRef.current = 0;
-    lastUserActionRef.current = Date.now(); // riparte il delay sull'arrivo
-    lastTickRef.current = Date.now();
-    scrollRef.current?.scrollTo({ y: 0, animated: false });
-  }, [currentPage]);
-
-  // ----- Auto-scroll loop -----
-  // Si attiva SOLO quando la pagina corrente eccede l'altezza dello schermo
-  // (contentH > containerH). Tick ogni 50ms, scrolla a `autoScrollPxPerSec`
-  // px/s. Si pausa per `autoScrollDelaySec` secondi dopo un'interazione utente.
-  // Si ferma in fondo (resta visibile l'ultima frase).
-  useEffect(() => {
-    if (loading || hasSession === false) return;
-    const interval = setInterval(() => {
-      const now = Date.now();
-      const dtMs = now - lastTickRef.current;
-      lastTickRef.current = now;
-      const idleMs = now - lastUserActionRef.current;
-      const delayMs = Math.max(0, autoScrollDelaySec * 1000);
-      if (idleMs < delayMs) return;
-      const maxY = Math.max(0, contentHRef.current - containerHRef.current);
-      if (maxY <= 0) return; // pagina entra tutta, niente da scrollare
-      if (scrollYRef.current >= maxY - 1) return;
-      const stepPx = (autoScrollPxPerSec * dtMs) / 1000;
-      const nextY = Math.min(maxY, scrollYRef.current + stepPx);
-      scrollYRef.current = nextY;
-      scrollRef.current?.scrollTo({ y: nextY, animated: false });
-    }, 50);
-    return () => clearInterval(interval);
-  }, [loading, hasSession, autoScrollPxPerSec, autoScrollDelaySec, currentPage]);
+    if (!flatListRef.current || pages.length === 0) return;
+    flatListRef.current.scrollToOffset({
+      offset: currentPage * screenWidth,
+      animated: true,
+    });
+  }, [currentPage, pages.length, screenWidth]);
 
   // ----- Rendering -----
   if (loading) {
@@ -420,16 +390,14 @@ export default function CelebraScreen() {
 
   const total = pages.length;
   const safeIdx = Math.max(0, Math.min(currentPage, Math.max(0, total - 1)));
-  const currentSegments = pages[safeIdx] || [];
 
   const prev = () => setCurrentPage(Math.max(0, safeIdx - 1));
   const advance = () => setCurrentPage(Math.min(total - 1, safeIdx + 1));
 
-  // Tap zone: 30% sx → indietro, 70% dx → avanti. Implementato a basso livello
+  // Tap zone: 50% sx → indietro, 50% dx → avanti. Implementato a basso livello
   // con touch tracking (start/end) per evitare conflitti con il drag della
-  // ScrollView e con i Text `selectable` che catturerebbero i click di un
-  // Pressable. touchStartRef è dichiarato in alto insieme agli altri ref.
-  const TAP_LEFT_RATIO = 0.3;
+  // FlatList orizzontale. touchStartRef è dichiarato in alto insieme agli altri ref.
+  const TAP_LEFT_RATIO = 0.5;
   const tapLeftWidth = Math.round(screenWidth * TAP_LEFT_RATIO);
 
   const onTouchStart = (e: any) => {
@@ -439,7 +407,6 @@ export default function CelebraScreen() {
       y: t?.pageY ?? 0,
       t: Date.now(),
     };
-    lastUserActionRef.current = Date.now();
   };
   const onTouchEnd = (e: any) => {
     const start = touchStartRef.current;
@@ -480,59 +447,59 @@ export default function CelebraScreen() {
         </View>
       </View>
 
-      {/* Area di lettura: ScrollView per la pagina corrente.
-          - Se il contenuto entra → niente scroll (pagina statica come prima).
-          - Se eccede → scroll automatico al ritmo impostato dall'utente.
-          - Tap dx 70% → pagina successiva, sx 30% → precedente.
-          - Drag verticale dell'utente → pausa auto-scroll per X secondi. */}
+      {/* Area di lettura: FlatList ORIZZONTALE con pagingEnabled.
+          - Ogni "pagina" è una slide larga screenWidth, con overflow nascosto.
+          - Snap netto tra pagine grazie a pagingEnabled.
+          - Tap dx 50% → pagina successiva, sx 50% → precedente.
+          - Swipe orizzontale anche supportato come bonus.
+          - Niente scroll verticale: il contenuto deve entrare nella pagina. */}
       <View
         style={styles.pageArea}
         onLayout={(e) => setContainerH(e.nativeEvent.layout.height)}
         testID="celebra-tap-area"
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
       >
         {pages.length === 0 ? (
           <ActivityIndicator size="large" color={colors.primary} />
         ) : (
-          <ScrollView
-            ref={scrollRef}
-            style={styles.pageScroll}
-            contentContainerStyle={styles.pageContent}
-            onLayout={(e) => {
-              containerHRef.current = e.nativeEvent.layout.height;
+          <FlatList
+            ref={flatListRef}
+            data={pages}
+            keyExtractor={(_, i) => `page-${i}`}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            showsVerticalScrollIndicator={false}
+            decelerationRate="fast"
+            snapToAlignment="start"
+            getItemLayout={(_, i) => ({
+              length: screenWidth,
+              offset: screenWidth * i,
+              index: i,
+            })}
+            initialNumToRender={3}
+            maxToRenderPerBatch={3}
+            windowSize={3}
+            onMomentumScrollEnd={(e) => {
+              const idx = Math.round(
+                e.nativeEvent.contentOffset.x / Math.max(1, screenWidth),
+              );
+              if (idx !== currentPage) {
+                setCurrentPage(Math.max(0, Math.min(pages.length - 1, idx)));
+              }
             }}
-            onContentSizeChange={(_, h) => {
-              contentHRef.current = h;
-            }}
-            onScroll={(e) => {
-              scrollYRef.current = e.nativeEvent.contentOffset.y;
-            }}
-            onScrollBeginDrag={() => {
-              lastUserActionRef.current = Date.now();
-            }}
-            onTouchStart={onTouchStart}
-            onTouchEnd={onTouchEnd}
-            scrollEventThrottle={50}
-            testID={`celebra-page-${safeIdx}`}
-          >
-            {/* Pressable interno alla ScrollView: gestisce il tap a dx/sx
-                per cambiare pagina su web (mouse click). Il drag verticale
-                viene assorbito dalla ScrollView. I Text figli sono
-                selectable={false} per non intercettare i click. */}
-            <Pressable
-              style={{ flex: 1, minHeight: containerH }}
-              onPress={(e: any) => {
-                const x = e?.nativeEvent?.pageX ?? 0;
-                if (x < tapLeftWidth) prev();
-                else advance();
-                lastUserActionRef.current = Date.now();
-              }}
-              testID="celebra-tap-pressable"
-            >
-              {currentSegments.map((seg, i) => (
-                <SegmentRenderer key={i} seg={seg} styles={styles} />
-              ))}
-            </Pressable>
-          </ScrollView>
+            renderItem={({ item, index }) => (
+              <View
+                style={[styles.pageSlide, { width: screenWidth, height: containerH }]}
+                testID={`celebra-page-${index}`}
+              >
+                {item.map((seg, j) => (
+                  <SegmentRenderer key={j} seg={seg} styles={styles} />
+                ))}
+              </View>
+            )}
+          />
         )}
       </View>
     </SafeAreaView>
@@ -570,8 +537,8 @@ function SegmentRenderer({ seg, styles }: { seg: Segment; styles: any }) {
     spacer: {},
   };
   // selectable={false} è IMPORTANTE: evita che Text catturi gli eventi mouse
-  // (su web) impedendo al Pressable di registrare il tap. In modalità
-  // celebrazione non serve selezionare il testo (è solo lettura).
+  // (su web) impedendo al touch handler della FlatList di registrare il tap.
+  // In modalità celebrazione non serve selezionare il testo (è solo lettura).
   return (
     <Text style={styleMap[seg.kind]} selectable={false}>
       {seg.text}
@@ -1150,7 +1117,11 @@ function paginate(
   const avgCharW = Math.max(8, fontSize * 0.52);
   const charsPerLine = Math.max(20, Math.floor(usableW / avgCharW));
   const lineH = Math.max(20, Math.round(fontSize * 1.45));
-  const usableH = Math.max(200, containerH - 16);
+  // Buffer di sicurezza: lasciamo 40px in fondo per essere certi che il
+  // contenuto entri nella slide orizzontale (no scroll verticale = no
+  // testo tagliato). Margine generoso per le diverse altezze di rendering
+  // e padding interno della slide (paddingTop 8 + paddingBottom 24 = 32).
+  const usableH = Math.max(200, containerH - 40);
 
   // Altezza extra (titolo, paragrafo, spacer): in unità "righe equivalenti"
   // Ogni segmento ha:
@@ -1511,18 +1482,17 @@ const makeStyles = (
     },
     pageArea: {
       flex: 1,
+      overflow: "hidden",
     },
-    // ScrollView interna alla pageArea, una per pagina. Se la pagina entra
-    // tutta nello schermo, la ScrollView si comporta come una View statica;
-    // se eccede, l'auto-scroll la fa scorrere automaticamente.
-    pageScroll: {
-      flex: 1,
-    },
-    pageContent: {
-      flexGrow: 1,           // ← contentContainer riempie tutto lo spazio
+    // Singola "pagina" (slide) della FlatList orizzontale.
+    // Larga screenWidth, altezza piena del pageArea, padding interno per il
+    // testo, overflow nascosto per evitare che il contenuto eccedente venga
+    // mostrato (paginazione conservativa garantisce che entri tutto).
+    pageSlide: {
       paddingHorizontal: 16,
       paddingTop: 8,
       paddingBottom: 24,
+      overflow: "hidden",
     },
     // ----- Tipografia (stessi colori/taglie di /messa) -----
     // I titoli sezione e PE hanno marginTop per respiro visivo quando seguono
