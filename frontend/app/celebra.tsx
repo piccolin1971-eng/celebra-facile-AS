@@ -836,7 +836,7 @@ function segmentsToHtml(
   #book > *:last-child { margin-bottom: 28px; }
 
   h2.section-title { font-size: ${Math.round(fs * 1.05)}px; font-weight: 800; color: #4DA8DA; margin: 16px 0 4px 0; line-height: 1.15; break-after: avoid-column; }
-  h3.antifona-title { font-size: ${Math.round(fs * 0.85)}px; font-weight: 800; color: #FFB74D; margin: 14px 0 4px 0; line-height: 1.1; break-after: avoid-column; }
+  h3.antifona-title { font-size: ${Math.round(fs * 0.85)}px; font-weight: 800; color: #FFB74D; margin: 24px 0 4px 0; line-height: 1.1; break-after: avoid-column; }
   h3.reading-title { font-size: ${Math.round(fs * 0.85)}px; font-weight: 800; color: #81C784; margin: 14px 0 4px 0; line-height: 1.1; break-after: avoid-column; }
   h3.orazione-title { font-size: ${Math.round(fs * 0.85)}px; font-weight: 800; color: #CE93D8; margin: 14px 0 4px 0; line-height: 1.1; break-after: avoid-column; }
   h3.subtitle { font-size: ${Math.round(fs * 0.85)}px; font-weight: 700; color: ${textColor}; margin: 12px 0 4px 0; line-height: 1.1; break-after: avoid-column; }
@@ -854,11 +854,16 @@ function segmentsToHtml(
   p.salmo { font-size: ${fs}px; color: ${textColor}; line-height: 1.55; margin: 6px 0; }
   span.salmo-r { color: #E57373; font-weight: 700; }
   div.pe-text { font-size: ${fs}px; color: ${textColor}; }
-  /* Consacrazione: azzurro acceso, leggermente in evidenza con padding
-     verticale e orizzontale per dare aria attorno alla frase. */
-  span.pe-consacration { color: #29B6F6; display: inline-block; padding: 4px 2px; margin: 2px 0; }
-  div.pe-dossologia-label { font-size: ${Math.round(fs * 0.8)}px; font-weight: 800; color: #29B6F6; margin: 12px 0 6px 0; }
-  div.pe-dossologia { font-size: ${fs}px; color: ${textColor}; text-transform: uppercase; line-height: 1.5; margin: 4px 0 12px 0; }
+  /* Consacrazione: azzurro acceso. Mantengo display inline (non inline-block)
+     così il line-height eredita correttamente dal genitore (no schiacciamento
+     interlinea quando la frase si dispone su più righe). Padding orizzontale
+     leggero per dare aria attorno. */
+  span.pe-consacration { color: #29B6F6; padding: 0 4px; }
+  /* Dossologia: titolo uniformato agli altri titoli (margin-top come pe-title,
+     margin-bottom 0 perché la regola "+ *" qui sotto attacca il testo successivo). */
+  div.pe-dossologia-label { font-size: ${Math.round(fs * 0.78)}px; font-weight: 800; color: #29B6F6; margin: 12px 0 0 0; line-height: 1.1; }
+  div.pe-dossologia-label + * { margin-top: 0 !important; }
+  div.pe-dossologia { font-size: ${fs}px; color: ${textColor}; text-transform: uppercase; line-height: 1.5; margin: 0 0 12px 0; }
   p.pe-dossologia { text-transform: uppercase; line-height: 1.5; }
   div.spacer { height: 16px; }
 </style>
@@ -884,14 +889,29 @@ function segmentsToHtml(
         try { window.parent.postMessage(msg, '*'); } catch (e) {}
       }
     }
+    // Fade rapido (200ms totali: 100ms out + 100ms in) durante il cambio
+    // pagina per una transizione morbida invece di un salto istantaneo.
+    var isAnimating = false;
+    function navigate(direction) {
+      if (isAnimating) return;
+      isAnimating = true;
+      book.style.transition = 'opacity 100ms ease-out';
+      book.style.opacity = '0';
+      setTimeout(function() {
+        book.scrollBy({ left: direction * W(), behavior: 'instant' });
+        // Forza il reflow prima di rifare il fade in
+        void book.offsetWidth;
+        book.style.transition = 'opacity 100ms ease-in';
+        book.style.opacity = '1';
+        setTimeout(function() {
+          isAnimating = false;
+        }, 110);
+      }, 100);
+    }
     document.addEventListener('click', function(e) {
       var x = e.clientX;
       var w = W();
-      if (x < w / 2) {
-        book.scrollBy({ left: -w, behavior: 'smooth' });
-      } else {
-        book.scrollBy({ left: w, behavior: 'smooth' });
-      }
+      navigate(x < w / 2 ? -1 : 1);
     }, { passive: true });
     var scrollDebounce;
     book.addEventListener('scroll', function() {
