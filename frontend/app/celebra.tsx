@@ -558,7 +558,10 @@ export default function CelebraScreen() {
               // interno comunica via window.parent.postMessage (gestito
               // dal listener 'message' nel useEffect sopra).
               React.createElement("iframe", {
-                key: html.length, // forza rerender quando l'HTML cambia
+                // Hash semplice basato su lunghezza + primi/ultimi caratteri
+                // per garantire rerender dell'iframe quando l'HTML cambia
+                // (es. cambio fontFamily che produce HTML di stessa length).
+                key: `${html.length}-${html.charCodeAt(100) || 0}-${html.charCodeAt(html.length - 100) || 0}`,
                 srcDoc: html,
                 style: {
                   flex: 1,
@@ -856,6 +859,33 @@ function segmentsToHtml(
   fontFamily: string | undefined,
   colors: any,
 ): string {
+  // Mappa il nome del font expo-font (es. "AtkinsonHyperlegible_400Regular")
+  // al nome leggibile + URL Google Fonts. Necessario perché il browser
+  // dentro l'iframe/WebView NON ha caricati i font dell'app: dobbiamo
+  // importarli esplicitamente via Google Fonts CDN.
+  const fontMap: Record<string, { name: string; gf: string }> = {
+    AtkinsonHyperlegible_400Regular: {
+      name: "Atkinson Hyperlegible",
+      gf: "Atkinson+Hyperlegible:wght@400;700",
+    },
+    Lora_400Regular: {
+      name: "Lora",
+      gf: "Lora:wght@400;700",
+    },
+    VarelaRound_400Regular: {
+      name: "Varela Round",
+      gf: "Varela+Round",
+    },
+    PatrickHand_400Regular: {
+      name: "Patrick Hand",
+      gf: "Patrick+Hand",
+    },
+  };
+  const fmap = fontFamily ? fontMap[fontFamily] : undefined;
+  const fontHref = fmap
+    ? `https://fonts.googleapis.com/css2?family=${fmap.gf}&display=swap`
+    : null;
+  const fontName = fmap?.name;
   // Helper: trim newline iniziali/finali e converte ogni sequenza di
   // newline (uno o più) in un singolo <br>. Evita "righe vuote fantasma"
   // tra strofe e tra titolo e testo seguente.
@@ -899,7 +929,7 @@ function segmentsToHtml(
     })
     .join("");
 
-  const ff = fontFamily ? `'${fontFamily}', ` : "";
+  const ff = fontName ? `'${fontName}', ` : "";
   const bg = colors?.background || "#000000";
   const textColor = colors?.textPrimary || "#FFFFFF";
   const fs = Math.round(fontSize);
@@ -908,6 +938,9 @@ function segmentsToHtml(
 <html><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
+${fontHref ? `<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="${fontHref}">` : ""}
 <style>
   * { box-sizing: border-box; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }
   html, body { margin: 0; padding: 0; height: 100vh; width: 100vw; overflow: hidden; background: ${bg}; color: ${textColor}; }
