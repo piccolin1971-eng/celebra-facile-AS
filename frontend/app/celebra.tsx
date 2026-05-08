@@ -26,6 +26,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
+  Pressable,
   ScrollView,
   useWindowDimensions,
 } from "react-native";
@@ -220,7 +221,12 @@ export default function CelebraScreen() {
   const [hasSession, setHasSession] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Auto-scroll state
+  // Paginazione "Kindle": tap dx 70% = avanza, sx 30% = indietro.
+  const [currentPage, setCurrentPage] = useState(0);
+  const [containerH, setContainerH] = useState(0);
+
+  // Auto-scroll state (attivo SOLO quando la pagina corrente supera l'altezza
+  // del viewport, ovvero quando il contenuto eccede e va in overflow).
   const scrollRef = useRef<ScrollView | null>(null);
   const scrollYRef = useRef<number>(0);             // posizione corrente
   const contentHRef = useRef<number>(0);            // altezza contenuto totale
@@ -311,10 +317,36 @@ export default function CelebraScreen() {
     session,
   ]);
 
+  // ----- Paginazione "Kindle": pacchettizza i segmenti in pagine ottimizzate
+  // per altezza schermo. Le pagine NON spezzano frasi; preferiscono andare in
+  // overflow piuttosto che perdere coerenza. L'overflow si gestisce con lo
+  // scroll automatico nella ScrollView della pagina corrente.
+  const pages: Segment[][] = useMemo(() => {
+    if (!segments.length || containerH < 100) return [];
+    return paginate(segments, containerH, fontSize, screenWidth);
+  }, [segments, containerH, fontSize, screenWidth]);
+
+  // Reset pagina (e scroll auto) quando il numero di pagine cambia.
+  useEffect(() => {
+    if (currentPage >= pages.length && pages.length > 0) {
+      setCurrentPage(0);
+    }
+  }, [pages.length, currentPage]);
+
+  // Reset scroll alla cima quando si cambia pagina + reset timer auto-scroll.
+  useEffect(() => {
+    scrollYRef.current = 0;
+    contentHRef.current = 0;
+    lastUserActionRef.current = Date.now(); // riparte il delay sull'arrivo
+    lastTickRef.current = Date.now();
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+  }, [currentPage]);
+
   // ----- Auto-scroll loop -----
-  // Tick ogni 50ms, calcola dt e avanza scrollY di (autoScrollPxPerSec * dt).
-  // Si pausa se l'utente ha toccato lo schermo da meno di autoScrollDelaySec
-  // secondi. Si ferma in fondo (scrollY >= contentH - containerH).
+  // Si attiva SOLO quando la pagina corrente eccede l'altezza dello schermo
+  // (contentH > containerH). Tick ogni 50ms, scrolla a `autoScrollPxPerSec`
+  // px/s. Si pausa per `autoScrollDelaySec` secondi dopo un'interazione utente.
+  // Si ferma in fondo (resta visibile l'ultima frase).
   useEffect(() => {
     if (loading || hasSession === false) return;
     const interval = setInterval(() => {
@@ -323,19 +355,17 @@ export default function CelebraScreen() {
       lastTickRef.current = now;
       const idleMs = now - lastUserActionRef.current;
       const delayMs = Math.max(0, autoScrollDelaySec * 1000);
-      if (idleMs < delayMs) return; // ancora in attesa dopo interazione utente
-
+      if (idleMs < delayMs) return;
       const maxY = Math.max(0, contentHRef.current - containerHRef.current);
-      if (maxY <= 0) return; // contenuto entra tutto, niente da scrollare
-      if (scrollYRef.current >= maxY - 1) return; // fine raggiunta
-
+      if (maxY <= 0) return; // pagina entra tutta, niente da scrollare
+      if (scrollYRef.current >= maxY - 1) return;
       const stepPx = (autoScrollPxPerSec * dtMs) / 1000;
       const nextY = Math.min(maxY, scrollYRef.current + stepPx);
       scrollYRef.current = nextY;
       scrollRef.current?.scrollTo({ y: nextY, animated: false });
     }, 50);
     return () => clearInterval(interval);
-  }, [loading, hasSession, autoScrollPxPerSec, autoScrollDelaySec]);
+  }, [loading, hasSession, autoScrollPxPerSec, autoScrollDelaySec, currentPage]);
 
   // ----- Rendering -----
   if (loading) {
@@ -385,9 +415,28 @@ export default function CelebraScreen() {
     );
   }
 
+  const total = pages.length;
+  const safeIdx = Math.max(0, Math.min(currentPage, Math.max(0, total - 1)));
+  const currentSegments = pages[safeIdx] || [];
+
+  const prev = () => setCurrentPage(Math.max(0, safeIdx - 1));
+  const advance = () => setCurrentPage(Math.min(total - 1, safeIdx + 1));
+
+  // Tap zone: 30% sx → indietro, 70% dx → avanti. Replica del comportamento
+  // Kindle classico, già usato in v2.9. La tap-zone è sopra alla ScrollView
+  // ma lascia passare il drag verticale grazie a Pressable + pointerEvents.
+  const TAP_LEFT_RATIO = 0.3;
+  const tapLeftWidth = Math.round(screenWidth * TAP_LEFT_RATIO);
+
+  const handleTap = (e: any) => {
+    const x = e?.nativeEvent?.pageX ?? e?.nativeEvent?.locationX ?? 0;
+    if (x < tapLeftWidth) prev();
+    else advance();
+  };
+
   return (
     <SafeAreaView style={styles.container} testID="celebra-screen">
-      {/* Top bar minimale: solo home + titolo discreto */}
+      {/* Top bar: home + data + indicatore di pagina */}
       <View style={styles.topBar}>
         <TouchableOpacity
           style={styles.backBtn}
@@ -400,42 +449,59 @@ export default function CelebraScreen() {
         <Text style={styles.title} numberOfLines={1}>
           {liturgy?.date_label || "Celebrazione"}
         </Text>
-        <View style={{ width: 56 }} />
+        <View style={styles.pageIndicator}>
+          <Text style={styles.pageIndicatorText}>
+            {total > 0 ? `${safeIdx + 1}/${total}` : ""}
+          </Text>
+        </View>
       </View>
 
-      {/* Lista continua scrollabile con auto-scroll. L'utente può scorrere a
-          mano in qualsiasi momento; l'auto-scroll si pausa per autoScrollDelaySec
-          dopo qualsiasi interazione, poi riprende. */}
-      <ScrollView
-        ref={scrollRef}
+      {/* Area di lettura: ScrollView per la pagina corrente.
+          - Se il contenuto entra → niente scroll (pagina statica come prima).
+          - Se eccede → scroll automatico al ritmo impostato dall'utente.
+          - Tap dx 70% → pagina successiva, sx 30% → precedente.
+          - Drag verticale dell'utente → pausa auto-scroll per X secondi. */}
+      <View
         style={styles.pageArea}
-        contentContainerStyle={styles.pageContent}
-        onLayout={(e) => {
-          containerHRef.current = e.nativeEvent.layout.height;
-        }}
-        onContentSizeChange={(_, h) => {
-          contentHRef.current = h;
-        }}
-        onScroll={(e) => {
-          scrollYRef.current = e.nativeEvent.contentOffset.y;
-        }}
-        onScrollBeginDrag={() => {
-          lastUserActionRef.current = Date.now();
-        }}
-        onTouchStart={() => {
-          lastUserActionRef.current = Date.now();
-        }}
-        scrollEventThrottle={50}
-        testID="celebra-scrollview"
+        onLayout={(e) => setContainerH(e.nativeEvent.layout.height)}
+        testID="celebra-tap-area"
       >
-        {segments.length === 0 ? (
+        {pages.length === 0 ? (
           <ActivityIndicator size="large" color={colors.primary} />
         ) : (
-          segments.map((seg, i) => (
-            <SegmentRenderer key={i} seg={seg} styles={styles} />
-          ))
+          <ScrollView
+            ref={scrollRef}
+            style={styles.pageScroll}
+            contentContainerStyle={styles.pageContent}
+            onLayout={(e) => {
+              containerHRef.current = e.nativeEvent.layout.height;
+            }}
+            onContentSizeChange={(_, h) => {
+              contentHRef.current = h;
+            }}
+            onScroll={(e) => {
+              scrollYRef.current = e.nativeEvent.contentOffset.y;
+            }}
+            onScrollBeginDrag={() => {
+              lastUserActionRef.current = Date.now();
+            }}
+            scrollEventThrottle={50}
+            testID={`celebra-page-${safeIdx}`}
+          >
+            {/* Pressable interno alla ScrollView: gestisce il tap a dx/sx
+                per cambiare pagina. Il drag verticale viene assorbito dalla
+                ScrollView, mentre i tap "secchi" sono catturati da Pressable. */}
+            <Pressable
+              onPress={handleTap}
+              testID="celebra-tap-pressable"
+            >
+              {currentSegments.map((seg, i) => (
+                <SegmentRenderer key={i} seg={seg} styles={styles} />
+              ))}
+            </Pressable>
+          </ScrollView>
         )}
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
@@ -1335,10 +1401,16 @@ const makeStyles = (
     pageArea: {
       flex: 1,
     },
+    // ScrollView interna alla pageArea, una per pagina. Se la pagina entra
+    // tutta nello schermo, la ScrollView si comporta come una View statica;
+    // se eccede, l'auto-scroll la fa scorrere automaticamente.
+    pageScroll: {
+      flex: 1,
+    },
     pageContent: {
       paddingHorizontal: 16,
       paddingTop: 8,
-      paddingBottom: 8,
+      paddingBottom: 24,
     },
     // ----- Tipografia (stessi colori/taglie di /messa) -----
     // I titoli sezione e PE hanno marginTop per respiro visivo quando seguono
