@@ -2,27 +2,32 @@
  * /celebra — Modalità "Celebra la Messa" (lettura pulita per l'altare)
  *
  * Pensata per sacerdoti anziani ipovedenti: NESSUN toggle, NESSUN selettore,
- * NESSUNA scelta. Solo testo continuo, una colonna, leggibile, suddiviso in
- * pagine "Kindle-style" che si girano con un tap. Le pagine sono dinamiche:
- *  - Misura l'altezza utile dello schermo via onLayout
- *  - Spezza il testo SOLO ai segni di punteggiatura (.!?:;)
- *  - Mai una frase tagliata a metà
+ * NESSUNA scelta. Solo testo continuo in una colonna unica, scrollabile,
+ * con AUTO-SCROLL automatico secondo le impostazioni dell'utente
+ * (autoScrollPxPerSec, autoScrollDelaySec).
+ *
+ * Comportamento:
+ *  - All'apertura, attende `autoScrollDelaySec` secondi → poi scorre da solo
+ *    a `autoScrollPxPerSec` pixel al secondo.
+ *  - Se il prete tocca lo schermo / scrolla a mano → l'auto-scroll si pausa.
+ *  - Dopo `autoScrollDelaySec` secondi di inattività → riprende.
+ *  - Quando arriva in fondo → si ferma (resta visibile l'ultima frase).
+ *
+ * Niente più paginazione (era fragile su dispositivi diversi). Tutto è una
+ * lunga "pergamena" verticale che si srotola da sola.
  *
  * Le scelte (PE, prefazio, congedo, ecc.) vengono lette dalla sessione
- * giornaliera salvata da /messa (AsyncStorage). Se l'utente non ha ancora
- * fatto le scelte, viene mostrato un messaggio gentile che lo invita a
- * passare prima da "Scegli la liturgia".
+ * giornaliera salvata da /messa (AsyncStorage).
  */
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
-  Pressable,
+  ScrollView,
   useWindowDimensions,
-  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -197,7 +202,7 @@ function expandPrayerText(
 export default function CelebraScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ date?: string }>();
-  const { colors, fontSize, scaledFont, fontFamily } = useSettings();
+  const { colors, fontSize, scaledFont, fontFamily, autoScrollDelaySec, autoScrollPxPerSec } = useSettings();
   const { width: screenWidth } = useWindowDimensions();
 
   const [liturgy, setLiturgy] = useState<Liturgy | null>(null);
@@ -215,9 +220,13 @@ export default function CelebraScreen() {
   const [hasSession, setHasSession] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Pagine
-  const [currentPage, setCurrentPage] = useState(0);
-  const [containerH, setContainerH] = useState(0);
+  // Auto-scroll state
+  const scrollRef = useRef<ScrollView | null>(null);
+  const scrollYRef = useRef<number>(0);             // posizione corrente
+  const contentHRef = useRef<number>(0);            // altezza contenuto totale
+  const containerHRef = useRef<number>(0);          // altezza viewport
+  const lastUserActionRef = useRef<number>(Date.now());
+  const lastTickRef = useRef<number>(Date.now());
 
   const styles = makeStyles(colors, fontSize, fontFamily);
 
@@ -302,18 +311,31 @@ export default function CelebraScreen() {
     session,
   ]);
 
-  // ----- Paginazione dinamica: stima righe per ogni segmento e impacchetta -----
-  const pages: Segment[][] = useMemo(() => {
-    if (!segments.length || containerH < 100) return [];
-    return paginate(segments, containerH, fontSize, screenWidth);
-  }, [segments, containerH, fontSize, screenWidth]);
-
-  // Reset pagina se cambia il numero di pagine (es. font size cambiato)
+  // ----- Auto-scroll loop -----
+  // Tick ogni 50ms, calcola dt e avanza scrollY di (autoScrollPxPerSec * dt).
+  // Si pausa se l'utente ha toccato lo schermo da meno di autoScrollDelaySec
+  // secondi. Si ferma in fondo (scrollY >= contentH - containerH).
   useEffect(() => {
-    if (currentPage >= pages.length && pages.length > 0) {
-      setCurrentPage(0);
-    }
-  }, [pages.length, currentPage]);
+    if (loading || hasSession === false) return;
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const dtMs = now - lastTickRef.current;
+      lastTickRef.current = now;
+      const idleMs = now - lastUserActionRef.current;
+      const delayMs = Math.max(0, autoScrollDelaySec * 1000);
+      if (idleMs < delayMs) return; // ancora in attesa dopo interazione utente
+
+      const maxY = Math.max(0, contentHRef.current - containerHRef.current);
+      if (maxY <= 0) return; // contenuto entra tutto, niente da scrollare
+      if (scrollYRef.current >= maxY - 1) return; // fine raggiunta
+
+      const stepPx = (autoScrollPxPerSec * dtMs) / 1000;
+      const nextY = Math.min(maxY, scrollYRef.current + stepPx);
+      scrollYRef.current = nextY;
+      scrollRef.current?.scrollTo({ y: nextY, animated: false });
+    }, 50);
+    return () => clearInterval(interval);
+  }, [loading, hasSession, autoScrollPxPerSec, autoScrollDelaySec]);
 
   // ----- Rendering -----
   if (loading) {
@@ -363,22 +385,6 @@ export default function CelebraScreen() {
     );
   }
 
-  const total = pages.length;
-  const safeIdx = Math.max(0, Math.min(currentPage, Math.max(0, total - 1)));
-  const currentSegments = pages[safeIdx] || [];
-
-  const prev = () => setCurrentPage(Math.max(0, safeIdx - 1));
-  const advance = () => setCurrentPage(Math.min(total - 1, safeIdx + 1));
-
-  const TAP_LEFT_RATIO = 0.3;
-  const tapLeftWidth = Math.round(screenWidth * TAP_LEFT_RATIO);
-
-  const handlePagePress = (e: any) => {
-    const x = e?.nativeEvent?.pageX ?? e?.nativeEvent?.locationX ?? 0;
-    if (x < tapLeftWidth) prev();
-    else advance();
-  };
-
   return (
     <SafeAreaView style={styles.container} testID="celebra-screen">
       {/* Top bar minimale: solo home + titolo discreto */}
@@ -394,30 +400,42 @@ export default function CelebraScreen() {
         <Text style={styles.title} numberOfLines={1}>
           {liturgy?.date_label || "Celebrazione"}
         </Text>
-        <View style={styles.pageIndicator}>
-          <Text style={styles.pageIndicatorText}>
-            {total > 0 ? `${safeIdx + 1}/${total}` : ""}
-          </Text>
-        </View>
+        <View style={{ width: 56 }} />
       </View>
 
-      {/* Area testo: misuriamo l'altezza per impaginare */}
-      <Pressable
+      {/* Lista continua scrollabile con auto-scroll. L'utente può scorrere a
+          mano in qualsiasi momento; l'auto-scroll si pausa per autoScrollDelaySec
+          dopo qualsiasi interazione, poi riprende. */}
+      <ScrollView
+        ref={scrollRef}
         style={styles.pageArea}
-        onPress={handlePagePress}
-        onLayout={(e) => setContainerH(e.nativeEvent.layout.height)}
-        testID="celebra-tap-area"
+        contentContainerStyle={styles.pageContent}
+        onLayout={(e) => {
+          containerHRef.current = e.nativeEvent.layout.height;
+        }}
+        onContentSizeChange={(_, h) => {
+          contentHRef.current = h;
+        }}
+        onScroll={(e) => {
+          scrollYRef.current = e.nativeEvent.contentOffset.y;
+        }}
+        onScrollBeginDrag={() => {
+          lastUserActionRef.current = Date.now();
+        }}
+        onTouchStart={() => {
+          lastUserActionRef.current = Date.now();
+        }}
+        scrollEventThrottle={50}
+        testID="celebra-scrollview"
       >
-        {pages.length === 0 ? (
+        {segments.length === 0 ? (
           <ActivityIndicator size="large" color={colors.primary} />
         ) : (
-          <View style={styles.pageContent} testID={`celebra-page-${safeIdx}`}>
-            {currentSegments.map((seg, i) => (
-              <SegmentRenderer key={i} seg={seg} styles={styles} />
-            ))}
-          </View>
+          segments.map((seg, i) => (
+            <SegmentRenderer key={i} seg={seg} styles={styles} />
+          ))
         )}
-      </Pressable>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -1429,8 +1447,8 @@ const makeStyles = (
       lineHeight: fontSize * 1.7,
     },
     assemblea: {
-      fontSize: fontSize,
-      fontWeight: "700",
+      fontSize: Math.max(12, fontSize - 1),
+      fontStyle: "italic",
       color: colors.textPrimary,
       fontFamily,
       marginVertical: 6,

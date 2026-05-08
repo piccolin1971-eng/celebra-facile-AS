@@ -210,62 +210,57 @@ export default function Home() {
           </TouchableOpacity>
         </View>
 
+        {/* Orazionale - card compatta a riga singola: titolo + sottotitolo
+            affiancati invece che impilati, per occupare meno spazio. */}
         <TouchableOpacity
-          style={[styles.secondaryCard, { borderColor: colors.liturgicalPurple, borderWidth: 2 }]}
+          style={[styles.compactCard, { borderColor: colors.liturgicalPurple, borderWidth: 2 }]}
           onPress={() => router.push("/orazionale" as any)}
           testID="btn-orazionale"
           accessibilityRole="button"
           accessibilityLabel="Orazionale, Preghiera Universale"
         >
-          <MaterialCommunityIcons name="hands-pray" size={scaledFont(40)} color={colors.liturgicalPurple} />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.secondaryCardTitle}>Orazionale</Text>
-            <Text style={styles.secondaryCardSubtitle}>Preghiera Universale</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={scaledFont(40)} color={colors.textSecondary} />
+          <MaterialCommunityIcons name="hands-pray" size={scaledFont(28)} color={colors.liturgicalPurple} />
+          <Text style={styles.compactCardTitle}>Orazionale</Text>
+          <Text style={styles.compactCardInline}>· Preghiera Universale</Text>
+          <View style={{ flex: 1 }} />
+          <Ionicons name="chevron-forward" size={scaledFont(26)} color={colors.textSecondary} />
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.secondaryCard}
+          style={styles.compactCard}
           onPress={() => router.push("/calendario")}
           testID="btn-calendar"
           accessibilityRole="button"
         >
-          <Ionicons name="calendar" size={scaledFont(44)} color={colors.textPrimary} />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.secondaryCardTitle}>Calendario Liturgico</Text>
-            <Text style={styles.secondaryCardSubtitle}>Santi, feste e messe votive</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={scaledFont(40)} color={colors.textSecondary} />
+          <Ionicons name="calendar" size={scaledFont(28)} color={colors.textPrimary} />
+          <Text style={styles.compactCardTitle}>Calendario Liturgico</Text>
+          <View style={{ flex: 1 }} />
+          <Ionicons name="chevron-forward" size={scaledFont(26)} color={colors.textSecondary} />
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.secondaryCard}
+          style={styles.compactCard}
           onPress={() => router.push("/scarica")}
           testID="btn-download"
           accessibilityRole="button"
           accessibilityLabel="Scarica letture per uso offline"
         >
-          <Ionicons name="cloud-download" size={scaledFont(44)} color={colors.textPrimary} />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.secondaryCardTitle}>Scarica letture</Text>
-            <Text style={styles.secondaryCardSubtitle}>Uso offline · Pre-download più giorni</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={scaledFont(40)} color={colors.textSecondary} />
+          <Ionicons name="cloud-download" size={scaledFont(28)} color={colors.textPrimary} />
+          <Text style={styles.compactCardTitle}>Scarica letture</Text>
+          <View style={{ flex: 1 }} />
+          <Ionicons name="chevron-forward" size={scaledFont(26)} color={colors.textSecondary} />
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.secondaryCard}
+          style={styles.compactCard}
           onPress={() => router.push("/impostazioni")}
           testID="btn-settings-card"
           accessibilityRole="button"
         >
-          <Ionicons name="text" size={scaledFont(44)} color={colors.textPrimary} />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.secondaryCardTitle}>Accessibilità</Text>
-            <Text style={styles.secondaryCardSubtitle}>Testo grande · Tema · Contrasto</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={scaledFont(40)} color={colors.textSecondary} />
+          <Ionicons name="text" size={scaledFont(28)} color={colors.textPrimary} />
+          <Text style={styles.compactCardTitle}>Accessibilità</Text>
+          <View style={{ flex: 1 }} />
+          <Ionicons name="chevron-forward" size={scaledFont(26)} color={colors.textSecondary} />
         </TouchableOpacity>
 
         {liturgy?.saints && liturgy.saints.length > 0 ? null : null}
@@ -426,6 +421,31 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
   },
   secondaryCardTitle: { fontSize: Math.round(fontSize * 0.85), fontWeight: "600", color: colors.textPrimary },
   secondaryCardSubtitle: { fontSize: Math.round(fontSize * 0.65), color: colors.textSecondary, marginTop: 4 },
+  // Card "compatte" usate per Orazionale, Calendario, Scarica letture,
+  // Accessibilità: una sola riga, ridotte rispetto a secondaryCard, per
+  // contenere meglio la lunghezza della Home.
+  compactCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 10,
+    backgroundColor: colors.surface,
+    minHeight: 56,
+  },
+  compactCardTitle: {
+    fontSize: Math.round(fontSize * 0.7),
+    fontWeight: "700",
+    color: colors.textPrimary,
+  },
+  compactCardInline: {
+    fontSize: Math.round(fontSize * 0.62),
+    color: colors.textSecondary,
+    marginLeft: 4,
+  },
   saintsBox: {
     padding: 20,
     borderWidth: 2,

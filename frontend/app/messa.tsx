@@ -89,8 +89,8 @@ export default function MessaScreen() {
   const [useOrazionePopolo, setUseOrazionePopolo] = useState<boolean>(false);
   const [orazionePopoloId, setOrazionePopoloId] = useState<string>("");
   const [prayersOverPeople, setPrayersOverPeople] = useState<{ id: string; num: number; text: string }[]>([]);
-  const [showGloria, setShowGloria] = useState<boolean>(true);
-  const [showCredo, setShowCredo] = useState<boolean>(true);
+  const [showGloria, setShowGloria] = useState<boolean>(false);
+  const [showCredo, setShowCredo] = useState<boolean>(false);
   const [congedoId, setCongedoId] = useState("A");
   const [benedizioneId, setBenedizioneId] = useState("A");
 
@@ -100,7 +100,7 @@ export default function MessaScreen() {
 
   // Preghiera dei fedeli (Orazionale)
   const [selectedOrazionaleId, setSelectedOrazionaleId] = useState<string>("");
-  const [showOrazionalePray, setShowOrazionalePray] = useState<boolean>(true);
+  const [showOrazionalePray, setShowOrazionalePray] = useState<boolean>(false);
   const [orazionaleSection, setOrazionaleSection] = useState<string | null>(null);
 
   // Paginazione: tap-to-advance per facilitare la celebrazione
@@ -509,7 +509,7 @@ export default function MessaScreen() {
   const getReading = (type: ReadingType) => liturgy?.readings?.find(r => r.type === type);
 
   // Basic text renderers
-  const R = ({ children, kind = "normal" }: { children: React.ReactNode; kind?: "normal" | "rubric" | "celebrante" | "assemblea" | "title" | "subtitle" | "antifonaTitle" | "readingTitle" | "orazioneTitle" | "ritoTitle" | "umili" | "peTitle" }) => {
+  const R = ({ children, kind = "normal" }: { children: React.ReactNode; kind?: "normal" | "rubric" | "celebrante" | "assemblea" | "title" | "subtitle" | "antifonaTitle" | "readingTitle" | "orazioneTitle" | "ritoTitle" | "umili" | "peTitle" | "prefaceTitle" }) => {
     const s = kind === "rubric" ? styles.rubric
       : kind === "celebrante" ? styles.celebrante
       : kind === "assemblea" ? styles.assemblea
@@ -521,6 +521,7 @@ export default function MessaScreen() {
       : kind === "ritoTitle" ? styles.ritoTitle
       : kind === "umili" ? styles.umili
       : kind === "peTitle" ? styles.peTitle
+      : kind === "prefaceTitle" ? styles.prefaceTitle
       : styles.text;
     return <Text style={s} selectable>{children}</Text>;
   };
@@ -1637,10 +1638,10 @@ export default function MessaScreen() {
                         <Ionicons name="swap-horizontal" size={scaledFont(28)} color={colors.primary} />
                         <Text style={styles.selectorBtnText}>Scegli Prefazio</Text>
                       </TouchableOpacity>
-                      <R kind="subtitle">{selectedPreface.title}</R>
+                      <R kind="prefaceTitle">{selectedPreface.title}</R>
                     </>
                   ) : (
-                    <R kind="subtitle">{selectedPreface.title} (continua)</R>
+                    <R kind="prefaceTitle">{selectedPreface.title} (continua)</R>
                   )}
                   <R>{prefChunks[i]}</R>
                 </View>
@@ -2441,14 +2442,25 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string) => Style
     lineHeight: Math.round(fontSize * 0.85),
   },
   // Titolo della Preghiera Eucaristica scelta (es. "Preghiera Eucaristica IV")
-  // Verde acceso, leggermente più grande del testo PE per essere ben evidente.
+  // Verde acceso, ridotto su richiesta utente (era 1.1× → ora 0.95× del testo).
   peTitle: {
-    fontSize: Math.round(fontSize * 1.1),
+    fontSize: Math.round(fontSize * 0.95),
     fontWeight: "800",
     color: "#66BB6A",      // Verde liturgico acceso, ben distinguibile
     marginTop: 0,
     marginBottom: 8,
-    lineHeight: Math.round(fontSize * 1.15),
+    lineHeight: Math.round(fontSize * 1.0),
+  },
+  // Titolo del prefazio scelto (es. "Prefazio Pasquale I - Il mistero pasquale").
+  // Stesso verde delle PE ma dimensione subtitle, per coerenza visiva con la
+  // sezione "Preghiera Eucaristica" successiva.
+  prefaceTitle: {
+    fontSize: Math.round(fontSize * 0.95),
+    fontWeight: "800",
+    color: "#66BB6A",
+    marginTop: 0,
+    marginBottom: 8,
+    lineHeight: Math.round(fontSize * 1.0),
   },
   // Parole della Consacrazione nelle PE: righe in MAIUSCOLO ("PRENDETE,
   // E MANGIATENE TUTTI..." / "QUESTO È IL MIO CORPO..." / "PRENDETE, E
@@ -2515,9 +2527,13 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string) => Style
     marginVertical: 6,
     lineHeight: fontSize * 1.5,
   },
+  // Risposte dell'assemblea (A. ...): corsivo, -1pt rispetto al base, NON bold.
+  // Pensato per dare meno "peso" visivo alle risposte rispetto alle parti del
+  // celebrante (che restano fontSize regular), mantenendo comunque la
+  // distinzione tipografica (italico).
   assemblea: {
-    fontSize: fontSize,
-    fontWeight: "700",
+    fontSize: Math.max(12, fontSize - 1),
+    fontStyle: "italic",
     color: colors.textPrimary,
     fontFamily,
     marginVertical: 6,
