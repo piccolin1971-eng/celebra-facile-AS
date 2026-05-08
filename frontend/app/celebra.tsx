@@ -611,7 +611,10 @@ function SalmoRenderer({ text, styles }: { text: string; styles: any }) {
 // Renderer testo PE: linee MAIUSCOLE = parole consacrazione (azzurro brillante)
 function PeTextRenderer({ text, styles }: { text: string; styles: any }) {
   if (!text) return null;
-  // Split su <<DOSSOLOGIA>> per gestione speciale
+  // Split su <<DOSSOLOGIA>> per gestione speciale: prima del marker = testo
+  // PE normale; dopo il marker = testo della dossologia ("PER CRISTO, CON
+  // CRISTO E IN CRISTO...") preceduto da un titolo "Dossologia" in azzurro
+  // (stesso stile delle sectionTitle) per coerenza con /messa.
   const dosMarker = "<<DOSSOLOGIA>>";
   const dosIdx = text.indexOf(dosMarker);
   if (dosIdx >= 0) {
@@ -621,9 +624,15 @@ function PeTextRenderer({ text, styles }: { text: string; styles: any }) {
       <View>
         {before ? <PeTextNormal text={before} styles={styles} /> : null}
         {after ? (
-          <Text style={styles.peDossologia} selectable={false}>
-            {after}
-          </Text>
+          <>
+            {/* Titolo "Dossologia" sopra il testo "PER CRISTO..." */}
+            <Text style={styles.sectionTitle} selectable={false}>
+              Dossologia
+            </Text>
+            <Text style={styles.peDossologia} selectable={false}>
+              {after}
+            </Text>
+          </>
         ) : null}
       </View>
     );
@@ -941,7 +950,8 @@ function buildSegments(args: BuildArgs): Segment[] {
   // il prefazio è dentro la PE stessa (con introduzione + Santo).
   if (selectedPreface && !hasProperPreface) {
     push("sectionTitle", "Prefazio");
-    push("subtitle", selectedPreface.title);
+    // Titolo del prefazio in VERDE (peTitle), coerente con /messa.
+    push("peTitle", selectedPreface.title);
     push("normal", PREFACE_INTRO + "\n\n" + selectedPreface.text.trimEnd() + "\n\n" + SANTO_TEXT);
     sp();
   }
