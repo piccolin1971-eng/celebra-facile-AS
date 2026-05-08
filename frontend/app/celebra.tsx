@@ -1419,18 +1419,25 @@ function paginate(
         }
         if (curPage.length > 0) {
           flushSimple(curPage);
-        } else {
-          flushSimple(orphans);
-          orphans.length = 0;
         }
+        // GLI ORPHANS (titoli rimasti in coda) vengono SEMPRE mantenuti per
+        // la pagina successiva, MAI flushati come pagina a sé stante (che
+        // sarebbe una pagina vuota di soli titoli, e il body successivo
+        // perderebbe il proprio titolo). Anche se la pagina precedente era
+        // composta SOLO da titoli, questi rimangono in attesa del body.
         curPage = orphans;
         curH = orphans.reduce((acc, s) => acc + segHeightPx(s), 0);
-        // Nuova pagina: se l'utente sta continuando una lettura/orazione che
-        // era splittata e la pagina nuova non ha header, aggiungiamo
-        // "{titolo} (continua)" per chiarezza.
-        if (curPage.length === 0) {
-          ensureContinuationHeader();
-        }
+      }
+      // "(continua)" header: SOLO quando questo segmento è una sub-parte
+      // (pIdx > 0) di un body originariamente splittato in più pezzi
+      // (lettura/orazione/PE talmente lunga che NON entra in una sola pagina
+      // e abbiamo dovuto splittarla a fine frase). In questo caso il prete
+      // sta leggendo un body che continua dalla pagina precedente, e il
+      // titolo "(continua)" gli ricorda quale sezione è. Per la PRIMA parte
+      // (pIdx === 0) o per pagine che iniziano una nuova sezione, niente
+      // "(continua)" — il titolo proprio è già presente normalmente.
+      if (pIdx > 0 && curPage.length === 0) {
+        ensureContinuationHeader();
       }
       curPage.push(p);
       curH += h;
