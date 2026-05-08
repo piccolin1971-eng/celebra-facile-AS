@@ -32,6 +32,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { WebView } from "react-native-webview";
+import { useKeepAwake } from "expo-keep-awake";
 import { useSettings } from "../src/SettingsContext";
 import {
   api,
@@ -200,10 +201,32 @@ function expandPrayerText(
 // Componente principale
 // ===========================================================================
 export default function CelebraScreen() {
+  // Wakelock: tiene lo schermo acceso mentre la pagina è aperta (essenziale
+  // durante la celebrazione: non c'è niente di peggio che lo schermo che
+  // si spegne durante la lettura).
+  useKeepAwake();
+
   const router = useRouter();
   const params = useLocalSearchParams<{ date?: string }>();
-  const { colors, fontSize, scaledFont, fontFamily } = useSettings();
+  const { colors, fontSize: settingsFontSize, scaledFont, fontFamily } = useSettings();
   const { width: screenWidth } = useWindowDimensions();
+
+  // Stato locale fontSize (override delle impostazioni globali, valido solo
+  // per questa sessione di celebrazione). Inizializzato da settings, può
+  // essere modificato con i bottoni A- / A+ in alto.
+  const [fontSize, setFontSize] = useState(settingsFontSize);
+  // Sincronizza quando l'utente cambia il font dalle Impostazioni mentre
+  // la celebrazione NON è ancora aperta (solo se non è stato customizzato qui).
+  useEffect(() => {
+    setFontSize(settingsFontSize);
+  }, [settingsFontSize]);
+  const FONT_MIN = 14;
+  const FONT_MAX = 60;
+  const FONT_STEP = 2;
+  const decreaseFont = () =>
+    setFontSize((f) => Math.max(FONT_MIN, f - FONT_STEP));
+  const increaseFont = () =>
+    setFontSize((f) => Math.min(FONT_MAX, f + FONT_STEP));
 
   const [liturgy, setLiturgy] = useState<Liturgy | null>(null);
   const [fixedParts, setFixedParts] = useState<Record<string, any> | null>(null);
@@ -332,6 +355,41 @@ export default function CelebraScreen() {
     setTotalPages(0);
   }, [html]);
 
+  // Invia un comando setFontSize alla WebView/iframe quando l'utente preme
+  // A- / A+. La WebView aggiorna document.body.style.fontSize: tutti i figli
+  // usano 'em' quindi si scalano automaticamente. Le CSS columns ricalcolano
+  // il layout, e la WebView ri-posta {page,total} per aggiornare la barra
+  // di progresso nativa.
+  // NOTA: invio SOLO quando fontSize cambia rispetto al valore iniziale
+  // dell'HTML (settingsFontSize), perché l'HTML al primo render è già
+  // costruito con quel valore.
+  useEffect(() => {
+    const msg = JSON.stringify({ type: "setFontSize", size: fontSize });
+    if (Platform.OS === "web") {
+      // iframe web: post al contentWindow
+      try {
+        const iframes = (typeof document !== "undefined"
+          ? document.querySelectorAll('iframe[data-testid="celebra-iframe"]')
+          : []) as any;
+        iframes.forEach((ifr: any) => {
+          if (ifr?.contentWindow?.postMessage) {
+            ifr.contentWindow.postMessage(msg, "*");
+          }
+        });
+      } catch {}
+    } else {
+      // WebView native: postMessage dispatcha un evento 'message' nel JS interno
+      try {
+        // @ts-ignore
+        webViewRef.current?.postMessage?.(msg);
+        // Backup via injectJavaScript per sicurezza
+        webViewRef.current?.injectJavaScript?.(
+          `(function(){try{document.dispatchEvent(new MessageEvent('message',{data:${JSON.stringify(msg)}}));}catch(e){}})();true;`,
+        );
+      } catch {}
+    }
+  }, [fontSize]);
+
   // Listener per messaggi dall'iframe (solo web). Ascolta i postMessage che
   // l'HTML interno alla WebView/iframe invia per aggiornare la barra di
   // progresso nativa. Su native questo è gestito dalla prop onMessage della
@@ -413,7 +471,7 @@ export default function CelebraScreen() {
 
   return (
     <SafeAreaView style={styles.container} testID="celebra-screen">
-      {/* Top bar: home + data + indicatore di pagina */}
+      {/* Top bar: home + data + bottoni font + indicatore di pagina */}
       <View style={styles.topBar}>
         <TouchableOpacity
           style={styles.backBtn}
@@ -426,6 +484,34 @@ export default function CelebraScreen() {
         <Text style={styles.title} numberOfLines={1}>
           {liturgy?.date_label || "Celebrazione"}
         </Text>
+        {/* Bottoni A-/A+ per dimensione font (vicino alla data, prima
+            dell'indicatore di pagina). Disabilitati ai limiti. */}
+        <View style={styles.fontBtns}>
+          <TouchableOpacity
+            style={[
+              styles.fontBtn,
+              fontSize <= FONT_MIN && styles.fontBtnDisabled,
+            ]}
+            onPress={decreaseFont}
+            disabled={fontSize <= FONT_MIN}
+            testID="btn-font-decrease"
+            accessibilityLabel="Riduci dimensione testo"
+          >
+            <Text style={styles.fontBtnText}>A-</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.fontBtn,
+              fontSize >= FONT_MAX && styles.fontBtnDisabled,
+            ]}
+            onPress={increaseFont}
+            disabled={fontSize >= FONT_MAX}
+            testID="btn-font-increase"
+            accessibilityLabel="Aumenta dimensione testo"
+          >
+            <Text style={styles.fontBtnText}>A+</Text>
+          </TouchableOpacity>
+        </View>
         <View style={styles.pageIndicator}>
           <Text style={styles.pageIndicatorText}>
             {total > 0 ? `${safeIdx + 1}/${total}` : ""}
@@ -837,35 +923,30 @@ function segmentsToHtml(
   #book > *:first-child { margin-top: 8px; }
   #book > *:last-child { margin-bottom: 28px; }
 
-  h2.section-title { font-size: ${Math.round(fs * 1.05)}px; font-weight: 800; color: #4DA8DA; margin: 16px 0 4px 0; line-height: 1.15; break-after: avoid-column; }
-  h3.antifona-title { font-size: ${Math.round(fs * 0.85)}px; font-weight: 800; color: #FFB74D; margin: 24px 0 4px 0; line-height: 1.1; break-after: avoid-column; }
-  h3.reading-title { font-size: ${Math.round(fs * 0.85)}px; font-weight: 800; color: #81C784; margin: 14px 0 4px 0; line-height: 1.1; break-after: avoid-column; }
-  h3.orazione-title { font-size: ${Math.round(fs * 0.85)}px; font-weight: 800; color: #CE93D8; margin: 14px 0 4px 0; line-height: 1.1; break-after: avoid-column; }
-  h3.subtitle { font-size: ${Math.round(fs * 0.85)}px; font-weight: 700; color: ${textColor}; margin: 12px 0 4px 0; line-height: 1.1; break-after: avoid-column; }
-  h3.pe-title { font-size: ${Math.round(fs * 0.78)}px; font-weight: 800; color: #66BB6A; margin: 12px 0 6px 0; line-height: 1.1; break-after: avoid-column; }
-  /* Primo elemento dopo un titolo: niente margin-top per attaccare il testo */
+  /* Tutti i font-size dei figli sono in 'em' (relativi al body.font-size).
+     Così basta cambiare document.body.style.fontSize per scalare TUTTO
+     dinamicamente senza dover rigenerare l'HTML. */
+  h2.section-title { font-size: 1.05em; font-weight: 800; color: #4DA8DA; margin: 16px 0 4px 0; line-height: 1.15; break-after: avoid-column; }
+  h3.antifona-title { font-size: 0.85em; font-weight: 800; color: #FFB74D; margin: 24px 0 4px 0; line-height: 1.1; break-after: avoid-column; }
+  h3.reading-title { font-size: 0.85em; font-weight: 800; color: #81C784; margin: 14px 0 4px 0; line-height: 1.1; break-after: avoid-column; }
+  h3.orazione-title { font-size: 0.85em; font-weight: 800; color: #CE93D8; margin: 14px 0 4px 0; line-height: 1.1; break-after: avoid-column; }
+  h3.subtitle { font-size: 0.85em; font-weight: 700; color: ${textColor}; margin: 12px 0 4px 0; line-height: 1.1; break-after: avoid-column; }
+  h3.pe-title { font-size: 0.78em; font-weight: 800; color: #66BB6A; margin: 12px 0 6px 0; line-height: 1.1; break-after: avoid-column; }
   h2 + *, h3 + * { margin-top: 0 !important; }
-  /* Primo elemento del book: niente margin-top */
   #book > *:first-child { margin-top: 0 !important; }
 
   p { margin: 4px 0 8px 0; }
-  p.rubric { color: #E57373; font-style: italic; font-size: ${Math.round(fs * 0.7)}px; line-height: 1.2; margin: 6px 0; }
-  p.celebrante { font-size: ${fs}px; color: ${textColor}; margin: 4px 0 10px 0; }
-  p.assemblea { font-size: ${Math.round(fs * 0.95)}px; color: ${textColor}; font-style: italic; margin: 4px 0 10px 0; }
-  p.umili { font-size: ${Math.round(fs * 0.85)}px; color: ${textColor}; margin: 4px 0 10px 0; line-height: 1.55; }
-  p.salmo { font-size: ${fs}px; color: ${textColor}; line-height: 1.55; margin: 6px 0; }
+  p.rubric { color: #E57373; font-style: italic; font-size: 0.7em; line-height: 1.2; margin: 6px 0; }
+  p.celebrante { font-size: 1em; color: ${textColor}; margin: 4px 0 10px 0; }
+  p.assemblea { font-size: 0.95em; color: ${textColor}; font-style: italic; margin: 4px 0 10px 0; }
+  p.umili { font-size: 0.85em; color: ${textColor}; margin: 4px 0 10px 0; line-height: 1.55; }
+  p.salmo { font-size: 1em; color: ${textColor}; line-height: 1.55; margin: 6px 0; }
   span.salmo-r { color: #E57373; font-weight: 700; }
-  div.pe-text { font-size: ${fs}px; color: ${textColor}; }
-  /* Consacrazione: azzurro acceso. Mantengo display inline (non inline-block)
-     così il line-height eredita correttamente dal genitore (no schiacciamento
-     interlinea quando la frase si dispone su più righe). Padding orizzontale
-     leggero per dare aria attorno. */
+  div.pe-text { font-size: 1em; color: ${textColor}; }
   span.pe-consacration { color: #29B6F6; padding: 0 4px; }
-  /* Dossologia: titolo uniformato agli altri titoli (margin-top come pe-title,
-     margin-bottom 0 perché la regola "+ *" qui sotto attacca il testo successivo). */
-  div.pe-dossologia-label { font-size: ${Math.round(fs * 0.78)}px; font-weight: 800; color: #29B6F6; margin: 12px 0 0 0; line-height: 1.1; }
+  div.pe-dossologia-label { font-size: 0.78em; font-weight: 800; color: #29B6F6; margin: 12px 0 0 0; line-height: 1.1; }
   div.pe-dossologia-label + * { margin-top: 0 !important; }
-  div.pe-dossologia { font-size: ${fs}px; color: ${textColor}; text-transform: uppercase; line-height: 1.5; margin: 0 0 12px 0; }
+  div.pe-dossologia { font-size: 1em; color: ${textColor}; text-transform: uppercase; line-height: 1.5; margin: 0 0 12px 0; }
   p.pe-dossologia { text-transform: uppercase; line-height: 1.5; }
   div.spacer { height: 16px; }
 </style>
@@ -927,6 +1008,37 @@ function segmentsToHtml(
     }
     if (document.readyState === 'complete') initialPost();
     else window.addEventListener('load', initialPost);
+
+    // Listener per messaggi da React Native (cambio dinamico fontSize).
+    // Aggiorna document.body.style.fontSize: i figli usano 'em' quindi
+    // si scalano automaticamente. Le CSS columns ricalcolano il layout
+    // e la posizione di scroll viene riallineata alla pagina corrente.
+    function applySetFontSize(size) {
+      var prevW = W();
+      var prevPage = Math.round(book.scrollLeft / prevW);
+      document.body.style.fontSize = size + 'px';
+      // Aspetta il reflow del browser (CSS columns ricalcolate)
+      setTimeout(function() {
+        var newW = window.innerWidth;
+        var totalNow = Math.max(1, Math.round(book.scrollWidth / newW));
+        var safeP = Math.min(prevPage, totalNow - 1);
+        book.scrollLeft = safeP * newW;
+        postState();
+      }, 60);
+    }
+    function handleHostMessage(raw) {
+      try {
+        var m = typeof raw === 'string' ? JSON.parse(raw) : raw;
+        if (m && m.type === 'setFontSize' && typeof m.size === 'number') {
+          applySetFontSize(m.size);
+        }
+      } catch (e) {}
+    }
+    // WebView native: react-native-webview iniezione tramite document evt
+    document.addEventListener('message', function(e) { handleHostMessage(e.data); });
+    // Iframe web: parent posta via window.postMessage
+    window.addEventListener('message', function(e) { handleHostMessage(e.data); });
+
     document.addEventListener('gesturestart', function(e) { e.preventDefault(); });
     document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
   })();
@@ -1753,6 +1865,29 @@ const makeStyles = (
       fontSize: Math.round(fontSize * 0.55),
       color: colors.textSecondary,
       fontWeight: "600",
+    },
+    // Bottoni A- / A+ per dimensione font (vicino alla data nella topBar).
+    fontBtns: {
+      flexDirection: "row",
+      gap: 6,
+      marginRight: 8,
+    },
+    fontBtn: {
+      minWidth: 50,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 8,
+      backgroundColor: colors.primary,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    fontBtnDisabled: {
+      opacity: 0.35,
+    },
+    fontBtnText: {
+      fontSize: Math.round(fontSize * 0.6),
+      fontWeight: "800",
+      color: "#FFFFFF",
     },
     pageArea: {
       flex: 1,

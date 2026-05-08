@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useKeepAwake } from "expo-keep-awake";
 import { useSettings } from "../src/SettingsContext";
 import { api, Liturgy, Preface, EucharisticPrayer, MysteryAcclamation, SolemnBlessing } from "../src/api";
 import { getOrazionaleSections, getPrayerById, suggestPrayerForLiturgy, OrazionalePrayer } from "../src/orazionale";
@@ -56,6 +57,11 @@ type ReadingType =
   | "sulle_offerte" | "antifona_comunione" | "dopo_comunione";
 
 export default function MessaScreen() {
+  // Wakelock: tiene lo schermo acceso mentre la pagina di preparazione
+  // della liturgia è aperta (essenziale per il sacerdote durante la
+  // celebrazione: non deve preoccuparsi dello spegnimento dello schermo).
+  useKeepAwake();
+
   const router = useRouter();
   const params = useLocalSearchParams<{ date?: string; preface?: string; votive?: string }>();
   const { colors, fontSize, scaledFont, readingMode, autoScrollDelaySec, autoScrollPxPerSec, fontFamily } = useSettings();
