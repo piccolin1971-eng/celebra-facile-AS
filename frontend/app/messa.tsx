@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Modal, Switch, Pressable, useWindowDimensions } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Modal, Switch, Pressable, Platform, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { useKeepAwake } from "expo-keep-awake";
+import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 import { useSettings } from "../src/SettingsContext";
 import { api, Liturgy, Preface, EucharisticPrayer, MysteryAcclamation, SolemnBlessing } from "../src/api";
 import { getOrazionaleSections, getPrayerById, suggestPrayerForLiturgy, OrazionalePrayer } from "../src/orazionale";
@@ -57,10 +57,25 @@ type ReadingType =
   | "sulle_offerte" | "antifona_comunione" | "dopo_comunione";
 
 export default function MessaScreen() {
-  // Wakelock: tiene lo schermo acceso mentre la pagina di preparazione
-  // della liturgia è aperta (essenziale per il sacerdote durante la
-  // celebrazione: non deve preoccuparsi dello spegnimento dello schermo).
-  useKeepAwake();
+  // Wakelock: tiene lo schermo acceso mentre la pagina di preparazione è
+  // aperta. SOLO su native: su web il browser nega il permesso e
+  // crashava l'app, quindi skippiamo. Wrappato in try/catch per sicurezza.
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+    let active = false;
+    activateKeepAwakeAsync()
+      .then(() => {
+        active = true;
+      })
+      .catch(() => {});
+    return () => {
+      if (active) {
+        try {
+          deactivateKeepAwake();
+        } catch {}
+      }
+    };
+  }, []);
 
   const router = useRouter();
   const params = useLocalSearchParams<{ date?: string; preface?: string; votive?: string }>();

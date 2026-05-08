@@ -32,7 +32,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { WebView } from "react-native-webview";
-import { useKeepAwake } from "expo-keep-awake";
+import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 import { useSettings } from "../src/SettingsContext";
 import {
   api,
@@ -201,10 +201,27 @@ function expandPrayerText(
 // Componente principale
 // ===========================================================================
 export default function CelebraScreen() {
-  // Wakelock: tiene lo schermo acceso mentre la pagina è aperta (essenziale
-  // durante la celebrazione: non c'è niente di peggio che lo schermo che
-  // si spegne durante la lettura).
-  useKeepAwake();
+  // Wakelock: tiene lo schermo acceso mentre la pagina è aperta. SOLO su
+  // native (Android/iOS): su web il browser nega il permesso e crashava
+  // l'app, quindi skippiamo. Wrappato in try/catch per sicurezza.
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+    let active = false;
+    activateKeepAwakeAsync()
+      .then(() => {
+        active = true;
+      })
+      .catch(() => {
+        // permesso negato o non supportato: prosegui senza wakelock
+      });
+    return () => {
+      if (active) {
+        try {
+          deactivateKeepAwake();
+        } catch {}
+      }
+    };
+  }, []);
 
   const router = useRouter();
   const params = useLocalSearchParams<{ date?: string }>();
@@ -1869,14 +1886,15 @@ const makeStyles = (
     // Bottoni A- / A+ per dimensione font (vicino alla data nella topBar).
     fontBtns: {
       flexDirection: "row",
-      gap: 6,
-      marginRight: 8,
+      gap: 14,           // più spazio tra A- e A+
+      marginRight: 14,
+      marginLeft: 6,
     },
     fontBtn: {
-      minWidth: 50,
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      borderRadius: 8,
+      minWidth: 64,           // più larghi (era 50)
+      paddingHorizontal: 16,  // più padding (era 12)
+      paddingVertical: 10,    // più alti (era 6)
+      borderRadius: 10,
       backgroundColor: colors.primary,
       alignItems: "center",
       justifyContent: "center",
@@ -1885,7 +1903,7 @@ const makeStyles = (
       opacity: 0.35,
     },
     fontBtnText: {
-      fontSize: Math.round(fontSize * 0.6),
+      fontSize: Math.round(fontSize * 0.75),  // testo più grande (era 0.6)
       fontWeight: "800",
       color: "#FFFFFF",
     },
