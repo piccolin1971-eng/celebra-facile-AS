@@ -1301,9 +1301,46 @@ function paginate(
   const pages: Segment[][] = [];
   let curPage: Segment[] = [];
   let curH = 0;
+  // Memorizza l'ultimo "header di sezione" visto (readingTitle / peTitle /
+  // antifonaTitle / orazioneTitle / sectionTitle). Quando una pagina inizia
+  // con la PROSECUZIONE di un body (lettura/PE/orazione lunga), aggiungiamo
+  // un titolo sintetico "{Header} (continua)" così il prete sa che pagina è.
+  let lastSectionHeader: Segment | null = null;
+  let lastSectionRubric: Segment | null = null; // riferimento bibblico associato
+  const SECTION_HEADER_KINDS: SegKind[] = [
+    "readingTitle",
+    "antifonaTitle",
+    "orazioneTitle",
+    "peTitle",
+    "sectionTitle",
+  ];
 
   const flushSimple = (toPush: Segment[]) => {
     if (toPush.length > 0) pages.push(toPush);
+  };
+
+  // Aggiunge un titolo "(continua)" all'inizio della pagina corrente quando
+  // la pagina sta iniziando con un body senza il proprio header.
+  const ensureContinuationHeader = () => {
+    if (!lastSectionHeader) return;
+    if (curPage.length > 0) return;
+    // Solo per readingTitle / orazioneTitle / antifonaTitle (le sezioni con
+    // contenuto che può essere splittato). sectionTitle/peTitle non si ripete
+    // perché quei titoli sono "padre" (Liturgia della Parola, Preghiera
+    // Eucaristica) — il sotto-titolo specifico (Prima Lettura, ecc.) è quello
+    // che vogliamo ripetere.
+    const kindsToRepeat: SegKind[] = ["readingTitle", "orazioneTitle", "antifonaTitle"];
+    if (!kindsToRepeat.includes(lastSectionHeader.kind)) return;
+    const ghost: Segment = {
+      kind: lastSectionHeader.kind,
+      text: `${lastSectionHeader.text} (continua)`,
+    };
+    curPage.push(ghost);
+    curH += segHeightPx(ghost);
+    if (lastSectionRubric) {
+      curPage.push(lastSectionRubric);
+      curH += segHeightPx(lastSectionRubric);
+    }
   };
 
   for (const seg of segments) {
@@ -1312,7 +1349,27 @@ function paginate(
     if (segH > usableH) {
       parts = splitSegByPunct(seg, usableH);
     }
-    for (const p of parts) {
+    // Aggiorna il tracker dell'ultimo header sezione.
+    if (SECTION_HEADER_KINDS.includes(seg.kind)) {
+      lastSectionHeader = seg;
+      lastSectionRubric = null;
+    } else if (
+      seg.kind === "rubric" &&
+      lastSectionHeader &&
+      curPage.length > 0 &&
+      curPage[curPage.length - 1].kind === lastSectionHeader.kind
+    ) {
+      // La rubrica appena dopo un readingTitle è il riferimento bibblico.
+      lastSectionRubric = seg;
+    } else if (
+      seg.kind !== "spacer" &&
+      seg.kind !== "rubric" &&
+      !SECTION_HEADER_KINDS.includes(seg.kind)
+    ) {
+      // I body successivi non sono "nuovi header" — manteniamo il tracker.
+    }
+    for (let pIdx = 0; pIdx < parts.length; pIdx++) {
+      const p = parts[pIdx];
       const h = segHeightPx(p);
       if (curH + h > usableH && curPage.length > 0) {
         // Strip dei titoli/spacer in coda (orphan protection): li spostiamo
@@ -1335,7 +1392,6 @@ function paginate(
           const last = curPage[curPage.length - 1];
           if (isTitle(last.kind)) {
             orphans.unshift(curPage.pop()!);
-            // dopo aver rimosso un titolo, eventuale spacer prima → rimuovi
             while (
               curPage.length > 0 &&
               curPage[curPage.length - 1].kind === "spacer"
@@ -1349,8 +1405,6 @@ function paginate(
             curPage.length >= 2 &&
             isTitle(curPage[curPage.length - 2].kind)
           ) {
-            // rubrica subito dopo un titolo → fa parte del "blocco header",
-            // muovilo insieme al titolo.
             orphans.unshift(curPage.pop()!); // rubrica
             orphans.unshift(curPage.pop()!); // titolo
             while (
@@ -1366,13 +1420,17 @@ function paginate(
         if (curPage.length > 0) {
           flushSimple(curPage);
         } else {
-          // Se la pagina sarebbe vuota senza i titoli, mantieni i titoli
-          // (caso raro: pagina iniziata con un titolo + segmento gigante).
           flushSimple(orphans);
           orphans.length = 0;
         }
         curPage = orphans;
         curH = orphans.reduce((acc, s) => acc + segHeightPx(s), 0);
+        // Nuova pagina: se l'utente sta continuando una lettura/orazione che
+        // era splittata e la pagina nuova non ha header, aggiungiamo
+        // "{titolo} (continua)" per chiarezza.
+        if (curPage.length === 0) {
+          ensureContinuationHeader();
+        }
       }
       curPage.push(p);
       curH += h;
