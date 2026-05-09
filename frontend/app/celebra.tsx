@@ -801,8 +801,6 @@ function ScrollIndicator(props: {
   scrollY: number;
   contentH: number;
   viewportH: number;
-  currentPage: number;
-  tickKey: number;
 }) {
   const { scrollY, contentH, viewportH } = props;
   const hasMoreBelow =
@@ -908,18 +906,9 @@ function renderSegment(seg: Segment, key: string, styles: any): React.ReactNode 
           {text}
         </Text>
       );
-    case "consacrazione":
-      return (
-        <Text key={key} style={styles.segConsacrazione}>
-          {text}
-        </Text>
-      );
-    case "dossologia":
-      return (
-        <Text key={key} style={styles.segDossologia}>
-          {text}
-        </Text>
-      );
+    case "peText":
+    case "peDossologia":
+      return renderPeTextNative(text, key, styles);
     case "salmo":
       return renderSalmoNative(text, key, styles);
     case "preghieraFedeli":
@@ -932,6 +921,75 @@ function renderSegment(seg: Segment, key: string, styles: any): React.ReactNode 
         </Text>
       );
   }
+}
+
+// ===========================================================================
+// renderPeTextNative: replica esatta della logica di /messa per il testo
+// delle Preghiere Eucaristiche.
+//  - Splitta il testo sul marker `<<DOSSOLOGIA>>` (inserito da expandPrayerText)
+//  - Parte PRE: testo normale, ma le righe interamente in MAIUSCOLO
+//    (parole della Consacrazione: "PRENDETE, E MANGIATENE TUTTI...",
+//    "QUESTO È IL MIO CORPO...", ecc.) vengono colorate in azzurro
+//    brillante #29B6F6 bold (stile peConsecration).
+//  - Parte POST: testo della Dossologia in BIANCO MAIUSCOLO REGULAR
+//    (stile peDossologia, allineato a /messa).
+// ===========================================================================
+function isUpperPeLine(ln: string): boolean {
+  const alphaChars = ln.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ]/g, "");
+  return alphaChars.length >= 5 && alphaChars === alphaChars.toUpperCase();
+}
+
+function renderPeTextLines(text: string, key: string, styles: any): React.ReactNode {
+  const lines = text.split("\n");
+  return (
+    <Text style={styles.segNormal} selectable key={key}>
+      {lines.map((ln, i) => {
+        const isCon = isUpperPeLine(ln);
+        const prevWasCon = i > 0 && isUpperPeLine(lines[i - 1]);
+        const nextIsCon = i < lines.length - 1 && isUpperPeLine(lines[i + 1]);
+        const isLast = i === lines.length - 1;
+        const needSpaceBefore = isCon && !prevWasCon && i > 0;
+        const needSpaceAfter = isCon && !nextIsCon && !isLast;
+        const tail = isLast ? "" : (needSpaceAfter ? "\n\n" : "\n");
+        if (isCon) {
+          return (
+            <Text key={i}>
+              {needSpaceBefore ? "\n" : ""}
+              <Text style={styles.segPeConsecration}>{ln}</Text>
+              {tail}
+            </Text>
+          );
+        }
+        return (
+          <Text key={i}>
+            {ln}
+            {tail}
+          </Text>
+        );
+      })}
+    </Text>
+  );
+}
+
+function renderPeTextNative(text: string, key: string, styles: any): React.ReactNode {
+  if (!text) return null;
+  const dosMarker = "<<DOSSOLOGIA>>";
+  const dosIdx = text.indexOf(dosMarker);
+  if (dosIdx >= 0) {
+    const before = text.slice(0, dosIdx).replace(/\n+$/, "");
+    const after = text.slice(dosIdx + dosMarker.length).replace(/^\n+/, "");
+    return (
+      <View key={key}>
+        {before ? renderPeTextLines(before, `${key}-pre`, styles) : null}
+        {after ? (
+          <Text style={styles.segPeDossologia} selectable>
+            {after}
+          </Text>
+        ) : null}
+      </View>
+    );
+  }
+  return renderPeTextLines(text, key, styles);
 }
 
 // Renderer salmo: evidenzia "R." (e suoi sinonimi tipo "R/.") in rosso.
@@ -1014,8 +1072,8 @@ function preSplitSegments(segments: Segment[]): Segment[] {
     "celebrante",
     "assemblea",
     "umili",
-    "consacrazione",
-    "dossologia",
+    "peText",
+    "peDossologia",
   ];
   for (const seg of segments) {
     if (
@@ -2215,18 +2273,25 @@ const makeStyles = (
       lineHeight: Math.round(fontSize * 1.55),
       marginVertical: 6,
     },
-    segConsacrazione: {
-      fontSize: fontSize,
-      color: "#4FC3F7",
-      lineHeight: Math.round(fontSize * 1.6),
-      marginVertical: 8,
+    // Parole della Consacrazione (righe MAIUSCOLE dentro la PE):
+    // azzurro brillante saturo #29B6F6 bold, allineato a /messa.
+    // Usato inline da renderPeTextLines per le righe interamente in maiuscolo.
+    segPeConsecration: {
+      color: "#29B6F6",
+      fontWeight: "800",
     },
-    segDossologia: {
+    // Dossologia conclusiva ("PER CRISTO, CON CRISTO E IN CRISTO..."):
+    // bianco, maiuscolo (il testo è già in maiuscolo dal JSON), peso REGULAR,
+    // identico a /messa per coerenza. Renderizzato dopo lo split sul marker
+    // <<DOSSOLOGIA>> di renderPeTextNative.
+    segPeDossologia: {
       fontSize: fontSize,
-      color: "#FFD54F",
-      fontWeight: "700",
-      lineHeight: Math.round(fontSize * 1.6),
-      marginVertical: 8,
+      lineHeight: Math.round(fontSize * 1.7),
+      color: colors.textPrimary,
+      fontWeight: "400",
+      fontFamily,
+      marginTop: 4,
+      marginBottom: 8,
     },
     // R/. marker rosso bold (regola globale Preghiera dei Fedeli + salmo)
     segRespMarker: {
