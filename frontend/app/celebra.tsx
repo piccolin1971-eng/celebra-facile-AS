@@ -474,12 +474,6 @@ function CelebraScreenInner() {
   const [scrollY, setScrollY] = useState(0);
   const [contentH, setContentH] = useState(0);
   const [viewportH, setViewportH] = useState(0);
-  // Nessun overlap: lo Smart Tap mostra SEMPRE testo nuovo, mai ripetuto.
-  const SCROLL_OVERLAP = 0;
-  // Altezza in fondo riservata alla pillola "scorri" (l'unico overlay
-  // rimasto dopo la rimozione della barra di progresso). Senza questo
-  // margine, l'ultima riga utile finirebbe dietro alla pillola.
-  const BOTTOM_OVERLAY_RESERVED = 50;
 
   // Reset stato quando cambia la macro-pagina + scroll a 0
   useEffect(() => {
@@ -491,12 +485,22 @@ function CelebraScreenInner() {
     });
   }, [currentPage]);
 
-  // Smart Tap NEXT: scroll giù di una "schermata utile" (viewport meno la
-  // zona overlay), oppure cambio macro-pagina se siamo già al fondo.
-  // Nessun overlap: la nuova schermata mostra il PRIMO testo non ancora letto.
+  // Calcola lo step di scroll: multiplo intero di righe del corpo testo.
+  // Così la riga "tagliata" in fondo al viewport precedente (parzialmente
+  // visibile dietro la pillola "scorri") diventa la PRIMA riga in cima
+  // della nuova schermata, intera e leggibile, senza ripetere righe già
+  // lette. lineH stimato come 1.6 × fontSize (= il lineHeight di segNormal).
+  const computeStep = () => {
+    if (viewportH <= 0) return 0;
+    const lineH = Math.max(20, Math.round(fontSize * 1.6));
+    const lines = Math.max(1, Math.floor(viewportH / lineH));
+    return lines * lineH;
+  };
+
+  // Smart Tap NEXT: scroll giù di N righe intere, oppure macro-pagina succ.
   const smartTapNext = () => {
     if (viewportH > 0 && contentH > viewportH && scrollY + viewportH < contentH - 8) {
-      const step = Math.max(40, viewportH - BOTTOM_OVERLAY_RESERVED - SCROLL_OVERLAP);
+      const step = computeStep();
       const nextY = Math.min(contentH - viewportH, scrollY + step);
       currentScrollRef.current?.scrollTo({ y: nextY, animated: true });
     } else {
@@ -511,11 +515,10 @@ function CelebraScreenInner() {
     }
   };
 
-  // Smart Tap PREV: scroll su della stessa "schermata utile", oppure
-  // macro-pagina precedente se siamo in cima.
+  // Smart Tap PREV: scroll su della stessa quantità, oppure macro-pagina prec.
   const smartTapPrev = () => {
     if (scrollY > 8) {
-      const step = Math.max(40, viewportH - BOTTOM_OVERLAY_RESERVED - SCROLL_OVERLAP);
+      const step = computeStep();
       const nextY = Math.max(0, scrollY - step);
       currentScrollRef.current?.scrollTo({ y: nextY, animated: true });
     } else {
