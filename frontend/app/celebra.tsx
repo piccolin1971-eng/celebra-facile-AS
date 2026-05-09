@@ -411,7 +411,7 @@ function CelebraScreenInner() {
   // ----- Costruisce i segmenti dell'intera celebrazione -----
   const segments: Segment[] = useMemo(() => {
     if (!fixedParts || !session) return [];
-    return buildSegments({
+    const raw = buildSegments({
       liturgy,
       fixedParts,
       prefaces,
@@ -423,6 +423,9 @@ function CelebraScreenInner() {
       currentSeasonKey,
       session,
     });
+    // Pre-split: spezza i testi lunghi in pezzi più piccoli per permettere
+    // al chunker di impaginare senza titoli orfani o pagine quasi vuote.
+    return preSplitSegments(raw);
   }, [
     liturgy,
     fixedParts,
@@ -439,32 +442,104 @@ function CelebraScreenInner() {
   // ----- HTML completo per la WebView (CSS columns) -----
   // Il browser interno alla WebView impagina il testo in colonne larghe 100vw,
   // riempiendo perfettamente ogni pagina. Tap a sinistra/destra → scroll
-  // === Chunking dei segmenti in pagine ===
-  // Strategia semplice e robusta richiesta dall'utente: una pagina per
-  // macro-blocco. I confini sono dettati ESCLUSIVAMENTE dai segmenti
-  // `sectionTitleBreak` (= Liturgia della Parola, post-Vangelo, Prefazio,
-  // Riti di Comunione, Riti di Conclusione). Tutto il resto fluisce di
-  // seguito sulla stessa pagina, e se la pagina è troppo lunga lo
-  // ScrollView interno permette lo scroll verticale.
-  // NIENTE misurazione altezze: rendering immediato, nessuna pagina
-  // mezza vuota o titolo orfano.
+  // === Misurazione altezze reali e chunking in sotto-pagine ===
+  // Strategia: misuriamo l'altezza reale di ogni segmento via onLayout in
+  // un container invisibile, poi chunking che riempie ogni pagina fino
+  // all'altezza schermo. Regola d'oro: i `sectionTitleBreak` forzano
+  // sempre l'inizio di una nuova pagina (macro-blocco). Regola
+  // widow/orphan: un titolo non resta mai da solo a fine pagina —
+  // se il successivo non entra, sposto il titolo sulla nuova pagina.
   const dims = useWindowDimensions();
+  const [measuredHeights, setMeasuredHeights] = useState<number[]>([]);
+  // Reset misurazioni quando cambiano i parametri di layout
+  useEffect(() => {
+    setMeasuredHeights([]);
+  }, [segments, fontSize, fontFamily, dims.width]);
+
+  const allMeasured =
+    segments.length > 0 && measuredHeights.length === segments.length &&
+    measuredHeights.every((h) => h > 0);
+
+  // Altezza utilizzabile per il rendering (sotto la topBar e sopra la
+  // progress bar). Se non ancora misurata, fallback all'altezza schermo.
+  const pageContentHeight = useMemo(() => {
+    return Math.max(200, (containerH || dims.height) - 24);
+  }, [containerH, dims.height]);
+
+  const isTitleKind = (k: SegKind): boolean =>
+    k === "sectionTitle" ||
+    k === "sectionTitleBreak" ||
+    k === "antifonaTitle" ||
+    k === "readingTitle" ||
+    k === "orazioneTitle" ||
+    k === "subtitle" ||
+    k === "peTitle";
+
+  // Chunking in sotto-pagine usando altezze REALI.
   const pages = useMemo<Segment[][]>(() => {
-    if (!segments.length) return [];
+    if (!allMeasured || segments.length === 0) return [];
     const result: Segment[][] = [[]];
-    for (const seg of segments) {
+    let currentH = 0;
+    const targetH = pageContentHeight - 30; // margine di sicurezza
+    for (let i = 0; i < segments.length; i++) {
+      const seg = segments[i];
+      const h = measuredHeights[i] || 0;
       const last = result[result.length - 1];
       const isBreak = seg.kind === "sectionTitleBreak";
-      // sectionTitleBreak = forza nuova pagina (a meno che la corrente sia
-      // già vuota: in quel caso lo aggiungo qui senza creare pagina vuota)
+      const isSpacer = seg.kind === "spacer";
+      // sectionTitleBreak forza nuova pagina (a meno che l'ultima sia vuota)
       if (isBreak && last.length > 0) {
         result.push([seg]);
+        currentH = h;
+        continue;
+      }
+      // Se sfora, apri nuova pagina (skippa spacer come primo elemento)
+      if (currentH + h > targetH && last.length > 0) {
+        if (isSpacer) continue;
+        // === Regola ANTI-ORFANO definitiva ===
+        // Se la pagina corrente contiene SOLO un titolo, NON crearne una
+        // nuova: append al titolo per evitare che resti orfano. È
+        // accettabile un piccolo overflow visivo per non avere titoli
+        // su pagine quasi vuote (es. "Preghiera Eucaristica II" da solo).
+        if (last.length === 1 && isTitleKind(last[0].kind)) {
+          last.push(seg);
+          currentH += h;
+        } else {
+          result.push([seg]);
+          currentH = h;
+        }
       } else {
         last.push(seg);
+        currentH += h;
+      }
+      // === Regola widow/orphan ===
+      // Se ho appena messo un TITOLO come ULTIMO elemento di una pagina
+      // e c'è un segmento successivo che NON entra, sposto il titolo
+      // sulla pagina successiva (così non resta orfano).
+      if (isTitleKind(seg.kind) && i + 1 < segments.length) {
+        const nextH = measuredHeights[i + 1] || 0;
+        const lastNow = result[result.length - 1];
+        const titleIsLastOnPage = lastNow[lastNow.length - 1] === seg;
+        if (titleIsLastOnPage && currentH + nextH > targetH) {
+          // Rimuovi il titolo dalla pagina corrente
+          lastNow.pop();
+          currentH -= h;
+          if (lastNow.length === 0) {
+            // La pagina è diventata vuota: lascia il titolo qui
+            // (non possiamo evitare l'orfano in questo caso)
+            lastNow.push(seg);
+            currentH = h;
+          } else {
+            // Apri nuova pagina con il titolo
+            result.push([seg]);
+            currentH = h;
+          }
+        }
       }
     }
-    return result;
-  }, [segments]);
+    // Filtra eventuali pagine completamente vuote (edge case)
+    return result.filter((p) => p.length > 0);
+  }, [segments, measuredHeights, allMeasured, pageContentHeight]);
 
   // Stato pagina/totale: tracciato direttamente da PagerView via onPageSelected.
   const totalPages = pages.length;
@@ -591,7 +666,46 @@ function CelebraScreenInner() {
         onLayout={(e) => setContainerH(e.nativeEvent.layout.height)}
         testID="celebra-tap-area"
       >
-        {!segments.length || pages.length === 0 ? (
+        {!segments.length ? (
+          <ActivityIndicator size="large" color={colors.primary} />
+        ) : !allMeasured ? (
+          // Fase MISURAZIONE invisibile: cattura altezza reale di ogni
+          // segmento via onLayout. Quando completata, allMeasured = true.
+          <>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <View
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                opacity: 0,
+              }}
+              pointerEvents="none"
+            >
+              <View style={styles.nativePage} collapsable={false}>
+                {segments.map((seg, i) => (
+                  <View
+                    key={`m-${i}`}
+                    onLayout={(e) => {
+                      const h = e.nativeEvent.layout.height;
+                      if (h <= 0) return;
+                      setMeasuredHeights((prev) => {
+                        if (prev[i] === h) return prev;
+                        const next = prev.slice();
+                        while (next.length < segments.length) next.push(0);
+                        next[i] = h;
+                        return next;
+                      });
+                    }}
+                  >
+                    {renderSegment(seg, `m-${i}`, styles)}
+                  </View>
+                ))}
+              </View>
+            </View>
+          </>
+        ) : pages.length === 0 ? (
           <ActivityIndicator size="large" color={colors.primary} />
         ) : (
           <>
@@ -600,15 +714,11 @@ function CelebraScreenInner() {
               // semplice che mostra una pagina alla volta. I tap zone sotto
               // gestiscono l'avanzamento.
               <View style={{ flex: 1 }}>
-                <ScrollView
-                  style={styles.nativePage}
-                  contentContainerStyle={{ paddingBottom: 30 }}
-                  showsVerticalScrollIndicator={true}
-                >
+                <View style={styles.nativePage} collapsable={false}>
                   {pages[Math.min(currentPage, pages.length - 1)].map((seg, j) =>
                     renderSegment(seg, `web-${currentPage}-${j}`, styles),
                   )}
-                </ScrollView>
+                </View>
               </View>
             ) : (
               <PagerView
@@ -624,14 +734,9 @@ function CelebraScreenInner() {
                 testID="celebra-pager"
               >
                 {pages.map((pageSegments, i) => (
-                  <ScrollView
-                    key={`page-${i}`}
-                    style={styles.nativePage}
-                    contentContainerStyle={{ paddingBottom: 30 }}
-                    showsVerticalScrollIndicator={true}
-                  >
+                  <View key={`page-${i}`} style={styles.nativePage} collapsable={false}>
                     {pageSegments.map((seg, j) => renderSegment(seg, `${i}-${j}`, styles))}
-                  </ScrollView>
+                  </View>
                 ))}
               </PagerView>
             )}
@@ -877,6 +982,57 @@ function renderPreghieraFedeliNative(text: string, key: string, styles: any): Re
       })}
     </Text>
   );
+}
+
+// Pre-split: spezza i segmenti di testo lunghi (>1 paragrafo) in pezzi più
+// piccoli mantenendo lo stesso kind. Necessario perché un body enorme
+// (es. tutta la Preghiera dei Fedeli) misurato come UN solo elemento non
+// permette al chunker di posizionarlo correttamente: finirebbe sempre da
+// solo su una pagina, e i titoli precedenti rimarrebbero orfani.
+// Spezzando per paragrafi (\n\n) o per righe se il paragrafo è ancora
+// troppo lungo, otteniamo blocchi che il chunker può impaginare bene.
+function preSplitSegments(segments: Segment[]): Segment[] {
+  const result: Segment[] = [];
+  const SPLITTABLE: SegKind[] = [
+    "normal",
+    "preghieraFedeli",
+    "salmo",
+    "celebrante",
+    "assemblea",
+    "umili",
+    "consacrazione",
+    "dossologia",
+  ];
+  for (const seg of segments) {
+    if (
+      SPLITTABLE.includes(seg.kind) &&
+      seg.text &&
+      seg.text.length > 300
+    ) {
+      // Split per paragrafi (doppio newline). Se non ci sono \n\n, prova
+      // a spezzare per linee singole raggruppate (4 righe per chunk).
+      const paragraphs = seg.text.split(/\n{2,}/).filter((p) => p.trim());
+      if (paragraphs.length > 1) {
+        for (const p of paragraphs) {
+          result.push({ ...seg, text: p });
+        }
+        continue;
+      }
+      // Solo \n singoli: raggruppa ogni 4 righe
+      const lines = seg.text.split("\n").filter((l) => l.length > 0);
+      if (lines.length > 4) {
+        for (let i = 0; i < lines.length; i += 4) {
+          result.push({
+            ...seg,
+            text: lines.slice(i, i + 4).join("\n"),
+          });
+        }
+        continue;
+      }
+    }
+    result.push(seg);
+  }
+  return result;
 }
 
 function escapeHtml(s: string): string {
