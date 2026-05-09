@@ -474,28 +474,31 @@ function CelebraScreenInner() {
   const [scrollY, setScrollY] = useState(0);
   const [contentH, setContentH] = useState(0);
   const [viewportH, setViewportH] = useState(0);
-  const SCROLL_OVERLAP = 40; // px lasciati visibili in alto allo scroll giù
+  const SCROLL_OVERLAP = 40; // px di testo dell'ultima riga che resta in cima
+  // Altezza dell'area in fondo OCCUPATA da overlay (indicatore "scorri" +
+  // barra di progresso oro). Lo scroll smart la sottrae alla viewport per
+  // evitare che il testo finisca dietro a questi overlay e venga rivisto
+  // poi in cima alla nuova schermata (effetto "testo che si ripete").
+  const BOTTOM_OVERLAY_RESERVED = 70;
 
   // Reset stato quando cambia la macro-pagina + scroll a 0
   useEffect(() => {
     setScrollY(0);
     setContentH(0);
     setViewportH(0);
-    // requestAnimationFrame per attendere che il ref sia agganciato al
-    // nuovo ScrollView (su PagerView ogni pagina ha il suo).
     requestAnimationFrame(() => {
       currentScrollRef.current?.scrollTo?.({ y: 0, animated: false });
     });
   }, [currentPage]);
 
-  // Smart Tap NEXT: scroll giù di una schermata, oppure cambio pagina
+  // Smart Tap NEXT: scroll giù di una "schermata utile" (viewport meno la
+  // zona overlay), oppure cambio macro-pagina se siamo già al fondo.
   const smartTapNext = () => {
-    // Se ci sono ancora pixel da scrollare giù → smooth scroll
     if (viewportH > 0 && contentH > viewportH && scrollY + viewportH < contentH - 8) {
-      const nextY = Math.min(contentH - viewportH, scrollY + viewportH - SCROLL_OVERLAP);
+      const step = Math.max(40, viewportH - BOTTOM_OVERLAY_RESERVED - SCROLL_OVERLAP);
+      const nextY = Math.min(contentH - viewportH, scrollY + step);
       currentScrollRef.current?.scrollTo({ y: nextY, animated: true });
     } else {
-      // Fondo pagina: passa alla macro-pagina successiva
       const next = Math.min(pages.length - 1, currentPage + 1);
       if (next !== currentPage) {
         if (PagerView && pagerRef.current?.setPage) {
@@ -507,14 +510,14 @@ function CelebraScreenInner() {
     }
   };
 
-  // Smart Tap PREV: scroll su di una schermata, oppure cambio pagina indietro
+  // Smart Tap PREV: scroll su della stessa "schermata utile", oppure
+  // macro-pagina precedente se siamo in cima.
   const smartTapPrev = () => {
     if (scrollY > 8) {
-      // Smooth scroll su di (vh - overlap)
-      const nextY = Math.max(0, scrollY - viewportH + SCROLL_OVERLAP);
+      const step = Math.max(40, viewportH - BOTTOM_OVERLAY_RESERVED - SCROLL_OVERLAP);
+      const nextY = Math.max(0, scrollY - step);
       currentScrollRef.current?.scrollTo({ y: nextY, animated: true });
     } else {
-      // In cima: torna alla macro-pagina precedente
       const prev = Math.max(0, currentPage - 1);
       if (prev !== currentPage) {
         if (PagerView && pagerRef.current?.setPage) {
@@ -686,7 +689,7 @@ function CelebraScreenInner() {
                   key={`web-page-${currentPage}`}
                   ref={currentScrollRef}
                   style={styles.nativePage}
-                  contentContainerStyle={{ paddingBottom: 30 }}
+                  contentContainerStyle={{ paddingBottom: 90 }}
                   showsVerticalScrollIndicator={true}
                   onScroll={(e) => setScrollY(e.nativeEvent.contentOffset.y)}
                   scrollEventThrottle={16}
@@ -715,7 +718,7 @@ function CelebraScreenInner() {
                     key={`page-${i}`}
                     ref={setRefIfCurrent(i)}
                     style={styles.nativePage}
-                    contentContainerStyle={{ paddingBottom: 30 }}
+                    contentContainerStyle={{ paddingBottom: 90 }}
                     showsVerticalScrollIndicator={true}
                     onScroll={onScrollCurrent(i)}
                     scrollEventThrottle={16}
