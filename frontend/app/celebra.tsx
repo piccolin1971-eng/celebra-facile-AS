@@ -281,6 +281,11 @@ export default function CelebraScreen() {
   // Ref alla WebView (per future injectJavaScript se necessario).
   const webViewRef = useRef<WebView | null>(null);
 
+  // Chiave per forzare il re-mount della WebView in caso di crash del
+  // processo renderer Android (onRenderProcessGone). Senza questo, l'app
+  // crasha completamente quando il sistema termina il processo WebView.
+  const [webviewKey, setWebviewKey] = useState(0);
+
   const styles = makeStyles(colors, fontSize, fontFamily);
 
   // ----- Caricamento dati -----
@@ -593,7 +598,6 @@ export default function CelebraScreen() {
                 source={{ html }}
                 style={[styles.webview, { backgroundColor: colors.background }]}
                 containerStyle={{ backgroundColor: colors.background }}
-                androidLayerType="hardware"
                 scrollEnabled={false}
                 showsHorizontalScrollIndicator={false}
                 showsVerticalScrollIndicator={false}
@@ -607,6 +611,7 @@ export default function CelebraScreen() {
                 allowsLinkPreview={false}
                 automaticallyAdjustContentInsets={false}
                 hideKeyboardAccessoryView
+                cacheEnabled={false}
                 {...({ scalesPageToFit: false } as any)}
                 onMessage={(event) => {
                   try {
@@ -623,6 +628,26 @@ export default function CelebraScreen() {
                     // ignora messaggi non JSON
                   }
                 }}
+                // CRITICO Android: senza questo handler, se il processo
+                // renderer della WebView muore (OOM, GPU crash, ecc.) l'app
+                // CRASHA. Ritornando true diciamo "abbiamo gestito noi":
+                // forziamo un re-mount incrementando webviewKey.
+                onRenderProcessGone={(syntheticEvent) => {
+                  console.warn("[celebra] WebView renderer gone:", syntheticEvent?.nativeEvent);
+                  setWebviewKey((k) => k + 1);
+                  return true;
+                }}
+                onContentProcessDidTerminate={(syntheticEvent) => {
+                  console.warn("[celebra] WebView content process terminated:", syntheticEvent?.nativeEvent);
+                  setWebviewKey((k) => k + 1);
+                }}
+                onError={(syntheticEvent) => {
+                  console.warn("[celebra] WebView error:", syntheticEvent?.nativeEvent);
+                }}
+                onHttpError={(syntheticEvent) => {
+                  console.warn("[celebra] WebView HTTP error:", syntheticEvent?.nativeEvent);
+                }}
+                key={webviewKey}
                 testID="celebra-webview"
               />
             )}
@@ -861,9 +886,13 @@ function segmentsToHtml(
 <html><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
-${fontHref ? `<link rel="preconnect" href="https://fonts.googleapis.com">
+${fontHref ? `<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="${fontHref}">` : ""}
+<!-- Caricamento font async/non-bloccante: se il tablet è offline o la
+     rete è lenta, il rendering NON si blocca (il browser usa il
+     fallback system font finché il Google Font non è disponibile). -->
+<link rel="stylesheet" href="${fontHref}" media="print" onload="this.media='all'; this.onload=null;">
+<noscript><link rel="stylesheet" href="${fontHref}"></noscript>` : ""}
 <style>
   * { box-sizing: border-box; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }
   html, body { margin: 0; padding: 0; height: 100vh; width: 100vw; overflow: hidden; background: ${bg}; color: ${textColor}; }
