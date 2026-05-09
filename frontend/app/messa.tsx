@@ -79,7 +79,23 @@ export default function MessaScreen() {
 
   const router = useRouter();
   const params = useLocalSearchParams<{ date?: string; preface?: string; votive?: string }>();
-  const { colors, fontSize, scaledFont, readingMode, autoScrollDelaySec, autoScrollPxPerSec, fontFamily } = useSettings();
+  const { colors, fontSize: settingsFontSize, scaledFont, readingMode, autoScrollDelaySec, autoScrollPxPerSec, fontFamily } = useSettings();
+
+  // Stato locale fontSize (override delle impostazioni globali, valido solo
+  // per questa sessione di preparazione). Inizializzato da settings, può
+  // essere modificato con i bottoni A- / A+ in alto, esattamente come in /celebra.
+  const [fontSize, setFontSize] = useState(settingsFontSize);
+  // Sincronizza quando l'utente cambia il font dalle Impostazioni.
+  useEffect(() => {
+    setFontSize(settingsFontSize);
+  }, [settingsFontSize]);
+  const FONT_MIN = 14;
+  const FONT_MAX = 60;
+  const FONT_STEP = 2;
+  const decreaseFont = () =>
+    setFontSize((f) => Math.max(FONT_MIN, f - FONT_STEP));
+  const increaseFont = () =>
+    setFontSize((f) => Math.min(FONT_MAX, f + FONT_STEP));
   const [liturgy, setLiturgy] = useState<Liturgy | null>(null);
   const [fixedParts, setFixedParts] = useState<Record<string, any> | null>(null);
   const [prefaces, setPrefaces] = useState<Preface[]>([]);
@@ -1340,6 +1356,35 @@ export default function MessaScreen() {
           <Text style={styles.backBtnText}>Home</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Santa Messa</Text>
+        {/* Bottoni A-/A+ per dimensione font (uguali a quelli di /celebra).
+            Permettono al sacerdote di ingrandire/ridurre il testo durante la
+            preparazione, senza dover entrare nelle Impostazioni. */}
+        <View style={styles.fontBtns}>
+          <TouchableOpacity
+            style={[
+              styles.fontBtn,
+              fontSize <= FONT_MIN && styles.fontBtnDisabled,
+            ]}
+            onPress={decreaseFont}
+            disabled={fontSize <= FONT_MIN}
+            testID="btn-font-decrease-messa"
+            accessibilityLabel="Riduci dimensione testo"
+          >
+            <Text style={styles.fontBtnText}>A-</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.fontBtn,
+              fontSize >= FONT_MAX && styles.fontBtnDisabled,
+            ]}
+            onPress={increaseFont}
+            disabled={fontSize >= FONT_MAX}
+            testID="btn-font-increase-messa"
+            accessibilityLabel="Aumenta dimensione testo"
+          >
+            <Text style={styles.fontBtnText}>A+</Text>
+          </TouchableOpacity>
+        </View>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.push("/impostazioni")} testID="btn-settings-mass">
           <Ionicons name="settings-outline" size={scaledFont(36)} color={colors.textPrimary} />
         </TouchableOpacity>
@@ -2377,6 +2422,30 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string) => Style
   },
   backBtnText: { fontSize: Math.round(fontSize * 0.6), color: colors.textPrimary, fontWeight: "600" },
   title: { fontSize: Math.round(fontSize * 0.78), fontWeight: "700", color: colors.textPrimary },
+  // Bottoni A- / A+ per dimensione font (uguali a quelli di /celebra).
+  fontBtns: {
+    flexDirection: "row",
+    gap: 14,
+    marginRight: 8,
+    marginLeft: 6,
+  },
+  fontBtn: {
+    minWidth: 64,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  fontBtnDisabled: {
+    opacity: 0.35,
+  },
+  fontBtnText: {
+    fontSize: Math.round(fontSize * 0.75),
+    fontWeight: "800",
+    color: "#FFFFFF",
+  },
   content: { padding: 16, paddingTop: 8, paddingBottom: 32 },
   dayHeader: {
     padding: 20,
