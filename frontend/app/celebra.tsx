@@ -474,12 +474,12 @@ function CelebraScreenInner() {
   const [scrollY, setScrollY] = useState(0);
   const [contentH, setContentH] = useState(0);
   const [viewportH, setViewportH] = useState(0);
-  const SCROLL_OVERLAP = 40; // px di testo dell'ultima riga che resta in cima
-  // Altezza dell'area in fondo OCCUPATA da overlay (indicatore "scorri" +
-  // barra di progresso oro). Lo scroll smart la sottrae alla viewport per
-  // evitare che il testo finisca dietro a questi overlay e venga rivisto
-  // poi in cima alla nuova schermata (effetto "testo che si ripete").
-  const BOTTOM_OVERLAY_RESERVED = 70;
+  // Nessun overlap: lo Smart Tap mostra SEMPRE testo nuovo, mai ripetuto.
+  const SCROLL_OVERLAP = 0;
+  // Altezza in fondo riservata alla pillola "scorri" (l'unico overlay
+  // rimasto dopo la rimozione della barra di progresso). Senza questo
+  // margine, l'ultima riga utile finirebbe dietro alla pillola.
+  const BOTTOM_OVERLAY_RESERVED = 50;
 
   // Reset stato quando cambia la macro-pagina + scroll a 0
   useEffect(() => {
@@ -493,6 +493,7 @@ function CelebraScreenInner() {
 
   // Smart Tap NEXT: scroll giù di una "schermata utile" (viewport meno la
   // zona overlay), oppure cambio macro-pagina se siamo già al fondo.
+  // Nessun overlap: la nuova schermata mostra il PRIMO testo non ancora letto.
   const smartTapNext = () => {
     if (viewportH > 0 && contentH > viewportH && scrollY + viewportH < contentH - 8) {
       const step = Math.max(40, viewportH - BOTTOM_OVERLAY_RESERVED - SCROLL_OVERLAP);
@@ -751,21 +752,10 @@ function CelebraScreenInner() {
                 />
               </View>
             </View>
-            {/* Barra di progresso fissa in fondo (3px di altezza, sollevata
-                di 10px dal bordo per non essere coperta dai tasti di sistema
-                Android). Sfondo grigio scuro, riempimento color oro. */}
-            <View style={styles.progressTrack} pointerEvents="none">
-              <View
-                style={[
-                  styles.progressFill,
-                  {
-                    width: `${
-                      total > 0 ? ((safeIdx + 1) / total) * 100 : 0
-                    }%`,
-                  },
-                ]}
-              />
-            </View>
+            {/* Barra di progresso rimossa (richiesta utente v2.16.2):
+                copriva 1-2 righe di testo in fondo che poi confondevano lo
+                scroll smart. Le pagine sono già indicate dal contatore N/M
+                in alto a destra. */}
           </>
         )}
       </View>
