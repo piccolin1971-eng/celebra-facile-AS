@@ -17,7 +17,7 @@
         "backgroundColor": "#000000"
       },
       "package": "it.messaparroco.app",
-      "versionCode": 276,
+      "versionCode": 277,
       "edgeToEdgeEnabled": true,
       "permissions": [
         "android.permission.INTERNET",

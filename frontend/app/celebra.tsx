@@ -41,8 +41,58 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { WebView } from "react-native-webview";
-import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
+// expo-keep-awake: import LAZY tramite require() in useEffect.
+// Motivo: in Expo SDK 54 + New Architecture, expo-keep-awake 15.x può
+// fallire la registrazione del TurboModule all'avvio dello schermo,
+// crashando l'intera app prima che useEffect parta. Con il require lazy
+// dentro useEffect, un eventuale errore viene catturato dal try/catch
+// senza propagare al render principale.
 import { useSettings } from "../src/SettingsContext";
+
+// ===========================================================================
+// ErrorBoundary: cattura QUALUNQUE errore JS dentro CelebraScreen e mostra
+// un fallback leggibile invece di crashare l'app. Critico su Android dove
+// gli errori di TurboModule/Native non gestiti uccidono l'intero processo.
+// ===========================================================================
+class CelebraErrorBoundary extends React.Component<
+  { children: React.ReactNode; onReset: () => void },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error: Error, info: any) {
+    console.warn("[celebra] ErrorBoundary caught:", error?.message, info?.componentStack);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <SafeAreaView style={{ flex: 1, backgroundColor: "#000", padding: 24, justifyContent: "center" }}>
+          <Text style={{ color: "#E57373", fontSize: 24, fontWeight: "700", marginBottom: 16, textAlign: "center" }}>
+            Errore nella schermata "Celebra la Messa"
+          </Text>
+          <Text style={{ color: "#FFF", fontSize: 16, lineHeight: 24, marginBottom: 24, textAlign: "center" }}>
+            {this.state.error?.message || "Errore sconosciuto"}
+          </Text>
+          <TouchableOpacity
+            onPress={() => {
+              this.setState({ hasError: false, error: null });
+              this.props.onReset();
+            }}
+            style={{ backgroundColor: "#4DA8DA", padding: 16, borderRadius: 12, alignItems: "center" }}
+          >
+            <Text style={{ color: "#FFF", fontSize: 18, fontWeight: "700" }}>Torna alla Home</Text>
+          </TouchableOpacity>
+        </SafeAreaView>
+      );
+    }
+    return this.props.children as any;
+  }
+}
 import {
   api,
   Liturgy,
@@ -210,26 +260,40 @@ function expandPrayerText(
 }
 
 // ===========================================================================
-// Componente principale
+// Componente principale (wrapped in ErrorBoundary nell'export default)
 // ===========================================================================
-export default function CelebraScreen() {
+function CelebraScreenInner() {
   // Wakelock: tiene lo schermo acceso mentre la pagina è aperta. SOLO su
   // native (Android/iOS): su web il browser nega il permesso e crashava
-  // l'app, quindi skippiamo. Wrappato in try/catch per sicurezza.
+  // l'app, quindi skippiamo. LAZY require per evitare che eventuali errori
+  // di registrazione TurboModule (Expo SDK 54 + newArch) crashino l'app.
   useEffect(() => {
     if (Platform.OS === "web") return;
     let active = false;
-    activateKeepAwakeAsync()
-      .then(() => {
-        active = true;
-      })
-      .catch(() => {
-        // permesso negato o non supportato: prosegui senza wakelock
-      });
+    let deactivateFn: (() => void) | null = null;
+    try {
+      // require dinamico: se il modulo nativo non è disponibile o fallisce
+      // la registrazione TurboModule, l'errore viene catturato qui sotto.
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const ka = require("expo-keep-awake");
+      deactivateFn = ka.deactivateKeepAwake;
+      ka.activateKeepAwakeAsync()
+        .then(() => {
+          active = true;
+        })
+        .catch(() => {
+          // permesso negato o non supportato: prosegui senza wakelock
+        });
+    } catch (e) {
+      // Modulo non disponibile (build senza expo-keep-awake o crash
+      // TurboModule): proseguiamo senza wakelock, lo schermo si spegnerà
+      // dopo il timeout di sistema. NON facciamo crashare l'app.
+      console.warn("[celebra] expo-keep-awake non disponibile:", e);
+    }
     return () => {
-      if (active) {
+      if (active && deactivateFn) {
         try {
-          deactivateKeepAwake();
+          deactivateFn();
         } catch {}
       }
     };
@@ -673,8 +737,20 @@ export default function CelebraScreen() {
   );
 }
 
-// (Codice morto rimosso: SegmentRenderer/SalmoRenderer/PeTextRenderer/PeTextNormal —
-//  sostituiti dal rendering HTML/CSS columns dentro la WebView via segmentsToHtml().)
+// Export default wrapped in ErrorBoundary: se qualunque errore JS viene
+// lanciato in CelebraScreenInner (incluso TurboModule, native module mancante,
+// o errori in useEffect), l'utente vede una schermata di errore con un
+// pulsante "Torna alla Home" invece di un crash dell'app.
+export default function CelebraScreen() {
+  // Hook router al livello dell'export per il reset (l'ErrorBoundary è una
+  // class component che non può usare hooks direttamente).
+  const router = useRouter();
+  return (
+    <CelebraErrorBoundary onReset={() => router.replace("/")}>
+      <CelebraScreenInner />
+    </CelebraErrorBoundary>
+  );
+}
 
 // ===========================================================================
 // buildSegments: costruisce l'intera Messa come array di Segment
