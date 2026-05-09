@@ -36,11 +36,18 @@ import {
   ActivityIndicator,
   Platform,
   useWindowDimensions,
+  Pressable,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { WebView } from "react-native-webview";
+// react-native-pager-view: componente NATIVO stabile per swipe orizzontale
+// tra pagine. Sostituisce la WebView (che crashava su Android+newArch) e
+// non richiede motori web. Il rendering interno usa <Text /> nativi.
+// IMPORTANTE: PagerView non supporta web. Importiamo via wrapper
+// platform-specifico (pagerView.native.ts vs pagerView.web.ts) così Metro
+// su web bundla solo lo stub null.
+import PagerView from "../src/pagerView";
 // expo-keep-awake: import LAZY tramite require() in useEffect.
 // Motivo: in Expo SDK 54 + New Architecture, expo-keep-awake 15.x può
 // fallire la registrazione del TurboModule all'avvio dello schermo,
@@ -342,13 +349,8 @@ function CelebraScreenInner() {
   const [currentPage, setCurrentPage] = useState(0);
   const [containerH, setContainerH] = useState(0);
 
-  // Ref alla WebView (per future injectJavaScript se necessario).
-  const webViewRef = useRef<WebView | null>(null);
-
-  // Chiave per forzare il re-mount della WebView in caso di crash del
-  // processo renderer Android (onRenderProcessGone). Senza questo, l'app
-  // crasha completamente quando il sistema termina il processo WebView.
-  const [webviewKey, setWebviewKey] = useState(0);
+  // Ref al PagerView nativo (per setPage in tap-to-advance).
+  const pagerRef = useRef<PagerView | null>(null);
 
   const styles = makeStyles(colors, fontSize, fontFamily);
 
@@ -436,85 +438,112 @@ function CelebraScreenInner() {
   // ----- HTML completo per la WebView (CSS columns) -----
   // Il browser interno alla WebView impagina il testo in colonne larghe 100vw,
   // riempiendo perfettamente ogni pagina. Tap a sinistra/destra → scroll
-  // orizzontale di una larghezza schermo. La WebView posta {page, total} via
-  // postMessage; React Native aggiorna currentPage/totalPages per la barra
-  // di progresso nativa.
-  const html: string = useMemo(() => {
-    if (!segments.length) return "";
-    return segmentsToHtml(segments, fontSize, fontFamily, colors);
-  }, [segments, fontSize, fontFamily, colors]);
+  // === Chunking dei segmenti in pagine (per PagerView) ===
+  // Ogni pagina deve stare in una schermata: stimiamo l'altezza di ogni
+  // segmento in base al numero di righe (lunghezza testo / caratteri-per-riga)
+  // moltiplicato per il line-height stimato del kind. Quando la pagina è
+  // piena, apriamo la successiva. I segmenti `sectionTitleBreak` forzano
+  // sempre l'inizio di una nuova pagina.
+  // Altezza utilizzabile per il rendering (sotto la topBar e sopra la
+  // progress bar). Se non ancora misurata, fallback all'altezza schermo
+  // meno una stima della topBar (~80px).
+  const dims = useWindowDimensions();
+  const pageContentHeight = useMemo(() => {
+    return Math.max(200, (containerH || dims.height) - 24);
+  }, [containerH, dims.height]);
 
-  // Stato pagina/totale: aggiornato dai messaggi postati dalla WebView.
-  const [totalPages, setTotalPages] = useState(0);
+  // Caratteri stimati per riga: dipende dalla larghezza schermo e dal
+  // fontSize. Una formula approssimativa è width / (fontSize * 0.55).
+  const charsPerLine = useMemo(() => {
+    const usableW = (dims.width || 800) - 32; // padding orizzontale
+    return Math.max(20, Math.floor(usableW / (fontSize * 0.55)));
+  }, [dims.width, fontSize]);
 
-  // Reset pagina quando l'HTML cambia (nuovo testo da impaginare)
+  // Stima altezza di un segmento in pixel
+  function estimateSegmentHeight(seg: Segment): number {
+    const text = seg.text || "";
+    const lh = fontSize * 1.6;
+    if (seg.kind === "spacer") return 16;
+    if (seg.kind === "sectionTitleBreak" || seg.kind === "sectionTitle") {
+      return Math.round(fontSize * 1.4) + 24;
+    }
+    if (
+      seg.kind === "antifonaTitle" ||
+      seg.kind === "readingTitle" ||
+      seg.kind === "orazioneTitle" ||
+      seg.kind === "subtitle" ||
+      seg.kind === "peTitle"
+    ) {
+      return Math.round(fontSize * 1.1) + 16;
+    }
+    if (seg.kind === "rubric") {
+      const lines = Math.max(1, Math.ceil(text.length / (charsPerLine * 1.2))) + (text.match(/\n/g)?.length || 0);
+      return Math.round(fontSize * 1.0) * lines + 12;
+    }
+    // Default: stima per testi lunghi
+    const explicitLines = (text.match(/\n/g)?.length || 0) + 1;
+    const wrappedLines = Math.max(
+      explicitLines,
+      Math.ceil(text.length / charsPerLine),
+    );
+    // preghieraFedeli: aggiunge righe vuote dopo ogni R/.
+    const respLines =
+      seg.kind === "preghieraFedeli"
+        ? (text.match(/R\/\.?/g) || []).length
+        : 0;
+    return Math.round(lh * (wrappedLines + respLines)) + 20;
+  }
+
+  // Costruisce array di pagine: ogni pagina è un array di segmenti.
+  const pages = useMemo<Segment[][]>(() => {
+    if (!segments.length) return [];
+    const result: Segment[][] = [[]];
+    let currentH = 0;
+    const targetH = pageContentHeight - 32; // margine di sicurezza
+    for (const seg of segments) {
+      const isBreak = seg.kind === "sectionTitleBreak";
+      const isSpacer = seg.kind === "spacer";
+      const segH = estimateSegmentHeight(seg);
+      const last = result[result.length - 1];
+      // Forza nuova pagina se sectionTitleBreak (e la pagina corrente non è vuota)
+      if (isBreak && last.length > 0) {
+        result.push([seg]);
+        currentH = segH;
+        continue;
+      }
+      // Se aggiungere il segmento sfora, apri nuova pagina (a meno che la
+      // pagina corrente sia vuota: in quel caso lo metto comunque per evitare
+      // pagine vuote).
+      if (currentH + segH > targetH && last.length > 0) {
+        // Non spezzare: apriamo nuova pagina. Se è uno spacer, skippiamo
+        // (non serve uno spacer come prima cosa di una pagina nuova).
+        if (isSpacer) {
+          continue;
+        }
+        result.push([seg]);
+        currentH = segH;
+      } else {
+        last.push(seg);
+        currentH += segH;
+      }
+    }
+    return result;
+  }, [segments, pageContentHeight, charsPerLine, fontSize]);
+
+  // Stato pagina/totale: tracciato direttamente da PagerView via onPageSelected.
+  const totalPages = pages.length;
+
+  // Reset pagina quando i segmenti cambiano (nuovo testo da impaginare)
   useEffect(() => {
     setCurrentPage(0);
-    setTotalPages(0);
-  }, [html]);
-
-  // Invia un comando setFontSize alla WebView/iframe quando l'utente preme
-  // A- / A+. La WebView aggiorna document.body.style.fontSize: tutti i figli
-  // usano 'em' quindi si scalano automaticamente. Le CSS columns ricalcolano
-  // il layout, e la WebView ri-posta {page,total} per aggiornare la barra
-  // di progresso nativa.
-  // NOTA: invio SOLO quando fontSize cambia rispetto al valore iniziale
-  // dell'HTML (settingsFontSize), perché l'HTML al primo render è già
-  // costruito con quel valore.
-  useEffect(() => {
-    const msg = JSON.stringify({ type: "setFontSize", size: fontSize });
-    if (Platform.OS === "web") {
-      // iframe web: post al contentWindow
+    if (pagerRef.current) {
       try {
-        const iframes = (typeof document !== "undefined"
-          ? document.querySelectorAll('iframe[data-testid="celebra-iframe"]')
-          : []) as any;
-        iframes.forEach((ifr: any) => {
-          if (ifr?.contentWindow?.postMessage) {
-            ifr.contentWindow.postMessage(msg, "*");
-          }
-        });
-      } catch {}
-    } else {
-      // WebView native: postMessage dispatcha un evento 'message' nel JS interno
-      try {
+        // setPageWithoutAnimation è sincrono, niente flicker
         // @ts-ignore
-        webViewRef.current?.postMessage?.(msg);
-        // Backup via injectJavaScript per sicurezza
-        webViewRef.current?.injectJavaScript?.(
-          `(function(){try{document.dispatchEvent(new MessageEvent('message',{data:${JSON.stringify(msg)}}));}catch(e){}})();true;`,
-        );
+        pagerRef.current.setPageWithoutAnimation?.(0);
       } catch {}
     }
-  }, [fontSize]);
-
-  // Listener per messaggi dall'iframe (solo web). Ascolta i postMessage che
-  // l'HTML interno alla WebView/iframe invia per aggiornare la barra di
-  // progresso nativa. Su native questo è gestito dalla prop onMessage della
-  // WebView; su web (iframe) serve window.addEventListener('message').
-  // IMPORTANTE: deve essere dichiarato PRIMA degli early return per rispettare
-  // le regole degli hook (stesso ordine ad ogni render).
-  useEffect(() => {
-    if (Platform.OS !== "web" || typeof window === "undefined") return;
-    const handler = (ev: MessageEvent) => {
-      try {
-        const data =
-          typeof ev.data === "string" ? JSON.parse(ev.data) : ev.data;
-        if (data && data.type === "state") {
-          if (typeof data.total === "number" && data.total > 0) {
-            setTotalPages(data.total);
-          }
-          if (typeof data.page === "number" && data.page >= 0) {
-            setCurrentPage(data.page);
-          }
-        }
-      } catch {
-        // ignora
-      }
-    };
-    window.addEventListener("message", handler);
-    return () => window.removeEventListener("message", handler);
-  }, []);
+  }, [segments]);
 
   // ----- Rendering -----
   if (loading) {
@@ -617,104 +646,84 @@ function CelebraScreenInner() {
         </View>
       </View>
 
-      {/* Area di lettura: WebView con HTML iniettato che usa CSS columns
-          (column-width: 100vw) per impaginare il testo PERFETTAMENTE. Il
-          motore CSS del browser calcola le colonne in modo nativo: nessuno
-          spazio vuoto, nessun chunking manuale. Tap dx/sx (gestiti dentro la
-          WebView via JS) → scrollBy(±100vw) con scroll-snap. La WebView
-          posta {page, total} via postMessage; React Native aggiorna
-          currentPage/totalPages per la barra di progresso nativa. */}
+      {/* Area di lettura: PagerView nativo con swipe orizzontale tra pagine.
+          Sostituisce la WebView (che crashava su Android+newArch). Ogni
+          pagina è un View con i segmenti renderizzati nativamente con Text.
+          Tap a sinistra = pagina precedente, tap a destra = pagina successiva. */}
       <View
         style={styles.pageArea}
         onLayout={(e) => setContainerH(e.nativeEvent.layout.height)}
         testID="celebra-tap-area"
       >
-        {!html ? (
+        {!segments.length || pages.length === 0 ? (
           <ActivityIndicator size="large" color={colors.primary} />
         ) : (
           <>
-            {Platform.OS === "web" ? (
-              // Su web preview, react-native-webview non è supportato.
-              // Usa un iframe HTML diretto con srcDoc. Il JavaScript
-              // interno comunica via window.parent.postMessage (gestito
-              // dal listener 'message' nel useEffect sopra).
-              React.createElement("iframe", {
-                // Hash semplice basato su lunghezza + primi/ultimi caratteri
-                // per garantire rerender dell'iframe quando l'HTML cambia
-                // (es. cambio fontFamily che produce HTML di stessa length).
-                key: `${html.length}-${html.charCodeAt(100) || 0}-${html.charCodeAt(html.length - 100) || 0}`,
-                srcDoc: html,
-                style: {
-                  flex: 1,
-                  width: "100%",
-                  height: "100%",
-                  border: 0,
-                  background: colors.background,
-                  display: "block",
-                },
-                title: "celebra",
-                "data-testid": "celebra-iframe",
-              })
+            {Platform.OS === "web" || !PagerView ? (
+              // Su web (preview) PagerView non funziona: usiamo un fallback
+              // semplice che mostra una pagina alla volta. I tap zone sotto
+              // gestiscono l'avanzamento.
+              <View style={{ flex: 1 }}>
+                <View style={styles.nativePage} collapsable={false}>
+                  {pages[Math.min(currentPage, pages.length - 1)].map((seg, j) =>
+                    renderSegment(seg, `web-${currentPage}-${j}`, styles),
+                  )}
+                </View>
+              </View>
             ) : (
-              <WebView
-                ref={webViewRef}
-                originWhitelist={["*"]}
-                source={{ html }}
-                style={[styles.webview, { backgroundColor: colors.background }]}
-                containerStyle={{ backgroundColor: colors.background }}
-                scrollEnabled={false}
-                showsHorizontalScrollIndicator={false}
-                showsVerticalScrollIndicator={false}
-                bounces={false}
-                overScrollMode="never"
-                decelerationRate="fast"
-                setSupportMultipleWindows={false}
-                javaScriptEnabled
-                domStorageEnabled={false}
-                opaque={false}
-                allowsLinkPreview={false}
-                automaticallyAdjustContentInsets={false}
-                hideKeyboardAccessoryView
-                cacheEnabled={false}
-                {...({ scalesPageToFit: false } as any)}
-                onMessage={(event) => {
-                  try {
-                    const data = JSON.parse(event.nativeEvent.data);
-                    if (data && data.type === "state") {
-                      if (typeof data.total === "number" && data.total > 0) {
-                        setTotalPages(data.total);
-                      }
-                      if (typeof data.page === "number" && data.page >= 0) {
-                        setCurrentPage(data.page);
-                      }
-                    }
-                  } catch {
-                    // ignora messaggi non JSON
-                  }
+              <PagerView
+                ref={pagerRef}
+                style={{ flex: 1 }}
+                initialPage={0}
+                orientation="horizontal"
+                offscreenPageLimit={1}
+                onPageSelected={(e: any) => {
+                  const idx = e.nativeEvent.position;
+                  setCurrentPage(idx);
                 }}
-                // CRITICO Android: senza questo handler, se il processo
-                // renderer della WebView muore (OOM, GPU crash, ecc.) l'app
-                // CRASHA. Ritornando true diciamo "abbiamo gestito noi":
-                // forziamo un re-mount incrementando webviewKey.
-                onRenderProcessGone={(syntheticEvent) => {
-                  console.warn("[celebra] WebView renderer gone:", syntheticEvent?.nativeEvent);
-                  setWebviewKey((k) => k + 1);
-                  return true;
-                }}
-                onContentProcessDidTerminate={(syntheticEvent) => {
-                  console.warn("[celebra] WebView content process terminated:", syntheticEvent?.nativeEvent);
-                  setWebviewKey((k) => k + 1);
-                }}
-                onError={(syntheticEvent) => {
-                  console.warn("[celebra] WebView error:", syntheticEvent?.nativeEvent);
-                }}
-                onHttpError={(syntheticEvent) => {
-                  console.warn("[celebra] WebView HTTP error:", syntheticEvent?.nativeEvent);
-                }}
-                key={webviewKey}
-                testID="celebra-webview"
-              />
+                testID="celebra-pager"
+              >
+                {pages.map((pageSegments, i) => (
+                  <View key={`page-${i}`} style={styles.nativePage} collapsable={false}>
+                    {pageSegments.map((seg, j) => renderSegment(seg, `${i}-${j}`, styles))}
+                  </View>
+                ))}
+              </PagerView>
             )}
+            {/* Tap zones invisibili: 30% sinistro = back, 30% destro = next.
+                Il 40% centrale è ignorato per evitare avanzamenti accidentali
+                durante la lettura (e per consentire lo swipe senza interferenze). */}
+            <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+              <View style={{ flex: 1, flexDirection: "row" }}>
+                <Pressable
+                  style={{ width: "30%" }}
+                  onPress={() => {
+                    const next = Math.max(0, currentPage - 1);
+                    if (PagerView && pagerRef.current?.setPage) {
+                      pagerRef.current.setPage(next);
+                    } else {
+                      setCurrentPage(next);
+                    }
+                  }}
+                  testID="celebra-tap-prev"
+                  accessibilityLabel="Pagina precedente"
+                />
+                <View style={{ width: "40%" }} pointerEvents="none" />
+                <Pressable
+                  style={{ width: "30%" }}
+                  onPress={() => {
+                    const next = Math.min(totalPages - 1, currentPage + 1);
+                    if (PagerView && pagerRef.current?.setPage) {
+                      pagerRef.current.setPage(next);
+                    } else {
+                      setCurrentPage(next);
+                    }
+                  }}
+                  testID="celebra-tap-next"
+                  accessibilityLabel="Pagina successiva"
+                />
+              </View>
+            </View>
             {/* Barra di progresso fissa in fondo (3px di altezza, sollevata
                 di 10px dal bordo per non essere coperta dai tasti di sistema
                 Android). Sfondo grigio scuro, riempimento color oro. */}
@@ -758,6 +767,173 @@ export default function CelebraScreen() {
 // segmentsToHtml: converte un array di Segment in stringa HTML completa
 // pronta per essere iniettata in una WebView con CSS columns.
 // ===========================================================================
+// ===========================================================================
+// renderSegment: converte un Segment in elementi React Native nativi.
+// Usato dal PagerView per renderizzare ogni pagina (sostituisce
+// segmentsToHtml che produceva HTML per la WebView ora rimossa).
+// ===========================================================================
+function renderSegment(seg: Segment, key: string, styles: any): React.ReactNode {
+  const text = seg.text || "";
+  switch (seg.kind) {
+    case "spacer":
+      return <View key={key} style={styles.segSpacer} />;
+    case "sectionTitle":
+    case "sectionTitleBreak":
+      return (
+        <Text key={key} style={styles.segSectionTitle}>
+          {text}
+        </Text>
+      );
+    case "antifonaTitle":
+      return (
+        <Text key={key} style={styles.segAntifonaTitle}>
+          {text}
+        </Text>
+      );
+    case "readingTitle":
+      return (
+        <Text key={key} style={styles.segReadingTitle}>
+          {text}
+        </Text>
+      );
+    case "orazioneTitle":
+      return (
+        <Text key={key} style={styles.segOrazioneTitle}>
+          {text}
+        </Text>
+      );
+    case "subtitle":
+      return (
+        <Text key={key} style={styles.segSubtitle}>
+          {text}
+        </Text>
+      );
+    case "peTitle":
+      return (
+        <Text key={key} style={styles.segPeTitle}>
+          {text}
+        </Text>
+      );
+    case "rubric":
+      return (
+        <Text key={key} style={styles.segRubric}>
+          {text}
+        </Text>
+      );
+    case "readingRef":
+      return (
+        <Text key={key} style={styles.segReadingRef}>
+          {text}
+        </Text>
+      );
+    case "celebrante":
+      return (
+        <Text key={key} style={styles.segCelebrante}>
+          {text}
+        </Text>
+      );
+    case "assemblea":
+      return (
+        <Text key={key} style={styles.segAssemblea}>
+          {text}
+        </Text>
+      );
+    case "umili":
+      return (
+        <Text key={key} style={styles.segUmili}>
+          {text}
+        </Text>
+      );
+    case "consacrazione":
+      return (
+        <Text key={key} style={styles.segConsacrazione}>
+          {text}
+        </Text>
+      );
+    case "dossologia":
+      return (
+        <Text key={key} style={styles.segDossologia}>
+          {text}
+        </Text>
+      );
+    case "salmo":
+      return renderSalmoNative(text, key, styles);
+    case "preghieraFedeli":
+      return renderPreghieraFedeliNative(text, key, styles);
+    case "normal":
+    default:
+      return (
+        <Text key={key} style={styles.segNormal}>
+          {text}
+        </Text>
+      );
+  }
+}
+
+// Renderer salmo: evidenzia "R." (e suoi sinonimi tipo "R/.") in rosso.
+function renderSalmoNative(text: string, key: string, styles: any): React.ReactNode {
+  const cleaned = text.replace(/^\n+|\n+$/g, "").replace(/\n+/g, "\n");
+  const lines = cleaned.split("\n");
+  return (
+    <Text key={key} style={styles.segSalmo} selectable>
+      {lines.map((ln, i) => {
+        const m = ln.match(/^(\s*)(R\.|R\/\.?)(\s*)(.*)$/);
+        const isLast = i === lines.length - 1;
+        const tail = isLast ? "" : "\n";
+        if (m) {
+          return (
+            <Text key={i}>
+              {m[1]}
+              <Text style={styles.segRespMarker}>{m[2]}</Text>
+              {m[3]}
+              {m[4]}
+              {tail}
+            </Text>
+          );
+        }
+        return <Text key={i}>{ln}{tail}</Text>;
+      })}
+    </Text>
+  );
+}
+
+// Renderer Preghiera dei Fedeli: regola globale R/. rosso bold + riga
+// vuota dopo ogni riga che lo contiene. Identica logica di /messa e /orazionale.
+function renderPreghieraFedeliNative(text: string, key: string, styles: any): React.ReactNode {
+  if (!text) return null;
+  const normalized = text.replace(/\n{3,}/g, "\n\n");
+  const rawLines = normalized.split("\n");
+  const lines: string[] = [];
+  for (let i = 0; i < rawLines.length; i++) {
+    const ln = rawLines[i];
+    lines.push(ln);
+    if (/R\/\.?/.test(ln) && rawLines[i + 1] === "") i++;
+  }
+  const RESP_RE = /R\/\.?/g;
+  return (
+    <Text key={key} style={styles.segNormal} selectable>
+      {lines.map((ln, i) => {
+        const parts = ln.split(/(R\/\.?)/g);
+        const hasResp = RESP_RE.test(ln);
+        RESP_RE.lastIndex = 0;
+        const isLast = i === lines.length - 1;
+        const tail = isLast ? "" : (hasResp ? "\n\n" : "\n");
+        return (
+          <Text key={i}>
+            {parts.map((p, j) => {
+              if (/^R\/\.?$/.test(p)) {
+                return <Text key={j} style={styles.segRespMarker}>{p}</Text>;
+              }
+              return <Text key={j}>{p}</Text>;
+            })}
+            {tail}
+          </Text>
+        );
+      })}
+    </Text>
+  );
+}
+
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")
@@ -1808,6 +1984,151 @@ const makeStyles = (
     webview: {
       flex: 1,
       backgroundColor: "transparent",
+    },
+    // ===== Stili NATIVI per il rendering dei segmenti su Android/iOS =====
+    // (sostituiscono il rendering HTML+WebView che crashava su tablet con
+    // newArch enabled). I colori e le proporzioni replicano fedelmente
+    // l'estetica dell'HTML originale.
+    nativeScroll: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    nativeContent: {
+      paddingHorizontal: 16,
+      paddingTop: 8,
+      paddingBottom: 60,
+    },
+    // Una pagina del PagerView: occupa tutta l'area disponibile, padding
+    // uniforme; il contenuto è renderizzato in alto.
+    nativePage: {
+      flex: 1,
+      paddingHorizontal: 16,
+      paddingTop: 12,
+      paddingBottom: 30, // spazio per la progress bar
+      backgroundColor: colors.background,
+    },
+    segSectionTitle: {
+      fontSize: Math.round(fontSize * 1.05),
+      fontWeight: "800",
+      color: "#4DA8DA",
+      marginTop: 16,
+      marginBottom: 4,
+      lineHeight: Math.round(fontSize * 1.25),
+    },
+    segAntifonaTitle: {
+      fontSize: Math.round(fontSize * 0.85),
+      fontWeight: "800",
+      color: "#FFB74D",
+      marginTop: 24,
+      marginBottom: 4,
+    },
+    segReadingTitle: {
+      fontSize: Math.round(fontSize * 0.85),
+      fontWeight: "800",
+      color: "#81C784",
+      marginTop: 14,
+      marginBottom: 4,
+    },
+    segOrazioneTitle: {
+      fontSize: Math.round(fontSize * 0.85),
+      fontWeight: "800",
+      color: "#CE93D8",
+      marginTop: 14,
+      marginBottom: 4,
+    },
+    segSubtitle: {
+      fontSize: Math.round(fontSize * 0.85),
+      fontWeight: "700",
+      color: colors.textPrimary,
+      marginTop: 12,
+      marginBottom: 4,
+    },
+    segPeTitle: {
+      fontSize: Math.round(fontSize * 0.78),
+      fontWeight: "800",
+      color: "#66BB6A",
+      marginTop: 12,
+      marginBottom: 6,
+    },
+    segNormal: {
+      fontSize: fontSize,
+      color: colors.textPrimary,
+      lineHeight: Math.round(fontSize * 1.6),
+      marginTop: 4,
+      marginBottom: 8,
+    },
+    segRubric: {
+      fontSize: Math.round(fontSize * 0.7),
+      color: "#E57373",
+      fontStyle: "italic",
+      lineHeight: Math.round(fontSize * 1.0),
+      marginVertical: 6,
+    },
+    segReadingRef: {
+      fontSize: fontSize,
+      color: "#E57373",
+      fontStyle: "italic",
+      lineHeight: Math.round(fontSize * 1.4),
+      marginTop: 4,
+      marginBottom: 8,
+    },
+    segCelebrante: {
+      fontSize: fontSize,
+      color: colors.textPrimary,
+      lineHeight: Math.round(fontSize * 1.6),
+      marginTop: 4,
+      marginBottom: 10,
+    },
+    segAssemblea: {
+      fontSize: Math.round(fontSize * 0.95),
+      color: colors.textPrimary,
+      fontStyle: "italic",
+      lineHeight: Math.round(fontSize * 1.55),
+      marginTop: 4,
+      marginBottom: 10,
+    },
+    segUmili: {
+      fontSize: Math.round(fontSize * 0.85),
+      color: colors.textPrimary,
+      lineHeight: Math.round(fontSize * 1.4),
+      marginTop: 4,
+      marginBottom: 10,
+    },
+    segSalmo: {
+      fontSize: fontSize,
+      color: colors.textPrimary,
+      lineHeight: Math.round(fontSize * 1.55),
+      marginVertical: 6,
+    },
+    segConsacrazione: {
+      fontSize: fontSize,
+      color: "#4FC3F7",
+      lineHeight: Math.round(fontSize * 1.6),
+      marginVertical: 8,
+    },
+    segDossologia: {
+      fontSize: fontSize,
+      color: "#FFD54F",
+      fontWeight: "700",
+      lineHeight: Math.round(fontSize * 1.6),
+      marginVertical: 8,
+    },
+    // R/. marker rosso bold (regola globale Preghiera dei Fedeli + salmo)
+    segRespMarker: {
+      color: "#E57373",
+      fontWeight: "700",
+    },
+    segSpacer: {
+      height: 16,
+    },
+    // Spacer grande prima di una sezione con page-break (Liturgia della
+    // Parola, post-Vangelo, Prefazio): non è una vera "pagina" ma una
+    // separazione visiva ben evidente.
+    segPageBreak: {
+      height: 32,
+      borderTopWidth: 2,
+      borderTopColor: colors.border,
+      marginTop: 32,
     },
     // Barra di progresso fissa in fondo alla pageArea. Sollevata di 10px dal
     // bordo per non essere coperta dai tasti di sistema su Android.
