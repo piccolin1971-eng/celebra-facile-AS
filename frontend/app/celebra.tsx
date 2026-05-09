@@ -2296,6 +2296,7 @@ const makeStyles = (
     segNormal: {
       fontSize: fontSize,
       color: colors.textPrimary,
+      fontFamily,
       lineHeight: Math.round(fontSize * 1.6),
       marginTop: 4,
       marginBottom: 8,
@@ -2311,6 +2312,7 @@ const makeStyles = (
       fontSize: fontSize,
       color: "#E57373",
       fontStyle: "italic",
+      fontFamily,
       lineHeight: Math.round(fontSize * 1.4),
       marginTop: 4,
       marginBottom: 8,
@@ -2318,6 +2320,7 @@ const makeStyles = (
     segCelebrante: {
       fontSize: fontSize,
       color: colors.textPrimary,
+      fontFamily,
       lineHeight: Math.round(fontSize * 1.6),
       marginTop: 4,
       marginBottom: 10,
@@ -2326,6 +2329,7 @@ const makeStyles = (
       fontSize: Math.round(fontSize * 0.95),
       color: colors.textPrimary,
       fontStyle: "italic",
+      fontFamily,
       lineHeight: Math.round(fontSize * 1.55),
       marginTop: 4,
       marginBottom: 10,
@@ -2333,6 +2337,7 @@ const makeStyles = (
     segUmili: {
       fontSize: Math.round(fontSize * 0.85),
       color: colors.textPrimary,
+      fontFamily,
       lineHeight: Math.round(fontSize * 1.4),
       marginTop: 4,
       marginBottom: 10,
@@ -2340,6 +2345,7 @@ const makeStyles = (
     segSalmo: {
       fontSize: fontSize,
       color: colors.textPrimary,
+      fontFamily,
       lineHeight: Math.round(fontSize * 1.55),
       marginVertical: 6,
     },
