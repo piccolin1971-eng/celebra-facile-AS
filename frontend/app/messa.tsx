@@ -873,6 +873,44 @@ export default function MessaScreen() {
     return chunks;
   };
 
+  // === Renderer Preghiera dei Fedeli ===
+  // Regola globale: ogni occorrenza di "R/." (anche multipla, anche a metà
+  // riga) viene mostrata in rosso bold; ogni riga che la contiene è seguita
+  // da una riga vuota (effetto "padding inferiore"). Vale per tutte le
+  // intenzioni dell'Orazionale CEI, presenti e future.
+  const renderPreghieraFedeliText = (text: string) => {
+    if (!text) return null;
+    const normalized = text.replace(/\n{3,}/g, "\n\n");
+    const lines = normalized.split("\n");
+    const RESP_RE = /R\/\.?/g;
+    return (
+      <Text style={styles.text} selectable>
+        {lines.map((ln, i) => {
+          // Splitta la riga in pezzi alternati: testo / "R/." / testo / ...
+          const parts = ln.split(/(R\/\.?)/g);
+          const hasResp = RESP_RE.test(ln);
+          RESP_RE.lastIndex = 0;
+          const isLast = i === lines.length - 1;
+          // Se la riga contiene R/. → riga vuota dopo (\n\n), altrimenti \n
+          const tail = isLast ? "" : (hasResp ? "\n\n" : "\n");
+          return (
+            <Text key={i}>
+              {parts.map((p, j) => {
+                if (/^R\/\.?$/.test(p)) {
+                  return (
+                    <Text key={j} style={styles.salmoRit}>{p}</Text>
+                  );
+                }
+                return <Text key={j}>{p}</Text>;
+              })}
+              {tail}
+            </Text>
+          );
+        })}
+      </Text>
+    );
+  };
+
   // === Reading renderer (daily) ===
   // Per il Salmo Responsoriale, evidenzia "R." (o "R/.") in rosso come ritornello.
   // Renderizziamo l'intero salmo in UN singolo <Text> usando \n: in questo modo
@@ -1572,7 +1610,7 @@ export default function MessaScreen() {
                   ) : (
                     <R kind="subtitle">{selectedOrazionale.title} (continua)</R>
                   )}
-                  <R>{orChunks[i]}</R>
+                  {renderPreghieraFedeliText(orChunks[i])}
                 </View>
               ),
             });
