@@ -50,7 +50,36 @@ export async function loadSession(dateISO: string): Promise<MassSession | null> 
     const raw = await AsyncStorage.getItem(sessionKey(dateISO));
     return raw ? JSON.parse(raw) : null;
   } catch (e) {
-    console.log("loadSession err:", e);
+    if (__DEV__) console.log("loadSession err:", e);
+    return null;
+  }
+}
+
+/**
+ * Carica la sessione del giorno richiesto. Se non esiste (es. oggi non è
+ * stata ancora preparata), restituisce l'ULTIMA sessione preparata in
+ * precedenza (anche se per un giorno diverso). In questo modo se l'utente
+ * prepara la liturgia stasera per domani, domani al primo ingresso la
+ * trova già impostata finché non ne prepara una nuova.
+ */
+export async function loadSessionOrLatest(
+  dateISO: string,
+): Promise<MassSession | null> {
+  // Prima prova: sessione esatta del giorno
+  const today = await loadSession(dateISO);
+  if (today) return today;
+  // Fallback: ultima sessione salvata (ordinamento ISO funziona come date sort)
+  try {
+    const allKeys = await AsyncStorage.getAllKeys();
+    const sessionKeys = allKeys
+      .filter((k) => k.startsWith(KEY_PREFIX))
+      .sort();
+    if (sessionKeys.length === 0) return null;
+    const latestKey = sessionKeys[sessionKeys.length - 1];
+    const raw = await AsyncStorage.getItem(latestKey);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    if (__DEV__) console.log("loadSessionOrLatest err:", e);
     return null;
   }
 }
@@ -59,7 +88,7 @@ export async function saveSession(dateISO: string, session: MassSession): Promis
   try {
     await AsyncStorage.setItem(sessionKey(dateISO), JSON.stringify(session));
   } catch (e) {
-    console.log("saveSession err:", e);
+    if (__DEV__) console.log("saveSession err:", e);
   }
 }
 
@@ -73,6 +102,6 @@ export async function cleanupOldSessions(): Promise<void> {
       await AsyncStorage.multiRemove(toRemove);
     }
   } catch (e) {
-    console.log("cleanupOldSessions err:", e);
+    if (__DEV__) console.log("cleanupOldSessions err:", e);
   }
 }

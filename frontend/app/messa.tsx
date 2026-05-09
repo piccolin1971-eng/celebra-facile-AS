@@ -7,7 +7,7 @@ import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 import { useSettings } from "../src/SettingsContext";
 import { api, Liturgy, Preface, EucharisticPrayer, MysteryAcclamation, SolemnBlessing } from "../src/api";
 import { getOrazionaleSections, getPrayerById, suggestPrayerForLiturgy, OrazionalePrayer } from "../src/orazionale";
-import { loadSession, saveSession, cleanupOldSessions, MassSession } from "../src/massSession";
+import { loadSession, loadSessionOrLatest, saveSession, cleanupOldSessions, MassSession } from "../src/massSession";
 import peFullData from "../src/data/eucharisticPrayersFull.json";
 
 // === Helper: suggerisce l'opzione "communicantes" (Tempo Liturgico) per la PE
@@ -206,7 +206,7 @@ export default function MessaScreen() {
         // mattino e imposta tutto, ritrova le stesse scelte la sera.
         const dateKey = lit?.date || dateParam || new Date().toISOString().slice(0, 10);
         setSessionDate(dateKey);
-        const saved = await loadSession(dateKey);
+        const saved = await loadSessionOrLatest(dateKey);
         if (saved) {
           if (typeof saved.showGloria === "boolean") setShowGloria(saved.showGloria);
           if (typeof saved.showCredo === "boolean") setShowCredo(saved.showCredo);

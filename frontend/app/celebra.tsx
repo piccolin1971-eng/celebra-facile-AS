@@ -52,7 +52,7 @@ import {
   SolemnBlessing,
 } from "../src/api";
 import { getPrayerById } from "../src/orazionale";
-import { loadSession } from "../src/massSession";
+import { loadSession, loadSessionOrLatest } from "../src/massSession";
 import peFullData from "../src/data/eucharisticPrayersFull.json";
 
 // ===========================================================================
@@ -61,12 +61,14 @@ import peFullData from "../src/data/eucharisticPrayersFull.json";
 
 type SegKind =
   | "sectionTitle"
+  | "sectionTitleBreak" // identico a sectionTitle ma forza salto pagina (CSS column-break)
   | "antifonaTitle"
   | "readingTitle"
   | "orazioneTitle"
   | "subtitle"
   | "normal"
   | "rubric"
+  | "readingRef" // riferimento biblico sotto Lettura/Vangelo (rosso, ma più grande della rubric)
   | "celebrante"
   | "assemblea"
   | "umili"
@@ -74,6 +76,7 @@ type SegKind =
   | "peText"
   | "peDossologia"
   | "salmo"
+  | "preghieraFedeli" // R/. in rosso + riga vuota dopo ogni R/.
   | "spacer";
 
 type Segment = {
@@ -317,7 +320,7 @@ export default function CelebraScreen() {
 
         const dateKey =
           lit?.date || dateParam || new Date().toISOString().slice(0, 10);
-        const saved = await loadSession(dateKey);
+        const saved = await loadSessionOrLatest(dateKey);
         if (saved) {
           setSession(saved);
           setHasSession(true);
@@ -677,7 +680,30 @@ function salmoToHtml(text: string): string {
   return lines.join("<br>");
 }
 
-// Renderizza il testo di una PE: estrae il marker <<DOSSOLOGIA>> e applica
+// Renderizza il testo della Preghiera dei Fedeli: evidenzia "R/." in rosso
+// e aggiunge una riga vuota dopo ogni "R/." per migliorare la leggibilità.
+function preghieraFedeliToHtml(text: string): string {
+  const cleaned = text.replace(/^\n+|\n+$/g, "").replace(/\n+/g, "\n");
+  const out: string[] = [];
+  const lines = cleaned.split("\n");
+  for (let i = 0; i < lines.length; i++) {
+    const ln = lines[i];
+    // Match "R/." sia all'inizio della linea, sia preceduto da spazi.
+    const m = ln.match(/^(\s*)(R\/\.?)(\s*)(.*)$/);
+    if (m) {
+      out.push(
+        `${escapeHtml(m[1])}<span class="resp-r">${escapeHtml(m[2])}</span>${escapeHtml(m[3])}${escapeHtml(m[4])}`,
+      );
+      // Riga vuota DOPO ogni R/. (un solo <br> aggiuntivo, non doppio)
+      out.push("");
+    } else {
+      out.push(escapeHtml(ln));
+    }
+  }
+  return out.join("<br>");
+}
+
+
 // stile speciale alle parole della Consacrazione (in azzurro).
 function peTextToHtml(text: string): string {
   const parts = text.split("<<DOSSOLOGIA>>");
@@ -748,13 +774,33 @@ function segmentsToHtml(
   const txt = (s: string) =>
     escapeHtml(s.replace(/^\n+|\n+$/g, "")).replace(/\n+/g, "<br>");
 
-  const body = segments
+  // Post-processing: la PRIMA "rubric" che segue un readingTitle (es.
+  // "Dalla lettera...") va trattata come "readingRef" — più grande, stessa
+  // dimensione del body. Le altre rubric restano piccole.
+  let lastNonSpacerKind: SegKind | null = null;
+  const processed: Segment[] = segments.map((seg) => {
+    if (seg.kind === "rubric" && lastNonSpacerKind === "readingTitle") {
+      lastNonSpacerKind = "rubric";
+      return { kind: "readingRef", text: seg.text };
+    }
+    if (seg.kind !== "spacer") {
+      lastNonSpacerKind = seg.kind;
+    }
+    return seg;
+  });
+
+  const body = processed
     .map((seg) => {
       switch (seg.kind) {
         case "spacer":
-          return ``; // spacer rimosso: lo spacing è gestito dai margin dei titoli
+          return ``;
         case "sectionTitle":
           return `<h2 class="section-title">${escapeHtml(seg.text)}</h2>`;
+        case "sectionTitleBreak":
+          // Forza un salto pagina (CSS columns) prima di questo titolo.
+          // Per maggiore affidabilità del browser, usiamo un div dedicato
+          // con break-before:column SEPARATO dal titolo h2.
+          return `<div class="page-break-spacer"></div><h2 class="section-title">${escapeHtml(seg.text)}</h2>`;
         case "antifonaTitle":
           return `<h3 class="antifona-title">${escapeHtml(seg.text)}</h3>`;
         case "readingTitle":
@@ -767,6 +813,10 @@ function segmentsToHtml(
           return `<h3 class="pe-title">${escapeHtml(seg.text)}</h3>`;
         case "rubric":
           return `<p class="rubric">${txt(seg.text)}</p>`;
+        case "readingRef":
+          // Riferimento biblico sotto Lettura/Vangelo: rosso ma di
+          // dimensione uguale al body (era 0.7em → ora 1em).
+          return `<p class="reading-ref">${txt(seg.text)}</p>`;
         case "celebrante":
           return `<p class="celebrante">${txt(seg.text)}</p>`;
         case "assemblea":
@@ -775,6 +825,8 @@ function segmentsToHtml(
           return `<p class="umili">${txt(seg.text)}</p>`;
         case "salmo":
           return `<p class="salmo">${salmoToHtml(seg.text.replace(/^\n+|\n+$/g, ""))}</p>`;
+        case "preghieraFedeli":
+          return `<p class="preghiera-fedeli">${preghieraFedeliToHtml(seg.text)}</p>`;
         case "peText":
           return `<div class="pe-text">${peTextToHtml(seg.text.replace(/^\n+|\n+$/g, ""))}</div>`;
         case "peDossologia":
@@ -843,11 +895,18 @@ ${fontHref ? `<link rel="preconnect" href="https://fonts.googleapis.com">
 
   p { margin: 4px 0 8px 0; }
   p.rubric { color: #E57373; font-style: italic; font-size: 0.7em; line-height: 1.2; margin: 6px 0; }
+  /* Riferimento biblico sotto Lettura/Vangelo: rosso (italico),
+     stessa dimensione del body per migliore leggibilità. */
+  p.reading-ref { color: #E57373; font-style: italic; font-size: 1em; line-height: 1.4; margin: 4px 0 8px 0; }
   p.celebrante { font-size: 1em; color: ${textColor}; margin: 4px 0 10px 0; }
   p.assemblea { font-size: 0.95em; color: ${textColor}; font-style: italic; margin: 4px 0 10px 0; }
   p.umili { font-size: 0.85em; color: ${textColor}; margin: 4px 0 10px 0; line-height: 1.55; }
   p.salmo { font-size: 1em; color: ${textColor}; line-height: 1.55; margin: 6px 0; }
   span.salmo-r { color: #E57373; font-weight: 700; }
+  /* Preghiera dei Fedeli: R/. in rosso, riga vuota dopo (gestita da
+     preghieraFedeliToHtml che inserisce un <br> aggiuntivo). */
+  p.preghiera-fedeli { font-size: 1em; color: ${textColor}; line-height: 1.7; margin: 6px 0; }
+  span.resp-r { color: #E57373; font-weight: 700; }
   div.pe-text { font-size: 1em; color: ${textColor}; }
   span.pe-consacration { color: #29B6F6; padding: 0 4px; }
   div.pe-dossologia-label { font-size: 0.78em; font-weight: 800; color: #29B6F6; margin: 12px 0 0 0; line-height: 1.1; }
@@ -855,6 +914,12 @@ ${fontHref ? `<link rel="preconnect" href="https://fonts.googleapis.com">
   div.pe-dossologia { font-size: 1em; color: ${textColor}; text-transform: uppercase; line-height: 1.5; margin: 0 0 12px 0; }
   p.pe-dossologia { text-transform: uppercase; line-height: 1.5; }
   div.spacer { height: 16px; }
+  /* Forza un salto di pagina (column-break) prima di un elemento.
+     Usato per: Liturgia della Parola (Prima Lettura), Prefazio.
+     Lo spacer è un div dedicato con break-before:column — funziona
+     più affidabilmente di break-before sull'h2 stesso. */
+  div.page-break-spacer { break-before: column !important; -webkit-column-break-before: always !important; page-break-before: always !important; height: 0; margin: 0; padding: 0; display: block; }
+  .force-page-break { break-before: column !important; -webkit-column-break-before: always !important; page-break-before: always !important; }
 </style>
 </head>
 <body>
@@ -878,30 +943,49 @@ ${fontHref ? `<link rel="preconnect" href="https://fonts.googleapis.com">
         try { window.parent.postMessage(msg, '*'); } catch (e) {}
       }
     }
-    // Fade rapido (200ms totali: 100ms out + 100ms in) durante il cambio
-    // pagina per una transizione morbida invece di un salto istantaneo.
+    // Slide animato 250ms con curva ease-out (cubic).
+    // Anima scrollLeft con requestAnimationFrame per controllare durata
+    // (scroll-behavior:smooth nativo dura ~500ms, troppo lento).
     var isAnimating = false;
-    function navigate(direction) {
+    function animateScroll(targetX, duration) {
       if (isAnimating) return;
       isAnimating = true;
-      book.style.transition = 'opacity 100ms ease-out';
-      book.style.opacity = '0';
-      setTimeout(function() {
-        book.scrollBy({ left: direction * W(), behavior: 'instant' });
-        // Forza il reflow prima di rifare il fade in
-        void book.offsetWidth;
-        book.style.transition = 'opacity 100ms ease-in';
-        book.style.opacity = '1';
-        setTimeout(function() {
+      var startX = book.scrollLeft;
+      var dx = targetX - startX;
+      if (dx === 0) { isAnimating = false; return; }
+      var startT = performance.now();
+      function tick(now) {
+        var p = Math.min(1, (now - startT) / duration);
+        // ease-out cubic: veloce all'inizio, morbida alla fine
+        var eased = 1 - Math.pow(1 - p, 3);
+        book.scrollLeft = startX + dx * eased;
+        if (p < 1) {
+          requestAnimationFrame(tick);
+        } else {
           isAnimating = false;
-        }, 110);
-      }, 100);
+          postState();
+        }
+      }
+      requestAnimationFrame(tick);
+    }
+    function navigate(direction) {
+      if (isAnimating) return;
+      var W = window.innerWidth;
+      var current = Math.round(book.scrollLeft / W);
+      var total = Math.round(book.scrollWidth / W);
+      var target = Math.max(0, Math.min(total - 1, current + direction));
+      animateScroll(target * W, 250);
     }
     document.addEventListener('click', function(e) {
       var x = e.clientX;
-      var w = W();
+      var w = window.innerWidth;
       navigate(x < w / 2 ? -1 : 1);
     }, { passive: true });
+
+    // Swipe orizzontale: il browser nativo fa già lo scroll grazie a
+    // overflow-x:auto + touch-action:pan-x + scroll-snap-type:x mandatory.
+    // Quando l'utente solleva il dito, scroll-snap allinea automaticamente.
+    // Quindi NON serve JS aggiuntivo per lo swipe — è già fluido.
     var scrollDebounce;
     book.addEventListener('scroll', function() {
       clearTimeout(scrollDebounce);
@@ -1127,13 +1211,16 @@ function buildSegments(args: BuildArgs): Segment[] {
   addReading("colletta", "orazioneTitle", "Colletta");
 
   // ===== LITURGIA DELLA PAROLA =====
-  push("sectionTitle", "Liturgia della Parola");
+  // sectionTitleBreak forza un salto pagina (CSS column-break-before)
+  // così Prima Lettura inizia sempre in una pagina nuova.
+  push("sectionTitleBreak", "Liturgia della Parola");
   sp();
   addReading("prima_lettura", "readingTitle", "Prima Lettura");
   addReading("salmo", "readingTitle", "Salmo Responsoriale");
   addReading("seconda_lettura", "readingTitle", "Seconda Lettura");
   addReading("sequenza", "antifonaTitle", "Sequenza");
-  addReading("acclamazione", "antifonaTitle", "Acclamazione al Vangelo");
+  // Acclamazione al Vangelo: verde come Salmo Responsoriale (era arancione)
+  addReading("acclamazione", "readingTitle", "Acclamazione al Vangelo");
   addReading("vangelo", "readingTitle", "Vangelo");
 
   // ===== CREDO =====
@@ -1155,7 +1242,9 @@ function buildSegments(args: BuildArgs): Segment[] {
     const orPrayer = getPrayerById(session.selectedOrazionaleId);
     if (orPrayer) {
       push("subtitle", orPrayer.title);
-      push("normal", orPrayer.body);
+      // Kind dedicato: "preghieraFedeli" applica colore rosso a R/. e
+      // garantisce una riga vuota dopo ogni R/.
+      push("preghieraFedeli", orPrayer.body);
     }
     sp();
   }
@@ -1205,7 +1294,8 @@ function buildSegments(args: BuildArgs): Segment[] {
   // Per le 7 PE con prefazio incorporato, NON ripetiamo il prefazio del giorno:
   // il prefazio è dentro la PE stessa (con introduzione + Santo).
   if (selectedPreface && !hasProperPreface) {
-    push("sectionTitle", "Prefazio");
+    // sectionTitleBreak: forza salto pagina prima del Prefazio (CSS column-break)
+    push("sectionTitleBreak", "Prefazio");
     // Titolo del prefazio in VERDE (peTitle), coerente con /messa.
     push("peTitle", selectedPreface.title);
     push("normal", PREFACE_INTRO + "\n\n" + selectedPreface.text.trimEnd() + "\n\n" + SANTO_TEXT);
@@ -1214,7 +1304,11 @@ function buildSegments(args: BuildArgs): Segment[] {
 
   // ===== PREGHIERA EUCARISTICA =====
   if (selectedPrayer) {
-    push("sectionTitle", "Preghiera Eucaristica");
+    // Se non c'è il sectionTitle "Prefazio" (caso PE con prefazio incorporato),
+    // forziamo il salto pagina direttamente sul titolo "Preghiera Eucaristica".
+    const peKind: SegKind =
+      selectedPreface && !hasProperPreface ? "sectionTitle" : "sectionTitleBreak";
+    push(peKind, "Preghiera Eucaristica");
     push("peTitle", selectedPrayer.title);
 
     // Costruzione testo PE: usa expandPrayerText (per 7 PE Messale 2020)
