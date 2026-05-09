@@ -808,11 +808,15 @@ function CelebraScreenInner() {
                 ))}
               </PagerView>
             )}
-            {/* Indicatore "↓ scorri" basato su STATE (auto-aggiornato) */}
-            <ScrollIndicator scrollY={scrollY} contentH={contentH} viewportH={viewportH} />
+            {/* Indicatore "↓ scorri" rimosso (richiesta utente v2.16.7):
+                copriva 1-2 righe di testo in basso a destra. Lo Smart Tap
+                gestisce già la navigazione: tap dx scrolla giù (o cambia
+                macro-pagina al fondo), tap sx scrolla su (o macro-pagina
+                precedente in cima). Il contatore N/M in alto a destra
+                indica la posizione tra le 4 macro-pagine. */}
             {/* Tap zones SMART (30% sx + 70% dx). 
-                Tap dx → smart scroll giù (overlap 40px) o macro-pagina succ.
-                Tap sx → smart scroll su (overlap 40px) o macro-pagina prec. */}
+                Tap dx → smart scroll giù o macro-pagina succ.
+                Tap sx → smart scroll su o macro-pagina prec. */}
             <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
               <View style={{ flex: 1, flexDirection: "row" }}>
                 <Pressable
@@ -861,44 +865,6 @@ export default function CelebraScreen() {
 // segmentsToHtml: converte un array di Segment in stringa HTML completa
 // pronta per essere iniettata in una WebView con CSS columns.
 // ===========================================================================
-// ===========================================================================
-// ScrollIndicator: piccola freccia "↓ scorri" che appare in basso quando
-// c'è altro testo sotto la viewport corrente. Aiuta l'utente anziano a
-// capire che la macro-pagina ha contenuto aggiuntivo da scoprire con
-// tap dx (smooth scroll) o swipe verticale.
-// ===========================================================================
-function ScrollIndicator(props: {
-  scrollY: number;
-  contentH: number;
-  viewportH: number;
-}) {
-  const { scrollY, contentH, viewportH } = props;
-  const hasMoreBelow =
-    viewportH > 0 && contentH > viewportH + 16 && scrollY + viewportH < contentH - 16;
-  if (!hasMoreBelow) return null;
-  return (
-    <View
-      pointerEvents="none"
-      style={{
-        position: "absolute",
-        right: 16,
-        bottom: 30,
-        backgroundColor: "rgba(212, 175, 55, 0.85)",
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 18,
-        flexDirection: "row",
-        alignItems: "center",
-      }}
-    >
-      <Ionicons name="chevron-down" size={20} color="#1a1a1a" />
-      <Text style={{ color: "#1a1a1a", fontWeight: "700", marginLeft: 4, fontSize: 14 }}>
-        scorri
-      </Text>
-    </View>
-  );
-}
-
 // ===========================================================================
 // renderSegment: converte un Segment in elementi React Native nativi.
 // Usato dal PagerView per renderizzare ogni pagina (sostituisce
