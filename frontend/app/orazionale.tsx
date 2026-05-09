@@ -8,6 +8,48 @@ import { getOrazionaleSections, OrazionalePrayer } from "../src/orazionale";
 
 type ViewMode = "list" | "section" | "prayer";
 
+// Renderer condiviso per il testo della Preghiera dei Fedeli.
+// Regola globale: ogni occorrenza di "R/." (anche multipla, anche a metà
+// riga) viene mostrata in rosso bold; ogni riga che la contiene è seguita
+// da UNA SOLA riga vuota di separazione. Stessa logica usata in
+// /messa (prepara la liturgia) e /celebra (celebrazione).
+function renderRespText(text: string, styles: any) {
+  if (!text) return null;
+  const normalized = text.replace(/\n{3,}/g, "\n\n");
+  const rawLines = normalized.split("\n");
+  // Evita doppio gap: se una riga contiene R/. e la successiva è vuota,
+  // saltiamo la riga vuota perché il tail "\n\n" la genererà comunque.
+  const lines: string[] = [];
+  for (let i = 0; i < rawLines.length; i++) {
+    const ln = rawLines[i];
+    lines.push(ln);
+    if (/R\/\.?/.test(ln) && rawLines[i + 1] === "") i++;
+  }
+  const RESP_RE = /R\/\.?/g;
+  return (
+    <Text style={styles.prayerText} selectable>
+      {lines.map((ln, i) => {
+        const parts = ln.split(/(R\/\.?)/g);
+        const hasResp = RESP_RE.test(ln);
+        RESP_RE.lastIndex = 0;
+        const isLast = i === lines.length - 1;
+        const tail = isLast ? "" : (hasResp ? "\n\n" : "\n");
+        return (
+          <Text key={i}>
+            {parts.map((p, j) => {
+              if (/^R\/\.?$/.test(p)) {
+                return <Text key={j} style={styles.respMarker}>{p}</Text>;
+              }
+              return <Text key={j}>{p}</Text>;
+            })}
+            {tail}
+          </Text>
+        );
+      })}
+    </Text>
+  );
+}
+
 export default function OrazionaleScreen() {
   const router = useRouter();
   const { colors, fontSize, scaledFont, readingMode } = useSettings();
@@ -162,15 +204,9 @@ export default function OrazionaleScreen() {
     const Body = (
       <View style={styles.prayerBody}>
         <Text style={styles.prayerHeader}>{activePrayer.title}</Text>
-        {isTap ? (
-          <Text style={styles.prayerText} selectable>
-            {prayerChunks[safePage]}
-          </Text>
-        ) : (
-          <Text style={styles.prayerText} selectable>
-            {activePrayer.body}
-          </Text>
-        )}
+        {isTap
+          ? renderRespText(prayerChunks[safePage], styles)
+          : renderRespText(activePrayer.body, styles)}
       </View>
     );
 
@@ -289,6 +325,11 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     fontSize: fontSize,
     lineHeight: Math.round(fontSize * 1.5),
     color: colors.textPrimary,
+  },
+  // Marker R/. in rosso bold (regola globale Preghiera dei Fedeli)
+  respMarker: {
+    color: "#E57373",
+    fontWeight: "700",
   },
   tapZone: {
     position: "absolute",
