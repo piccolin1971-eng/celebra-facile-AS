@@ -467,10 +467,17 @@ function CelebraScreenInner() {
   }, [segments]);
 
   // === Smart Tap state ===
-  // Tracciamo lo stato di scroll della pagina CORRENTE in stato React
-  // (NON in dictionary di refs, troppo fragile). Quando cambia currentPage,
-  // un useEffect resetta lo stato e fa scrollTo(0) sulla nuova pagina.
-  const currentScrollRef = useRef<ScrollView | null>(null);
+  // Su native PagerView le N ScrollView coesistono tutte montate insieme,
+  // quindi non possiamo affidarci a UN solo ref / a stati globali (sarebbero
+  // sempre quelli della pagina iniziale). Manteniamo invece dictionary
+  // INDICIZZATI per pagina (refs); leggiamo i valori della currentPage
+  // direttamente da lì negli handler dei tap.
+  const scrollRefsRef = useRef<Record<number, ScrollView | null>>({});
+  const scrollYByPageRef = useRef<Record<number, number>>({});
+  const contentHByPageRef = useRef<Record<number, number>>({});
+  const viewportHByPageRef = useRef<Record<number, number>>({});
+  // Stato React solo per UI (es. ScrollIndicator); aggiornato dagli onScroll
+  // della pagina corrente.
   const [scrollY, setScrollY] = useState(0);
   const [contentH, setContentH] = useState(0);
   const [viewportH, setViewportH] = useState(0);
@@ -480,16 +487,19 @@ function CelebraScreenInner() {
   // di scrollare di una quantità fissa che taglia righe a metà.
   const segLayoutsRef = useRef<Record<number, Record<string, number>>>({});
 
-  // Reset stato quando cambia la macro-pagina + scroll a 0
+  // Reset stato quando cambia la macro-pagina: sincronizziamo lo stato UI
+  // ai valori già misurati per la nuova pagina (se disponibili) e rifacciamo
+  // scrollTo(0) sulla ScrollView della pagina corrente.
   useEffect(() => {
+    const ch = contentHByPageRef.current[currentPage] ?? 0;
+    const vh = viewportHByPageRef.current[currentPage] ?? 0;
+    scrollYByPageRef.current[currentPage] = 0;
     setScrollY(0);
-    setContentH(0);
-    setViewportH(0);
-    // I layout sono ricalcolati al re-mount (via key={`page-${i}`}); qui
-    // resettiamo solo la mappa della pagina corrente per sicurezza.
-    segLayoutsRef.current[currentPage] = {};
+    setContentH(ch);
+    setViewportH(vh);
+    segLayoutsRef.current[currentPage] = segLayoutsRef.current[currentPage] || {};
     requestAnimationFrame(() => {
-      currentScrollRef.current?.scrollTo?.({ y: 0, animated: false });
+      scrollRefsRef.current[currentPage]?.scrollTo?.({ y: 0, animated: false });
     });
   }, [currentPage]);
 
@@ -521,15 +531,21 @@ function CelebraScreenInner() {
   // Smart Tap NEXT: scroll giù di N righe intere, snappato al confine di
   // segmento più vicino (entro ±1 riga). Se siamo già a fondo pagina,
   // passa alla macro-pagina successiva.
+  // Legge i valori della pagina corrente dai ref-by-page (più affidabile
+  // dello stato React, che potrebbe essere stale dopo un cambio pagina).
   const smartTapNext = () => {
-    if (viewportH > 0 && contentH > viewportH && scrollY + viewportH < contentH - 8) {
-      const lines = Math.max(1, Math.floor(viewportH / lineH));
+    const ref = scrollRefsRef.current[currentPage];
+    const sy = scrollYByPageRef.current[currentPage] ?? 0;
+    const ch = contentHByPageRef.current[currentPage] ?? 0;
+    const vh = viewportHByPageRef.current[currentPage] ?? 0;
+    if (vh > 0 && ch > vh && sy + vh < ch - 8) {
+      const lines = Math.max(1, Math.floor(vh / lineH));
       const idealStep = lines * lineH;
-      const ideal = scrollY + idealStep;
+      const ideal = sy + idealStep;
       const snap = findSnapNear(ideal);
       let nextY = snap > 0 ? snap : ideal;
-      nextY = Math.min(contentH - viewportH, nextY);
-      currentScrollRef.current?.scrollTo({ y: nextY, animated: true });
+      nextY = Math.min(ch - vh, nextY);
+      ref?.scrollTo({ y: nextY, animated: true });
     } else {
       const next = Math.min(pages.length - 1, currentPage + 1);
       if (next !== currentPage) {
@@ -544,14 +560,17 @@ function CelebraScreenInner() {
 
   // Smart Tap PREV: simmetrico al NEXT.
   const smartTapPrev = () => {
-    if (scrollY > 8) {
-      const lines = Math.max(1, Math.floor(viewportH / lineH));
+    const ref = scrollRefsRef.current[currentPage];
+    const sy = scrollYByPageRef.current[currentPage] ?? 0;
+    const vh = viewportHByPageRef.current[currentPage] ?? 0;
+    if (sy > 8) {
+      const lines = Math.max(1, Math.floor(vh / lineH));
       const idealStep = lines * lineH;
-      const ideal = scrollY - idealStep;
+      const ideal = sy - idealStep;
       const snap = findSnapNear(ideal);
       let nextY = snap >= 0 ? snap : ideal;
       nextY = Math.max(0, nextY);
-      currentScrollRef.current?.scrollTo({ y: nextY, animated: true });
+      ref?.scrollTo({ y: nextY, animated: true });
     } else {
       const prev = Math.max(0, currentPage - 1);
       if (prev !== currentPage) {
@@ -585,25 +604,28 @@ function CelebraScreenInner() {
     );
   };
 
-  // Helper: applica scroll/layout/contentSize allo stato SOLO se la
-  // ScrollView è quella della pagina corrente. Necessario su PagerView
-  // dove tutte le pagine sono renderizzate insieme.
+  // Helpers: salvano SEMPRE nei ref-by-page (necessario su native PagerView
+  // dove tutte le pagine sono montate insieme e gli onLayout/onScroll delle
+  // pagine non-correnti devono comunque registrare i loro valori). Lo stato
+  // React UI viene aggiornato solo per la pagina attualmente visibile.
   const onScrollCurrent = (i: number) => (e: any) => {
-    if (i !== currentPage) return;
-    setScrollY(e.nativeEvent.contentOffset.y);
+    const y = e.nativeEvent.contentOffset.y;
+    scrollYByPageRef.current[i] = y;
+    if (i === currentPage) setScrollY(y);
   };
   const onContentSizeCurrent = (i: number) => (_w: number, h: number) => {
-    if (i !== currentPage) return;
-    setContentH(h);
+    contentHByPageRef.current[i] = h;
+    if (i === currentPage) setContentH(h);
   };
   const onLayoutCurrent = (i: number) => (e: any) => {
-    if (i !== currentPage) return;
-    setViewportH(e.nativeEvent.layout.height);
+    const h = e.nativeEvent.layout.height;
+    viewportHByPageRef.current[i] = h;
+    if (i === currentPage) setViewportH(h);
   };
-  // Ref binding: agganciamo currentScrollRef SOLO alla ScrollView della
-  // pagina corrente (per native PagerView). Su web c'è una sola ScrollView.
+  // Ref binding: salviamo SEMPRE il ref di ogni pagina (anche non-corrente),
+  // così gli smartTap leggono il ref giusto dopo un cambio macro-pagina.
   const setRefIfCurrent = (i: number) => (r: ScrollView | null) => {
-    if (i === currentPage) currentScrollRef.current = r;
+    scrollRefsRef.current[i] = r;
   };
 
   // Stato pagina/totale: tracciato direttamente da PagerView via onPageSelected.
@@ -743,14 +765,14 @@ function CelebraScreenInner() {
               <View style={{ flex: 1 }}>
                 <ScrollView
                   key={`web-page-${currentPage}`}
-                  ref={currentScrollRef}
+                  ref={setRefIfCurrent(currentPage)}
                   style={styles.nativePage}
                   contentContainerStyle={{ paddingBottom: 90 }}
                   showsVerticalScrollIndicator={true}
-                  onScroll={(e) => setScrollY(e.nativeEvent.contentOffset.y)}
+                  onScroll={onScrollCurrent(currentPage)}
                   scrollEventThrottle={16}
-                  onContentSizeChange={(_w, h) => setContentH(h)}
-                  onLayout={(e) => setViewportH(e.nativeEvent.layout.height)}
+                  onContentSizeChange={onContentSizeCurrent(currentPage)}
+                  onLayout={onLayoutCurrent(currentPage)}
                 >
                   {pages[Math.min(currentPage, pages.length - 1)].map((seg, j) =>
                     renderSegmentWithLayout(seg, currentPage, j),
