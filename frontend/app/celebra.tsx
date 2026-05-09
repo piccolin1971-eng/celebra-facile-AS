@@ -442,104 +442,99 @@ function CelebraScreenInner() {
   // ----- HTML completo per la WebView (CSS columns) -----
   // Il browser interno alla WebView impagina il testo in colonne larghe 100vw,
   // riempiendo perfettamente ogni pagina. Tap a sinistra/destra → scroll
-  // === Misurazione altezze reali e chunking in sotto-pagine ===
-  // Strategia: misuriamo l'altezza reale di ogni segmento via onLayout in
-  // un container invisibile, poi chunking che riempie ogni pagina fino
-  // all'altezza schermo. Regola d'oro: i `sectionTitleBreak` forzano
-  // sempre l'inizio di una nuova pagina (macro-blocco). Regola
-  // widow/orphan: un titolo non resta mai da solo a fine pagina —
-  // se il successivo non entra, sposto il titolo sulla nuova pagina.
+  // === Chunking semplice in 4 macro-pagine (Smart Tap) ===
+  // Strategia richiesta dall'utente: una pagina per macro-blocco. Il
+  // confine è dato ESCLUSIVAMENTE dai segmenti `sectionTitleBreak` (=
+  // Liturgia della Parola, post-Vangelo, Prefazio, ecc). Ogni macro-pagina
+  // è wrappata in ScrollView con scroll verticale interno. La navigazione
+  // tap (Smart Tap) gestisce: tap destra → smooth scroll giù (con overlap
+  // di 40px), o macro-pagina successiva se siamo a fondo; tap sinistra →
+  // smooth scroll su, o macro-pagina precedente se siamo in cima.
   const dims = useWindowDimensions();
-  const [measuredHeights, setMeasuredHeights] = useState<number[]>([]);
-  // Reset misurazioni quando cambiano i parametri di layout
-  useEffect(() => {
-    setMeasuredHeights([]);
-  }, [segments, fontSize, fontFamily, dims.width]);
-
-  const allMeasured =
-    segments.length > 0 && measuredHeights.length === segments.length &&
-    measuredHeights.every((h) => h > 0);
-
-  // Altezza utilizzabile per il rendering (sotto la topBar e sopra la
-  // progress bar). Se non ancora misurata, fallback all'altezza schermo.
-  const pageContentHeight = useMemo(() => {
-    return Math.max(200, (containerH || dims.height) - 24);
-  }, [containerH, dims.height]);
-
-  const isTitleKind = (k: SegKind): boolean =>
-    k === "sectionTitle" ||
-    k === "sectionTitleBreak" ||
-    k === "antifonaTitle" ||
-    k === "readingTitle" ||
-    k === "orazioneTitle" ||
-    k === "subtitle" ||
-    k === "peTitle";
-
-  // Chunking in sotto-pagine usando altezze REALI.
   const pages = useMemo<Segment[][]>(() => {
-    if (!allMeasured || segments.length === 0) return [];
+    if (!segments.length) return [];
     const result: Segment[][] = [[]];
-    let currentH = 0;
-    const targetH = pageContentHeight - 30; // margine di sicurezza
-    for (let i = 0; i < segments.length; i++) {
-      const seg = segments[i];
-      const h = measuredHeights[i] || 0;
+    for (const seg of segments) {
       const last = result[result.length - 1];
       const isBreak = seg.kind === "sectionTitleBreak";
-      const isSpacer = seg.kind === "spacer";
-      // sectionTitleBreak forza nuova pagina (a meno che l'ultima sia vuota)
       if (isBreak && last.length > 0) {
         result.push([seg]);
-        currentH = h;
-        continue;
-      }
-      // Se sfora, apri nuova pagina (skippa spacer come primo elemento)
-      if (currentH + h > targetH && last.length > 0) {
-        if (isSpacer) continue;
-        // === Regola ANTI-ORFANO definitiva ===
-        // Se la pagina corrente contiene SOLO un titolo, NON crearne una
-        // nuova: append al titolo per evitare che resti orfano. È
-        // accettabile un piccolo overflow visivo per non avere titoli
-        // su pagine quasi vuote (es. "Preghiera Eucaristica II" da solo).
-        if (last.length === 1 && isTitleKind(last[0].kind)) {
-          last.push(seg);
-          currentH += h;
-        } else {
-          result.push([seg]);
-          currentH = h;
-        }
       } else {
         last.push(seg);
-        currentH += h;
       }
-      // === Regola widow/orphan ===
-      // Se ho appena messo un TITOLO come ULTIMO elemento di una pagina
-      // e c'è un segmento successivo che NON entra, sposto il titolo
-      // sulla pagina successiva (così non resta orfano).
-      if (isTitleKind(seg.kind) && i + 1 < segments.length) {
-        const nextH = measuredHeights[i + 1] || 0;
-        const lastNow = result[result.length - 1];
-        const titleIsLastOnPage = lastNow[lastNow.length - 1] === seg;
-        if (titleIsLastOnPage && currentH + nextH > targetH) {
-          // Rimuovi il titolo dalla pagina corrente
-          lastNow.pop();
-          currentH -= h;
-          if (lastNow.length === 0) {
-            // La pagina è diventata vuota: lascia il titolo qui
-            // (non possiamo evitare l'orfano in questo caso)
-            lastNow.push(seg);
-            currentH = h;
-          } else {
-            // Apri nuova pagina con il titolo
-            result.push([seg]);
-            currentH = h;
-          }
+    }
+    return result;
+  }, [segments]);
+
+  // === Smart Tap state ===
+  // Per ogni macro-pagina memorizziamo:
+  //  - scrollRef: per chiamare scrollTo programmaticamente
+  //  - scrollY: posizione corrente di scroll
+  //  - contentH: altezza totale del contenuto della pagina
+  //  - viewportH: altezza visibile della ScrollView
+  // Indicizzati per indice di pagina (0..pages.length-1).
+  const scrollRefs = useRef<{ [k: number]: ScrollView | null }>({});
+  const pageScrollY = useRef<{ [k: number]: number }>({});
+  const pageContentH = useRef<{ [k: number]: number }>({});
+  const pageViewportH = useRef<{ [k: number]: number }>({});
+  const SCROLL_OVERLAP = 40; // px lasciati visibili in alto allo scroll giù
+
+  // Smart Tap NEXT: scroll giù di una schermata, oppure cambio pagina
+  const smartTapNext = () => {
+    const idx = currentPage;
+    const sy = pageScrollY.current[idx] || 0;
+    const ch = pageContentH.current[idx] || 0;
+    const vh = pageViewportH.current[idx] || 0;
+    // Margine: se siamo a meno di 8px dal fondo, considera "fine pagina"
+    if (vh > 0 && sy + vh < ch - 8) {
+      // C'è ancora testo sotto: smooth scroll giù di (vh - overlap)
+      const nextY = Math.min(ch - vh, sy + vh - SCROLL_OVERLAP);
+      scrollRefs.current[idx]?.scrollTo({ y: nextY, animated: true });
+    } else {
+      // Fondo pagina: passa alla macro-pagina successiva
+      const next = Math.min(pages.length - 1, idx + 1);
+      if (next !== idx) {
+        if (PagerView && pagerRef.current?.setPage) {
+          pagerRef.current.setPage(next);
+        } else {
+          setCurrentPage(next);
         }
       }
     }
-    // Filtra eventuali pagine completamente vuote (edge case)
-    return result.filter((p) => p.length > 0);
-  }, [segments, measuredHeights, allMeasured, pageContentHeight]);
+  };
+
+  // Smart Tap PREV: scroll su di una schermata, oppure cambio pagina indietro
+  const smartTapPrev = () => {
+    const idx = currentPage;
+    const sy = pageScrollY.current[idx] || 0;
+    const vh = pageViewportH.current[idx] || 0;
+    if (sy > 8) {
+      // Non siamo in cima: smooth scroll su di (vh - overlap)
+      const nextY = Math.max(0, sy - vh + SCROLL_OVERLAP);
+      scrollRefs.current[idx]?.scrollTo({ y: nextY, animated: true });
+    } else {
+      // In cima: torna alla macro-pagina precedente
+      const prev = Math.max(0, idx - 1);
+      if (prev !== idx) {
+        if (PagerView && pagerRef.current?.setPage) {
+          pagerRef.current.setPage(prev);
+        } else {
+          setCurrentPage(prev);
+        }
+      }
+    }
+  };
+
+  // Quando l'utente cambia macro-pagina (via swipe o tap), resettiamo lo
+  // scroll della nuova pagina in cima (richiesto dall'utente).
+  const handlePageSelected = (newIdx: number) => {
+    setCurrentPage(newIdx);
+    // Reset scroll della pagina entrante
+    requestAnimationFrame(() => {
+      scrollRefs.current[newIdx]?.scrollTo({ y: 0, animated: false });
+      pageScrollY.current[newIdx] = 0;
+    });
+  };
 
   // Stato pagina/totale: tracciato direttamente da PagerView via onPageSelected.
   const totalPages = pages.length;
@@ -666,59 +661,37 @@ function CelebraScreenInner() {
         onLayout={(e) => setContainerH(e.nativeEvent.layout.height)}
         testID="celebra-tap-area"
       >
-        {!segments.length ? (
-          <ActivityIndicator size="large" color={colors.primary} />
-        ) : !allMeasured ? (
-          // Fase MISURAZIONE invisibile: cattura altezza reale di ogni
-          // segmento via onLayout. Quando completata, allMeasured = true.
-          <>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <View
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                opacity: 0,
-              }}
-              pointerEvents="none"
-            >
-              <View style={styles.nativePage} collapsable={false}>
-                {segments.map((seg, i) => (
-                  <View
-                    key={`m-${i}`}
-                    onLayout={(e) => {
-                      const h = e.nativeEvent.layout.height;
-                      if (h <= 0) return;
-                      setMeasuredHeights((prev) => {
-                        if (prev[i] === h) return prev;
-                        const next = prev.slice();
-                        while (next.length < segments.length) next.push(0);
-                        next[i] = h;
-                        return next;
-                      });
-                    }}
-                  >
-                    {renderSegment(seg, `m-${i}`, styles)}
-                  </View>
-                ))}
-              </View>
-            </View>
-          </>
-        ) : pages.length === 0 ? (
+        {!segments.length || pages.length === 0 ? (
           <ActivityIndicator size="large" color={colors.primary} />
         ) : (
           <>
             {Platform.OS === "web" || !PagerView ? (
-              // Su web (preview) PagerView non funziona: usiamo un fallback
-              // semplice che mostra una pagina alla volta. I tap zone sotto
-              // gestiscono l'avanzamento.
+              // Su web (preview): mostra una macro-pagina alla volta, in
+              // ScrollView con scroll verticale interno. Smart Tap funziona
+              // identico a native.
               <View style={{ flex: 1 }}>
-                <View style={styles.nativePage} collapsable={false}>
+                <ScrollView
+                  ref={(r) => {
+                    scrollRefs.current[currentPage] = r;
+                  }}
+                  style={styles.nativePage}
+                  contentContainerStyle={{ paddingBottom: 30 }}
+                  showsVerticalScrollIndicator={false}
+                  onScroll={(e) => {
+                    pageScrollY.current[currentPage] = e.nativeEvent.contentOffset.y;
+                  }}
+                  scrollEventThrottle={16}
+                  onContentSizeChange={(_w, h) => {
+                    pageContentH.current[currentPage] = h;
+                  }}
+                  onLayout={(e) => {
+                    pageViewportH.current[currentPage] = e.nativeEvent.layout.height;
+                  }}
+                >
                   {pages[Math.min(currentPage, pages.length - 1)].map((seg, j) =>
                     renderSegment(seg, `web-${currentPage}-${j}`, styles),
                   )}
-                </View>
+                </ScrollView>
               </View>
             ) : (
               <PagerView
@@ -728,49 +701,51 @@ function CelebraScreenInner() {
                 orientation="horizontal"
                 offscreenPageLimit={1}
                 onPageSelected={(e: any) => {
-                  const idx = e.nativeEvent.position;
-                  setCurrentPage(idx);
+                  handlePageSelected(e.nativeEvent.position);
                 }}
                 testID="celebra-pager"
               >
                 {pages.map((pageSegments, i) => (
-                  <View key={`page-${i}`} style={styles.nativePage} collapsable={false}>
+                  <ScrollView
+                    key={`page-${i}`}
+                    ref={(r) => {
+                      scrollRefs.current[i] = r;
+                    }}
+                    style={styles.nativePage}
+                    contentContainerStyle={{ paddingBottom: 30 }}
+                    showsVerticalScrollIndicator={false}
+                    onScroll={(e) => {
+                      pageScrollY.current[i] = e.nativeEvent.contentOffset.y;
+                    }}
+                    scrollEventThrottle={16}
+                    onContentSizeChange={(_w, h) => {
+                      pageContentH.current[i] = h;
+                    }}
+                    onLayout={(e) => {
+                      pageViewportH.current[i] = e.nativeEvent.layout.height;
+                    }}
+                  >
                     {pageSegments.map((seg, j) => renderSegment(seg, `${i}-${j}`, styles))}
-                  </View>
+                  </ScrollView>
                 ))}
               </PagerView>
             )}
-            {/* Tap zones invisibili: 30% sinistro = back, 30% destro = next.
-                Il 40% centrale è ignorato per evitare avanzamenti accidentali
-                durante la lettura (e per consentire lo swipe senza interferenze). */}
+            {/* Tap zones SMART (30% sx + 70% dx). 
+                Tap dx → smart scroll giù (overlap 40px) o macro-pagina succ.
+                Tap sx → smart scroll su (overlap 40px) o macro-pagina prec. */}
             <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
               <View style={{ flex: 1, flexDirection: "row" }}>
                 <Pressable
                   style={{ width: "30%" }}
-                  onPress={() => {
-                    const next = Math.max(0, currentPage - 1);
-                    if (PagerView && pagerRef.current?.setPage) {
-                      pagerRef.current.setPage(next);
-                    } else {
-                      setCurrentPage(next);
-                    }
-                  }}
+                  onPress={smartTapPrev}
                   testID="celebra-tap-prev"
-                  accessibilityLabel="Pagina precedente"
+                  accessibilityLabel="Indietro / scroll su"
                 />
-                <View style={{ width: "40%" }} pointerEvents="none" />
                 <Pressable
-                  style={{ width: "30%" }}
-                  onPress={() => {
-                    const next = Math.min(totalPages - 1, currentPage + 1);
-                    if (PagerView && pagerRef.current?.setPage) {
-                      pagerRef.current.setPage(next);
-                    } else {
-                      setCurrentPage(next);
-                    }
-                  }}
+                  style={{ width: "70%" }}
+                  onPress={smartTapNext}
                   testID="celebra-tap-next"
-                  accessibilityLabel="Pagina successiva"
+                  accessibilityLabel="Avanti / scroll giù"
                 />
               </View>
             </View>
