@@ -1477,6 +1477,33 @@ export default function MessaScreen() {
         });
 
         // PAGINA: Riti di Introduzione + Colletta combinati (Colletta chiude i riti iniziali)
+        // SALUTI INIZIALI ALTERNATIVI: dopo "Nel nome del Padre" il Messale
+        // Romano 2020 prevede 5 formule di saluto fra cui il celebrante può
+        // scegliere a vista. Le mostriamo tutte come blocchi di dialogo C./A.
+        // separati da una riga vuota.
+        const SALUTI_INIZIALI = [
+          {
+            c: "La grazia del Signore nostro Gesù Cristo,\nl'amore di Dio Padre\ne la comunione dello Spirito Santo siano con tutti voi.",
+            a: "E con il tuo spirito.",
+          },
+          {
+            c: "La grazia e la pace di Dio nostro Padre\ne del Signore nostro Gesù Cristo siano con tutti voi.",
+            a: "E con il tuo spirito.",
+          },
+          {
+            c: "Il Signore, che guida i nostri cuori all'amore\ne alla pazienza di Cristo, sia con tutti voi.",
+            a: "E con il tuo spirito.",
+          },
+          {
+            c: "Il Dio della speranza, che ci riempie di ogni gioia\ne pace nella fede\nper la potenza dello Spirito Santo, sia con tutti voi.",
+            a: "E con il tuo spirito.",
+          },
+          {
+            c: "La pace, la carità e la fede da parte di Dio Padre\ne del Signore Gesù Cristo siano con tutti voi.",
+            a: "E con il tuo spirito.",
+          },
+        ];
+
         pages.push({
           key: "riti-iniziali",
           title: "Riti di Introduzione",
@@ -1485,6 +1512,13 @@ export default function MessaScreen() {
               {renderReading("antifona_ingresso", "Antifona d'ingresso")}
               <R kind="title">Riti di Introduzione</R>
               {fixedParts["riti_iniziali"].sections.map(renderSectionNoRubric)}
+              {/* 5 formule di saluto: il celebrante sceglie a vista. */}
+              {SALUTI_INIZIALI.map((s, i) => (
+                <View key={`saluto-${i}`} style={styles.salutoBlock}>
+                  <R kind="celebrante">C. {s.c}</R>
+                  <R kind="assemblea">A. {s.a}</R>
+                </View>
+              ))}
             </View>
           ),
         });
@@ -2483,6 +2517,11 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string) => Style
     fontSize: Math.round(fontSize * 0.75),
     fontWeight: "800",
     color: "#FFFFFF",
+  },
+  // Blocco saluto iniziale: dopo "A. E con il tuo spirito" lasciamo una
+  // riga vuota di separazione tra le formule alternative.
+  salutoBlock: {
+    marginBottom: Math.round(fontSize * 1.0),
   },
   content: { padding: 16, paddingTop: 8, paddingBottom: 32 },
   dayHeader: {

@@ -804,9 +804,13 @@ function segmentsToHtml(
           return `<h2 class="section-title">${escapeHtml(seg.text)}</h2>`;
         case "sectionTitleBreak":
           // Forza un salto pagina (CSS columns) prima di questo titolo.
-          // Per maggiore affidabilità del browser, usiamo un div dedicato
-          // con break-before:column SEPARATO dal titolo h2.
-          return `<div class="page-break-spacer"></div><h2 class="section-title">${escapeHtml(seg.text)}</h2>`;
+          // Strategia robusta cross-browser: applichiamo `break-before: column`
+          // SIA su uno spacer con contenuto invisibile (zero-width-space) che
+          // garantisce di non essere ottimizzato via dal motore di layout,
+          // SIA direttamente sull'h2 come backup. Inoltre `break-after: column`
+          // sullo spacer assicura che il contenuto SUCCESSIVO inizi su nuova
+          // colonna anche se il browser ignora il break-before.
+          return `<div class="page-break-spacer">&#8203;</div><h2 class="section-title force-page-break">${escapeHtml(seg.text)}</h2>`;
         case "antifonaTitle":
           return `<h3 class="antifona-title">${escapeHtml(seg.text)}</h3>`;
         case "readingTitle":
@@ -920,11 +924,12 @@ ${fontHref ? `<link rel="preconnect" href="https://fonts.googleapis.com">
   div.pe-dossologia { font-size: 1em; color: ${textColor}; text-transform: uppercase; line-height: 1.5; margin: 0 0 12px 0; }
   p.pe-dossologia { text-transform: uppercase; line-height: 1.5; }
   div.spacer { height: 16px; }
-  /* Forza un salto di pagina (column-break) prima di un elemento.
-     Usato per: Liturgia della Parola (Prima Lettura), Prefazio.
-     Lo spacer è un div dedicato con break-before:column — funziona
-     più affidabilmente di break-before sull'h2 stesso. */
-  div.page-break-spacer { break-before: column !important; -webkit-column-break-before: always !important; page-break-before: always !important; height: 0; margin: 0; padding: 0; display: block; }
+  /* Spacer per forzare un salto di pagina (column-break) prima di un titolo.
+     Il salto effettivo è gestito da JavaScript (enforcePageBreaks) che
+     calcola dinamicamente la min-height necessaria a riempire il resto
+     della colonna corrente, in modo affidabile cross-browser. Lasciamo
+     anche le proprietà CSS standard come fallback. */
+  div.page-break-spacer { break-before: column !important; -webkit-column-break-before: always !important; page-break-before: always !important; min-height: 0; margin: 0; padding: 0; display: block; }
   .force-page-break { break-before: column !important; -webkit-column-break-before: always !important; page-break-before: always !important; }
 </style>
 </head>
@@ -1004,6 +1009,87 @@ ${fontHref ? `<link rel="preconnect" href="https://fonts.googleapis.com">
     }
     if (document.readyState === 'complete') initialPost();
     else window.addEventListener('load', initialPost);
+
+    // === Forza salto pagina su .force-page-break ===
+    // I motori CSS multicol spesso ignorano break-before:column su elementi
+    // vuoti o con altezza 0. Soluzione affidabile: dopo il layout, calcoliamo
+    // la posizione visiva di ciascun elemento .force-page-break e iniettiamo
+    // una min-height sul .page-break-spacer che lo precede, sufficiente a
+    // spingerlo all'inizio della colonna successiva (= nuova schermata).
+    // Si rilancia su resize, dopo cambio fontSize, e dopo il primo load.
+    function enforcePageBreaks() {
+      var ch = window.innerHeight;
+      var spacers = document.querySelectorAll('.page-break-spacer');
+      if (!spacers.length) return;
+      // Reset dei valori precedenti
+      for (var i = 0; i < spacers.length; i++) {
+        spacers[i].style.minHeight = '0px';
+      }
+      // Forza reflow per misurare le posizioni "naturali"
+      void document.body.offsetHeight;
+      // Single pass in document order: applichiamo lo spacer necessario per
+      // ciascun .force-page-break. Dopo ogni applicazione, forziamo un reflow
+      // così che la misurazione del target successivo riflette lo shift già
+      // applicato. NON facciamo passaggi multipli: rifare il loop reimposta
+      // a 0 gli spacer già correttamente applicati (perché vede top<=4).
+      for (var i = 0; i < spacers.length; i++) {
+        var sp = spacers[i];
+        var target = sp.nextElementSibling;
+        if (!target || !target.classList.contains('force-page-break')) continue;
+        var rect = target.getBoundingClientRect();
+        var topInColumn = rect.top;
+        // Se il target è già praticamente all'inizio della colonna, non serve push.
+        if (topInColumn <= 4) {
+          continue;
+        }
+        // min-height da applicare allo spacer per spingere il target alla
+        // colonna successiva. Aggiungiamo 8px di margine per sicurezza.
+        var needed = (ch - topInColumn) + 8;
+        if (needed < 0) needed = 0;
+        sp.style.minHeight = needed + 'px';
+        // Forza reflow prima della prossima iterazione
+        void sp.offsetHeight;
+      }
+      // Secondo passaggio di RIFINITURA: per ogni target ancora non
+      // allineato (top > 4 dopo il reflow), AGGIUNGIAMO ulteriore altezza
+      // (senza resettare). Massimo 3 iterazioni di sicurezza.
+      for (var pass = 0; pass < 3; pass++) {
+        var anyAdjusted = false;
+        for (var i = 0; i < spacers.length; i++) {
+          var sp = spacers[i];
+          var target = sp.nextElementSibling;
+          if (!target || !target.classList.contains('force-page-break')) continue;
+          var rect = target.getBoundingClientRect();
+          if (rect.top <= 4) continue;
+          // Aumentiamo l'altezza dello spacer di (ch - rect.top + 8) px in più
+          var current = parseFloat(sp.style.minHeight) || 0;
+          var extra = (ch - rect.top) + 8;
+          if (extra <= 0) continue;
+          sp.style.minHeight = (current + extra) + 'px';
+          void sp.offsetHeight;
+          anyAdjusted = true;
+        }
+        if (!anyAdjusted) break;
+      }
+      // Dopo le modifiche, le pagine totali potrebbero essere cambiate:
+      // ri-pubblichiamo lo stato.
+      postState();
+    }
+    function scheduleEnforce() {
+      // Un ritardo di sicurezza per attendere il completamento del layout
+      // (font caricato, immagini, ecc.).
+      setTimeout(enforcePageBreaks, 50);
+      setTimeout(enforcePageBreaks, 300);
+      setTimeout(enforcePageBreaks, 1000);
+    }
+    if (document.readyState === 'complete') scheduleEnforce();
+    else window.addEventListener('load', scheduleEnforce);
+    // Web fonts: alcune font (es. Google Fonts) caricano dopo il primo paint;
+    // riapplichiamo i break appena le font sono pronte.
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(scheduleEnforce).catch(function() {});
+    }
+    window.addEventListener('resize', scheduleEnforce);
 
     // Listener per messaggi da React Native (cambio dinamico fontSize).
     // Aggiorna document.body.style.fontSize: i figli usano 'em' quindi
@@ -1150,6 +1236,22 @@ function buildSegments(args: BuildArgs): Segment[] {
   for (const s of fixedParts["riti_iniziali"]?.sections || []) {
     addSection(s, { skipRubric: true });
   }
+  // SALUTI INIZIALI ALTERNATIVI (Messale Romano 2020): 5 formule fra cui
+  // il celebrante può scegliere a vista. Le mostriamo tutte di seguito,
+  // ognuna seguita dalla risposta dell'assemblea e da una riga vuota di
+  // separazione (spacer).
+  const SALUTI_INIZIALI = [
+    "La grazia del Signore nostro Gesù Cristo,\nl'amore di Dio Padre\ne la comunione dello Spirito Santo siano con tutti voi.",
+    "La grazia e la pace di Dio nostro Padre\ne del Signore nostro Gesù Cristo siano con tutti voi.",
+    "Il Signore, che guida i nostri cuori all'amore\ne alla pazienza di Cristo, sia con tutti voi.",
+    "Il Dio della speranza, che ci riempie di ogni gioia\ne pace nella fede\nper la potenza dello Spirito Santo, sia con tutti voi.",
+    "La pace, la carità e la fede da parte di Dio Padre\ne del Signore Gesù Cristo siano con tutti voi.",
+  ];
+  for (const sal of SALUTI_INIZIALI) {
+    push("celebrante", `C. ${sal}`);
+    push("assemblea", "A. E con il tuo spirito.");
+    sp();
+  }
   sp();
 
   // ===== ATTO PENITENZIALE =====
@@ -1229,9 +1331,24 @@ function buildSegments(args: BuildArgs): Segment[] {
   addReading("acclamazione", "readingTitle", "Acclamazione al Vangelo");
   addReading("vangelo", "readingTitle", "Vangelo");
 
+  // ===== PUNTO DI ROTTURA POST-VANGELO =====
+  // Subito dopo il Vangelo deve iniziare una nuova pagina, su qualunque sia
+  // la sezione che segue (Credo, Preghiera dei fedeli, o Presentazione dei
+  // doni se entrambi i toggle sono off). Usiamo un flag che converte la
+  // PRIMA sezione post-Vangelo in `sectionTitleBreak`.
+  let postVangeloBreakUsed = false;
+  const pushSection = (text: string) => {
+    if (!postVangeloBreakUsed) {
+      push("sectionTitleBreak", text);
+      postVangeloBreakUsed = true;
+    } else {
+      push("sectionTitle", text);
+    }
+  };
+
   // ===== CREDO =====
   if (session.showCredo !== false) {
-    push("sectionTitle", "Professione di Fede");
+    pushSection("Professione di Fede");
     const credo = fixedParts["credo"];
     if (credo) {
       const credoChoice = credo.sections[0];
@@ -1244,7 +1361,7 @@ function buildSegments(args: BuildArgs): Segment[] {
 
   // ===== PREGHIERA DEI FEDELI =====
   if (session.showOrazionalePray !== false && session.selectedOrazionaleId) {
-    push("sectionTitle", "Preghiera dei Fedeli");
+    pushSection("Preghiera dei Fedeli");
     const orPrayer = getPrayerById(session.selectedOrazionaleId);
     if (orPrayer) {
       push("subtitle", orPrayer.title);
@@ -1256,7 +1373,7 @@ function buildSegments(args: BuildArgs): Segment[] {
   }
 
   // ===== PRESENTAZIONE DEI DONI =====
-  push("sectionTitle", "Presentazione dei Doni");
+  pushSection("Presentazione dei Doni");
   const off = fixedParts["offertorio"];
   if (off) {
     const allSections = off.sections;
