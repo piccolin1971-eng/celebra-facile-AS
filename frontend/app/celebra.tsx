@@ -37,6 +37,7 @@ import {
   Platform,
   useWindowDimensions,
   Pressable,
+  ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -438,97 +439,32 @@ function CelebraScreenInner() {
   // ----- HTML completo per la WebView (CSS columns) -----
   // Il browser interno alla WebView impagina il testo in colonne larghe 100vw,
   // riempiendo perfettamente ogni pagina. Tap a sinistra/destra → scroll
-  // === Chunking dei segmenti in pagine (per PagerView) ===
-  // Ogni pagina deve stare in una schermata: stimiamo l'altezza di ogni
-  // segmento in base al numero di righe (lunghezza testo / caratteri-per-riga)
-  // moltiplicato per il line-height stimato del kind. Quando la pagina è
-  // piena, apriamo la successiva. I segmenti `sectionTitleBreak` forzano
-  // sempre l'inizio di una nuova pagina.
-  // Altezza utilizzabile per il rendering (sotto la topBar e sopra la
-  // progress bar). Se non ancora misurata, fallback all'altezza schermo
-  // meno una stima della topBar (~80px).
+  // === Chunking dei segmenti in pagine ===
+  // Strategia semplice e robusta richiesta dall'utente: una pagina per
+  // macro-blocco. I confini sono dettati ESCLUSIVAMENTE dai segmenti
+  // `sectionTitleBreak` (= Liturgia della Parola, post-Vangelo, Prefazio,
+  // Riti di Comunione, Riti di Conclusione). Tutto il resto fluisce di
+  // seguito sulla stessa pagina, e se la pagina è troppo lunga lo
+  // ScrollView interno permette lo scroll verticale.
+  // NIENTE misurazione altezze: rendering immediato, nessuna pagina
+  // mezza vuota o titolo orfano.
   const dims = useWindowDimensions();
-  const pageContentHeight = useMemo(() => {
-    return Math.max(200, (containerH || dims.height) - 24);
-  }, [containerH, dims.height]);
-
-  // Caratteri stimati per riga: dipende dalla larghezza schermo e dal
-  // fontSize. Una formula approssimativa è width / (fontSize * 0.55).
-  const charsPerLine = useMemo(() => {
-    const usableW = (dims.width || 800) - 32; // padding orizzontale
-    return Math.max(20, Math.floor(usableW / (fontSize * 0.55)));
-  }, [dims.width, fontSize]);
-
-  // Stima altezza di un segmento in pixel
-  function estimateSegmentHeight(seg: Segment): number {
-    const text = seg.text || "";
-    const lh = fontSize * 1.6;
-    if (seg.kind === "spacer") return 16;
-    if (seg.kind === "sectionTitleBreak" || seg.kind === "sectionTitle") {
-      return Math.round(fontSize * 1.4) + 24;
-    }
-    if (
-      seg.kind === "antifonaTitle" ||
-      seg.kind === "readingTitle" ||
-      seg.kind === "orazioneTitle" ||
-      seg.kind === "subtitle" ||
-      seg.kind === "peTitle"
-    ) {
-      return Math.round(fontSize * 1.1) + 16;
-    }
-    if (seg.kind === "rubric") {
-      const lines = Math.max(1, Math.ceil(text.length / (charsPerLine * 1.2))) + (text.match(/\n/g)?.length || 0);
-      return Math.round(fontSize * 1.0) * lines + 12;
-    }
-    // Default: stima per testi lunghi
-    const explicitLines = (text.match(/\n/g)?.length || 0) + 1;
-    const wrappedLines = Math.max(
-      explicitLines,
-      Math.ceil(text.length / charsPerLine),
-    );
-    // preghieraFedeli: aggiunge righe vuote dopo ogni R/.
-    const respLines =
-      seg.kind === "preghieraFedeli"
-        ? (text.match(/R\/\.?/g) || []).length
-        : 0;
-    return Math.round(lh * (wrappedLines + respLines)) + 20;
-  }
-
-  // Costruisce array di pagine: ogni pagina è un array di segmenti.
   const pages = useMemo<Segment[][]>(() => {
     if (!segments.length) return [];
     const result: Segment[][] = [[]];
-    let currentH = 0;
-    const targetH = pageContentHeight - 32; // margine di sicurezza
     for (const seg of segments) {
-      const isBreak = seg.kind === "sectionTitleBreak";
-      const isSpacer = seg.kind === "spacer";
-      const segH = estimateSegmentHeight(seg);
       const last = result[result.length - 1];
-      // Forza nuova pagina se sectionTitleBreak (e la pagina corrente non è vuota)
+      const isBreak = seg.kind === "sectionTitleBreak";
+      // sectionTitleBreak = forza nuova pagina (a meno che la corrente sia
+      // già vuota: in quel caso lo aggiungo qui senza creare pagina vuota)
       if (isBreak && last.length > 0) {
         result.push([seg]);
-        currentH = segH;
-        continue;
-      }
-      // Se aggiungere il segmento sfora, apri nuova pagina (a meno che la
-      // pagina corrente sia vuota: in quel caso lo metto comunque per evitare
-      // pagine vuote).
-      if (currentH + segH > targetH && last.length > 0) {
-        // Non spezzare: apriamo nuova pagina. Se è uno spacer, skippiamo
-        // (non serve uno spacer come prima cosa di una pagina nuova).
-        if (isSpacer) {
-          continue;
-        }
-        result.push([seg]);
-        currentH = segH;
       } else {
         last.push(seg);
-        currentH += segH;
       }
     }
     return result;
-  }, [segments, pageContentHeight, charsPerLine, fontSize]);
+  }, [segments]);
 
   // Stato pagina/totale: tracciato direttamente da PagerView via onPageSelected.
   const totalPages = pages.length;
@@ -664,11 +600,15 @@ function CelebraScreenInner() {
               // semplice che mostra una pagina alla volta. I tap zone sotto
               // gestiscono l'avanzamento.
               <View style={{ flex: 1 }}>
-                <View style={styles.nativePage} collapsable={false}>
+                <ScrollView
+                  style={styles.nativePage}
+                  contentContainerStyle={{ paddingBottom: 30 }}
+                  showsVerticalScrollIndicator={true}
+                >
                   {pages[Math.min(currentPage, pages.length - 1)].map((seg, j) =>
                     renderSegment(seg, `web-${currentPage}-${j}`, styles),
                   )}
-                </View>
+                </ScrollView>
               </View>
             ) : (
               <PagerView
@@ -684,9 +624,14 @@ function CelebraScreenInner() {
                 testID="celebra-pager"
               >
                 {pages.map((pageSegments, i) => (
-                  <View key={`page-${i}`} style={styles.nativePage} collapsable={false}>
+                  <ScrollView
+                    key={`page-${i}`}
+                    style={styles.nativePage}
+                    contentContainerStyle={{ paddingBottom: 30 }}
+                    showsVerticalScrollIndicator={true}
+                  >
                     {pageSegments.map((seg, j) => renderSegment(seg, `${i}-${j}`, styles))}
-                  </View>
+                  </ScrollView>
                 ))}
               </PagerView>
             )}
