@@ -1,0 +1,50 @@
+name: EAS Build Android (Expo cloud)
+
+# Builda l'APK Android usando EAS Build (servizio cloud ufficiale di Expo).
+# Più affidabile della build Gradle manuale: usa la stessa pipeline che Expo
+# usa internamente, con tutte le configurazioni nuove (newArchEnabled,
+# react-native-webview, expo-keep-awake) gestite automaticamente.
+#
+# REQUISITO: aggiungere il segreto `EXPO_TOKEN` nei GitHub repo settings:
+#   https://github.com/<owner>/<repo>/settings/secrets/actions
+#   Token generato qui: https://expo.dev/accounts/agedon/settings/access-tokens
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: EAS Build (preview profile, APK)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+          cache-dependency-path: frontend/yarn.lock
+
+      - name: Setup Expo / EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: yarn install --network-timeout 600000
+
+      - name: EAS Build (Android, profilo preview = APK installabile)
+        working-directory: ./frontend
+        # --non-interactive evita prompt; --no-wait fa partire la build e
+        # ritorna subito (la build prosegue su EAS cloud). Rimuovere --no-wait
+        # se preferisci che il workflow attenda fino al completamento.
+        # Lasciamo che EAS attenda (default) così il workflow fallisce se la
+        # build fallisce.
+        run: eas build --platform android --profile preview --non-interactive
