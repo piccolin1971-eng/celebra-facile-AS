@@ -634,8 +634,10 @@ export default function MessaScreen() {
 
   // Determina il kind del titolo in base al type della reading
   const readingTitleKind = (t: ReadingType): "antifonaTitle" | "readingTitle" | "orazioneTitle" => {
-    if (t === "antifona_ingresso" || t === "antifona_comunione" || t === "sequenza" || t === "acclamazione") return "antifonaTitle";
+    if (t === "antifona_ingresso" || t === "antifona_comunione" || t === "sequenza") return "antifonaTitle";
     if (t === "colletta" || t === "sulle_offerte" || t === "dopo_comunione") return "orazioneTitle";
+    // "acclamazione" (Acclamazione al Vangelo) usa readingTitle = verde,
+    // come Vangelo e altre letture, per coerenza visiva.
     return "readingTitle";
   };
 
@@ -876,17 +878,28 @@ export default function MessaScreen() {
   // === Renderer Preghiera dei Fedeli ===
   // Regola globale: ogni occorrenza di "R/." (anche multipla, anche a metà
   // riga) viene mostrata in rosso bold; ogni riga che la contiene è seguita
-  // da una riga vuota (effetto "padding inferiore"). Vale per tutte le
+  // da una sola riga vuota (effetto "padding inferiore"). Vale per tutte le
   // intenzioni dell'Orazionale CEI, presenti e future.
   const renderPreghieraFedeliText = (text: string) => {
     if (!text) return null;
     const normalized = text.replace(/\n{3,}/g, "\n\n");
-    const lines = normalized.split("\n");
+    const rawLines = normalized.split("\n");
+    // Per evitare doppio gap, se una riga contiene R/. e la successiva
+    // è vuota (perché la fonte usa \n\n), saltiamo la riga vuota.
+    const lines: string[] = [];
+    for (let i = 0; i < rawLines.length; i++) {
+      const ln = rawLines[i];
+      lines.push(ln);
+      if (/R\/\.?/.test(ln) && rawLines[i + 1] === "") {
+        // Salta la riga vuota: il tail "\n\n" che applicheremo dopo
+        // produrrà già la riga vuota richiesta.
+        i++;
+      }
+    }
     const RESP_RE = /R\/\.?/g;
     return (
       <Text style={styles.text} selectable>
         {lines.map((ln, i) => {
-          // Splitta la riga in pezzi alternati: testo / "R/." / testo / ...
           const parts = ln.split(/(R\/\.?)/g);
           const hasResp = RESP_RE.test(ln);
           RESP_RE.lastIndex = 0;

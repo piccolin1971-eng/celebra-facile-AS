@@ -682,28 +682,33 @@ function salmoToHtml(text: string): string {
 
 // Renderizza il testo della Preghiera dei Fedeli: evidenzia OGNI occorrenza
 // di "R/." in rosso bold (anche a metà riga, anche multiple sulla stessa riga)
-// e forza una riga vuota dopo ogni riga che contenga almeno un "R/.".
+// e forza UNA SOLA riga vuota dopo ogni riga che contenga almeno un "R/.".
 // Regola globale richiesta dall'utente: vale per tutto il documento, comprese
 // le parti che verranno aggiunte/modificate in futuro.
 function preghieraFedeliToHtml(text: string): string {
-  const cleaned = text.replace(/^\n+|\n+$/g, "").replace(/\n+/g, "\n");
+  const cleaned = text.replace(/^\n+|\n+$/g, "").replace(/\n{3,}/g, "\n\n");
+  const rawLines = cleaned.split("\n");
+  // Per evitare il doppio gap, se una riga contiene R/. e la successiva
+  // è vuota (perché la fonte usa già \n\n), saltiamo la riga vuota: la
+  // riga vuota verrà aggiunta dopo automaticamente dal nostro algoritmo.
+  const lines: string[] = [];
+  for (let i = 0; i < rawLines.length; i++) {
+    const ln = rawLines[i];
+    lines.push(ln);
+    if (/R\/\.?/.test(ln) && rawLines[i + 1] === "") {
+      i++;
+    }
+  }
   const out: string[] = [];
-  const lines = cleaned.split("\n");
-  // Pattern globale: match qualunque "R/" seguito da punto opzionale.
   const RESP_RE = /R\/\.?/g;
   for (let i = 0; i < lines.length; i++) {
     const ln = lines[i];
-    // Escape HTML PRIMA della sostituzione: "R/." non contiene caratteri
-    // speciali HTML, quindi è sicuro fare il replace dopo l'escape.
     const escaped = escapeHtml(ln);
     const styled = escaped.replace(RESP_RE, (m) => `<span class="resp-r">${m}</span>`);
     out.push(styled);
-    // Se la riga contiene almeno un "R/.", aggiungi una riga vuota dopo
-    // (effetto "riga vuota" tramite un <br> extra).
     if (RESP_RE.test(ln)) {
       out.push("");
     }
-    // Reset lastIndex perché RESP_RE è una regex globale riusata in loop
     RESP_RE.lastIndex = 0;
   }
   return out.join("<br>");
