@@ -474,34 +474,61 @@ function CelebraScreenInner() {
   const [scrollY, setScrollY] = useState(0);
   const [contentH, setContentH] = useState(0);
   const [viewportH, setViewportH] = useState(0);
+  // Mappa: pagina → { segKey → topY }. Popolata via onLayout dei wrapper
+  // attorno a ogni renderSegment. Permette allo Smart Tap di fare SNAP al
+  // top di un segmento (= confine "naturale" tra paragrafi/sezioni) invece
+  // di scrollare di una quantità fissa che taglia righe a metà.
+  const segLayoutsRef = useRef<Record<number, Record<string, number>>>({});
 
   // Reset stato quando cambia la macro-pagina + scroll a 0
   useEffect(() => {
     setScrollY(0);
     setContentH(0);
     setViewportH(0);
+    // I layout sono ricalcolati al re-mount (via key={`page-${i}`}); qui
+    // resettiamo solo la mappa della pagina corrente per sicurezza.
+    segLayoutsRef.current[currentPage] = {};
     requestAnimationFrame(() => {
       currentScrollRef.current?.scrollTo?.({ y: 0, animated: false });
     });
   }, [currentPage]);
 
-  // Calcola lo step di scroll: multiplo intero di righe del corpo testo.
-  // Così la riga "tagliata" in fondo al viewport precedente (parzialmente
-  // visibile dietro la pillola "scorri") diventa la PRIMA riga in cima
-  // della nuova schermata, intera e leggibile, senza ripetere righe già
-  // lette. lineH stimato come 1.6 × fontSize (= il lineHeight di segNormal).
-  const computeStep = () => {
-    if (viewportH <= 0) return 0;
-    const lineH = Math.max(20, Math.round(fontSize * 1.6));
-    const lines = Math.max(1, Math.floor(viewportH / lineH));
-    return lines * lineH;
+  // Stima lineHeight del corpo testo: usato come step ideale e tolleranza
+  // per il matching ai confini di segmento.
+  const lineH = Math.max(20, Math.round(fontSize * 1.6));
+
+  // Snap helper: dato un target ideale (in pixel), trova il top di un
+  // segmento entro ±tolerance pixel dal target. Se trovato → snap "pulito"
+  // al confine di paragrafo. Altrimenti → step ideale (multiplo di lineH).
+  // Strategia conservativa: lo snap è permesso SOLO entro 1 lineHeight,
+  // così non saltiamo lontano dal target lasciando righe duplicate o gap.
+  const findSnapNear = (target: number): number => {
+    const layouts = segLayoutsRef.current[currentPage] || {};
+    const tops = Object.values(layouts)
+      .filter((v) => typeof v === "number")
+      .sort((a, b) => a - b);
+    if (tops.length === 0) return -1;
+    const tolerance = lineH;
+    let best = -1;
+    for (const t of tops) {
+      if (t < target - tolerance) continue;
+      if (t > target + tolerance) break;
+      if (best < 0 || Math.abs(t - target) < Math.abs(best - target)) best = t;
+    }
+    return best;
   };
 
-  // Smart Tap NEXT: scroll giù di N righe intere, oppure macro-pagina succ.
+  // Smart Tap NEXT: scroll giù di N righe intere, snappato al confine di
+  // segmento più vicino (entro ±1 riga). Se siamo già a fondo pagina,
+  // passa alla macro-pagina successiva.
   const smartTapNext = () => {
     if (viewportH > 0 && contentH > viewportH && scrollY + viewportH < contentH - 8) {
-      const step = computeStep();
-      const nextY = Math.min(contentH - viewportH, scrollY + step);
+      const lines = Math.max(1, Math.floor(viewportH / lineH));
+      const idealStep = lines * lineH;
+      const ideal = scrollY + idealStep;
+      const snap = findSnapNear(ideal);
+      let nextY = snap > 0 ? snap : ideal;
+      nextY = Math.min(contentH - viewportH, nextY);
       currentScrollRef.current?.scrollTo({ y: nextY, animated: true });
     } else {
       const next = Math.min(pages.length - 1, currentPage + 1);
@@ -515,11 +542,15 @@ function CelebraScreenInner() {
     }
   };
 
-  // Smart Tap PREV: scroll su della stessa quantità, oppure macro-pagina prec.
+  // Smart Tap PREV: simmetrico al NEXT.
   const smartTapPrev = () => {
     if (scrollY > 8) {
-      const step = computeStep();
-      const nextY = Math.max(0, scrollY - step);
+      const lines = Math.max(1, Math.floor(viewportH / lineH));
+      const idealStep = lines * lineH;
+      const ideal = scrollY - idealStep;
+      const snap = findSnapNear(ideal);
+      let nextY = snap >= 0 ? snap : ideal;
+      nextY = Math.max(0, nextY);
       currentScrollRef.current?.scrollTo({ y: nextY, animated: true });
     } else {
       const prev = Math.max(0, currentPage - 1);
@@ -531,6 +562,27 @@ function CelebraScreenInner() {
         }
       }
     }
+  };
+
+  // Helper per il render: wrappa ogni segment in una View con onLayout
+  // che registra il top del segment in segLayoutsRef per la pagina i.
+  const renderSegmentWithLayout = (
+    seg: Segment,
+    i: number,
+    j: number,
+  ): React.ReactNode => {
+    const key = `${i}-${j}`;
+    return (
+      <View
+        key={key}
+        onLayout={(e) => {
+          if (!segLayoutsRef.current[i]) segLayoutsRef.current[i] = {};
+          segLayoutsRef.current[i][key] = e.nativeEvent.layout.y;
+        }}
+      >
+        {renderSegment(seg, key, styles)}
+      </View>
+    );
   };
 
   // Helper: applica scroll/layout/contentSize allo stato SOLO se la
@@ -701,7 +753,7 @@ function CelebraScreenInner() {
                   onLayout={(e) => setViewportH(e.nativeEvent.layout.height)}
                 >
                   {pages[Math.min(currentPage, pages.length - 1)].map((seg, j) =>
-                    renderSegment(seg, `web-${currentPage}-${j}`, styles),
+                    renderSegmentWithLayout(seg, currentPage, j),
                   )}
                 </ScrollView>
               </View>
@@ -729,7 +781,7 @@ function CelebraScreenInner() {
                     onContentSizeChange={onContentSizeCurrent(i)}
                     onLayout={onLayoutCurrent(i)}
                   >
-                    {pageSegments.map((seg, j) => renderSegment(seg, `${i}-${j}`, styles))}
+                    {pageSegments.map((seg, j) => renderSegmentWithLayout(seg, i, j))}
                   </ScrollView>
                 ))}
               </PagerView>
