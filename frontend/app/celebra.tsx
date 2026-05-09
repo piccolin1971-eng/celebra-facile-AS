@@ -485,8 +485,9 @@ function CelebraScreenInner() {
     const sy = pageScrollY.current[idx] || 0;
     const ch = pageContentH.current[idx] || 0;
     const vh = pageViewportH.current[idx] || 0;
-    // Margine: se siamo a meno di 8px dal fondo, considera "fine pagina"
-    if (vh > 0 && sy + vh < ch - 8) {
+    // Margine: se siamo a meno di 8px dal fondo (o se il contenuto sta tutto
+    // nel viewport), considera "fine pagina"
+    if (vh > 0 && ch > vh && sy + vh < ch - 8) {
       // C'è ancora testo sotto: smooth scroll giù di (vh - overlap)
       const nextY = Math.min(ch - vh, sy + vh - SCROLL_OVERLAP);
       scrollRefs.current[idx]?.scrollTo({ y: nextY, animated: true });
@@ -497,7 +498,8 @@ function CelebraScreenInner() {
         if (PagerView && pagerRef.current?.setPage) {
           pagerRef.current.setPage(next);
         } else {
-          setCurrentPage(next);
+          // Web fallback: cambia pagina + reset scroll IMMEDIATAMENTE
+          handlePageSelected(next);
         }
       }
     }
@@ -519,22 +521,37 @@ function CelebraScreenInner() {
         if (PagerView && pagerRef.current?.setPage) {
           pagerRef.current.setPage(prev);
         } else {
-          setCurrentPage(prev);
+          // Web fallback: cambia pagina + reset scroll
+          handlePageSelected(prev);
         }
       }
     }
   };
 
-  // Quando l'utente cambia macro-pagina (via swipe o tap), resettiamo lo
-  // scroll della nuova pagina in cima (richiesto dall'utente).
+  // Cambio macro-pagina: reset scroll della nuova pagina + reset misure
+  // così la prossima Smart Tap NEXT vede contentH/viewportH della nuova
+  // pagina (non quelli stale della precedente).
   const handlePageSelected = (newIdx: number) => {
     setCurrentPage(newIdx);
-    // Reset scroll della pagina entrante
+    // Invalida misure stale: verranno aggiornate dai prossimi onLayout/
+    // onContentSizeChange.
+    pageScrollY.current[newIdx] = 0;
+    pageContentH.current[newIdx] = 0;
+    pageViewportH.current[newIdx] = 0;
+    // Reset scroll della pagina entrante (sia web che native)
     requestAnimationFrame(() => {
-      scrollRefs.current[newIdx]?.scrollTo({ y: 0, animated: false });
-      pageScrollY.current[newIdx] = 0;
+      scrollRefs.current[newIdx]?.scrollTo?.({ y: 0, animated: false });
     });
   };
+
+  // tickKey: incrementiamo periodicamente (300ms) per forzare il
+  // re-render dello ScrollIndicator e leggere i ref aggiornati di
+  // scrollY / contentH / viewportH (i ref non causano re-render).
+  const [tickKey, setTickKey] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTickKey((k) => (k + 1) % 1000000), 300);
+    return () => clearInterval(id);
+  }, []);
 
   // Stato pagina/totale: tracciato direttamente da PagerView via onPageSelected.
   const totalPages = pages.length;
@@ -730,6 +747,16 @@ function CelebraScreenInner() {
                 ))}
               </PagerView>
             )}
+            {/* Indicatore "↓ scorri" che appare in basso quando c'è altro
+                testo sotto. Lampeggia leggermente per attirare l'attenzione.
+                Sparisce quando l'utente scrolla a fondo. */}
+            <ScrollIndicator
+              scrollY={pageScrollY.current[currentPage] || 0}
+              contentH={pageContentH.current[currentPage] || 0}
+              viewportH={pageViewportH.current[currentPage] || 0}
+              currentPage={currentPage}
+              tickKey={tickKey}
+            />
             {/* Tap zones SMART (30% sx + 70% dx). 
                 Tap dx → smart scroll giù (overlap 40px) o macro-pagina succ.
                 Tap sx → smart scroll su (overlap 40px) o macro-pagina prec. */}
@@ -792,6 +819,46 @@ export default function CelebraScreen() {
 // segmentsToHtml: converte un array di Segment in stringa HTML completa
 // pronta per essere iniettata in una WebView con CSS columns.
 // ===========================================================================
+// ===========================================================================
+// ScrollIndicator: piccola freccia "↓ scorri" che appare in basso quando
+// c'è altro testo sotto la viewport corrente. Aiuta l'utente anziano a
+// capire che la macro-pagina ha contenuto aggiuntivo da scoprire con
+// tap dx (smooth scroll) o swipe verticale.
+// ===========================================================================
+function ScrollIndicator(props: {
+  scrollY: number;
+  contentH: number;
+  viewportH: number;
+  currentPage: number;
+  tickKey: number;
+}) {
+  const { scrollY, contentH, viewportH } = props;
+  const hasMoreBelow =
+    viewportH > 0 && contentH > viewportH + 16 && scrollY + viewportH < contentH - 16;
+  if (!hasMoreBelow) return null;
+  return (
+    <View
+      pointerEvents="none"
+      style={{
+        position: "absolute",
+        right: 16,
+        bottom: 30,
+        backgroundColor: "rgba(212, 175, 55, 0.85)",
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 18,
+        flexDirection: "row",
+        alignItems: "center",
+      }}
+    >
+      <Ionicons name="chevron-down" size={20} color="#1a1a1a" />
+      <Text style={{ color: "#1a1a1a", fontWeight: "700", marginLeft: 4, fontSize: 14 }}>
+        scorri
+      </Text>
+    </View>
+  );
+}
+
 // ===========================================================================
 // renderSegment: converte un Segment in elementi React Native nativi.
 // Usato dal PagerView per renderizzare ogni pagina (sostituisce
