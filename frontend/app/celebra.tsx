@@ -124,6 +124,7 @@ type SegKind =
   | "readingTitle"
   | "orazioneTitle"
   | "subtitle"
+  | "troparioTitle" // titolo dei tropari Formula C atto penitenziale (arancio brillante)
   | "normal"
   | "rubric"
   | "readingRef" // riferimento biblico sotto Lettura/Vangelo (rosso, ma più grande della rubric)
@@ -903,6 +904,12 @@ function renderSegment(seg: Segment, key: string, styles: any): React.ReactNode 
     case "subtitle":
       return (
         <Text key={key} style={styles.segSubtitle}>
+          {text}
+        </Text>
+      );
+    case "troparioTitle":
+      return (
+        <Text key={key} style={styles.segTroparioTitle}>
           {text}
         </Text>
       );
@@ -1778,7 +1785,7 @@ function buildSegments(args: BuildArgs): Segment[] {
           // Spazio tra le formule (1, 2, 3...) per separazione visiva
           if (fi > 0) sp();
           const formula = seasonVariant.formulas[fi];
-          if (formula.label) push("subtitle", formula.label);
+          if (formula.label) push("troparioTitle", formula.label);
           for (const d of formula.dialogue || []) {
             push("celebrante", `C. ${d.c}`);
             push("assemblea", `A. ${d.a}`);
@@ -2250,6 +2257,17 @@ const makeStyles = (
       fontWeight: "700",
       color: colors.textPrimary,
       marginTop: 12,
+      marginBottom: 4,
+    },
+    // Titolo dei tropari della Formula C dell'Atto Penitenziale.
+    // Arancio brillante per distinguere visivamente le serie di
+    // invocazioni (es. "1. Via, Verità, Vita", "Formula introduttiva") dalle
+    // invocazioni C./A. che le seguono. Coerente con messa.tsx.
+    segTroparioTitle: {
+      fontSize: Math.round(fontSize * 0.85),
+      fontWeight: "800",
+      color: "#FFA726",
+      marginTop: 14,
       marginBottom: 4,
     },
     segPeTitle: {

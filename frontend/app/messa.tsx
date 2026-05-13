@@ -546,7 +546,7 @@ export default function MessaScreen() {
   const getReading = (type: ReadingType) => liturgy?.readings?.find(r => r.type === type);
 
   // Basic text renderers
-  const R = ({ children, kind = "normal" }: { children: React.ReactNode; kind?: "normal" | "rubric" | "celebrante" | "assemblea" | "title" | "subtitle" | "antifonaTitle" | "readingTitle" | "orazioneTitle" | "ritoTitle" | "umili" | "peTitle" | "prefaceTitle" }) => {
+  const R = ({ children, kind = "normal" }: { children: React.ReactNode; kind?: "normal" | "rubric" | "celebrante" | "assemblea" | "title" | "subtitle" | "antifonaTitle" | "readingTitle" | "orazioneTitle" | "ritoTitle" | "umili" | "peTitle" | "prefaceTitle" | "troparioTitle" }) => {
     const s = kind === "rubric" ? styles.rubric
       : kind === "celebrante" ? styles.celebrante
       : kind === "assemblea" ? styles.assemblea
@@ -559,6 +559,7 @@ export default function MessaScreen() {
       : kind === "umili" ? styles.umili
       : kind === "peTitle" ? styles.peTitle
       : kind === "prefaceTitle" ? styles.prefaceTitle
+      : kind === "troparioTitle" ? styles.troparioTitle
       : styles.text;
     return <Text style={s} selectable>{children}</Text>;
   };
@@ -1052,7 +1053,7 @@ export default function MessaScreen() {
               <>
                 {seasonVariant.formulas.map((formula: any, fi: number) => (
                   <View key={`formula-${fi}`} style={styles.penitentialFormulaBox}>
-                    {formula.label && <R kind="subtitle">{formula.label}</R>}
+                    {formula.label && <R kind="troparioTitle">{formula.label}</R>}
                     {formula.dialogue?.map((d: any, i: number) => (
                       <View key={`f${fi}-${i}`} style={styles.dialogBlock}>
                         <R kind="celebrante">C. {d.c}</R>
@@ -2620,6 +2621,18 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string) => Style
     marginTop: 0,
     marginBottom: 6,
     lineHeight: Math.round(fontSize * 0.85),
+  },
+  // Titolo dei tropari della Formula C dell'Atto Penitenziale.
+  // Arancio brillante per distinguere visivamente le serie di invocazioni
+  // (es. "1. Via, Verità, Vita", "Formula introduttiva") dalle invocazioni
+  // C./A. che le seguono. Coerente con la palette esistente.
+  troparioTitle: {
+    fontSize: Math.round(fontSize * 0.85),
+    fontWeight: "800",
+    color: "#FFA726",
+    marginTop: 8,
+    marginBottom: 6,
+    lineHeight: Math.round(fontSize * 1.0),
   },
   // Titolo della Preghiera Eucaristica scelta (es. "Preghiera Eucaristica IV")
   // Verde acceso, ridotto su richiesta utente (era 1.1× → 0.95× → 0.78× del testo).

@@ -9,7 +9,7 @@ import { FONT_OPTIONS, FontFamilyId } from "../src/fontFamily";
 
 export default function Impostazioni() {
   const router = useRouter();
-  const { theme, setTheme, fontSize, setFontSize, highContrast, setHighContrast, autoScrollDelaySec, setAutoScrollDelaySec, autoScrollPxPerSec, setAutoScrollPxPerSec, fontFamilyId, setFontFamilyId, colors, scaledFont } = useSettings();
+  const { theme, setTheme, fontSize, highContrast, setHighContrast, autoScrollDelaySec, setAutoScrollDelaySec, autoScrollPxPerSec, setAutoScrollPxPerSec, fontFamilyId, setFontFamilyId, colors, scaledFont } = useSettings();
   const styles = makeStyles(colors, fontSize);
 
   return (
@@ -29,41 +29,10 @@ export default function Impostazioni() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.section} testID="section-font-size">
-          <Text style={styles.sectionTitle}>Dimensione testo</Text>
-          <Text style={styles.sectionDesc}>Regola la dimensione dei testi di lettura ({fontSize} pt)</Text>
-          <View style={styles.sliderRow}>
-            <TouchableOpacity
-              style={styles.fontBtn}
-              onPress={() => setFontSize(Math.max(14, fontSize - 2))}
-              testID="btn-font-minus"
-              accessibilityLabel="Riduci dimensione testo"
-            >
-              <Text style={styles.fontBtnText}>A−</Text>
-            </TouchableOpacity>
-            <Slider
-              style={{ flex: 1, height: 60 }}
-              minimumValue={14}
-              maximumValue={60}
-              step={1}
-              value={fontSize}
-              onValueChange={(v) => setFontSize(Math.round(v))}
-              minimumTrackTintColor={colors.primary}
-              maximumTrackTintColor={colors.border}
-              thumbTintColor={colors.primary}
-              testID="slider-font-size"
-            />
-            <TouchableOpacity
-              style={styles.fontBtn}
-              onPress={() => setFontSize(Math.min(60, fontSize + 2))}
-              testID="btn-font-plus"
-              accessibilityLabel="Aumenta dimensione testo"
-            >
-              <Text style={styles.fontBtnText}>A+</Text>
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.previewText}>Anteprima: In principio era il Verbo.</Text>
-        </View>
+        {/* Sezione "Dimensione testo" rimossa (richiesta utente v2.16.8):
+            la dimensione del testo si regola ora solo dai bottoni A- / A+
+            in alto nelle schermate (Home, Messa, Celebra, Orazionale).
+            Il valore continua a essere persistito in SettingsContext. */}
 
         <View style={styles.section} testID="section-autoscroll-speed">
           <Text style={styles.sectionTitle}>Velocità auto-scroll PE</Text>

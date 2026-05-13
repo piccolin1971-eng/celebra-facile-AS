@@ -30,11 +30,19 @@ function dayLabelFor(day: DayChoice, date: Date): string {
 
 export default function Home() {
   const router = useRouter();
-  const { colors, scaledFont, fontSize } = useSettings();
+  const { colors, scaledFont, fontSize, setFontSize } = useSettings();
   const [selectedDay, setSelectedDay] = useState<DayChoice>("today");
   const [liturgy, setLiturgy] = useState<Liturgy | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  // Bottoni A- / A+ per dimensione testo, identici a /messa, /celebra,
+  // /orazionale. Modificano il valore GLOBALE in SettingsContext (e quindi
+  // anche le altre schermate). Limiti coerenti con quelli di /messa.
+  const FONT_MIN = 14;
+  const FONT_MAX = 60;
+  const FONT_STEP = 2;
+  const decreaseFont = () => setFontSize(Math.max(FONT_MIN, fontSize - FONT_STEP));
+  const increaseFont = () => setFontSize(Math.min(FONT_MAX, fontSize + FONT_STEP));
 
   const loadLiturgy = useCallback(async (day: DayChoice) => {
     setLoading(true);
@@ -94,6 +102,29 @@ export default function Home() {
     <SafeAreaView style={styles.container} testID="home-screen">
       <View style={styles.topBar}>
         <Text style={styles.appTitle} testID="app-title">Celebra facile</Text>
+        {/* Bottoni A- / A+ per dimensione testo (richiesta utente v2.16.8):
+            uguali a quelli di /messa, /celebra, /orazionale. Modificano il
+            valore GLOBALE in SettingsContext che vale per tutte le schermate. */}
+        <View style={styles.fontBtns}>
+          <TouchableOpacity
+            style={[styles.fontBtn, fontSize <= FONT_MIN && styles.fontBtnDisabled]}
+            onPress={decreaseFont}
+            disabled={fontSize <= FONT_MIN}
+            testID="btn-font-decrease-home"
+            accessibilityLabel="Riduci dimensione testo"
+          >
+            <Text style={styles.fontBtnText}>A-</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.fontBtn, fontSize >= FONT_MAX && styles.fontBtnDisabled]}
+            onPress={increaseFont}
+            disabled={fontSize >= FONT_MAX}
+            testID="btn-font-increase-home"
+            accessibilityLabel="Aumenta dimensione testo"
+          >
+            <Text style={styles.fontBtnText}>A+</Text>
+          </TouchableOpacity>
+        </View>
         <TouchableOpacity
           style={styles.settingsBtn}
           onPress={() => router.push("/impostazioni")}
@@ -251,17 +282,10 @@ export default function Home() {
           <Ionicons name="chevron-forward" size={scaledFont(26)} color={colors.textSecondary} />
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.compactCard}
-          onPress={() => router.push("/impostazioni")}
-          testID="btn-settings-card"
-          accessibilityRole="button"
-        >
-          <Ionicons name="text" size={scaledFont(28)} color={colors.textPrimary} />
-          <Text style={styles.compactCardTitle}>Accessibilità</Text>
-          <View style={{ flex: 1 }} />
-          <Ionicons name="chevron-forward" size={scaledFont(26)} color={colors.textSecondary} />
-        </TouchableOpacity>
+        {/* Card "Accessibilità" rimossa (richiesta utente v2.16.8):
+            duplicato di "Impostazioni" — entrambe puntavano allo stesso
+            schermo. Ora si accede alle impostazioni solo dal bottone in
+            alto a destra. */}
 
         {liturgy?.saints && liturgy.saints.length > 0 ? null : null}
 
@@ -297,6 +321,21 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     borderRadius: 12,
   },
   settingsBtnText: { fontSize: Math.round(fontSize * 0.7), color: colors.textPrimary, fontWeight: "600" },
+  // Bottoni A- / A+ in topBar Home (richiesta utente v2.16.8). Stesso stile
+  // di quelli di /messa, /celebra, /orazionale per coerenza visiva.
+  fontBtns: { flexDirection: "row", gap: 8 },
+  fontBtn: {
+    width: 56,
+    height: 56,
+    borderWidth: 2,
+    borderColor: colors.border,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surface,
+  },
+  fontBtnDisabled: { opacity: 0.4 },
+  fontBtnText: { fontSize: 22, fontWeight: "800", color: colors.textPrimary },
   content: { padding: 24, gap: 20 },
   dateBanner: {
     flexDirection: "row",
