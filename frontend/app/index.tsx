@@ -321,21 +321,24 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     borderRadius: 12,
   },
   settingsBtnText: { fontSize: Math.round(fontSize * 0.7), color: colors.textPrimary, fontWeight: "600" },
-  // Bottoni A- / A+ in topBar Home (richiesta utente v2.16.8). Stesso stile
-  // di quelli di /messa, /celebra, /orazionale per coerenza visiva.
+  // Bottoni A- / A+ in topBar Home (richiesta utente v2.16.8). Stile IDENTICO
+  // a quelli di /messa, /celebra, /orazionale per coerenza visiva.
   fontBtns: { flexDirection: "row", gap: 8 },
   fontBtn: {
-    width: 56,
-    height: 56,
-    borderWidth: 2,
-    borderColor: colors.border,
-    borderRadius: 12,
+    minWidth: 64,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: colors.primary,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.surface,
   },
-  fontBtnDisabled: { opacity: 0.4 },
-  fontBtnText: { fontSize: 22, fontWeight: "800", color: colors.textPrimary },
+  fontBtnDisabled: { opacity: 0.35 },
+  fontBtnText: {
+    fontSize: Math.round(fontSize * 0.75),
+    fontWeight: "800",
+    color: "#FFFFFF",
+  },
   content: { padding: 24, gap: 20 },
   dateBanner: {
     flexDirection: "row",
