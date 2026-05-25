@@ -10,7 +10,7 @@ name: EAS Build Android (Expo cloud)
 #   Token generato qui: https://expo.dev/accounts/agedon/settings/access-tokens
 
 on:
-  # push:
+  # # push:
   #   branches: [main, master]
   workflow_dispatch:
 
