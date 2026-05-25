@@ -3,18 +3,18 @@
     "id": "A",
     "label": "Acclamazione A - Annunciamo la tua morte",
     "celebrante": "Mistero della fede.",
-    "assemblea": "Annunciamo la tua morte, Signore, proclamiamo la tua risurrezione, nell'attesa della tua venuta."
+    "assemblea": "Annunciamo la tua morte, Signore,\nproclamiamo la tua risurrezione,\nnell'attesa della tua venuta."
   },
   {
     "id": "B",
     "label": "Acclamazione B - Ogni volta che mangiamo",
     "celebrante": "Mistero della fede.",
-    "assemblea": "Ogni volta che mangiamo di questo pane e beviamo a questo calice annunciamo la tua morte, Signore, nell'attesa della tua venuta."
+    "assemblea": "Ogni volta che mangiamo di questo pane\ne beviamo a questo calice,\nannunciamo la tua morte, Signore,\nnell'attesa della tua venuta."
   },
   {
     "id": "C",
     "label": "Acclamazione C - Tu ci hai redenti",
     "celebrante": "Mistero della fede.",
-    "assemblea": "Tu ci hai redenti con la tua croce e la tua risurrezione: salvaci, o Salvatore del mondo."
+    "assemblea": "Tu ci hai redenti con la tua croce\ne la tua risurrezione:\nsalvaci, o Salvatore del mondo."
   }
 ]

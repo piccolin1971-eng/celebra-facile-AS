@@ -132,6 +132,7 @@ export default function MessaScreen() {
   const [benedizioneId, setBenedizioneId] = useState("A");
 
   const [showPrefaces, setShowPrefaces] = useState(false);
+  const [expandedPrefaceSeason, setExpandedPrefaceSeason] = useState<string | null>(null);
   const [showPrayers, setShowPrayers] = useState(false);
   const [showOrazionale, setShowOrazionale] = useState(false);
 
@@ -1786,7 +1787,7 @@ export default function MessaScreen() {
                   {i === 0 ? (
                     <>
                       <R kind="title">Prefazio</R>
-                      <TouchableOpacity style={styles.selectorBtn} onPress={() => setShowPrefaces(true)} testID="btn-select-preface">
+                      <TouchableOpacity style={styles.selectorBtn} onPress={() => setShowPrefaces(true); setExpandedPrefaceSeason('suggeriti');} testID="btn-select-preface">
                         <Ionicons name="swap-horizontal" size={scaledFont(28)} color={colors.primary} />
                         <Text style={styles.selectorBtnText}>Scegli Prefazio</Text>
                       </TouchableOpacity>
@@ -1807,7 +1808,7 @@ export default function MessaScreen() {
             render: () => (
               <View style={styles.partBox}>
                 <R kind="title">Prefazio</R>
-                <TouchableOpacity style={styles.selectorBtn} onPress={() => setShowPrefaces(true)} testID="btn-select-preface">
+                <TouchableOpacity style={styles.selectorBtn} onPress={() => setShowPrefaces(true); setExpandedPrefaceSeason('suggeriti');} testID="btn-select-preface">
                   <Ionicons name="swap-horizontal" size={scaledFont(28)} color={colors.primary} />
                   <Text style={styles.selectorBtnText}>Scegli Prefazio</Text>
                 </TouchableOpacity>
@@ -2314,34 +2315,71 @@ export default function MessaScreen() {
               <Ionicons name="close" size={scaledFont(36)} color={colors.textPrimary} />
               <Text style={styles.backBtnText}>Chiudi</Text>
             </TouchableOpacity>
-            <Text style={styles.title}>Scegli Prefazio</Text>
+            <Text style={styles.title}>Scegli Prefazio (2020)</Text>
             <View style={{ width: 100 }} />
           </View>
           <ScrollView contentContainerStyle={styles.content}>
             {(() => {
-              // Ordina prefazi: tempo corrente in cima, poi comune, poi gli altri
-              const sorted = [...prefaces].sort((a, b) => {
-                const rank = (p: Preface) => p.season === currentSeasonKey ? 0
-                  : p.season === "comune" ? 1
-                  : 2;
-                const ra = rank(a), rb = rank(b);
-                if (ra !== rb) return ra - rb;
-                return 0;
+              const categories = [
+                { key: 'suggeriti', label: '⭐ Suggeriti per oggi' },
+                { key: 'avvento', label: '🕒 Tempo di Avvento' },
+                { key: 'natale', label: '🕒 Tempo di Natale ed Epifania' },
+                { key: 'quaresima', label: '🕒 Tempo di Quaresima' },
+                { key: 'passione', label: '🕒 Passione e Settimana Santa' },
+                { key: 'pasqua', label: '🕒 Tempo di Pasqua e Pentecoste' },
+                { key: 'ordinario', label: '🕒 Domeniche del Tempo Ordinario' },
+                { key: 'comune', label: '⛪ Prefazi Comuni' },
+                { key: 'misteri', label: '✝️ Misteri del Signore' },
+                { key: 'bvm', label: '😇 Beata Vergine Maria' },
+                { key: 'santi', label: '😇 Santi e Angeli' },
+                { key: 'rituali', label: '⛪ Riti e Messe Rituali' },
+                { key: 'pe', label: '📜 Preghiere Eucaristiche' },
+                { key: 'defunti', label: '✟ Per i Defunti' },
+              ];
+
+              return categories.map(cat => {
+                let filtered = [];
+                if (cat.key === 'suggeriti') {
+                  filtered = prefaces.filter(p => (p.season === currentSeasonKey || p.category === currentSeasonKey));
+                  if (filtered.length === 0) return null;
+                } else {
+                  filtered = prefaces.filter(p => (p.season === cat.key || p.category === cat.key));
+                }
+
+                if (filtered.length === 0) return null;
+
+                const isExpanded = expandedPrefaceSeason === cat.key;
+
+                return (
+                  <View key={cat.key} style={{ marginBottom: 12 }}>
+                    <TouchableOpacity
+                      style={[styles.sectionHeader, isExpanded && { borderBottomWidth: 0, borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }]}
+                      onPress={() => setExpandedPrefaceSeason(isExpanded ? null : cat.key)}
+                    >
+                      <Text style={styles.sectionTitle}>{cat.label}</Text>
+                      <Ionicons
+                        name={isExpanded ? "chevron-up" : "chevron-down"}
+                        size={24}
+                        color={colors.textPrimary}
+                      />
+                    </TouchableOpacity>
+
+                    {isExpanded && (
+                      <View style={{ backgroundColor: colors.bgSecondary, borderBottomLeftRadius: 12, borderBottomRightRadius: 12, overflow: 'hidden' }}>
+                        {filtered.map(p => (
+                          <TouchableOpacity
+                            key={p.id}
+                            style={[styles.listItem, selectedPrefaceId === p.id && styles.listItemActive]}
+                            onPress={() => { setSelectedPrefaceId(p.id); setShowPrefaces(false); }}
+                          >
+                            <Text style={styles.listItemText}>{p.title}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                );
               });
-              return sorted.map(p => (
-                <TouchableOpacity
-                  key={p.id}
-                  style={[styles.listItem, selectedPrefaceId === p.id && styles.listItemActive]}
-                  onPress={() => { setSelectedPrefaceId(p.id); setShowPrefaces(false); }}
-                  testID={`preface-item-${p.id}`}
-                >
-                  {p.season === currentSeasonKey && (
-                    <Text style={styles.badgeSeasonal}>▸ TEMPO CORRENTE</Text>
-                  )}
-                  <Text style={styles.listItemText}>{p.title}</Text>
-                  <Text style={styles.listItemSub}>Tempo: {p.season}</Text>
-                </TouchableOpacity>
-              ));
             })()}
           </ScrollView>
         </SafeAreaView>
@@ -3071,5 +3109,22 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string) => Style
     borderLeftColor: colors.primary,
     backgroundColor: colors.surface,
     borderRadius: 8,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 20,
+    backgroundColor: colors.surface,
+    borderWidth: 2,
+    borderColor: colors.border,
+    borderRadius: 12,
+  },
+  sectionTitle: {
+    fontSize: Math.round(fontSize * 0.75),
+    fontWeight: "800",
+    color: colors.textPrimary,
+    textTransform: "uppercase",
+    letterSpacing: 1,
   },
 });

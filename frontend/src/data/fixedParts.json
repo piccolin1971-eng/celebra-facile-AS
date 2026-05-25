@@ -442,7 +442,7 @@
       },
       {
         "type": "prayer",
-        "text": "Gloria a Dio nell'alto dei cieli\ne pace in terra agli uomini di buona volontà.\n\nNoi ti lodiamo, ti benediciamo, ti adoriamo,\nti glorifichiamo, ti rendiamo grazie\nper la tua gloria immensa,\nSignore Dio, Re del cielo,\nDio Padre onnipotente.\n\nSignore, Figlio unigenito, Gesù Cristo,\nSignore Dio, Agnello di Dio, Figlio del Padre;\ntu che togli i peccati del mondo, abbi pietà di noi;\ntu che togli i peccati del mondo, accogli la nostra supplica;\ntu che siedi alla destra del Padre, abbi pietà di noi.\n\nPerché tu solo il Santo, tu solo il Signore,\ntu solo l'Altissimo, Gesù Cristo,\ncon lo Spirito Santo: nella gloria di Dio Padre. Amen."
+        "text": "Gloria a Dio nell'alto dei cieli\ne pace in terra agli uomini, amati dal Signore.\n\nNoi ti lodiamo, ti benediciamo, ti adoriamo,\nti glorifichiamo, ti rendiamo grazie\nper la tua gloria immensa,\nSignore Dio, Re del cielo,\nDio Padre onnipotente.\n\nSignore, Figlio unigenito, Gesù Cristo,\nSignore Dio, Agnello di Dio, Figlio del Padre;\ntu che togli i peccati del mondo, abbi pietà di noi;\ntu che togli i peccati del mondo, accogli la nostra supplica;\ntu che siedi alla destra del Padre, abbi pietà di noi.\n\nPerché tu solo il Santo, tu solo il Signore,\ntu solo l'Altissimo, Gesù Cristo,\ncon lo Spirito Santo: nella gloria di Dio Padre. Amen."
       }
     ]
   },
@@ -652,6 +652,21 @@
           {
             "id": "D",
             "celebrante": "Andate in pace.",
+            "assemblea": "Rendiamo grazie a Dio."
+          },
+          {
+            "id": "E",
+            "celebrante": "La gioia del Signore sia la vostra forza: andate in pace.",
+            "assemblea": "Rendiamo grazie a Dio."
+          },
+          {
+            "id": "F",
+            "celebrante": "Nel nome del Signore, andate in pace.",
+            "assemblea": "Rendiamo grazie a Dio."
+          },
+          {
+            "id": "G",
+            "celebrante": "Portate a tutti la gioia del Signore risorto: andate in pace.",
             "assemblea": "Rendiamo grazie a Dio."
           }
         ]
