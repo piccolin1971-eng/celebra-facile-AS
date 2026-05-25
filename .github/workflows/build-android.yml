@@ -5,9 +5,8 @@ name: Build Android APK (Native Gradle)
 # L'APK viene caricato come artifact scaricabile dalla pagina Actions.
 
 on:
-  # Disabilitato il trigger automatico su push: ora usiamo EAS Build come
-  # metodo principale (vedi eas-build-android.yml). Lasciamo solo il trigger
-  # manuale come backup, attivabile da GitHub → Actions → "Run workflow".
+  push:
+    branches: [main, master]
   workflow_dispatch:
 
 jobs:
