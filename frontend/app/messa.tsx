@@ -1787,7 +1787,7 @@ export default function MessaScreen() {
                   {i === 0 ? (
                     <>
                       <R kind="title">Prefazio</R>
-                      <TouchableOpacity style={styles.selectorBtn} onPress={() => setShowPrefaces(true); setExpandedPrefaceSeason('suggeriti');} testID="btn-select-preface">
+                      <TouchableOpacity style={styles.selectorBtn} onPress={() => { setShowPrefaces(true); setExpandedPrefaceSeason('suggeriti'); }} testID="btn-select-preface">
                         <Ionicons name="swap-horizontal" size={scaledFont(28)} color={colors.primary} />
                         <Text style={styles.selectorBtnText}>Scegli Prefazio</Text>
                       </TouchableOpacity>
@@ -1808,7 +1808,7 @@ export default function MessaScreen() {
             render: () => (
               <View style={styles.partBox}>
                 <R kind="title">Prefazio</R>
-                <TouchableOpacity style={styles.selectorBtn} onPress={() => setShowPrefaces(true); setExpandedPrefaceSeason('suggeriti');} testID="btn-select-preface">
+                <TouchableOpacity style={styles.selectorBtn} onPress={() => { setShowPrefaces(true); setExpandedPrefaceSeason('suggeriti'); }} testID="btn-select-preface">
                   <Ionicons name="swap-horizontal" size={scaledFont(28)} color={colors.primary} />
                   <Text style={styles.selectorBtnText}>Scegli Prefazio</Text>
                 </TouchableOpacity>
