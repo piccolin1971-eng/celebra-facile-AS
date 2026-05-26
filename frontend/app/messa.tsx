@@ -80,7 +80,7 @@ export default function MessaScreen() {
 
   const router = useRouter();
   const params = useLocalSearchParams<{ date?: string; preface?: string; votive?: string }>();
-  const { colors, fontSize: settingsFontSize, scaledFont, readingMode, autoScrollDelaySec, autoScrollPxPerSec, fontFamily } = useSettings();
+  const { colors, fontSize: settingsFontSize, scaledFont, readingMode, autoScrollDelaySec, autoScrollPxPerSec, fontFamily, isBold } = useSettings();
 
   // Stato locale fontSize (override delle impostazioni globali, valido solo
   // per questa sessione di preparazione). Inizializzato da settings, può
@@ -167,7 +167,6 @@ export default function MessaScreen() {
   // Solo dopo questo flag, il save automatico è attivo.
   const [sessionLoaded, setSessionLoaded] = useState(false);
 
-  const { colors, scaledFont, fontSize, fontFamily, isBold } = useSettings();
   const styles = makeStyles(colors, fontSize, fontFamily, isBold);
 
   useEffect(() => {
