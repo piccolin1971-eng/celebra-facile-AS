@@ -10,7 +10,7 @@ from datetime import datetime, date, timezone
 from liturgy_data import FIXED_PARTS, MASS_ORDER, EUCHARISTIC_PRAYERS
 from liturgy_extras import EUCHARISTIC_PRAYERS_CHILDREN, MYSTERY_ACCLAMATIONS, SOLEMN_BLESSINGS, PASQUA_DISMISSAL
 from prefaces_data import PREFACES
-from liturgy_scraper import fetch_liturgy, get_liturgical_season
+from liturgy_scraper import fetch_liturgy, get_liturgical_season, calculate_liturgical_color
 from saints_calendar import get_saints_for_date, VOTIVE_MASSES, SAINTS_CALENDAR
 
 ROOT_DIR = Path(__file__).parent
@@ -87,14 +87,16 @@ async def _full_liturgy(target: date) -> dict:
     if readings_data and "_id" in readings_data:
         del readings_data["_id"]
 
+    effective = calculate_liturgical_color(season, saints)
+
     return {
         "date": target.isoformat(),
         "date_label": _italian_date_label(target),
-        "season": season,
+        "season": {**season, "color": effective["color"], "color_hex": effective["color_hex"]},
         "saints": saints,
         "readings": readings_data.get("readings", []) if readings_data else [],
         "title": readings_data.get("title", "") if readings_data else "",
-        "liturgical_color": readings_data.get("liturgical_color", "") or season.get("color", ""),
+        "liturgical_color": readings_data.get("liturgical_color", "") or effective["color"],
         "source": readings_data.get("source", "") if readings_data else "",
         "source_url": readings_data.get("source_url", "") if readings_data else "",
         "cached": bool(cached),

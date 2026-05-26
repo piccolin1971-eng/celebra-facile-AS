@@ -175,17 +175,52 @@ async def fetch_liturgy(target_date: date) -> dict:
     return result
 
 
+COLOR_MAP = {
+    "verde": "#1B5E20",
+    "viola": "#4A148C",
+    "bianco": "#D4AF37",
+    "rosso": "#B71C1C",
+    "rosa": "#AD1457",
+}
+
+
 def get_liturgical_season(target_date: date) -> dict:
     """Calcolo approssimativo del tempo liturgico."""
     month = target_date.month
     day = target_date.day
 
     if (month == 12 and day <= 24) or (month == 11 and day >= 27):
-        return {"season": "Avvento", "color": "viola", "color_hex": "#4A148C"}
+        return {"season": "Avvento", "color": "viola", "color_hex": COLOR_MAP["viola"]}
     if (month == 12 and day >= 25) or (month == 1 and day <= 13):
-        return {"season": "Natale", "color": "bianco", "color_hex": "#D4AF37"}
+        return {"season": "Natale", "color": "bianco", "color_hex": COLOR_MAP["bianco"]}
     if (month == 2 and day >= 14) or (month == 3 and day <= 31):
-        return {"season": "Quaresima", "color": "viola", "color_hex": "#4A148C"}
+        return {"season": "Quaresima", "color": "viola", "color_hex": COLOR_MAP["viola"]}
     if (month == 4) or (month == 5 and day <= 25):
-        return {"season": "Pasqua", "color": "bianco", "color_hex": "#D4AF37"}
-    return {"season": "Tempo Ordinario", "color": "verde", "color_hex": "#1B5E20"}
+        return {"season": "Pasqua", "color": "bianco", "color_hex": COLOR_MAP["bianco"]}
+    return {"season": "Tempo Ordinario", "color": "verde", "color_hex": COLOR_MAP["verde"]}
+
+
+def calculate_liturgical_color(season: dict, saints: list) -> dict:
+    """Calcola il colore effettivo considerando i gradi delle celebrazioni."""
+    rank_priority = {
+        "solennita": 1,
+        "festa": 2,
+        "memoria_obbligatoria": 3,
+        "memoria_facoltativa": 4,
+    }
+
+    best = None
+    for s in saints:
+        if not best or rank_priority.get(s["rank"], 99) < rank_priority.get(best["rank"], 99):
+            best = s
+
+    is_lent_or_advent = season["season"] in ("Avvento", "Quaresima")
+
+    if best:
+        if best["rank"] in ("solennita", "festa"):
+            return {"color": best["color"], "color_hex": COLOR_MAP.get(best["color"], season["color_hex"])}
+        if best["rank"] == "memoria_obbligatoria" and not is_lent_or_advent:
+            return {"color": best["color"], "color_hex": COLOR_MAP.get(best["color"], season["color_hex"])}
+
+    return {"color": season["color"], "color_hex": season["color_hex"]}
+

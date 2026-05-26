@@ -40,18 +40,63 @@ function parseDateStr(s: string): Date {
 
 // ===== Stagione liturgica (calcolo approssimato) =====
 
+const COLOR_MAP: Record<string, string> = {
+  verde: "#1B5E20",
+  viola: "#4A148C",
+  bianco: "#D4AF37",
+  rosso: "#B71C1C",
+  rosa: "#AD1457",
+};
+
 export function getLiturgicalSeason(d: Date): { season: string; color: string; color_hex: string } {
   const m = d.getMonth() + 1;
   const day = d.getDate();
   if ((m === 12 && day <= 24) || (m === 11 && day >= 27))
-    return { season: "Avvento", color: "viola", color_hex: "#4A148C" };
+    return { season: "Avvento", color: "viola", color_hex: COLOR_MAP.viola };
   if ((m === 12 && day >= 25) || (m === 1 && day <= 13))
-    return { season: "Natale", color: "bianco", color_hex: "#D4AF37" };
+    return { season: "Natale", color: "bianco", color_hex: COLOR_MAP.bianco };
   if ((m === 2 && day >= 14) || (m === 3 && day <= 31))
-    return { season: "Quaresima", color: "viola", color_hex: "#4A148C" };
+    return { season: "Quaresima", color: "viola", color_hex: COLOR_MAP.viola };
   if (m === 4 || (m === 5 && day <= 25))
-    return { season: "Pasqua", color: "bianco", color_hex: "#D4AF37" };
-  return { season: "Tempo Ordinario", color: "verde", color_hex: "#1B5E20" };
+    return { season: "Pasqua", color: "bianco", color_hex: COLOR_MAP.bianco };
+  return { season: "Tempo Ordinario", color: "verde", color_hex: COLOR_MAP.verde };
+}
+
+// ===== Calcolo colore liturgico effettivo (Santi vs Stagione) =====
+
+export function calculateLiturgicalColor(
+  season: { season: string; color: string; color_hex: string },
+  saints: SaintEntry[],
+): { color: string; color_hex: string } {
+  const rankPriority: Record<string, number> = {
+    solennita: 1,
+    festa: 2,
+    memoria_obbligatoria: 3,
+    memoria_facoltativa: 4,
+  };
+
+  let best: SaintEntry | null = null;
+  for (const s of saints) {
+    if (!best || rankPriority[s.rank] < rankPriority[best.rank]) {
+      best = s;
+    }
+  }
+
+  const isLentOrAdvent = season.season === "Avvento" || season.season === "Quaresima";
+
+  if (best) {
+    // Solennità e Feste cambiano sempre il colore (es. San Giuseppe in Quaresima = Bianco)
+    if (best.rank === "solennita" || best.rank === "festa") {
+      return { color: best.color, color_hex: COLOR_MAP[best.color] || season.color_hex };
+    }
+    // Memorie obbligatorie cambiano colore solo in Tempo Ordinario.
+    // In Avvento/Quaresima sono ridotte a commemorazioni (colore viola resta).
+    if (best.rank === "memoria_obbligatoria" && !isLentOrAdvent) {
+      return { color: best.color, color_hex: COLOR_MAP[best.color] || season.color_hex };
+    }
+  }
+
+  return { color: season.color, color_hex: season.color_hex };
 }
 
 // ===== Calendario santi =====
@@ -91,14 +136,17 @@ export async function getFullLiturgy(d: Date): Promise<Liturgy> {
   const season = getLiturgicalSeason(d);
   const saints = getSaintsForDate(d);
   const scraped = await scrapeLiturgy(d);
+
+  const effective = calculateLiturgicalColor(season, saints);
+
   return {
     date: iso,
     date_label: italianDateLabel(d),
-    season,
+    season: { ...season, color: effective.color, color_hex: effective.color_hex },
     saints,
     readings: scraped.readings,
     title: scraped.title,
-    liturgical_color: scraped.liturgical_color || season.color,
+    liturgical_color: scraped.liturgical_color || effective.color,
     source_url: scraped.source_url,
     error: scraped.error || null,
   };

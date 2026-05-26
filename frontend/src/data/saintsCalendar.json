@@ -1584,7 +1584,7 @@
     "celebrations": [
       {
         "title": "San Giovanni XXIII, papa",
-        "rank": "memoria_facoltativa",
+        "rank": "memoria_obbligatoria",
         "color": "bianco"
       }
     ]
@@ -1664,7 +1664,7 @@
     "celebrations": [
       {
         "title": "San Giovanni Paolo II, papa",
-        "rank": "memoria_facoltativa",
+        "rank": "memoria_obbligatoria",
         "color": "bianco"
       }
     ]
@@ -1714,8 +1714,8 @@
     "celebrations": [
       {
         "title": "Commemorazione di tutti i fedeli defunti",
-        "rank": "memoria_obbligatoria",
-        "color": "verde"
+        "rank": "solennita",
+        "color": "viola"
       }
     ]
   },
