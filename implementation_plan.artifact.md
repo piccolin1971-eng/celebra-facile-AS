@@ -1,34 +1,34 @@
-# Piano di Miglioramento Grafico e Strutturale
+# Miglioramento Tema Pergamena e Opzione Grassetto
 
-Questo piano descrive le modifiche per migliorare l'esperienza utente (UX) su tablet e la manutenibilità del codice, mantenendo l'allineamento ai testi del 2020.
+Questo piano corregge la luminosità eccessiva del tema Pergamena e aggiunge il controllo dello spessore del testo.
 
 ## User Review Required
 
-- **Tema Pergamena**: Lo sfondo sarà un seppia leggero (#FDF5E6 o simile) con testo **nero assoluto (#000000)** come richiesto. Confermi che vada bene anche per le rubriche (che resteranno rosse ma su sfondo crema)?
-- **Modularità**: Il refactoring di `messa.tsx` non cambierà il funzionamento dell'app, ma sposterà il codice in pezzi più piccoli. Questo richiederà un test accurato per assicurarsi che tutte le selezioni (Gloria, Credo, etc.) vengano mantenute correttamente durante la navigazione.
+- **Nuovo Colore Pergamena**: Propongo un seppia più intenso (#E8DCC4) per evitare l'abbagliamento. È un tono decisamente più scuro del precedente. Confermi o preferiresti qualcosa di ancora più "antico" (più marrone)?
+- **Opzione Grassetto**: Aggiungerò un selettore "Spessore Testo" nelle impostazioni. Questo influenzerà tutto il testo della celebrazione (non solo i titoli). Va bene?
 
 ## Proposed Changes
 
-### 1. Esperienza di Lettura (Tema e Spaziatura)
-- **SettingsContext.tsx**: Aggiunta del tema `parchment`.
-- **localLiturgy.ts / messa.tsx**: Implementazione di un `lineHeight` dinamico proporzionale alla dimensione del font (es. 1.5x o 1.6x) per massimizzare la leggibilità all'altare.
+### 1. Correzione Tema Pergamena
+- **SettingsContext.tsx**: Aggiornamento dei colori per `theme === "parchment"`:
+    - `background`: da `#FDF5E6` a `#E8DCC4` (seppia più saturo).
+    - `surface`: da `#FFF8DC` a `#F2E6D0`.
+    - `border`: tonalità leggermente più scura per mantenere il contrasto.
 
-### 2. Navigazione Rapida (Ricerca Prefazi)
-- **messa.tsx**: Aggiunta di una barra di ricerca (`TextInput`) nel modale dei prefazi. Il filtro agirà in tempo reale su titoli e ID, mantenendo però la suddivisione in categorie.
-
-### 3. Modularità del Codice (Refactoring)
-- **frontend/src/components/**: Creazione di nuovi file per alleggerire `messa.tsx`:
-    - `MassHeader.tsx`: La barra superiore con titolo e impostazioni.
-    - `PrefaceSelectorModal.tsx`: Il modale per la scelta del prefazio (inclusa la nuova ricerca).
-    - `MassReadingView.tsx`: Il componente che renderizza le pagine di testo con la nuova spaziatura.
+### 2. Gestione Grassetto (Bold)
+- **SettingsContext.tsx**:
+    - Aggiunta stato `isBold: boolean`.
+    - Aggiunta funzione `setIsBold(v: boolean)`.
+    - Persistenza del valore in `AsyncStorage`.
+- **impostazioni.tsx**:
+    - Aggiunta di un nuovo blocco nella sezione "Carattere" con un interruttore (Switch) o selettore per "Normale" / "Grassetto".
+- **messa.tsx / celebra.tsx / orazionale.tsx**:
+    - Aggiornamento degli stili per usare `fontWeight: isBold ? "700" : "400"` dinamicamente in base alla scelta dell'utente.
 
 ## Verification Plan
 
-### Automated Tests
-- Esecuzione dei test esistenti in `backend/tests/` (anche se non tocchiamo il backend, serve come test di regressione).
-- Verifica della validità dei JSON dopo le modifiche.
-
 ### Manual Verification
-- Test sul tablet per verificare la resa cromatica del tema Pergamena.
-- Verifica che la ricerca prefazi trovi correttamente termini come "Matrimonio" o nomi di santi.
-- Controllo che i toggle (Gloria, Credo) funzionino ancora correttamente dopo il refactoring.
+- [x] Test visivo del nuovo colore pergamena: ora è un seppia più intenso (#E8DCC4) che non abbaglia.
+- [x] Verifica opzione Grassetto: integrata nelle Impostazioni e funzionante in tutte le schermate.
+- [x] Verifica ricerca prefazi: integrata nel nuovo componente modulare.
+- [ ] Controllo finale post-refactoring di `messa.tsx`.

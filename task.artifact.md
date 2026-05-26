@@ -1,7 +1,6 @@
-# Task: Miglioramenti Grafici e Strutturali
-
-- [/] Progettazione e Pianificazione
-- [ ] Implementazione Tema Pergamena e Spaziatura Dinamica
-- [ ] Aggiunta Ricerca Rapida nei Prefazi
-- [ ] Refactoring Modulare di `messa.tsx`
+- [x] Progettazione e Pianificazione
+- [x] Implementazione Tema Pergamena e Spaziatura Dinamica
+- [x] Aggiunta Ricerca Rapida nei Prefazi
+- [x] Implementazione Opzione Grassetto (Bold)
+- [ ] Refactoring Modulare di `messa.tsx` (in corso)
 - [ ] Verifica e Validazione Finale (senza Push automatico)

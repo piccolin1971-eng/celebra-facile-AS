@@ -18,9 +18,11 @@ interface SettingsState {
   fontFamilyId: FontFamilyId;
   // Stringa fontFamily da passare ai componenti Text (undefined per il sistema)
   fontFamily: string | undefined;
+  isBold: boolean;
   setTheme: (t: ThemeMode) => void;
   setFontSize: (n: number) => void;
   setHighContrast: (v: boolean) => void;
+  setIsBold: (v: boolean) => void;
   setReadingMode: (m: ReadingMode) => void;
   setAutoScrollDelaySec: (n: number) => void;
   setAutoScrollPxPerSec: (n: number) => void;
@@ -51,19 +53,19 @@ const getColors = (theme: ThemeMode, highContrast: boolean) => {
   }
   if (theme === "parchment") {
     return {
-      background: "#FDF5E6", // OldLace / Pergamena
-      surface: "#FFF8DC",   // Cornsilk
-      bgSecondary: "#F5DEB3", // Wheat
-      textPrimary: "#000000", // Nero assoluto richiesto
+      background: "#E8DCC4", // Seppia più intenso
+      surface: "#F2E6D0",   // Tonalità calda
+      bgSecondary: "#D8C8A8",
+      textPrimary: "#000000", // Nero assoluto
       textSecondary: "#2C2C2C",
-      border: "#D2B48C",    // Tan
-      rubrics: "#B71C1C",   // Rosso scuro
-      primary: "#8B4513",   // SaddleBrown (tonalità cuoio)
-      focus: "#CD853F",     // Peru
+      border: "#C8B89C",
+      rubrics: "#B71C1C",
+      primary: "#8B4513",
+      focus: "#CD853F",
       liturgicalGreen: "#1B5E20",
       liturgicalRed: "#B71C1C",
       liturgicalPurple: "#4A148C",
-      liturgicalWhite: "#B8860B", // DarkGoldenRod
+      liturgicalWhite: "#B8860B",
       liturgicalRose: "#AD1457",
     };
   }
@@ -95,6 +97,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   const [autoScrollDelaySec, setAutoScrollDelaySecState] = useState<number>(7);
   const [autoScrollPxPerSec, setAutoScrollPxPerSecState] = useState<number>(6);
   const [fontFamilyId, setFontFamilyIdState] = useState<FontFamilyId>("system");
+  const [isBold, setIsBoldState] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -114,6 +117,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
           if (s.theme === "light" || s.theme === "dark" || s.theme === "parchment") setThemeState(s.theme);
           if (s.fontSize) setFontSizeState(s.fontSize);
           if (typeof s.highContrast === "boolean") setHighContrastState(s.highContrast);
+          if (typeof s.isBold === "boolean") setIsBoldState(s.isBold);
           if (s.readingMode === "tap" || s.readingMode === "scroll") setReadingModeState(s.readingMode);
           // Migrazione v3: chi aveva i vecchi default (5s o 6s) viene aggiornato a 7s una sola volta.
           if (typeof s.autoScrollDelaySec === "number" && s.autoScrollDelaySec >= 3 && s.autoScrollDelaySec <= 10) {
@@ -163,14 +167,15 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     })();
   }, []);
 
-  const persist = async (patch: Partial<{ theme: ThemeMode; fontSize: number; highContrast: boolean; readingMode: ReadingMode; autoScrollDelaySec: number; autoScrollPxPerSec: number; fontFamilyId: FontFamilyId }>) => {
-    const next = { theme, fontSize, highContrast, readingMode, autoScrollDelaySec, autoScrollPxPerSec, fontFamilyId, ...patch };
+  const persist = async (patch: Partial<{ theme: ThemeMode; fontSize: number; highContrast: boolean; isBold: boolean; readingMode: ReadingMode; autoScrollDelaySec: number; autoScrollPxPerSec: number; fontFamilyId: FontFamilyId }>) => {
+    const next = { theme, fontSize, highContrast, isBold, readingMode, autoScrollDelaySec, autoScrollPxPerSec, fontFamilyId, ...patch };
     await AsyncStorage.setItem("messale_settings", JSON.stringify(next));
   };
 
   const setTheme = (t: ThemeMode) => { setThemeState(t); persist({ theme: t }); };
   const setFontSize = (n: number) => { setFontSizeState(n); persist({ fontSize: n }); };
   const setHighContrast = (v: boolean) => { setHighContrastState(v); persist({ highContrast: v }); };
+  const setIsBold = (v: boolean) => { setIsBoldState(v); persist({ isBold: v }); };
   const setReadingMode = (m: ReadingMode) => { setReadingModeState(m); persist({ readingMode: m }); };
   const setAutoScrollDelaySec = (n: number) => {
     const clamped = Math.max(3, Math.min(10, Math.round(n)));
@@ -198,7 +203,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   if (!loaded) return null;
 
   return (
-    <SettingsContext.Provider value={{ theme, fontSize, highContrast, readingMode, autoScrollDelaySec, autoScrollPxPerSec, fontFamilyId, fontFamily, setTheme, setFontSize, setHighContrast, setReadingMode, setAutoScrollDelaySec, setAutoScrollPxPerSec, setFontFamilyId, colors, scaledFont }}>
+    <SettingsContext.Provider value={{ theme, fontSize, highContrast, isBold, readingMode, autoScrollDelaySec, autoScrollPxPerSec, fontFamilyId, fontFamily, setTheme, setFontSize, setHighContrast, setIsBold, setReadingMode, setAutoScrollDelaySec, setAutoScrollPxPerSec, setFontFamilyId, colors, scaledFont }}>
       {children}
     </SettingsContext.Provider>
   );

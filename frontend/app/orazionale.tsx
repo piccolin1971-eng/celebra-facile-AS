@@ -52,7 +52,7 @@ function renderRespText(text: string, styles: any) {
 
 export default function OrazionaleScreen() {
   const router = useRouter();
-  const { colors, fontSize, scaledFont, readingMode } = useSettings();
+  const { colors, fontSize, scaledFont, readingMode, isBold } = useSettings();
   const { width } = useWindowDimensions();
 
   const sections = useMemo(() => getOrazionaleSections(), []);
@@ -62,7 +62,7 @@ export default function OrazionaleScreen() {
   // indice della "pagina" del corpo preghiera per Tap-to-Advance
   const [page, setPage] = useState(0);
 
-  const styles = makeStyles(colors, fontSize);
+  const styles = makeStyles(colors, fontSize, isBold);
 
   const activeSection = sections.find((s) => s.key === activeSectionKey);
   const activePrayer: OrazionalePrayer | null = activeSection
@@ -240,7 +240,7 @@ export default function OrazionaleScreen() {
   return null;
 }
 
-const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
+const makeStyles = (colors: any, fontSize: number, isBold?: boolean) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   topBar: {
     flexDirection: "row",
@@ -323,13 +323,14 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
   },
   prayerText: {
     fontSize: fontSize,
-    lineHeight: Math.round(fontSize * 1.5),
+    lineHeight: Math.round(fontSize * 1.6),
     color: colors.textPrimary,
+    fontWeight: isBold ? "700" : "400",
   },
   // Marker R/. in rosso bold (regola globale Preghiera dei Fedeli)
   respMarker: {
     color: "#E57373",
-    fontWeight: "700",
+    fontWeight: "800",
   },
   tapZone: {
     position: "absolute",

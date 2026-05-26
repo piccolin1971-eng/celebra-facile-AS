@@ -167,7 +167,8 @@ export default function MessaScreen() {
   // Solo dopo questo flag, il save automatico è attivo.
   const [sessionLoaded, setSessionLoaded] = useState(false);
 
-  const styles = makeStyles(colors, fontSize, fontFamily);
+  const { colors, scaledFont, fontSize, fontFamily, isBold } = useSettings();
+  const styles = makeStyles(colors, fontSize, fontFamily, isBold);
 
   useEffect(() => {
     (async () => {
@@ -2463,7 +2464,7 @@ export default function MessaScreen() {
   );
 }
 
-const makeStyles = (colors: any, fontSize: number, fontFamily?: string) => StyleSheet.create({
+const makeStyles = (colors: any, fontSize: number, fontFamily?: string, isBold?: boolean) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   topBar: {
     flexDirection: "row",
@@ -2647,7 +2648,7 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string) => Style
     fontSize: fontSize,
     lineHeight: fontSize * 1.6,
     color: colors.textPrimary,
-    fontWeight: "400",
+    fontWeight: isBold ? "800" : "400",
     fontFamily,
     marginTop: 4,
     marginBottom: 8,
@@ -2660,6 +2661,7 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string) => Style
     fontFamily,
     marginVertical: 6,
     lineHeight: fontSize * 1.35,
+    fontWeight: isBold ? "700" : "400",
   },
   text: {
     fontSize: fontSize,
@@ -2668,6 +2670,7 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string) => Style
     fontFamily,
     marginTop: 0,
     marginBottom: 8,
+    fontWeight: isBold ? "700" : "400",
   },
   rubric: {
     fontSize: Math.round(fontSize * 0.7),
@@ -2675,6 +2678,7 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string) => Style
     color: colors.rubrics,
     marginVertical: 4,
     lineHeight: fontSize * 1.2,
+    fontWeight: isBold ? "700" : "400",
   },
   // Inline "R." rosso per il ritornello del Salmo Responsoriale
   salmoRit: {
@@ -2689,6 +2693,7 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string) => Style
     color: colors.textPrimary,
     fontFamily,
     marginVertical: 4,
+    fontWeight: isBold ? "700" : "400",
   },
   celebrante: {
     fontSize: fontSize,
@@ -2696,6 +2701,7 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string) => Style
     fontFamily,
     marginVertical: 6,
     lineHeight: fontSize * 1.6,
+    fontWeight: isBold ? "700" : "400",
   },
   // Risposte dell'assemblea (A. ...): corsivo, -1pt rispetto al base, NON bold.
   // Pensato per dare meno "peso" visivo alle risposte rispetto alle parti del
@@ -2708,6 +2714,7 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string) => Style
     fontFamily,
     marginVertical: 6,
     lineHeight: fontSize * 1.6,
+    fontWeight: isBold ? "700" : "400",
   },
   block: { marginVertical: 10 },
   // Pulsante grande sulla pagina del Congedo: passa alla modalità "Celebra la

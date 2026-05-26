@@ -351,10 +351,12 @@ function CelebraScreenInner() {
   const [currentPage, setCurrentPage] = useState(0);
   const [containerH, setContainerH] = useState(0);
 
+  const { colors, scaledFont, fontSize, fontFamily, isBold } = useSettings();
+
   // Ref al PagerView nativo (per setPage in tap-to-advance).
   const pagerRef = useRef<PagerView | null>(null);
 
-  const styles = makeStyles(colors, fontSize, fontFamily);
+  const styles = makeStyles(colors, fontSize, fontFamily, isBold);
 
   // ----- Caricamento dati -----
   useEffect(() => {
@@ -2122,6 +2124,7 @@ const makeStyles = (
   colors: any,
   fontSize: number,
   fontFamily: string | undefined,
+  isBold?: boolean,
 ) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
@@ -2444,7 +2447,7 @@ const makeStyles = (
       fontSize: fontSize,
       lineHeight: fontSize * 1.7,
       color: colors.textPrimary,
-      fontWeight: "400",
+      fontWeight: isBold ? "800" : "400",
       fontFamily,
       marginTop: 4,
       marginBottom: 8,
@@ -2456,6 +2459,7 @@ const makeStyles = (
       fontFamily,
       marginVertical: 6,
       lineHeight: fontSize * 1.55,
+      fontWeight: isBold ? "700" : "400",
     },
     text: {
       fontSize: fontSize,
@@ -2464,6 +2468,7 @@ const makeStyles = (
       fontFamily,
       marginTop: 0,
       marginBottom: 8,
+      fontWeight: isBold ? "700" : "400",
     },
     rubric: {
       fontSize: Math.round(fontSize * 0.7),
@@ -2471,6 +2476,7 @@ const makeStyles = (
       color: colors.rubrics,
       marginVertical: 4,
       lineHeight: fontSize * 1.2,
+      fontWeight: isBold ? "700" : "400",
     },
     salmoRit: {
       color: colors.rubrics,
@@ -2482,6 +2488,7 @@ const makeStyles = (
       color: colors.textPrimary,
       fontFamily,
       marginVertical: 4,
+      fontWeight: isBold ? "700" : "400",
     },
     celebrante: {
       fontSize: fontSize,
@@ -2489,6 +2496,7 @@ const makeStyles = (
       fontFamily,
       marginVertical: 6,
       lineHeight: fontSize * 1.7,
+      fontWeight: isBold ? "700" : "400",
     },
     assemblea: {
       fontSize: Math.max(12, fontSize - 1),
@@ -2497,6 +2505,7 @@ const makeStyles = (
       fontFamily,
       marginVertical: 6,
       lineHeight: fontSize * 1.7,
+      fontWeight: isBold ? "700" : "400",
     },
     // ----- Empty state -----
     emptyBox: {

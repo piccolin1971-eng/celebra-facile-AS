@@ -9,7 +9,7 @@ import { FONT_OPTIONS, FontFamilyId } from "../src/fontFamily";
 
 export default function Impostazioni() {
   const router = useRouter();
-  const { theme, setTheme, fontSize, highContrast, setHighContrast, autoScrollDelaySec, setAutoScrollDelaySec, autoScrollPxPerSec, setAutoScrollPxPerSec, fontFamilyId, setFontFamilyId, colors, scaledFont } = useSettings();
+  const { theme, setTheme, fontSize, highContrast, setHighContrast, isBold, setIsBold, autoScrollDelaySec, setAutoScrollDelaySec, autoScrollPxPerSec, setAutoScrollPxPerSec, fontFamilyId, setFontFamilyId, colors, scaledFont } = useSettings();
   const styles = makeStyles(colors, fontSize);
 
   return (
@@ -83,8 +83,25 @@ export default function Impostazioni() {
         <View style={styles.section} testID="section-font-family">
           <Text style={styles.sectionTitle}>Carattere</Text>
           <Text style={styles.sectionDesc}>
-            Scegli il tipo di carattere per il testo della celebrazione. Tocca un'opzione per applicarla — l'anteprima sotto mostra come apparirà.
+            Scegli il tipo di carattere per il testo della celebrazione. Tocca un'opzione per applicarla.
           </Text>
+
+          {/* Opzione Grassetto (Bold) - Richiesta utente v2.7.5 */}
+          <View style={[styles.switchRow, { marginTop: 12, marginBottom: 16, padding: 12, backgroundColor: colors.bgSecondary, borderRadius: 12 }]}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.fontFamilyLabel, { fontSize: scaledFont(22) }]}>Grassetto</Text>
+              <Text style={styles.fontFamilyDesc}>Rende tutto il testo più spesso per una migliore visibilità.</Text>
+            </View>
+            <Switch
+              value={isBold}
+              onValueChange={setIsBold}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor="#FFFFFF"
+              style={{ transform: [{ scaleX: 1.3 }, { scaleY: 1.3 }] }}
+              testID="switch-bold"
+            />
+          </View>
+
           <View style={styles.fontFamilyList}>
             {FONT_OPTIONS.map((opt) => {
               const active = opt.id === fontFamilyId;
