@@ -4,12 +4,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
-import { useSettings } from "../src/SettingsContext";
+import { useSettings, PARCHMENT_TONE_MIN, PARCHMENT_TONE_MAX } from "../src/SettingsContext";
 import { FONT_OPTIONS, FontFamilyId } from "../src/fontFamily";
 
 export default function Impostazioni() {
   const router = useRouter();
-  const { theme, setTheme, fontSize, highContrast, setHighContrast, isBold, setIsBold, autoScrollDelaySec, setAutoScrollDelaySec, autoScrollPxPerSec, setAutoScrollPxPerSec, fontFamilyId, setFontFamilyId, colors, scaledFont } = useSettings();
+  const { theme, setTheme, fontSize, highContrast, setHighContrast, isBold, setIsBold, autoScrollDelaySec, setAutoScrollDelaySec, autoScrollPxPerSec, setAutoScrollPxPerSec, fontFamilyId, setFontFamilyId, parchmentTone, setParchmentTone, colors, scaledFont } = useSettings();
   const styles = makeStyles(colors, fontSize);
 
   return (
@@ -176,6 +176,46 @@ export default function Impostazioni() {
               <Text style={[styles.themeCardText, theme === "dark" && { color: colors.primary }]}>Scuro</Text>
             </TouchableOpacity>
           </View>
+
+          {theme === "parchment" && (
+            <View style={{ marginTop: 16 }} testID="section-parchment-tone">
+              <Text style={styles.sectionTitle}>Tono pergamena</Text>
+              <Text style={styles.sectionDesc}>
+                Regola la tonalità dello sfondo seppia ({parchmentTone}).
+                Il range è limitato per mantenere il testo nero sempre leggibile.
+              </Text>
+              <View style={styles.sliderRow}>
+                <Text style={[styles.fontBtnText, { width: 56, textAlign: "center", fontSize: scaledFont(18) }]}>{PARCHMENT_TONE_MIN}</Text>
+                <Slider
+                  style={{ flex: 1, height: 60 }}
+                  minimumValue={PARCHMENT_TONE_MIN}
+                  maximumValue={PARCHMENT_TONE_MAX}
+                  step={1}
+                  value={parchmentTone}
+                  onValueChange={(v) => setParchmentTone(Math.round(v))}
+                  minimumTrackTintColor={colors.primary}
+                  maximumTrackTintColor={colors.border}
+                  thumbTintColor={colors.primary}
+                  testID="slider-parchment-tone"
+                />
+                <Text style={[styles.fontBtnText, { width: 56, textAlign: "center", fontSize: scaledFont(18) }]}>{PARCHMENT_TONE_MAX}</Text>
+              </View>
+              <View
+                style={[
+                  styles.parchmentPreview,
+                  { backgroundColor: colors.background, borderColor: colors.border },
+                ]}
+                testID="parchment-tone-preview"
+              >
+                <Text style={[styles.parchmentPreviewSample, { color: colors.textPrimary }]}>
+                  Padre nostro che sei nei cieli, sia santificato il tuo nome.
+                </Text>
+                <Text style={[styles.parchmentPreviewDesc, { color: colors.textSecondary }]}>
+                  Anteprima del tono pergamena su sfondo e testo nero.
+                </Text>
+              </View>
+            </View>
+          )}
         </View>
 
         <View style={styles.section} testID="section-contrast">
@@ -309,6 +349,23 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
   fontFamilyDesc: {
     fontSize: Math.round(fontSize * 0.55),
     color: colors.textSecondary,
+    fontStyle: "italic",
+    lineHeight: fontSize * 0.8,
+  },
+  parchmentPreview: {
+    marginTop: 12,
+    padding: 14,
+    borderWidth: 2,
+    borderRadius: 12,
+  },
+  parchmentPreviewSample: {
+    fontSize: Math.round(fontSize * 0.85),
+    lineHeight: fontSize * 1.2,
+    fontWeight: "600",
+  },
+  parchmentPreviewDesc: {
+    fontSize: Math.round(fontSize * 0.55),
+    marginTop: 8,
     fontStyle: "italic",
     lineHeight: fontSize * 0.8,
   },

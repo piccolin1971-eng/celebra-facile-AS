@@ -5,11 +5,18 @@ import { FontFamilyId, getFontFamilyString } from "./fontFamily";
 type ThemeMode = "light" | "dark" | "parchment";
 type ReadingMode = "scroll" | "tap";
 
+/** Regolazione tono pergamena: 35 (più chiaro) … 65 (più scuro), 50 = default. */
+export const PARCHMENT_TONE_MIN = 35;
+export const PARCHMENT_TONE_MAX = 65;
+export const PARCHMENT_TONE_DEFAULT = 50;
+
 interface SettingsState {
   theme: ThemeMode;
   fontSize: number; // reading text size in pt
   highContrast: boolean;
   readingMode: ReadingMode;
+  /** Tono sfondo pergamena (solo con theme === "parchment"). */
+  parchmentTone: number;
   // Tempo (in secondi) prima che parta l'auto-scroll dopo il cambio pagina (3..10)
   autoScrollDelaySec: number;
   // Velocità auto-scroll nelle Preghiere Eucaristiche, in pixel al secondo (2..15)
@@ -27,11 +34,92 @@ interface SettingsState {
   setAutoScrollDelaySec: (n: number) => void;
   setAutoScrollPxPerSec: (n: number) => void;
   setFontFamilyId: (id: FontFamilyId) => void;
+  setParchmentTone: (n: number) => void;
   colors: ReturnType<typeof getColors>;
   scaledFont: (base: number) => number;
 }
 
-const getColors = (theme: ThemeMode, highContrast: boolean) => {
+const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
+
+function hexToHsl(hex: string): [number, number, number] {
+  const raw = hex.replace("#", "");
+  const r = parseInt(raw.slice(0, 2), 16) / 255;
+  const g = parseInt(raw.slice(2, 4), 16) / 255;
+  const b = parseInt(raw.slice(4, 6), 16) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  if (max === min) return [0, 0, l * 100];
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  let h = 0;
+  if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
+  else if (max === g) h = (b - r) / d + 2;
+  else h = (r - g) / d + 4;
+  h /= 6;
+  return [h * 360, s * 100, l * 100];
+}
+
+function hslToHex(h: number, s: number, l: number): string {
+  const hh = ((h % 360) + 360) % 360;
+  const ss = clamp(s, 0, 100) / 100;
+  const ll = clamp(l, 0, 100) / 100;
+  if (ss === 0) {
+    const v = Math.round(ll * 255);
+    const hex = v.toString(16).padStart(2, "0");
+    return `#${hex}${hex}${hex}`;
+  }
+  const q = ll < 0.5 ? ll * (1 + ss) : ll + ss - ll * ss;
+  const p = 2 * ll - q;
+  const hue = hh / 360;
+  const toRgb = (t: number) => {
+    let x = t;
+    if (x < 0) x += 1;
+    if (x > 1) x -= 1;
+    if (x < 1 / 6) return p + (q - p) * 6 * x;
+    if (x < 1 / 2) return q;
+    if (x < 2 / 3) return p + (q - p) * (2 / 3 - x) * 6;
+    return p;
+  };
+  const r = Math.round(toRgb(hue + 1 / 3) * 255);
+  const g = Math.round(toRgb(hue) * 255);
+  const b = Math.round(toRgb(hue - 1 / 3) * 255);
+  return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+}
+
+/** Sposta la luminosità del colore base, con limiti per mantenere contrasto col testo nero. */
+function shiftParchmentHex(hex: string, tone: number, minL: number, maxL: number): string {
+  const [h, s, l] = hexToHsl(hex);
+  return hslToHex(h, s, clamp(l + tone * 1.25, minL, maxL));
+}
+
+function parchmentToneToDelta(tone: number): number {
+  const t = clamp(Math.round(tone), PARCHMENT_TONE_MIN, PARCHMENT_TONE_MAX);
+  // 35 → -8, 50 → 0, 65 → +8 (shift luminosità massimo controllato)
+  return ((t - PARCHMENT_TONE_DEFAULT) / 15) * 8;
+}
+
+function getParchmentColors(tone: number) {
+  const delta = parchmentToneToDelta(tone);
+  return {
+    background: shiftParchmentHex("#E8DCC4", delta, 78, 92),
+    surface: shiftParchmentHex("#F2E6D0", delta, 80, 94),
+    bgSecondary: shiftParchmentHex("#D8C8A8", delta, 68, 82),
+    border: shiftParchmentHex("#C8B89C", delta, 62, 76),
+    textPrimary: "#000000",
+    textSecondary: "#2C2C2C",
+    rubrics: "#B71C1C",
+    primary: "#8B4513",
+    focus: "#CD853F",
+    liturgicalGreen: "#1B5E20",
+    liturgicalRed: "#B71C1C",
+    liturgicalPurple: "#4A148C",
+    liturgicalWhite: "#B8860B",
+    liturgicalRose: "#AD1457",
+  };
+}
+
+const getColors = (theme: ThemeMode, highContrast: boolean, parchmentTone = PARCHMENT_TONE_DEFAULT) => {
   if (theme === "dark") {
     return {
       // Sfondo NERO ASSOLUTO per risparmio energia su schermi OLED
@@ -52,22 +140,7 @@ const getColors = (theme: ThemeMode, highContrast: boolean) => {
     };
   }
   if (theme === "parchment") {
-    return {
-      background: "#E8DCC4", // Seppia più intenso
-      surface: "#F2E6D0",   // Tonalità calda
-      bgSecondary: "#D8C8A8",
-      textPrimary: "#000000", // Nero assoluto
-      textSecondary: "#2C2C2C",
-      border: "#C8B89C",
-      rubrics: "#B71C1C",
-      primary: "#8B4513",
-      focus: "#CD853F",
-      liturgicalGreen: "#1B5E20",
-      liturgicalRed: "#B71C1C",
-      liturgicalPurple: "#4A148C",
-      liturgicalWhite: "#B8860B",
-      liturgicalRose: "#AD1457",
-    };
+    return getParchmentColors(parchmentTone);
   }
   return {
     background: highContrast ? "#FFFFFF" : "#FDFBF7",
@@ -98,6 +171,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   const [autoScrollPxPerSec, setAutoScrollPxPerSecState] = useState<number>(6);
   const [fontFamilyId, setFontFamilyIdState] = useState<FontFamilyId>("system");
   const [isBold, setIsBoldState] = useState(false);
+  const [parchmentTone, setParchmentToneState] = useState(PARCHMENT_TONE_DEFAULT);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -152,6 +226,16 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
           ) {
             setFontFamilyIdState(s.fontFamilyId);
           }
+          if (typeof s.parchmentTone === "number") {
+            let t = Math.round(s.parchmentTone);
+            // Migrazione dal vecchio formato -8…+8 al nuovo 35…65 (centro 50).
+            if (t >= -8 && t <= 8) {
+              t = clamp(50 + Math.round((t / 8) * 15), PARCHMENT_TONE_MIN, PARCHMENT_TONE_MAX);
+            } else {
+              t = clamp(t, PARCHMENT_TONE_MIN, PARCHMENT_TONE_MAX);
+            }
+            setParchmentToneState(t);
+          }
         }
         if (!migrationDoneV3) {
           await AsyncStorage.setItem("messale_settings_migrated_v3", "1");
@@ -167,8 +251,8 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     })();
   }, []);
 
-  const persist = async (patch: Partial<{ theme: ThemeMode; fontSize: number; highContrast: boolean; isBold: boolean; readingMode: ReadingMode; autoScrollDelaySec: number; autoScrollPxPerSec: number; fontFamilyId: FontFamilyId }>) => {
-    const next = { theme, fontSize, highContrast, isBold, readingMode, autoScrollDelaySec, autoScrollPxPerSec, fontFamilyId, ...patch };
+  const persist = async (patch: Partial<{ theme: ThemeMode; fontSize: number; highContrast: boolean; isBold: boolean; readingMode: ReadingMode; autoScrollDelaySec: number; autoScrollPxPerSec: number; fontFamilyId: FontFamilyId; parchmentTone: number }>) => {
+    const next = { theme, fontSize, highContrast, isBold, readingMode, autoScrollDelaySec, autoScrollPxPerSec, fontFamilyId, parchmentTone, ...patch };
     await AsyncStorage.setItem("messale_settings", JSON.stringify(next));
   };
 
@@ -191,8 +275,13 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     setFontFamilyIdState(id);
     persist({ fontFamilyId: id });
   };
+  const setParchmentTone = (n: number) => {
+    const clamped = clamp(Math.round(n), PARCHMENT_TONE_MIN, PARCHMENT_TONE_MAX);
+    setParchmentToneState(clamped);
+    persist({ parchmentTone: clamped });
+  };
 
-  const colors = getColors(theme, highContrast);
+  const colors = getColors(theme, highContrast, parchmentTone);
   const fontFamily = getFontFamilyString(fontFamilyId);
   // scaledFont: UI elements scale proportionally based on reading font
   const scaledFont = (base: number) => {
@@ -203,7 +292,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   if (!loaded) return null;
 
   return (
-    <SettingsContext.Provider value={{ theme, fontSize, highContrast, isBold, readingMode, autoScrollDelaySec, autoScrollPxPerSec, fontFamilyId, fontFamily, setTheme, setFontSize, setHighContrast, setIsBold, setReadingMode, setAutoScrollDelaySec, setAutoScrollPxPerSec, setFontFamilyId, colors, scaledFont }}>
+    <SettingsContext.Provider value={{ theme, fontSize, highContrast, isBold, readingMode, autoScrollDelaySec, autoScrollPxPerSec, fontFamilyId, fontFamily, parchmentTone, setTheme, setFontSize, setHighContrast, setIsBold, setReadingMode, setAutoScrollDelaySec, setAutoScrollPxPerSec, setFontFamilyId, setParchmentTone, colors, scaledFont }}>
       {children}
     </SettingsContext.Provider>
   );
