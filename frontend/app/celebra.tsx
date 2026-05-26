@@ -310,7 +310,7 @@ function CelebraScreenInner() {
 
   const router = useRouter();
   const params = useLocalSearchParams<{ date?: string }>();
-  const { colors, fontSize: settingsFontSize, scaledFont, fontFamily } = useSettings();
+  const { colors, fontSize: settingsFontSize, scaledFont, fontFamily, isBold } = useSettings();
   const { width: screenWidth } = useWindowDimensions();
 
   // Stato locale fontSize (override delle impostazioni globali, valido solo
@@ -350,8 +350,6 @@ function CelebraScreenInner() {
   // pagingEnabled (snap netto, niente scroll verticale, niente scrollbar).
   const [currentPage, setCurrentPage] = useState(0);
   const [containerH, setContainerH] = useState(0);
-
-  const { colors, scaledFont, fontSize, fontFamily, isBold } = useSettings();
 
   // Ref al PagerView nativo (per setPage in tap-to-advance).
   const pagerRef = useRef<PagerView | null>(null);
