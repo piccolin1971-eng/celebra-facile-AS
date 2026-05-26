@@ -328,10 +328,10 @@ const makeStyles = (c: any, fs: number) => StyleSheet.create({
   footerHint: { color: c.textSecondary, fontSize: 13 },
 
   // Tipi blocco
-  rubric: { color: "#cc3333", fontSize: Math.max(14, fs * 0.42), fontStyle: "italic", marginVertical: 4, lineHeight: Math.max(20, fs * 0.6) },
-  rubricSection: { color: "#cc3333", fontSize: Math.max(14, fs * 0.42), fontStyle: "italic", marginVertical: 6, fontWeight: "600" },
+  rubric: { color: c.rubrics, fontSize: Math.max(14, fs * 0.42), fontStyle: "italic", marginVertical: 4, lineHeight: Math.max(20, fs * 0.6) },
+  rubricSection: { color: c.rubrics, fontSize: Math.max(14, fs * 0.42), fontStyle: "italic", marginVertical: 6, fontWeight: "600" },
   text: { color: c.textPrimary, fontSize: fs, lineHeight: fs * 1.4, marginVertical: 8 },
-  consacrazione: { color: c.textPrimary, fontSize: fs, lineHeight: fs * 1.4, fontWeight: "700", marginVertical: 12 },
+  consacrazione: { color: c.accentPeConsecration, fontSize: fs, lineHeight: fs * 1.4, fontWeight: "700", marginVertical: 12 },
   acclamazione: { color: c.primary, fontSize: fs, lineHeight: fs * 1.4, fontStyle: "italic", marginVertical: 10 },
 
   modalBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.7)", justifyContent: "center", padding: 24 },

@@ -289,7 +289,7 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
   badge: {
     fontSize: Math.round(fontSize * 0.7),
     fontWeight: "800",
-    color: "#FFFFFF",
+    color: colors.onPrimary,
     backgroundColor: colors.primary,
     paddingHorizontal: 16,
     paddingVertical: 4,

@@ -140,6 +140,9 @@ const ACCENT_PARCHMENT = {
   onPrimary: "#FFFFFF",
 };
 
+/** Accenti scuri per sfondo chiaro (tema Chiaro e Pergamena). */
+const ACCENT_LIGHT = ACCENT_PARCHMENT;
+
 function getParchmentColors(tone: number) {
   const delta = parchmentToneToDelta(tone);
   return {
@@ -200,7 +203,7 @@ const getColors = (theme: ThemeMode, highContrast: boolean, parchmentTone = PARC
     liturgicalPurple: "#4A148C",
     liturgicalWhite: "#D4AF37",
     liturgicalRose: "#AD1457",
-    ...ACCENT_DARK,
+    ...ACCENT_LIGHT,
   };
 };
 

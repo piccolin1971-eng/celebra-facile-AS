@@ -9,6 +9,7 @@ import { api, Liturgy, Preface, EucharisticPrayer, MysteryAcclamation, SolemnBle
 import { PrefaceSelectorModal } from "../src/components/PrefaceSelectorModal";
 import { getOrazionaleSections, getPrayerById, suggestPrayerForLiturgy, OrazionalePrayer } from "../src/orazionale";
 import { loadSession, loadSessionOrLatest, saveSession, cleanupOldSessions, MassSession } from "../src/massSession";
+import { getLiturgicalSeasonKey, getSuggestedPrefaces } from "../src/prefaceUtils";
 import peFullData from "../src/data/eucharisticPrayersFull.json";
 
 // === Helper: suggerisce l'opzione "communicantes" (Tempo Liturgico) per la PE
@@ -192,14 +193,10 @@ export default function MessaScreen() {
         if (Array.isArray((bless as any).prayersOverPeople)) {
           setPrayersOverPeople((bless as any).prayersOverPeople);
         }
-        const seasonName = (lit?.season?.season || "").toLowerCase();
-        const seasonKey = seasonName.includes("avvento") ? "avvento"
-          : seasonName.includes("natale") ? "natale"
-          : seasonName.includes("quaresima") ? "quaresima"
-          : seasonName.includes("pasqua") ? "pasqua"
-          : "ordinario";
+        const seasonKey = getLiturgicalSeasonKey(lit?.season?.season || "");
         setCurrentSeasonKey(seasonKey);
-        const match = pr.prefaces.find(p => p.season === seasonKey) || pr.prefaces[0];
+        const suggested = getSuggestedPrefaces(pr.prefaces, seasonKey);
+        const match = suggested[0] || pr.prefaces[0];
         if (match) setSelectedPrefaceId(match.id);
         // Override prefazio se passato esplicitamente (es. messa votiva)
         const prefaceParam = typeof params.preface === "string" ? params.preface : "";
@@ -207,7 +204,7 @@ export default function MessaScreen() {
           const forced = pr.prefaces.find(p => p.id === prefaceParam);
           if (forced) setSelectedPrefaceId(forced.id);
         }
-        setPenitentialSeason(seasonKey);
+        setPenitentialSeason(seasonKey === "passione" ? "quaresima" : seasonKey);
         if (seasonKey === "avvento" || seasonKey === "quaresima") setShowGloria(false);
         // Benedizione solenne: preseleziona quella della stagione se disponibile
         const seasBless = bless.blessings.find(b => b.id === seasonKey) || bless.blessings.find(b => b.season === seasonKey);

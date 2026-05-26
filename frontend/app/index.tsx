@@ -222,7 +222,7 @@ export default function Home() {
             accessibilityLabel="Scegli la liturgia"
           >
             <View style={styles.heroIconRow}>
-              <Ionicons name="settings" size={scaledFont(28)} color="#FFFFFF" />
+              <Ionicons name="settings" size={scaledFont(28)} color={colors.onPrimary} />
               <Text style={styles.heroTitle}>Scegli la liturgia</Text>
             </View>
           </TouchableOpacity>
@@ -235,7 +235,7 @@ export default function Home() {
             accessibilityLabel="Celebra la Messa, modalità lettura per l'altare"
           >
             <View style={styles.heroIconRow}>
-              <Ionicons name="book" size={scaledFont(28)} color="#FFFFFF" />
+              <Ionicons name="book" size={scaledFont(28)} color={colors.onPrimary} />
               <Text style={styles.heroTitle}>Celebra la Messa</Text>
             </View>
           </TouchableOpacity>
@@ -337,7 +337,7 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
   fontBtnText: {
     fontSize: Math.round(fontSize * 0.75),
     fontWeight: "800",
-    color: "#FFFFFF",
+    color: colors.onPrimary,
   },
   content: { padding: 24, gap: 20 },
   dateBanner: {
@@ -401,13 +401,13 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     color: colors.textPrimary,
     textAlign: "center",
   },
-  dayButtonLabelActive: { color: "#FFFFFF" },
+  dayButtonLabelActive: { color: colors.onPrimary },
   dayButtonNum: {
     fontSize: Math.round(fontSize * 0.85),
     fontWeight: "800",
     color: colors.textSecondary,
   },
-  dayButtonNumActive: { color: "#FFFFFF" },
+  dayButtonNumActive: { color: colors.onPrimary },
   bigCard: {
     padding: 22,
     borderRadius: 14,
@@ -416,8 +416,8 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     minHeight: 140,
     justifyContent: "center",
   },
-  bigCardTitle: { fontSize: Math.round(fontSize * 0.8), fontWeight: "700", color: "#FFFFFF" },
-  bigCardSubtitle: { fontSize: Math.round(fontSize * 0.55), color: "#FFFFFF", opacity: 0.9, textAlign: "center" },
+  bigCardTitle: { fontSize: Math.round(fontSize * 0.8), fontWeight: "700", color: colors.onPrimary },
+  bigCardSubtitle: { fontSize: Math.round(fontSize * 0.55), color: colors.onPrimary, opacity: 0.9, textAlign: "center" },
   heroRow: {
     flexDirection: "row",
     gap: 12,
@@ -441,7 +441,7 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     gap: 8,
     minHeight: 140,
   },
-  heroTitle: { fontSize: Math.round(fontSize * 0.78), fontWeight: "700", color: "#FFFFFF", textAlign: "center", flexShrink: 1 },
+  heroTitle: { fontSize: Math.round(fontSize * 0.78), fontWeight: "700", color: colors.onPrimary, textAlign: "center", flexShrink: 1 },
   heroIconRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -449,7 +449,7 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     gap: 12,
     flexWrap: "wrap",
   },
-  heroSubtitle: { fontSize: Math.round(fontSize * 0.5), color: "#FFFFFF", opacity: 0.92, textAlign: "center" },
+  heroSubtitle: { fontSize: Math.round(fontSize * 0.5), color: colors.onPrimary, opacity: 0.92, textAlign: "center" },
   secondaryCard: {
     flexDirection: "row",
     alignItems: "center",

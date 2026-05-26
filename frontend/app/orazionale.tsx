@@ -329,7 +329,7 @@ const makeStyles = (colors: any, fontSize: number, isBold?: boolean) => StyleShe
   },
   // Marker R/. in rosso bold (regola globale Preghiera dei Fedeli)
   respMarker: {
-    color: "#E57373",
+    color: colors.rubrics,
     fontWeight: "800",
   },
   tapZone: {

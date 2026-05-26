@@ -91,14 +91,14 @@ export default function CalendarioScreen() {
           onPress={() => setTab("santi")}
           testID="tab-santi"
         >
-          <Text style={[styles.tabBtnText, tab === "santi" && { color: "#FFFFFF" }]}>Santi e Feste</Text>
+          <Text style={[styles.tabBtnText, tab === "santi" && { color: colors.onPrimary }]}>Santi e Feste</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tabBtn, tab === "votive" && styles.tabBtnActive]}
           onPress={() => setTab("votive")}
           testID="tab-votive"
         >
-          <Text style={[styles.tabBtnText, tab === "votive" && { color: "#FFFFFF" }]}>Messe Votive</Text>
+          <Text style={[styles.tabBtnText, tab === "votive" && { color: colors.onPrimary }]}>Messe Votive</Text>
         </TouchableOpacity>
       </View>
 
@@ -114,7 +114,7 @@ export default function CalendarioScreen() {
                 onPress={() => setSelectedMonth(i + 1)}
                 testID={`month-${i+1}`}
               >
-                <Text style={[styles.monthBtnText, selectedMonth === i + 1 && { color: "#FFFFFF" }]}>{m}</Text>
+                <Text style={[styles.monthBtnText, selectedMonth === i + 1 && { color: colors.onPrimary }]}>{m}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -262,7 +262,7 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  saintDay: { fontSize: Math.round(fontSize * 1.0), fontWeight: "800", color: "#FFFFFF" },
+  saintDay: { fontSize: Math.round(fontSize * 1.0), fontWeight: "800", color: colors.onPrimary },
   colorDot: { width: 18, height: 18, borderRadius: 10, borderWidth: 1, borderColor: colors.border },
   saintRank: { fontSize: Math.round(fontSize * 0.55), color: colors.textSecondary, textTransform: "uppercase", fontWeight: "700" },
   saintName: { fontSize: Math.round(fontSize * 0.75), color: colors.textPrimary, fontWeight: "600", marginTop: 4 },

@@ -202,12 +202,12 @@ export default function VotiveMassDetail() {
           accessibilityRole="button"
           accessibilityLabel={`Celebra la Messa ${mass.title}`}
         >
-          <Ionicons name="book" size={scaledFont(40)} color="#FFFFFF" />
+          <Ionicons name="book" size={scaledFont(40)} color={colors.onPrimary} />
           <View style={{ flex: 1 }}>
             <Text style={styles.celebrateBtnTitle}>Celebra con questo formulario</Text>
             <Text style={styles.celebrateBtnSubtitle}>Apre la messa con prefazio preselezionato</Text>
           </View>
-          <Ionicons name="chevron-forward" size={scaledFont(36)} color="#FFFFFF" />
+          <Ionicons name="chevron-forward" size={scaledFont(36)} color={colors.onPrimary} />
         </TouchableOpacity>
 
         <Text style={styles.footer}>
@@ -282,7 +282,7 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
   prefaceTitle: {
     fontSize: Math.round(fontSize * 0.75),
     fontWeight: "600",
-    color: colors.primary,
+    color: colors.accentPe,
     marginBottom: 12,
     fontStyle: "italic",
   },
@@ -305,7 +305,7 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     minHeight: 100,
     marginTop: 8,
   },
-  celebrateBtnTitle: { fontSize: Math.round(fontSize * 0.85), fontWeight: "700", color: "#FFFFFF" },
-  celebrateBtnSubtitle: { fontSize: Math.round(fontSize * 0.6), color: "#FFFFFF", opacity: 0.9, marginTop: 4 },
+  celebrateBtnTitle: { fontSize: Math.round(fontSize * 0.85), fontWeight: "700", color: colors.onPrimary },
+  celebrateBtnSubtitle: { fontSize: Math.round(fontSize * 0.6), color: colors.onPrimary, opacity: 0.9, marginTop: 4 },
   footer: { fontSize: Math.round(fontSize * 0.6), color: colors.textSecondary, textAlign: "center", marginTop: 16, fontStyle: "italic" },
 });

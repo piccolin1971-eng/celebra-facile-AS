@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput, SafeAreaView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Preface } from "../api";
+import { getSuggestedPrefaces } from "../prefaceUtils";
 
 interface Props {
   visible: boolean;
@@ -117,7 +118,7 @@ export const PrefaceSelectorModal: React.FC<Props> = ({
                       style={[styles.listItem, selectedId === p.id && styles.listItemActive]}
                       onPress={() => handleSelect(p.id)}
                     >
-                      <Text style={styles.listItemText}>{p.title}</Text>
+                      <Text style={[styles.listItemText, selectedId === p.id && styles.listItemTextActive]}>{p.title}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -127,7 +128,7 @@ export const PrefaceSelectorModal: React.FC<Props> = ({
             categories.map(cat => {
               let filtered = [];
               if (cat.key === 'suggeriti') {
-                filtered = prefaces.filter(p => (p.season === currentSeasonKey || p.category === currentSeasonKey));
+                filtered = getSuggestedPrefaces(prefaces, currentSeasonKey);
                 if (filtered.length === 0) return null;
               } else {
                 filtered = prefaces.filter(p => (p.season === cat.key || p.category === cat.key));
@@ -160,7 +161,7 @@ export const PrefaceSelectorModal: React.FC<Props> = ({
                           style={[styles.listItem, selectedId === p.id && styles.listItemActive]}
                           onPress={() => handleSelect(p.id)}
                         >
-                          <Text style={styles.listItemText}>{p.title}</Text>
+                          <Text style={[styles.listItemText, selectedId === p.id && styles.listItemTextActive]}>{p.title}</Text>
                         </TouchableOpacity>
                       ))}
                     </View>
@@ -216,6 +217,7 @@ const makeStyles = (colors: any, scaledFont: any, fontFamily?: string) => StyleS
   sectionTitle: { fontSize: scaledFont(22), fontWeight: "700", color: colors.textPrimary },
   expandedList: { backgroundColor: colors.bgSecondary, borderBottomLeftRadius: 12, borderBottomRightRadius: 12, overflow: 'hidden' },
   listItem: { padding: 18, borderBottomWidth: 1, borderBottomColor: colors.border },
-  listItemActive: { backgroundColor: colors.primary + "20" },
+  listItemActive: { backgroundColor: colors.primary + "20", borderLeftWidth: 4, borderLeftColor: colors.accentPe },
   listItemText: { fontSize: scaledFont(20), color: colors.textPrimary },
+  listItemTextActive: { color: colors.accentPe, fontWeight: "700" },
 });
