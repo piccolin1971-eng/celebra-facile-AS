@@ -177,6 +177,23 @@ export default function Impostazioni() {
             </TouchableOpacity>
           </View>
 
+          <View
+            style={[styles.themePreview, { backgroundColor: colors.background, borderColor: colors.border }]}
+            testID="theme-accent-preview"
+          >
+            <Text style={styles.themePreviewHeading}>Anteprima colori liturgici</Text>
+            <Text style={[styles.themePreviewAntifona, { color: colors.accentAntifona }]}>Antifona d'ingresso</Text>
+            <Text style={[styles.themePreviewOrazione, { color: colors.accentOrazione }]}>Colletta</Text>
+            <Text style={[styles.themePreviewReading, { color: colors.accentReading }]}>Prima Lettura</Text>
+            <Text style={[styles.themePreviewPe, { color: colors.accentPe }]}>Preghiera Eucaristica</Text>
+            <Text style={[styles.themePreviewBody, { color: colors.textPrimary }]}>
+              Padre nostro che sei nei cieli, sia santificato il tuo nome.
+            </Text>
+            <Text style={[styles.themePreviewRubric, { color: colors.rubrics }]}>
+              Il sacerdote invita i fedeli all'atto penitenziale:
+            </Text>
+          </View>
+
           {theme === "parchment" && (
             <View style={{ marginTop: 16 }} testID="section-parchment-tone">
               <Text style={styles.sectionTitle}>Tono pergamena</Text>
@@ -312,6 +329,25 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
   },
   themeCardActive: { borderColor: colors.primary, borderWidth: 3 },
   themeCardText: { fontSize: Math.round(fontSize * 0.7), fontWeight: "600", color: colors.textPrimary },
+  themePreview: {
+    marginTop: 16,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 2,
+    gap: 6,
+  },
+  themePreviewHeading: {
+    fontSize: Math.round(fontSize * 0.65),
+    fontWeight: "700",
+    color: colors.textSecondary,
+    marginBottom: 4,
+  },
+  themePreviewAntifona: { fontSize: Math.round(fontSize * 0.72), fontWeight: "800" },
+  themePreviewOrazione: { fontSize: Math.round(fontSize * 0.72), fontWeight: "800" },
+  themePreviewReading: { fontSize: Math.round(fontSize * 0.72), fontWeight: "800" },
+  themePreviewPe: { fontSize: Math.round(fontSize * 0.68), fontWeight: "800" },
+  themePreviewBody: { fontSize: Math.round(fontSize * 0.75), lineHeight: fontSize * 1.1, marginTop: 4 },
+  themePreviewRubric: { fontSize: Math.round(fontSize * 0.55), fontStyle: "italic", marginTop: 4 },
   switchRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   info: { fontSize: Math.round(fontSize * 0.6), color: colors.textSecondary, marginTop: 6, lineHeight: fontSize * 0.85 },
   // ----- Sezione Carattere -----

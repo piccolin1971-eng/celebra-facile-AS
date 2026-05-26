@@ -20,350 +20,684 @@ MASS_ORDER = [
 ]
 
 FIXED_PARTS = {
-"riti_iniziali": {
-"title": "Riti di Introduzione",
-"sections": [
-{
-"type": "rubric",
-"text": "Il sacerdote, giunto all'altare, lo venera con un bacio e si reca alla sede. Fatto il segno della croce, saluta il popolo."
-},
-{
-"type": "dialogue",
-"celebrante": "Nel nome del Padre e del Figlio e dello Spirito Santo.",
-"assemblea": "Amen."
-},
-{
-"type": "choice",
-"label": "Saluto",
-"options": [
-{
-"id": "A",
-"celebrante": "La grazia del Signore nostro Gesù Cristo, l'amore di Dio Padre e la comunione dello Spirito Santo siano con tutti voi.",
-"assemblea": "E con il tuo spirito."
-},
-{
-"id": "B",
-"celebrante": "La grazia e la pace di Dio nostro Padre e del Signore nostro Gesù Cristo siano con tutti voi.",
-"assemblea": "E con il tuo spirito."
-},
-{
-"id": "C",
-"celebrante": "Il Signore sia con voi.",
-"assemblea": "E con il tuo spirito."
-}
-]
-}
-]
-},
-"atto_penitenziale": {
-"title": "Atto Penitenziale",
-"sections": [
-{
-"type": "rubric",
-"text": "Il sacerdote invita i fedeli all'atto penitenziale:"
-},
-{
-"type": "invitation_alternatives",
-"options": [
-"Fratelli e sorelle, per celebrare degnamente i santi misteri, riconosciamo i nostri peccati.",
-"Il Signore Gesù,\nche ci invita alla mensa della Parola e dell'Eucaristia,\nci chiama alla conversione.\nRiconosciamo di essere peccatori\ne invochiamo con fiducia la misericordia di Dio.",
-"Oggi, celebrando la vittoria di Cristo\nsul peccato e sulla morte,\nsiamo chiamati a morire al peccato\nper risorgere alla vita nuova.\nRiconosciamoci bisognosi della misericordia del Padre."
-]
-},
-{
-"type": "choice",
-"label": "Formula",
-"options": [
-{
-"id": "A",
-"label": "Formula A - Confesso",
-"assemblea": "Confesso a Dio onnipotente e a voi, fratelli e sorelle, che ho molto peccato in pensieri, parole, opere e omissioni, per mia colpa, mia colpa, mia grandissima colpa. E supplico la beata sempre Vergine Maria, gli angeli, i santi e voi, fratelli e sorelle, di pregare per me il Signore Dio nostro.",
-"celebrante": "Dio onnipotente abbia misericordia di noi, perdoni i nostri peccati e ci conduca alla vita eterna.",
-"risposta": "Amen."
-},
-{
-"id": "B",
-"label": "Formula B - Pietà di noi",
-"dialogue": [
-{"c": "Pietà di noi, Signore.", "a": "Contro di te abbiamo peccato."},
-{"c": "Mostraci, Signore, la tua misericordia.", "a": "E donaci la tua salvezza."}
-],
-"celebrante": "Dio onnipotente abbia misericordia di noi, perdoni i nostri peccati e ci conduca alla vita eterna.",
-"risposta": "Amen."
-},
-{
-"id": "C",
-"label": "Formula C - Invocazioni (tropari)",
-"season_variants": {
-"ordinario": {
-"label": "Tempo Ordinario",
-"dialogue": [
-{"c": "Signore, mandato dal Padre a salvare i contriti di cuore, abbi pietà di noi.", "a": "Signore, pietà."},
-{"c": "Cristo, che sei venuto a chiamare i peccatori, abbi pietà di noi.", "a": "Cristo, pietà."},
-{"c": "Signore, che siedi alla destra del Padre e intercedi per noi, abbi pietà di noi.", "a": "Signore, pietà."}
-]
-},
-"avvento": {
-"label": "Avvento",
-"dialogue": [
-{"c": "Signore, che sei venuto nel mondo per salvarci, abbi pietà di noi.", "a": "Signore, pietà."},
-{"c": "Cristo, che vieni a visitarci con la grazia del tuo Spirito, abbi pietà di noi.", "a": "Cristo, pietà."},
-{"c": "Signore, che verrai nella gloria a giudicare il mondo, abbi pietà di noi.", "a": "Signore, pietà."}
-]
-},
-"natale": {
-"label": "Natale",
-"dialogue": [
-{"c": "Signore, Figlio di Dio, che nascendo da Maria Vergine ti sei fatto nostro fratello, abbi pietà di noi.", "a": "Signore, pietà."},
-{"c": "Cristo, Figlio dell'uomo, che conosci e comprendi la nostra debolezza, abbi pietà di noi.", "a": "Cristo, pietà."},
-{"c": "Signore, Figlio primogenito del Padre, che fai di noi una sola famiglia, abbi pietà di noi.", "a": "Signore, pietà."}
-]
-},
-"quaresima": {
-"label": "Quaresima",
-"dialogue": [
-{"c": "Signore, che ci inviti al perdono fraterno prima di presentarci al tuo altare, abbi pietà di noi.", "a": "Signore, pietà."},
-{"c": "Cristo, che sulla croce hai invocato il perdono per i peccatori, abbi pietà di noi.", "a": "Cristo, pietà."},
-{"c": "Signore, che hai effuso lo Spirito per la remissione dei peccati, abbi pietà di noi.", "a": "Signore, pietà."}
-]
-},
-"pasqua": {
-"label": "Tempo di Pasqua",
-"dialogue": [
-{"c": "Signore, nostra pace, abbi pietà di noi.", "a": "Signore, pietà."},
-{"c": "Cristo, nostra Pasqua, abbi pietà di noi.", "a": "Cristo, pietà."},
-{"c": "Signore, nostra vita, abbi pietà di noi.", "a": "Signore, pietà."}
-]
-}
-},
-"celebrante": "Dio onnipotente abbia misericordia di noi, perdoni i nostri peccati e ci conduca alla vita eterna.",
-"risposta": "Amen."
-}
-]
-},
-{
-"type": "kyrie",
-"rubric": "Se non è stata usata la formula C, seguono le invocazioni:",
-"dialogue": [
-{"c": "Signore, pietà.", "a": "Signore, pietà."},
-{"c": "Cristo, pietà.", "a": "Cristo, pietà."},
-{"c": "Signore, pietà.", "a": "Signore, pietà."}
-]
-}
-]
-},
-"gloria": {
-"title": "Gloria",
-"sections": [
-{
-"type": "rubric",
-"text": "Nelle domeniche (escluse quelle di Avvento e di Quaresima), nelle solennità e nelle feste, si canta o si recita il Gloria."
-},
-{
-"type": "prayer",
-"text": "Gloria a Dio nell'alto dei cieli\ne pace in terra agli uomini, amati dal Signore.\n\nNoi ti lodiamo, ti benediciamo, ti adoriamo,\nti glorifichiamo, ti rendiamo grazie\nper la tua gloria immensa,\nSignore Dio, Re del cielo,\nDio Padre onnipotente.\n\nSignore, Figlio unigenito, Gesù Cristo,\nSignore Dio, Agnello di Dio, Figlio del Padre;\ntu che togli i peccati del mondo, abbi pietà di noi;\ntu che togli i peccati del mondo, accogli la nostra supplica;\ntu che siedi alla destra del Padre, abbi pietà di noi.\n\nPerché tu solo il Santo, tu solo il Signore,\ntu solo l'Altissimo, Gesù Cristo,\ncon lo Spirito Santo: nella gloria di Dio Padre. Amen."
-}
-]
-},
-"credo": {
-"title": "Professione di Fede",
-"sections": [
-{
-"type": "choice",
-"label": "Simbolo",
-"options": [
-{
-"id": "niceno",
-"label": "Simbolo Niceno-Costantinopolitano",
-"text": "Credo in un solo Dio, Padre onnipotente,\ncreatore del cielo e della terra,\ndi tutte le cose visibili e invisibili.\n\nCredo in un solo Signore, Gesù Cristo,\nunigenito Figlio di Dio,\nnato dal Padre prima di tutti i secoli:\nDio da Dio, Luce da Luce, Dio vero da Dio vero;\ngenerato, non creato, della stessa sostanza del Padre;\nper mezzo di lui tutte le cose sono state create.\n\nPer noi uomini e per la nostra salvezza\ndiscese dal cielo;\n(si china il capo) e per opera dello Spirito Santo\nsi è incarnato nel seno della Vergine Maria e si è fatto uomo.\n\nFu crocifisso per noi sotto Ponzio Pilato,\nmorì e fu sepolto.\nIl terzo giorno è risuscitato, secondo le Scritture;\nè salito al cielo, siede alla destra del Padre.\nE di nuovo verrà, nella gloria,\nper giudicare i vivi e i morti,\ne il suo regno non avrà fine.\n\nCredo nello Spirito Santo,\nche è Signore e dà la vita,\ne procede dal Padre e dal Figlio,\ne con il Padre e il Figlio è adorato e glorificato,\ne ha parlato per mezzo dei profeti.\n\nCredo la Chiesa, una, santa, cattolica e apostolica.\nProfesso un solo battesimo per il perdono dei peccati.\nAspetto la risurrezione dei morti\ne la vita del mondo che verrà. Amen."
-},
-{
-"id": "apostolico",
-"label": "Simbolo Apostolico",
-"text": "Io credo in Dio, Padre onnipotente,\ncreatore del cielo e della terra;\ne in Gesù Cristo, suo unico Figlio, nostro Signore,\nil quale fu concepito di Spirito Santo,\nnacque da Maria Vergine,\npatì sotto Ponzio Pilato,\nfu crocifisso, morì e fu sepolto;\ndiscese agli inferi;\nil terzo giorno risuscitò da morte;\nsalì al cielo, siede alla destra di Dio Padre onnipotente;\ndi là verrà a giudicare i vivi e i morti.\n\nCredo nello Spirito Santo,\nla santa Chiesa cattolica,\nla comunione dei santi,\nla remissione dei peccati,\nla risurrezione della carne,\nla vita eterna. Amen."
-}
-]
-}
-]
-},
-"offertorio": {
-"title": "Liturgia Eucaristica - Presentazione dei doni",
-"sections": [
-{
-"type": "rubric",
-"text": "Il sacerdote, stando all'altare, prende la patena con il pane e, tenendola un poco sollevata, dice sottovoce:"
-},
-{
-"type": "prayer",
-"celebrante": "Benedetto sei tu, Signore, Dio dell'universo: dalla tua bontà abbiamo ricevuto questo pane, frutto della terra e del lavoro dell'uomo; lo presentiamo a te, perché diventi per noi cibo di vita eterna.",
-"assemblea": "Benedetto nei secoli il Signore."
-},
-{
-"type": "rubric",
-"text": "Il diacono, o il sacerdote, versa nel calice il vino, con un po' d'acqua, dicendo sottovoce: «L'acqua unita al vino sia segno della nostra unione con la vita divina di colui che ha voluto assumere la nostra natura umana». Poi il sacerdote prende il calice e, tenendolo un poco sollevato sull'altare, dice sottovoce:"
-},
-{
-"type": "prayer",
-"celebrante": "Benedetto sei tu, Signore, Dio dell'universo: dalla tua bontà abbiamo ricevuto questo vino, frutto della vite e del lavoro dell'uomo; lo presentiamo a te, perché diventi per noi bevanda di salvezza.",
-"assemblea": "Benedetto nei secoli il Signore."
-},
-{
-"type": "prayer",
-"rubric": "Inchinato, il sacerdote dice sottovoce:",
-"celebrante": "Umili e pentiti accoglici, o Signore: ti sia gradito il nostro sacrificio che oggi si compie dinanzi a te."
-},
-{
-"type": "choice_orate",
-"label": "Invito e risposta (Orate Fratres)",
-"rubric": "Il sacerdote si lava le mani dicendo sottovoce: «Lavami, Signore, da ogni colpa, purificami da ogni peccato». Poi, in piedi al centro dell'altare, rivolto al popolo, allargando e ricongiungendo le mani, dice:",
-"options": [
-{
-"id": "A",
-"label": "Formula standard",
-"celebrante": "Pregate, fratelli e sorelle, perché il mio e vostro sacrificio sia gradito a Dio, Padre onnipotente.",
-"assemblea": "Il Signore riceva dalle tue mani questo sacrificio a lode e gloria del suo nome, per il bene nostro e di tutta la sua santa Chiesa."
-},
-{
-"id": "B",
-"label": "Per la comunità",
-"celebrante": "Pregate, fratelli e sorelle, perché questa nostra famiglia, radunata dallo Spirito Santo nel nome di Cristo, possa offrire il sacrificio gradito a Dio Padre onnipotente.",
-"assemblea": "Il Signore riceva dalle tue mani questo sacrificio a lode e gloria del suo nome, per il bene nostro e di tutta la sua santa Chiesa."
-},
-{
-"id": "C",
-"label": "Per la vita quotidiana",
-"celebrante": "Pregate, fratelli e sorelle, perché, portando all'altare la gioia e la fatica di ogni giorno, ci disponiamo a offrire il sacrificio gradito a Dio Padre onnipotente.",
-"assemblea": "Il Signore riceva dalle tue mani questo sacrificio a lode e gloria del suo nome, per il bene nostro e di tutta la sua santa Chiesa."
-},
-{
-"id": "D",
-"label": "Per il cammino ecclesiale",
-"celebrante": "Pregate, fratelli e sorelle, perché il sacrificio della Chiesa, in questa sosta che la rinfranca nel suo cammino verso la patria del cielo, sia gradito a Dio Padre onnipotente.",
-"assemblea": "Il Signore riceva dalle tue mani questo sacrificio a lode e gloria del suo nome, per il bene nostro e di tutta la sua santa Chiesa."
-}
-]
-}
-]
-},
-"padre_nostro": {
-"title": "Riti di Comunione - Padre Nostro",
-"sections": [
-{
-"type": "choice_intro",
-"label": "Monizione d'introduzione al Padre Nostro",
-"options": [
-{
-"id": "A",
-"label": "Forma A - Obbedienti alla parola",
-"text": "Obbedienti alla parola del Salvatore e formati al suo divino insegnamento, osiamo dire:"
-},
-{
-"id": "B",
-"label": "Forma B - Guidati dallo Spirito",
-"text": "Guidati dallo Spirito di Gesù e illuminati dalla sapienza del Vangelo, osiamo dire:"
-},
-{
-"id": "C",
-"label": "Forma C - Fedeli alla parola di Cristo",
-"text": "Fedeli alla parola di Cristo e prendendo forza dal suo amore, osiamo dire:"
-},
-{
-"id": "D",
-"label": "Forma D - Prima del banchetto",
-"text": "Prima di partecipare al banchetto dell'Eucaristia, segno di riconciliazione e vincolo di comunione fraterna, preghiamo insieme come il Signore ci ha insegnato:"
-}
-]
-},
-{
-"type": "prayer",
-"text": "Padre nostro, che sei nei cieli,\nsia santificato il tuo nome,\nvenga il tuo regno,\nsia fatta la tua volontà,\ncome in cielo così in terra.\nDacci oggi il nostro pane quotidiano,\ne rimetti a noi i nostri debiti\ncome anche noi li rimettiamo ai nostri debitori,\ne non abbandonarci alla tentazione,\nma liberaci dal male."
-},
-{
-"type": "prayer",
-"celebrante": "Liberaci, o Signore, da tutti i mali, concedi la pace ai nostri giorni; e con l'aiuto della tua misericordia, vivremo sempre liberi dal peccato e sicuri da ogni turbamento, nell'attesa che si compia la beata speranza, e venga il nostro Salvatore Gesù Cristo.",
-"assemblea": "Tuo è il regno, tua la potenza e la gloria nei secoli."
-},
-{
-"type": "prayer",
-"rubric": "Rito della pace:",
-"celebrante": "Signore Gesù Cristo, che hai detto ai tuoi apostoli: «Vi lascio la pace, vi do la mia pace», non guardare ai nostri peccati, ma alla fede della tua Chiesa, e donale unità e pace secondo la tua volontà.\nTu che vivi e regni nei secoli dei secoli.",
-"assemblea": "Amen."
-},
-{
-"type": "dialogue",
-"celebrante": "La pace del Signore sia sempre con voi.",
-"assemblea": "E con il tuo spirito."
-},
-{
-"type": "rubric",
-"text": "Il diacono, o il sacerdote, può aggiungere: «Scambiatevi il dono della pace»."
-}
-]
-},
-"comunione": {
-"title": "Frazione del Pane e Comunione",
-"sections": [
-{
-"type": "rubric",
-"text": "Il sacerdote spezza il pane consacrato, mentre si canta o si recita:"
-},
-{
-"type": "prayer",
-"text": "Agnello di Dio, che togli i peccati del mondo, abbi pietà di noi.\nAgnello di Dio, che togli i peccati del mondo, abbi pietà di noi.\nAgnello di Dio, che togli i peccati del mondo, dona a noi la pace."
-},
-{
-"type": "prayer",
-"rubric": "Il sacerdote mostra ai fedeli il pane eucaristico:",
-"celebrante": "Ecco l'Agnello di Dio, ecco colui che toglie i peccati del mondo. Beati gli invitati alla cena dell'Agnello.",
-"assemblea": "O Signore, non sono degno di partecipare alla tua mensa, ma di' soltanto una parola e io sarò salvato."
-},
-{
-"type": "rubric",
-"text": "Il sacerdote si comunica al Corpo e al Sangue di Cristo, poi distribuisce la comunione ai fedeli. Dopo la comunione, si osserva un tempo di silenzio, oppure si canta un inno o un salmo di lode."
-}
-]
-},
-"riti_conclusione": {
-"title": "Riti di Conclusione",
-"sections": [
-{
-"type": "dialogue",
-"celebrante": "Il Signore sia con voi.",
-"assemblea": "E con il tuo spirito."
-},
-{
-"type": "choice",
-"label": "Benedizione",
-"options": [
-{
-"id": "A",
-"label": "Benedizione Semplice",
-"celebrante": "Vi benedica Dio onnipotente, Padre e Figlio ✠ e Spirito Santo.",
-"assemblea": "Amen."
-},
-{
-"id": "B",
-"label": "Benedizione Solenne (esempio)",
-"celebrante": "Dio, fonte di ogni consolazione, disponga i vostri giorni nella sua pace e vi conceda i doni della sua benedizione.\nAmen.\nVi liberi sempre da ogni pericolo e confermi i vostri cuori nel suo amore.\nAmen.\nCosì, ricchi di fede, di speranza e di carità, possiate progredire con impegno nelle opere buone, e giungere felicemente alla vita eterna.\nAmen.\nE su voi tutti, scenda la benedizione di Dio onnipotente, Padre e Figlio ✠ e Spirito Santo.",
-"assemblea": "Amen."
-}
-]
-},
-{
-"type": "choice",
-"label": "Congedo",
-"options": [
-{"id": "A", "celebrante": "La Messa è finita: andate in pace.", "assemblea": "Rendiamo grazie a Dio."},
-{"id": "B", "celebrante": "Andate e annunciate il Vangelo del Signore.", "assemblea": "Rendiamo grazie a Dio."},
-{"id": "C", "celebrante": "Glorificate il Signore con la vostra vita: andate in pace.", "assemblea": "Rendiamo grazie a Dio."},
-{"id": "D", "celebrante": "Andate in pace.", "assemblea": "Rendiamo grazie a Dio."},
-{"id": "E", "celebrante": "La gioia del Signore sia la vostra forza: andate in pace.", "assemblea": "Rendiamo grazie a Dio."},
-{"id": "F", "celebrante": "Nel nome del Signore, andate in pace.", "assemblea": "Rendiamo grazie a Dio."},
-{"id": "G", "celebrante": "Portate a tutti la gioia del Signore risorto: andate in pace.", "assemblea": "Rendiamo grazie a Dio."}
-]
-}
-]
-}
+    "riti_iniziali": {
+        "title": "Riti di Introduzione",
+        "sections": [
+            {
+                "type": "rubric",
+                "text": "Il sacerdote, giunto all'altare, lo venera con un bacio e si reca alla sede. Fatto il segno della croce, saluta il popolo."
+            },
+            {
+                "type": "dialogue",
+                "celebrante": "Nel nome del Padre e del Figlio e dello Spirito Santo.",
+                "assemblea": "Amen."
+            },
+            {
+                "type": "choice",
+                "label": "Saluto",
+                "options": [
+                    {
+                        "id": "A",
+                        "celebrante": "La grazia del Signore nostro Gesù Cristo, l'amore di Dio Padre e la comunione dello Spirito Santo siano con tutti voi.",
+                        "assemblea": "E con il tuo spirito."
+                    },
+                    {
+                        "id": "B",
+                        "celebrante": "La grazia e la pace di Dio nostro Padre e del Signore nostro Gesù Cristo siano con tutti voi.",
+                        "assemblea": "E con il tuo spirito."
+                    },
+                    {
+                        "id": "C",
+                        "celebrante": "Il Signore sia con voi.",
+                        "assemblea": "E con il tuo spirito."
+                    }
+                ]
+            }
+        ]
+    },
+    "atto_penitenziale": {
+        "title": "Atto Penitenziale",
+        "sections": [
+            {
+                "type": "rubric",
+                "text": "Il sacerdote invita i fedeli all'atto penitenziale:"
+            },
+            {
+                "type": "invitation_alternatives",
+                "options": [
+                    "Fratelli e sorelle, per celebrare degnamente i santi misteri, riconosciamo i nostri peccati.",
+                    "Il Signore Gesù,\nche ci invita alla mensa della Parola e dell'Eucaristia,\nci chiama alla conversione.\nRiconosciamo di essere peccatori\ne invochiamo con fiducia la misericordia di Dio.",
+                    "Oggi, celebrando la vittoria di Cristo\nsul peccato e sulla morte,\nsiamo chiamati a morire al peccato\nper risorgere alla vita nuova.\nRiconosciamoci bisognosi della misericordia del Padre."
+                ]
+            },
+            {
+                "type": "choice",
+                "label": "Formula",
+                "options": [
+                    {
+                        "id": "A",
+                        "label": "Formula A - Confesso",
+                        "assemblea": "Confesso a Dio onnipotente e a voi, fratelli e sorelle, che ho molto peccato in pensieri, parole, opere e omissioni, per mia colpa, mia colpa, mia grandissima colpa. E supplico la beata sempre Vergine Maria, gli angeli, i santi e voi, fratelli e sorelle, di pregare per me il Signore Dio nostro.",
+                        "celebrante": "Dio onnipotente abbia misericordia di noi, perdoni i nostri peccati e ci conduca alla vita eterna.",
+                        "risposta": "Amen."
+                    },
+                    {
+                        "id": "B",
+                        "label": "Formula B - Pietà di noi",
+                        "dialogue": [
+                            {
+                                "c": "Pietà di noi, Signore.",
+                                "a": "Contro di te abbiamo peccato."
+                            },
+                            {
+                                "c": "Mostraci, Signore, la tua misericordia.",
+                                "a": "E donaci la tua salvezza."
+                            }
+                        ],
+                        "celebrante": "Dio onnipotente abbia misericordia di noi, perdoni i nostri peccati e ci conduca alla vita eterna.",
+                        "risposta": "Amen."
+                    },
+                    {
+                        "id": "C",
+                        "label": "Formula C - Invocazioni (tropari)",
+                        "season_variants": {
+                            "ordinario": {
+                                "label": "Tempo Ordinario / ad libitum",
+                                "formulas": [
+                                    {
+                                        "id": "ord_intro",
+                                        "label": "Formula introduttiva",
+                                        "dialogue": [
+                                            {
+                                                "c": "Signore, mandato dal Padre a salvare i contriti di cuore, Kýrie, eléison.",
+                                                "a": "Kýrie, eléison."
+                                            },
+                                            {
+                                                "c": "Cristo, che sei venuto a chiamare i peccatori, Christe, eléison.",
+                                                "a": "Christe, eléison."
+                                            },
+                                            {
+                                                "c": "Signore, che siedi alla destra del Padre e intercedi per noi, Kýrie, eléison.",
+                                                "a": "Kýrie, eléison."
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "id": "ord_1",
+                                        "label": "1. Via, Verità, Vita",
+                                        "dialogue": [
+                                            {
+                                                "c": "Signore, via che riconduce al Padre, Kýrie, eléison.",
+                                                "a": "Kýrie, eléison."
+                                            },
+                                            {
+                                                "c": "Cristo, verità che illumina i popoli, Christe, eléison.",
+                                                "a": "Christe, eléison."
+                                            },
+                                            {
+                                                "c": "Signore, vita che rinnova il mondo, Kýrie, eléison.",
+                                                "a": "Kýrie, eléison."
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "id": "ord_2",
+                                        "label": "2. Donna peccatrice, ladrone, Pietro",
+                                        "dialogue": [
+                                            {
+                                                "c": "Signore, che alla donna peccatrice hai donato la tua misericordia, Kýrie, eléison.",
+                                                "a": "Kýrie, eléison."
+                                            },
+                                            {
+                                                "c": "Cristo, che al ladrone pentito hai promesso il paradiso, Christe, eléison.",
+                                                "a": "Christe, eléison."
+                                            },
+                                            {
+                                                "c": "Signore, che a Pietro hai offerto il tuo perdono, Kýrie, eléison.",
+                                                "a": "Kýrie, eléison."
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "id": "ord_3",
+                                        "label": "3. Non a condannare ma a perdonare",
+                                        "dialogue": [
+                                            {
+                                                "c": "Signore, che non sei venuto a condannare ma a perdonare, Kýrie, eléison.",
+                                                "a": "Kýrie, eléison."
+                                            },
+                                            {
+                                                "c": "Cristo, che fai festa per ogni peccatore pentito, Christe, eléison.",
+                                                "a": "Christe, eléison."
+                                            },
+                                            {
+                                                "c": "Signore, che perdoni molto a chi molto ama, Kýrie, eléison.",
+                                                "a": "Kýrie, eléison."
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "id": "ord_4",
+                                        "label": "4. Cercare chi era perduto",
+                                        "dialogue": [
+                                            {
+                                                "c": "Signore, che sei venuto a cercare chi era perduto, Kýrie, eléison.",
+                                                "a": "Kýrie, eléison."
+                                            },
+                                            {
+                                                "c": "Cristo, che hai dato la tua vita in riscatto per tutti, Christe, eléison.",
+                                                "a": "Christe, eléison."
+                                            },
+                                            {
+                                                "c": "Signore, che raccogli nell'unità i figli di Dio dispersi, Kýrie, eléison.",
+                                                "a": "Kýrie, eléison."
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "id": "ord_5",
+                                        "label": "5. Pienezza di verità",
+                                        "dialogue": [
+                                            {
+                                                "c": "Signore, pienezza di verità e di grazia, Kýrie, eléison.",
+                                                "a": "Kýrie, eléison."
+                                            },
+                                            {
+                                                "c": "Cristo, fatto povero per arricchirci, Christe, eléison.",
+                                                "a": "Christe, eléison."
+                                            },
+                                            {
+                                                "c": "Signore, venuto per radunare il tuo popolo santo, Kýrie, eléison.",
+                                                "a": "Kýrie, eléison."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            "avvento": {
+                                "label": "Tempo di Avvento",
+                                "formulas": [
+                                    {
+                                        "id": "avv_1",
+                                        "label": "1. Sei venuto, vieni, verrai",
+                                        "dialogue": [
+                                            {
+                                                "c": "Signore, che sei venuto nel mondo per salvarci, Kýrie, eléison.",
+                                                "a": "Kýrie, eléison."
+                                            },
+                                            {
+                                                "c": "Cristo, che vieni a visitarci con la grazia del tuo Spirito, Christe, eléison.",
+                                                "a": "Christe, eléison."
+                                            },
+                                            {
+                                                "c": "Signore, che verrai un giorno a giudicare le nostre opere, Kýrie, eléison.",
+                                                "a": "Kýrie, eléison."
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "id": "avv_2",
+                                        "label": "2. Difensore dei poveri",
+                                        "dialogue": [
+                                            {
+                                                "c": "Signore, difensore dei poveri, Kýrie, eléison.",
+                                                "a": "Kýrie, eléison."
+                                            },
+                                            {
+                                                "c": "Cristo, rifugio dei deboli, Christe, eléison.",
+                                                "a": "Christe, eléison."
+                                            },
+                                            {
+                                                "c": "Signore, speranza dei peccatori, Kýrie, eléison.",
+                                                "a": "Kýrie, eléison."
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "id": "avv_3",
+                                        "label": "3. Vieni a visitare, salvare, creare",
+                                        "dialogue": [
+                                            {
+                                                "c": "Signore, che vieni a visitare il tuo popolo nella pace, Kýrie, eléison.",
+                                                "a": "Kýrie, eléison."
+                                            },
+                                            {
+                                                "c": "Cristo, che vieni a salvare chi è perduto, Christe, eléison.",
+                                                "a": "Christe, eléison."
+                                            },
+                                            {
+                                                "c": "Signore, che vieni a creare un mondo nuovo, Kýrie, eléison.",
+                                                "a": "Kýrie, eléison."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            "natale": {
+                                "label": "Tempo di Natale",
+                                "formulas": [
+                                    {
+                                        "id": "nat_1",
+                                        "label": "1. Figlio di Dio nato da Maria",
+                                        "dialogue": [
+                                            {
+                                                "c": "Signore, Figlio di Dio, che nascendo da Maria Vergine ti sei fatto nostro fratello, Kýrie, eléison.",
+                                                "a": "Kýrie, eléison."
+                                            },
+                                            {
+                                                "c": "Cristo, Figlio dell'uomo, che conosci e comprendi la nostra debolezza, Christe, eléison.",
+                                                "a": "Christe, eléison."
+                                            },
+                                            {
+                                                "c": "Signore, Figlio primogenito del Padre, che fai di noi una sola famiglia, Kýrie, eléison.",
+                                                "a": "Kýrie, eléison."
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "id": "nat_2",
+                                        "label": "2. Re della pace, luce, immagine",
+                                        "dialogue": [
+                                            {
+                                                "c": "Signore, re della pace, Kýrie, eléison.",
+                                                "a": "Kýrie, eléison."
+                                            },
+                                            {
+                                                "c": "Cristo, luce nelle tenebre, Christe, eléison.",
+                                                "a": "Christe, eléison."
+                                            },
+                                            {
+                                                "c": "Signore, immagine dell'uomo nuovo, Kýrie, eléison.",
+                                                "a": "Kýrie, eléison."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            "quaresima": {
+                                "label": "Tempo di Quaresima",
+                                "formulas": [
+                                    {
+                                        "id": "quar_1",
+                                        "label": "1. Perdono, croce, Spirito",
+                                        "dialogue": [
+                                            {
+                                                "c": "Signore, che ci inviti al perdono fraterno prima di presentarci al tuo altare, Kýrie, eléison.",
+                                                "a": "Kýrie, eléison."
+                                            },
+                                            {
+                                                "c": "Cristo, che sulla croce hai invocato il perdono per i peccatori, Christe, eléison.",
+                                                "a": "Christe, eléison."
+                                            },
+                                            {
+                                                "c": "Signore, che hai effuso lo Spirito per la remissione dei peccati, Kýrie, eléison.",
+                                                "a": "Kýrie, eléison."
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "id": "quar_2",
+                                        "label": "2. Acqua e Spirito",
+                                        "dialogue": [
+                                            {
+                                                "c": "Signore, che nell'acqua e nello Spirito ci hai rigenerato a tua immagine, Kýrie, eléison.",
+                                                "a": "Kýrie, eléison."
+                                            },
+                                            {
+                                                "c": "Cristo, che nel tuo Spirito crei in noi un cuore nuovo, Christe, eléison.",
+                                                "a": "Christe, eléison."
+                                            },
+                                            {
+                                                "c": "Signore, che nello Spirito Santo ci raduni in un solo corpo, Kýrie, eléison.",
+                                                "a": "Kýrie, eléison."
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "id": "quar_3",
+                                        "label": "3. Dalla morte alla vita",
+                                        "dialogue": [
+                                            {
+                                                "c": "Signore, che fai passare dalla morte alla vita chi ascolta la tua parola, Kýrie, eléison.",
+                                                "a": "Kýrie, eléison."
+                                            },
+                                            {
+                                                "c": "Cristo, che hai voluto essere innalzato da terra per attirarci a te, Christe, eléison.",
+                                                "a": "Christe, eléison."
+                                            },
+                                            {
+                                                "c": "Signore, che ci sottoponi al giudizio della tua croce, Kýrie, eléison.",
+                                                "a": "Kýrie, eléison."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            "pasqua": {
+                                "label": "Tempo di Pasqua",
+                                "formulas": [
+                                    {
+                                        "id": "pas_1",
+                                        "label": "1. Pace, Pasqua, Vita",
+                                        "dialogue": [
+                                            {
+                                                "c": "Signore, nostra pace, Kýrie, eléison.",
+                                                "a": "Kýrie, eléison."
+                                            },
+                                            {
+                                                "c": "Cristo, nostra Pasqua, Christe, eléison.",
+                                                "a": "Christe, eléison."
+                                            },
+                                            {
+                                                "c": "Signore, nostra vita, Kýrie, eléison.",
+                                                "a": "Kýrie, eléison."
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "id": "pas_2",
+                                        "label": "2. Sacerdote, pietre vive, concittadini",
+                                        "dialogue": [
+                                            {
+                                                "c": "Signore, che sei l'eterno sacerdote della nuova alleanza, Kýrie, eléison.",
+                                                "a": "Kýrie, eléison."
+                                            },
+                                            {
+                                                "c": "Cristo, che ci edifichi come pietre vive in tempio santo di Dio, Christe, eléison.",
+                                                "a": "Christe, eléison."
+                                            },
+                                            {
+                                                "c": "Signore, che ci fai concittadini dei santi nel regno dei cieli, Kýrie, eléison.",
+                                                "a": "Kýrie, eléison."
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "id": "pas_3",
+                                        "label": "3. Asceso alla destra del Padre",
+                                        "dialogue": [
+                                            {
+                                                "c": "Signore, che asceso alla destra del Padre ci fai dono del tuo Spirito, Kýrie, eléison.",
+                                                "a": "Kýrie, eléison."
+                                            },
+                                            {
+                                                "c": "Cristo, che sostieni ogni cosa con la potenza della tua parola, Christe, eléison.",
+                                                "a": "Christe, eléison."
+                                            },
+                                            {
+                                                "c": "Signore, che hai vinto la morte e regni nei secoli, Kýrie, eléison.",
+                                                "a": "Kýrie, eléison."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        "celebrante": "Dio onnipotente abbia misericordia di noi, perdoni i nostri peccati e ci conduca alla vita eterna.",
+                        "risposta": "Amen."
+                    }
+                ]
+            },
+            {
+                "type": "kyrie",
+                "rubric": "Se non è stata usata la formula C, seguono le invocazioni:",
+                "dialogue": [
+                    {
+                        "c": "Signore, pietà.",
+                        "a": "Signore, pietà."
+                    },
+                    {
+                        "c": "Cristo, pietà.",
+                        "a": "Cristo, pietà."
+                    },
+                    {
+                        "c": "Signore, pietà.",
+                        "a": "Signore, pietà."
+                    }
+                ]
+            }
+        ]
+    },
+    "gloria": {
+        "title": "Gloria",
+        "sections": [
+            {
+                "type": "rubric",
+                "text": "Nelle domeniche (escluse quelle di Avvento e di Quaresima), nelle solennità e nelle feste, si canta o si recita il Gloria."
+            },
+            {
+                "type": "prayer",
+                "text": "Gloria a Dio nell'alto dei cieli\ne pace in terra agli uomini, amati dal Signore.\n\nNoi ti lodiamo, ti benediciamo, ti adoriamo,\nti glorifichiamo, ti rendiamo grazie\nper la tua gloria immensa,\nSignore Dio, Re del cielo,\nDio Padre onnipotente.\n\nSignore, Figlio unigenito, Gesù Cristo,\nSignore Dio, Agnello di Dio, Figlio del Padre;\ntu che togli i peccati del mondo, abbi pietà di noi;\ntu che togli i peccati del mondo, accogli la nostra supplica;\ntu che siedi alla destra del Padre, abbi pietà di noi.\n\nPerché tu solo il Santo, tu solo il Signore,\ntu solo l'Altissimo, Gesù Cristo,\ncon lo Spirito Santo: nella gloria di Dio Padre. Amen."
+            }
+        ]
+    },
+    "credo": {
+        "title": "Professione di Fede",
+        "sections": [
+            {
+                "type": "choice",
+                "label": "Simbolo",
+                "options": [
+                    {
+                        "id": "niceno",
+                        "label": "Simbolo Niceno-Costantinopolitano",
+                        "text": "Credo in un solo Dio, Padre onnipotente,\ncreatore del cielo e della terra,\ndi tutte le cose visibili e invisibili.\n\nCredo in un solo Signore, Gesù Cristo,\nunigenito Figlio di Dio,\nnato dal Padre prima di tutti i secoli:\nDio da Dio, Luce da Luce, Dio vero da Dio vero;\ngenerato, non creato, della stessa sostanza del Padre;\nper mezzo di lui tutte le cose sono state create.\n\nPer noi uomini e per la nostra salvezza\ndiscese dal cielo;\n(si china il capo) e per opera dello Spirito Santo\nsi è incarnato nel seno della Vergine Maria e si è fatto uomo.\n\nFu crocifisso per noi sotto Ponzio Pilato,\nmorì e fu sepolto.\nIl terzo giorno è risuscitato, secondo le Scritture;\nè salito al cielo, siede alla destra del Padre.\nE di nuovo verrà, nella gloria,\nper giudicare i vivi e i morti,\ne il suo regno non avrà fine.\n\nCredo nello Spirito Santo,\nche è Signore e dà la vita,\ne procede dal Padre e dal Figlio,\ne con il Padre e il Figlio è adorato e glorificato,\ne ha parlato per mezzo dei profeti.\n\nCredo la Chiesa, una, santa, cattolica e apostolica.\nProfesso un solo battesimo per il perdono dei peccati.\nAspetto la risurrezione dei morti\ne la vita del mondo che verrà. Amen."
+                    },
+                    {
+                        "id": "apostolico",
+                        "label": "Simbolo Apostolico",
+                        "text": "Io credo in Dio, Padre onnipotente,\ncreatore del cielo e della terra;\ne in Gesù Cristo, suo unico Figlio, nostro Signore,\nil quale fu concepito di Spirito Santo,\nnacque da Maria Vergine,\npatì sotto Ponzio Pilato,\nfu crocifisso, morì e fu sepolto;\ndiscese agli inferi;\nil terzo giorno risuscitò da morte;\nsalì al cielo, siede alla destra di Dio Padre onnipotente;\ndi là verrà a giudicare i vivi e i morti.\n\nCredo nello Spirito Santo,\nla santa Chiesa cattolica,\nla comunione dei santi,\nla remissione dei peccati,\nla risurrezione della carne,\nla vita eterna. Amen."
+                    }
+                ]
+            }
+        ]
+    },
+    "offertorio": {
+        "title": "Liturgia Eucaristica - Presentazione dei doni",
+        "sections": [
+            {
+                "type": "rubric",
+                "text": "Il sacerdote, stando all'altare, prende la patena con il pane e, tenendola un poco sollevata, dice sottovoce:"
+            },
+            {
+                "type": "prayer",
+                "celebrante": "Benedetto sei tu, Signore, Dio dell'universo: dalla tua bontà abbiamo ricevuto questo pane, frutto della terra e del lavoro dell'uomo; lo presentiamo a te, perché diventi per noi cibo di vita eterna.",
+                "assemblea": "Benedetto nei secoli il Signore."
+            },
+            {
+                "type": "rubric",
+                "text": "Il diacono, o il sacerdote, versa il vino e un po' d'acqua nel calice dicendo sottovoce: «L'acqua unita al vino sia segno della nostra unione con la vita divina di colui che ha voluto assumere la nostra natura umana». Poi il sacerdote prende il calice e, tenendolo un poco sollevato sull'altare, dice sottovoce:"
+            },
+            {
+                "type": "prayer",
+                "celebrante": "Benedetto sei tu, Signore, Dio dell'universo: dalla tua bontà abbiamo ricevuto questo vino, frutto della vite e del lavoro dell'uomo; lo presentiamo a te, perché diventi per noi bevanda di salvezza.",
+                "assemblea": "Benedetto nei secoli il Signore."
+            },
+            {
+                "type": "prayer",
+                "rubric": "Inchinato, il sacerdote dice sottovoce:",
+                "celebrante": "Umili e pentiti accoglici, o Signore: ti sia gradito il nostro sacrificio che oggi si compie dinanzi a te."
+            },
+            {
+                "type": "choice_orate",
+                "label": "Invito e risposta (Orate Fratres)",
+                "rubric": "Il sacerdote si lava le mani dicendo sottovoce: «Lavami, Signore, da ogni colpa, purificami da ogni peccato». Poi, in piedi al centro dell'altare, rivolto al popolo, allargando e ricongiungendo le mani, dice:",
+                "options": [
+                    {
+                        "id": "A",
+                        "label": "Formula standard",
+                        "celebrante": "Pregate, fratelli e sorelle, perché il mio e vostro sacrificio sia gradito a Dio, Padre onnipotente.",
+                        "assemblea": "Il Signore riceva dalle tue mani questo sacrificio a lode e gloria del suo nome, per il bene nostro e di tutta la sua santa Chiesa."
+                    },
+                    {
+                        "id": "B",
+                        "label": "Per la comunità",
+                        "celebrante": "Pregate, fratelli e sorelle, perché questa nostra famiglia, radunata nel nome di Cristo, possa offrire il sacrificio gradito a Dio Padre onnipotente.",
+                        "assemblea": "Il Signore riceva dalle tue mani questo sacrificio a lode e gloria del suo nome, per il bene nostro e di tutta la sua santa Chiesa."
+                    },
+                    {
+                        "id": "C",
+                        "label": "Per la vita quotidiana",
+                        "celebrante": "Pregate, fratelli e sorelle, perché portando all'altare la gioia e la fatica di ogni giorno, ci disponiamo a offrire il sacrificio gradito a Dio Padre onnipotente.",
+                        "assemblea": "Il Signore riceva dalle tue mani questo sacrificio a lode e gloria del suo nome, per il bene nostro e di tutta la sua santa Chiesa."
+                    },
+                    {
+                        "id": "D",
+                        "label": "Per il cammino ecclesiale",
+                        "celebrante": "Pregate, fratelli e sorelle, perché il sacrificio della Chiesa, in questa sosta che la rinfranca nel suo cammino verso la patria, sia gradito a Dio Padre onnipotente.",
+                        "assemblea": "Il Signore riceva dalle tue mani questo sacrificio a lode e gloria del suo nome, per il bene nostro e di tutta la sua santa Chiesa."
+                    }
+                ]
+            }
+        ]
+    },
+    "padre_nostro": {
+        "title": "Riti di Comunione - Padre Nostro",
+        "sections": [
+            {
+                "type": "choice_intro",
+                "label": "Monizione d'introduzione al Padre Nostro",
+                "options": [
+                    {
+                        "id": "I",
+                        "label": "I",
+                        "text": "Obbedienti alla parola del Salvatore e formati al suo divino insegnamento, osiamo dire:"
+                    },
+                    {
+                        "id": "II",
+                        "label": "II",
+                        "text": "Il Signore ci ha donato il suo Spirito. Con la fiducia e la libertà dei figli preghiamo insieme:"
+                    },
+                    {
+                        "id": "III",
+                        "label": "III",
+                        "text": "Prima di partecipare al banchetto dell'Eucaristia, segno di riconciliazione e vincolo di comunione fraterna, preghiamo insieme come il Signore ci ha insegnato:"
+                    },
+                    {
+                        "id": "IV",
+                        "label": "IV",
+                        "text": "Guidati dallo Spirito di Gesù e illuminati dalla sapienza del Vangelo, osiamo dire:"
+                    }
+                ]
+            },
+            {
+                "type": "prayer",
+                "text": "Padre nostro, che sei nei cieli,\nsia santificato il tuo nome,\nvenga il tuo regno,\nsia fatta la tua volontà,\ncome in cielo così in terra.\nDacci oggi il nostro pane quotidiano,\ne rimetti a noi i nostri debiti\ncome anche noi li rimettiamo ai nostri debitori,\ne non abbandonarci alla tentazione,\nma liberaci dal male."
+            },
+            {
+                "type": "prayer",
+                "celebrante": "Liberaci, o Signore, da tutti i mali, concedi la pace ai nostri giorni; e con l'aiuto della tua misericordia, vivremo sempre liberi dal peccato e sicuri da ogni turbamento, nell'attesa che si compia la beata speranza, e venga il nostro Salvatore Gesù Cristo.",
+                "assemblea": "Tuo è il regno, tua la potenza e la gloria nei secoli."
+            },
+            {
+                "type": "prayer",
+                "rubric": "Rito della pace:",
+                "celebrante": "Signore Gesù Cristo, che hai detto ai tuoi apostoli: «Vi lascio la pace, vi do la mia pace», non guardare ai nostri peccati, ma alla fede della tua Chiesa, e donale unità e pace secondo la tua volontà.\nTu che vivi e regni nei secoli dei secoli.",
+                "assemblea": "Amen."
+            },
+            {
+                "type": "dialogue",
+                "celebrante": "La pace del Signore sia sempre con voi.",
+                "assemblea": "E con il tuo spirito."
+            },
+            {
+                "type": "rubric",
+                "text": "Il diacono, o il sacerdote, può aggiungere: «Scambiatevi il dono della pace»."
+            }
+        ]
+    },
+    "comunione": {
+        "title": "Frazione del Pane e Comunione",
+        "sections": [
+            {
+                "type": "rubric",
+                "text": "Il sacerdote spezza il pane consacrato, mentre si canta o si recita:"
+            },
+            {
+                "type": "prayer",
+                "text": "Agnello di Dio, che togli i peccati del mondo, abbi pietà di noi.\nAgnello di Dio, che togli i peccati del mondo, abbi pietà di noi.\nAgnello di Dio, che togli i peccati del mondo, dona a noi la pace."
+            },
+            {
+                "type": "prayer",
+                "rubric": "Il sacerdote mostra ai fedeli il pane eucaristico:",
+                "celebrante": "Ecco l'Agnello di Dio, ecco colui che toglie i peccati del mondo. Beati gli invitati alla cena dell'Agnello.",
+                "assemblea": "O Signore, non sono degno di partecipare alla tua mensa, ma di' soltanto una parola e io sarò salvato."
+            },
+            {
+                "type": "rubric",
+                "text": "Il sacerdote si comunica al Corpo e al Sangue di Cristo, poi distribuisce la comunione ai fedeli. Dopo la comunione, si osserva un tempo di silenzio, oppure si canta un inno o un salmo di lode."
+            }
+        ]
+    },
+    "riti_conclusione": {
+        "title": "Riti di Conclusione",
+        "sections": [
+            {
+                "type": "dialogue",
+                "celebrante": "Il Signore sia con voi.",
+                "assemblea": "E con il tuo spirito."
+            },
+            {
+                "type": "choice",
+                "label": "Benedizione",
+                "options": [
+                    {
+                        "id": "A",
+                        "label": "Benedizione Semplice",
+                        "celebrante": "Vi benedica Dio onnipotente, Padre e Figlio ✠ e Spirito Santo.",
+                        "assemblea": "Amen."
+                    },
+                    {
+                        "id": "B",
+                        "label": "Benedizione Solenne (esempio)",
+                        "celebrante": "Dio, fonte di ogni consolazione, disponga i vostri giorni nella sua pace e vi conceda i doni della sua benedizione.\nAmen.\nVi liberi sempre da ogni pericolo e confermi i vostri cuori nel suo amore.\nAmen.\nCosì, ricchi di fede, di speranza e di carità, possiate progredire con impegno nelle opere buone, e giungere felicemente alla vita eterna.\nAmen.\nE su voi tutti, scenda la benedizione di Dio onnipotente, Padre e Figlio ✠ e Spirito Santo.",
+                        "assemblea": "Amen."
+                    }
+                ]
+            },
+            {
+                "type": "choice",
+                "label": "Congedo",
+                "options": [
+                    {
+                        "id": "A",
+                        "celebrante": "La Messa è finita: andate in pace.",
+                        "assemblea": "Rendiamo grazie a Dio."
+                    },
+                    {
+                        "id": "B",
+                        "celebrante": "Andate e annunciate il Vangelo del Signore.",
+                        "assemblea": "Rendiamo grazie a Dio."
+                    },
+                    {
+                        "id": "C",
+                        "celebrante": "Glorificate il Signore con la vostra vita: andate in pace.",
+                        "assemblea": "Rendiamo grazie a Dio."
+                    },
+                    {
+                        "id": "D",
+                        "celebrante": "Andate in pace.",
+                        "assemblea": "Rendiamo grazie a Dio."
+                    },
+                    {
+                        "id": "E",
+                        "celebrante": "La gioia del Signore sia la vostra forza: andate in pace.",
+                        "assemblea": "Rendiamo grazie a Dio."
+                    },
+                    {
+                        "id": "F",
+                        "celebrante": "Nel nome del Signore, andate in pace.",
+                        "assemblea": "Rendiamo grazie a Dio."
+                    },
+                    {
+                        "id": "G",
+                        "celebrante": "Portate a tutti la gioia del Signore risorto: andate in pace.",
+                        "assemblea": "Rendiamo grazie a Dio."
+                    }
+                ]
+            }
+        ]
+    }
 }
 
 PREFACES = [
