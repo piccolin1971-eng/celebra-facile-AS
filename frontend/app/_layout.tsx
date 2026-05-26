@@ -4,20 +4,31 @@ import { Stack } from "expo-router";
 import { SettingsProvider } from "../src/SettingsContext";
 import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
-import { AtkinsonHyperlegible_400Regular } from "@expo-google-fonts/atkinson-hyperlegible";
-import { Lora_400Regular } from "@expo-google-fonts/lora";
-import { VarelaRound_400Regular } from "@expo-google-fonts/varela-round";
-import { PatrickHand_400Regular } from "@expo-google-fonts/patrick-hand";
+import {
+  AtkinsonHyperlegible_400Regular,
+  AtkinsonHyperlegible_700Bold,
+} from "@expo-google-fonts/atkinson-hyperlegible";
+import { Lora_400Regular, Lora_700Bold } from "@expo-google-fonts/lora";
+import {
+  PlaypenSans_400Regular,
+  PlaypenSans_700Bold,
+} from "@expo-google-fonts/playpen-sans";
+import {
+  SourGummy_400Regular,
+  SourGummy_700Bold,
+} from "@expo-google-fonts/sour-gummy";
 
 export default function RootLayout() {
-  // Carica i 4 font selezionabili dall'utente in Impostazioni → Carattere.
-  // useFonts (expo-font) gestisce caching e retry. La prima apertura dell'app
-  // mostra brevemente lo spinner; alle successive i font sono già in cache.
+  // Carica i font selezionabili in Impostazioni → Carattere (Regular + Bold).
   const [loaded] = useFonts({
     AtkinsonHyperlegible_400Regular,
+    AtkinsonHyperlegible_700Bold,
     Lora_400Regular,
-    VarelaRound_400Regular,
-    PatrickHand_400Regular,
+    Lora_700Bold,
+    PlaypenSans_400Regular,
+    PlaypenSans_700Bold,
+    SourGummy_400Regular,
+    SourGummy_700Bold,
   });
 
   if (!loaded) {

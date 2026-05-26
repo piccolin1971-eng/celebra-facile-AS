@@ -111,6 +111,7 @@ import {
 } from "../src/api";
 import { getPrayerById } from "../src/orazionale";
 import { loadSession, loadSessionOrLatest } from "../src/massSession";
+import { FontFamilyId, resolveAppFont, resolveBodyFont, resolveHeadingFont } from "../src/fontFamily";
 import peFullData from "../src/data/eucharisticPrayersFull.json";
 
 // ===========================================================================
@@ -310,7 +311,7 @@ function CelebraScreenInner() {
 
   const router = useRouter();
   const params = useLocalSearchParams<{ date?: string }>();
-  const { colors, fontSize: settingsFontSize, scaledFont, fontFamily, isBold } = useSettings();
+  const { colors, fontSize: settingsFontSize, scaledFont, fontFamilyId, isBold } = useSettings();
   const { width: screenWidth } = useWindowDimensions();
 
   // Stato locale fontSize (override delle impostazioni globali, valido solo
@@ -354,7 +355,7 @@ function CelebraScreenInner() {
   // Ref al PagerView nativo (per setPage in tap-to-advance).
   const pagerRef = useRef<PagerView | null>(null);
 
-  const styles = makeStyles(colors, fontSize, fontFamily, isBold);
+  const styles = makeStyles(colors, fontSize, fontFamilyId, isBold);
 
   // ----- Caricamento dati -----
   useEffect(() => {
@@ -1258,13 +1259,13 @@ function segmentsToHtml(
       name: "Lora",
       gf: "Lora:wght@400;700",
     },
-    VarelaRound_400Regular: {
-      name: "Varela Round",
-      gf: "Varela+Round",
+    PlaypenSans_400Regular: {
+      name: "Playpen Sans",
+      gf: "Playpen+Sans:wght@400;700",
     },
-    PatrickHand_400Regular: {
-      name: "Patrick Hand",
-      gf: "Patrick+Hand",
+    SourGummy_400Regular: {
+      name: "Sour Gummy",
+      gf: "Sour+Gummy:wght@400;700",
     },
   };
   const fmap = fontFamily ? fontMap[fontFamily] : undefined;
@@ -2136,10 +2137,14 @@ function buildSegments(args: BuildArgs): Segment[] {
 const makeStyles = (
   colors: any,
   fontSize: number,
-  fontFamily: string | undefined,
+  fontFamilyId: FontFamilyId,
   isBold?: boolean,
-) =>
-  StyleSheet.create({
+) => {
+  const bodyFont = resolveBodyFont(fontFamilyId, !!isBold);
+  const headingFont = resolveHeadingFont(fontFamilyId);
+  const subtitleFont = resolveAppFont(fontFamilyId, "bold");
+
+  return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
     topBar: {
       flexDirection: "row",
@@ -2241,7 +2246,8 @@ const makeStyles = (
     },
     segSectionTitle: {
       fontSize: Math.round(fontSize * 1.05),
-      fontWeight: "800",
+      fontFamily: headingFont.fontFamily,
+      fontWeight: headingFont.fontWeight,
       color: colors.accentSection,
       marginTop: 16,
       marginBottom: 4,
@@ -2249,28 +2255,32 @@ const makeStyles = (
     },
     segAntifonaTitle: {
       fontSize: Math.round(fontSize * 0.85),
-      fontWeight: "800",
+      fontFamily: headingFont.fontFamily,
+      fontWeight: headingFont.fontWeight,
       color: colors.accentAntifona,
       marginTop: 24,
       marginBottom: 4,
     },
     segReadingTitle: {
       fontSize: Math.round(fontSize * 0.85),
-      fontWeight: "800",
+      fontFamily: headingFont.fontFamily,
+      fontWeight: headingFont.fontWeight,
       color: colors.accentReading,
       marginTop: 14,
       marginBottom: 4,
     },
     segOrazioneTitle: {
       fontSize: Math.round(fontSize * 0.85),
-      fontWeight: "800",
+      fontFamily: headingFont.fontFamily,
+      fontWeight: headingFont.fontWeight,
       color: colors.accentOrazione,
       marginTop: 14,
       marginBottom: 4,
     },
     segSubtitle: {
       fontSize: Math.round(fontSize * 0.85),
-      fontWeight: "700",
+      fontFamily: subtitleFont.fontFamily,
+      fontWeight: subtitleFont.fontWeight,
       color: colors.textPrimary,
       marginTop: 12,
       marginBottom: 4,
@@ -2281,14 +2291,16 @@ const makeStyles = (
     // invocazioni C./A. che le seguono. Coerente con messa.tsx.
     segTroparioTitle: {
       fontSize: Math.round(fontSize * 0.85),
-      fontWeight: "800",
+      fontFamily: headingFont.fontFamily,
+      fontWeight: headingFont.fontWeight,
       color: colors.accentTropario,
       marginTop: 14,
       marginBottom: 4,
     },
     segPeTitle: {
       fontSize: Math.round(fontSize * 0.78),
-      fontWeight: "800",
+      fontFamily: headingFont.fontFamily,
+      fontWeight: headingFont.fontWeight,
       color: colors.accentPe,
       marginTop: 12,
       marginBottom: 6,
@@ -2296,7 +2308,8 @@ const makeStyles = (
     segNormal: {
       fontSize: fontSize,
       color: colors.textPrimary,
-      fontFamily,
+      fontFamily: bodyFont.fontFamily,
+      fontWeight: bodyFont.fontWeight,
       lineHeight: Math.round(fontSize * 1.6),
       marginTop: 4,
       marginBottom: 8,
@@ -2305,6 +2318,8 @@ const makeStyles = (
       fontSize: Math.round(fontSize * 0.7),
       color: colors.rubrics,
       fontStyle: "italic",
+      fontFamily: bodyFont.fontFamily,
+      fontWeight: bodyFont.fontWeight,
       lineHeight: Math.round(fontSize * 1.0),
       marginVertical: 6,
     },
@@ -2312,7 +2327,8 @@ const makeStyles = (
       fontSize: fontSize,
       color: colors.rubrics,
       fontStyle: "italic",
-      fontFamily,
+      fontFamily: bodyFont.fontFamily,
+      fontWeight: bodyFont.fontWeight,
       lineHeight: Math.round(fontSize * 1.4),
       marginTop: 4,
       marginBottom: 8,
@@ -2320,7 +2336,8 @@ const makeStyles = (
     segCelebrante: {
       fontSize: fontSize,
       color: colors.textPrimary,
-      fontFamily,
+      fontFamily: bodyFont.fontFamily,
+      fontWeight: bodyFont.fontWeight,
       lineHeight: Math.round(fontSize * 1.6),
       marginTop: 4,
       marginBottom: 10,
@@ -2329,7 +2346,8 @@ const makeStyles = (
       fontSize: Math.round(fontSize * 0.95),
       color: colors.textPrimary,
       fontStyle: "italic",
-      fontFamily,
+      fontFamily: bodyFont.fontFamily,
+      fontWeight: bodyFont.fontWeight,
       lineHeight: Math.round(fontSize * 1.55),
       marginTop: 4,
       marginBottom: 10,
@@ -2337,7 +2355,8 @@ const makeStyles = (
     segUmili: {
       fontSize: Math.round(fontSize * 0.85),
       color: colors.textPrimary,
-      fontFamily,
+      fontFamily: bodyFont.fontFamily,
+      fontWeight: bodyFont.fontWeight,
       lineHeight: Math.round(fontSize * 1.4),
       marginTop: 4,
       marginBottom: 10,
@@ -2345,7 +2364,8 @@ const makeStyles = (
     segSalmo: {
       fontSize: fontSize,
       color: colors.textPrimary,
-      fontFamily,
+      fontFamily: bodyFont.fontFamily,
+      fontWeight: bodyFont.fontWeight,
       lineHeight: Math.round(fontSize * 1.55),
       marginVertical: 6,
     },
@@ -2354,7 +2374,8 @@ const makeStyles = (
     // Usato inline da renderPeTextLines per le righe interamente in maiuscolo.
     segPeConsecration: {
       color: colors.accentPeConsecration,
-      fontWeight: "800",
+      fontFamily: headingFont.fontFamily,
+      fontWeight: headingFont.fontWeight,
     },
     // Dossologia conclusiva ("PER CRISTO, CON CRISTO E IN CRISTO..."):
     // bianco, maiuscolo (il testo è già in maiuscolo dal JSON), peso REGULAR,
@@ -2364,15 +2385,16 @@ const makeStyles = (
       fontSize: fontSize,
       lineHeight: Math.round(fontSize * 1.7),
       color: colors.textPrimary,
-      fontWeight: "400",
-      fontFamily,
+      fontFamily: bodyFont.fontFamily,
+      fontWeight: bodyFont.fontWeight,
       marginTop: 4,
       marginBottom: 8,
     },
     // R/. marker rosso bold (regola globale Preghiera dei Fedeli + salmo)
     segRespMarker: {
       color: colors.rubrics,
-      fontWeight: "700",
+      fontFamily: headingFont.fontFamily,
+      fontWeight: headingFont.fontWeight,
     },
     segSpacer: {
       height: 16,
@@ -2406,7 +2428,8 @@ const makeStyles = (
     // resti mai solo in fondo a una pagina).
     sectionTitle: {
       fontSize: Math.round(fontSize * 1.05),
-      fontWeight: "800",
+      fontFamily: headingFont.fontFamily,
+      fontWeight: headingFont.fontWeight,
       color: colors.accentSection,
       marginTop: 14,
       marginBottom: 8,
@@ -2414,7 +2437,8 @@ const makeStyles = (
     },
     antifonaTitle: {
       fontSize: Math.round(fontSize * 0.85),
-      fontWeight: "800",
+      fontFamily: headingFont.fontFamily,
+      fontWeight: headingFont.fontWeight,
       color: colors.accentAntifona,
       marginTop: 10,
       marginBottom: 6,
@@ -2422,7 +2446,8 @@ const makeStyles = (
     },
     readingTitle: {
       fontSize: Math.round(fontSize * 0.85),
-      fontWeight: "800",
+      fontFamily: headingFont.fontFamily,
+      fontWeight: headingFont.fontWeight,
       color: colors.accentReading,
       marginTop: 10,
       marginBottom: 6,
@@ -2430,7 +2455,8 @@ const makeStyles = (
     },
     orazioneTitle: {
       fontSize: Math.round(fontSize * 0.85),
-      fontWeight: "800",
+      fontFamily: headingFont.fontFamily,
+      fontWeight: headingFont.fontWeight,
       color: colors.accentOrazione,
       marginTop: 10,
       marginBottom: 6,
@@ -2438,7 +2464,8 @@ const makeStyles = (
     },
     subtitle: {
       fontSize: Math.round(fontSize * 0.85),
-      fontWeight: "700",
+      fontFamily: subtitleFont.fontFamily,
+      fontWeight: subtitleFont.fontWeight,
       color: colors.textPrimary,
       marginTop: 8,
       marginBottom: 6,
@@ -2446,7 +2473,8 @@ const makeStyles = (
     },
     peTitle: {
       fontSize: Math.round(fontSize * 0.78),
-      fontWeight: "800",
+      fontFamily: headingFont.fontFamily,
+      fontWeight: headingFont.fontWeight,
       color: colors.accentPe,
       marginTop: 6,
       marginBottom: 10,
@@ -2454,14 +2482,15 @@ const makeStyles = (
     },
     peConsecration: {
       color: colors.accentPeConsecration,
-      fontWeight: "800",
+      fontFamily: headingFont.fontFamily,
+      fontWeight: headingFont.fontWeight,
     },
     peDossologia: {
       fontSize: fontSize,
       lineHeight: fontSize * 1.7,
       color: colors.textPrimary,
-      fontWeight: isBold ? "800" : "400",
-      fontFamily,
+      fontFamily: bodyFont.fontFamily,
+      fontWeight: bodyFont.fontWeight,
       marginTop: 4,
       marginBottom: 8,
     },
@@ -2469,56 +2498,58 @@ const makeStyles = (
       fontSize: Math.round(fontSize * 0.85),
       fontStyle: "italic",
       color: colors.rubrics,
-      fontFamily,
+      fontFamily: bodyFont.fontFamily,
+      fontWeight: bodyFont.fontWeight,
       marginVertical: 6,
       lineHeight: fontSize * 1.55,
-      fontWeight: isBold ? "700" : "400",
     },
     text: {
       fontSize: fontSize,
       lineHeight: fontSize * 1.7,
       color: colors.textPrimary,
-      fontFamily,
+      fontFamily: bodyFont.fontFamily,
+      fontWeight: bodyFont.fontWeight,
       marginTop: 0,
       marginBottom: 8,
-      fontWeight: isBold ? "700" : "400",
     },
     rubric: {
       fontSize: Math.round(fontSize * 0.7),
       fontStyle: "italic",
       color: colors.rubrics,
+      fontFamily: bodyFont.fontFamily,
+      fontWeight: bodyFont.fontWeight,
       marginVertical: 4,
       lineHeight: fontSize * 1.2,
-      fontWeight: isBold ? "700" : "400",
     },
     salmoRit: {
       color: colors.rubrics,
-      fontWeight: "800",
+      fontFamily: headingFont.fontFamily,
+      fontWeight: headingFont.fontWeight,
     },
     salmoText: {
       fontSize: fontSize,
       lineHeight: fontSize * 1.55,
       color: colors.textPrimary,
-      fontFamily,
+      fontFamily: bodyFont.fontFamily,
+      fontWeight: bodyFont.fontWeight,
       marginVertical: 4,
-      fontWeight: isBold ? "700" : "400",
     },
     celebrante: {
       fontSize: fontSize,
       color: colors.textPrimary,
-      fontFamily,
+      fontFamily: bodyFont.fontFamily,
+      fontWeight: bodyFont.fontWeight,
       marginVertical: 6,
       lineHeight: fontSize * 1.7,
-      fontWeight: isBold ? "700" : "400",
     },
     assemblea: {
       fontSize: Math.max(12, fontSize - 1),
       fontStyle: "italic",
       color: colors.textPrimary,
-      fontFamily,
+      fontFamily: bodyFont.fontFamily,
+      fontWeight: bodyFont.fontWeight,
       marginVertical: 6,
       lineHeight: fontSize * 1.7,
-      fontWeight: isBold ? "700" : "400",
     },
     // ----- Empty state -----
     emptyBox: {
@@ -2556,3 +2587,4 @@ const makeStyles = (
       color: colors.onPrimary,
     },
   });
+};

@@ -10,6 +10,7 @@ import { PrefaceSelectorModal } from "../src/components/PrefaceSelectorModal";
 import { getOrazionaleSections, getPrayerById, suggestPrayerForLiturgy, OrazionalePrayer } from "../src/orazionale";
 import { loadSession, loadSessionOrLatest, saveSession, cleanupOldSessions, MassSession } from "../src/massSession";
 import { getLiturgicalSeasonKey, getSuggestedPrefaces } from "../src/prefaceUtils";
+import { FontFamilyId, resolveAppFont, resolveBodyFont, resolveHeadingFont } from "../src/fontFamily";
 import peFullData from "../src/data/eucharisticPrayersFull.json";
 
 // === Helper: suggerisce l'opzione "communicantes" (Tempo Liturgico) per la PE
@@ -81,7 +82,7 @@ export default function MessaScreen() {
 
   const router = useRouter();
   const params = useLocalSearchParams<{ date?: string; preface?: string; votive?: string }>();
-  const { colors, fontSize: settingsFontSize, scaledFont, readingMode, autoScrollDelaySec, autoScrollPxPerSec, fontFamily, isBold } = useSettings();
+  const { colors, fontSize: settingsFontSize, scaledFont, readingMode, autoScrollDelaySec, autoScrollPxPerSec, fontFamilyId, isBold } = useSettings();
 
   // Stato locale fontSize (override delle impostazioni globali, valido solo
   // per questa sessione di preparazione). Inizializzato da settings, può
@@ -168,7 +169,7 @@ export default function MessaScreen() {
   // Solo dopo questo flag, il save automatico è attivo.
   const [sessionLoaded, setSessionLoaded] = useState(false);
 
-  const styles = makeStyles(colors, fontSize, fontFamily, isBold);
+  const styles = makeStyles(colors, fontSize, fontFamilyId, isBold);
 
   useEffect(() => {
     (async () => {
@@ -2328,7 +2329,8 @@ export default function MessaScreen() {
         currentSeasonKey={currentSeasonKey}
         colors={colors}
         scaledFont={scaledFont}
-        fontFamily={fontFamily}
+        fontFamilyId={fontFamilyId}
+        isBold={isBold}
         expandedSeason={expandedPrefaceSeason}
         setExpandedSeason={setExpandedPrefaceSeason}
       />
@@ -2472,7 +2474,12 @@ export default function MessaScreen() {
   );
 }
 
-const makeStyles = (colors: any, fontSize: number, fontFamily?: string, isBold?: boolean) => StyleSheet.create({
+const makeStyles = (colors: any, fontSize: number, fontFamilyId: FontFamilyId, isBold?: boolean) => {
+  const bodyFont = resolveBodyFont(fontFamilyId, !!isBold);
+  const headingFont = resolveHeadingFont(fontFamilyId);
+  const subtitleFont = resolveAppFont(fontFamilyId, "bold");
+
+  return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   topBar: {
     flexDirection: "row",
@@ -2556,7 +2563,8 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string, isBold?:
   // marginTop: 0 (lo spazio sopra è gestito dal partBox).
   sectionTitle: {
     fontSize: Math.round(fontSize * 1.05),
-    fontWeight: "800",
+    fontFamily: headingFont.fontFamily,
+    fontWeight: headingFont.fontWeight,
     color: colors.accentSection,
     marginTop: 0,
     marginBottom: 6,
@@ -2565,7 +2573,8 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string, isBold?:
   // Titolo per sezioni rituali macro (Riti Introduzione, Liturgia Parola, ecc.)
   ritoTitle: {
     fontSize: Math.round(fontSize * 0.95),
-    fontWeight: "800",
+    fontFamily: headingFont.fontFamily,
+    fontWeight: headingFont.fontWeight,
     color: colors.accentRito,
     marginTop: 0,
     marginBottom: 6,
@@ -2576,7 +2585,8 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string, isBold?:
   // Titolo per antifone d'ingresso/comunione, sequenza, acclamazione al Vangelo
   antifonaTitle: {
     fontSize: Math.round(fontSize * 0.85),
-    fontWeight: "800",
+    fontFamily: headingFont.fontFamily,
+    fontWeight: headingFont.fontWeight,
     color: colors.accentAntifona,
     marginTop: 0,
     marginBottom: 6,
@@ -2585,7 +2595,8 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string, isBold?:
   // Titolo per le letture (Prima, Salmo, Seconda, Vangelo)
   readingTitle: {
     fontSize: Math.round(fontSize * 0.85),
-    fontWeight: "800",
+    fontFamily: headingFont.fontFamily,
+    fontWeight: headingFont.fontWeight,
     color: colors.accentReading,
     marginTop: 0,
     marginBottom: 6,
@@ -2594,7 +2605,8 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string, isBold?:
   // Titolo per orazioni proprie (Colletta, Sulle offerte, Dopo la comunione)
   orazioneTitle: {
     fontSize: Math.round(fontSize * 0.85),
-    fontWeight: "800",
+    fontFamily: headingFont.fontFamily,
+    fontWeight: headingFont.fontWeight,
     color: colors.accentOrazione,
     marginTop: 0,
     marginBottom: 6,
@@ -2602,7 +2614,8 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string, isBold?:
   },
   subtitle: {
     fontSize: Math.round(fontSize * 0.85),
-    fontWeight: "700",
+    fontFamily: subtitleFont.fontFamily,
+    fontWeight: subtitleFont.fontWeight,
     color: colors.textPrimary,
     marginTop: 0,
     marginBottom: 6,
@@ -2614,7 +2627,8 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string, isBold?:
   // C./A. che le seguono. Coerente con la palette esistente.
   troparioTitle: {
     fontSize: Math.round(fontSize * 0.85),
-    fontWeight: "800",
+    fontFamily: headingFont.fontFamily,
+    fontWeight: headingFont.fontWeight,
     color: colors.accentTropario,
     marginTop: 8,
     marginBottom: 6,
@@ -2622,7 +2636,8 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string, isBold?:
   },
   peTitle: {
     fontSize: Math.round(fontSize * 0.78),
-    fontWeight: "800",
+    fontFamily: headingFont.fontFamily,
+    fontWeight: headingFont.fontWeight,
     color: colors.accentPe,
     marginTop: 0,
     marginBottom: 8,
@@ -2630,7 +2645,8 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string, isBold?:
   },
   prefaceTitle: {
     fontSize: Math.round(fontSize * 0.78),
-    fontWeight: "800",
+    fontFamily: headingFont.fontFamily,
+    fontWeight: headingFont.fontWeight,
     color: colors.accentPe,
     marginTop: 0,
     marginBottom: 8,
@@ -2638,7 +2654,8 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string, isBold?:
   },
   peConsecration: {
     color: colors.accentPeConsecration,
-    fontWeight: "800",
+    fontFamily: headingFont.fontFamily,
+    fontWeight: headingFont.fontWeight,
   },
   // Dossologia conclusiva ("PER CRISTO, CON CRISTO E IN CRISTO..."): stile
   // uniforme per tutte le PE — bianco, maiuscolo, peso REGULAR (alleggerito
@@ -2647,8 +2664,8 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string, isBold?:
     fontSize: fontSize,
     lineHeight: fontSize * 1.6,
     color: colors.textPrimary,
-    fontWeight: isBold ? "800" : "400",
-    fontFamily,
+    fontFamily: bodyFont.fontFamily,
+    fontWeight: bodyFont.fontWeight,
     marginTop: 4,
     marginBottom: 8,
   },
@@ -2657,19 +2674,19 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string, isBold?:
     fontSize: Math.round(fontSize * 0.85),
     fontStyle: "italic",
     color: colors.rubrics,
-    fontFamily,
+    fontFamily: bodyFont.fontFamily,
+    fontWeight: bodyFont.fontWeight,
     marginVertical: 6,
     lineHeight: fontSize * 1.35,
-    fontWeight: isBold ? "700" : "400",
   },
   text: {
     fontSize: fontSize,
     lineHeight: fontSize * 1.6,
     color: colors.textPrimary,
-    fontFamily,
+    fontFamily: bodyFont.fontFamily,
+    fontWeight: bodyFont.fontWeight,
     marginTop: 0,
     marginBottom: 8,
-    fontWeight: isBold ? "700" : "400",
   },
   rubric: {
     fontSize: Math.round(fontSize * 0.7),
@@ -2677,12 +2694,14 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string, isBold?:
     color: colors.rubrics,
     marginVertical: 4,
     lineHeight: fontSize * 1.2,
-    fontWeight: isBold ? "700" : "400",
+    fontFamily: bodyFont.fontFamily,
+    fontWeight: bodyFont.fontWeight,
   },
   // Inline "R." rosso per il ritornello del Salmo Responsoriale
   salmoRit: {
     color: colors.rubrics,
-    fontWeight: "800",
+    fontFamily: headingFont.fontFamily,
+    fontWeight: headingFont.fontWeight,
   },
   // Stile per il salmo responsoriale: usa un singolo <Text> multilinea
   // così le strofe non hanno doppio spazio fra una riga e l'altra.
@@ -2690,17 +2709,17 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string, isBold?:
     fontSize: fontSize,
     lineHeight: fontSize * 1.3,
     color: colors.textPrimary,
-    fontFamily,
+    fontFamily: bodyFont.fontFamily,
+    fontWeight: bodyFont.fontWeight,
     marginVertical: 4,
-    fontWeight: isBold ? "700" : "400",
   },
   celebrante: {
     fontSize: fontSize,
     color: colors.textPrimary,
-    fontFamily,
+    fontFamily: bodyFont.fontFamily,
+    fontWeight: bodyFont.fontWeight,
     marginVertical: 6,
     lineHeight: fontSize * 1.6,
-    fontWeight: isBold ? "700" : "400",
   },
   // Risposte dell'assemblea (A. ...): corsivo, -1pt rispetto al base, NON bold.
   // Pensato per dare meno "peso" visivo alle risposte rispetto alle parti del
@@ -2710,10 +2729,10 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string, isBold?:
     fontSize: Math.max(12, fontSize - 1),
     fontStyle: "italic",
     color: colors.textPrimary,
-    fontFamily,
+    fontFamily: bodyFont.fontFamily,
+    fontWeight: bodyFont.fontWeight,
     marginVertical: 6,
     lineHeight: fontSize * 1.6,
-    fontWeight: isBold ? "700" : "400",
   },
   block: { marginVertical: 10 },
   // Pulsante grande sulla pagina del Congedo: passa alla modalità "Celebra la
@@ -3065,11 +3084,13 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string, isBold?:
     borderColor: colors.border,
     borderRadius: 12,
   },
-  sectionTitle: {
+  peCatalogTitle: {
     fontSize: Math.round(fontSize * 0.75),
-    fontWeight: "800",
+    fontFamily: headingFont.fontFamily,
+    fontWeight: headingFont.fontWeight,
     color: colors.textPrimary,
     textTransform: "uppercase",
     letterSpacing: 1,
   },
-});
+  });
+};

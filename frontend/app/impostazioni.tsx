@@ -5,7 +5,7 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
 import { useSettings, PARCHMENT_TONE_MIN, PARCHMENT_TONE_MAX } from "../src/SettingsContext";
-import { FONT_OPTIONS, FontFamilyId } from "../src/fontFamily";
+import { FONT_OPTIONS, FontFamilyId, resolveBodyFont } from "../src/fontFamily";
 
 export default function Impostazioni() {
   const router = useRouter();
@@ -90,7 +90,9 @@ export default function Impostazioni() {
           <View style={[styles.switchRow, { marginTop: 12, marginBottom: 16, padding: 12, backgroundColor: colors.bgSecondary, borderRadius: 12 }]}>
             <View style={{ flex: 1 }}>
               <Text style={[styles.fontFamilyLabel, { fontSize: scaledFont(22) }]}>Grassetto</Text>
-              <Text style={styles.fontFamilyDesc}>Rende tutto il testo più spesso per una migliore visibilità.</Text>
+              <Text style={styles.fontFamilyDesc}>
+                Rende più spesso il testo liturgico, mantenendo il carattere scelto.
+              </Text>
             </View>
             <Switch
               value={isBold}
@@ -134,6 +136,9 @@ export default function Impostazioni() {
                     style={[
                       styles.fontFamilySample,
                       opt.family ? { fontFamily: opt.family } : null,
+                      isBold && opt.supportsNativeBold
+                        ? resolveBodyFont(opt.id, true)
+                        : null,
                     ]}
                   >
                     {opt.sample}

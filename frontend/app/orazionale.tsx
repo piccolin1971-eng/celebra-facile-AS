@@ -5,6 +5,7 @@ import { useRouter } from "expo-router";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSettings } from "../src/SettingsContext";
 import { getOrazionaleSections, OrazionalePrayer } from "../src/orazionale";
+import { FontFamilyId, resolveBodyFont, resolveHeadingFont } from "../src/fontFamily";
 
 type ViewMode = "list" | "section" | "prayer";
 
@@ -52,7 +53,7 @@ function renderRespText(text: string, styles: any) {
 
 export default function OrazionaleScreen() {
   const router = useRouter();
-  const { colors, fontSize, scaledFont, readingMode, isBold } = useSettings();
+  const { colors, fontSize, scaledFont, readingMode, fontFamilyId, isBold } = useSettings();
   const { width } = useWindowDimensions();
 
   const sections = useMemo(() => getOrazionaleSections(), []);
@@ -62,7 +63,7 @@ export default function OrazionaleScreen() {
   // indice della "pagina" del corpo preghiera per Tap-to-Advance
   const [page, setPage] = useState(0);
 
-  const styles = makeStyles(colors, fontSize, isBold);
+  const styles = makeStyles(colors, fontSize, fontFamilyId, isBold);
 
   const activeSection = sections.find((s) => s.key === activeSectionKey);
   const activePrayer: OrazionalePrayer | null = activeSection
@@ -240,7 +241,11 @@ export default function OrazionaleScreen() {
   return null;
 }
 
-const makeStyles = (colors: any, fontSize: number, isBold?: boolean) => StyleSheet.create({
+const makeStyles = (colors: any, fontSize: number, fontFamilyId: FontFamilyId, isBold?: boolean) => {
+  const bodyFont = resolveBodyFont(fontFamilyId, !!isBold);
+  const headingFont = resolveHeadingFont(fontFamilyId);
+
+  return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   topBar: {
     flexDirection: "row",
@@ -325,12 +330,14 @@ const makeStyles = (colors: any, fontSize: number, isBold?: boolean) => StyleShe
     fontSize: fontSize,
     lineHeight: Math.round(fontSize * 1.6),
     color: colors.textPrimary,
-    fontWeight: isBold ? "700" : "400",
+    fontFamily: bodyFont.fontFamily,
+    fontWeight: bodyFont.fontWeight,
   },
   // Marker R/. in rosso bold (regola globale Preghiera dei Fedeli)
   respMarker: {
     color: colors.rubrics,
-    fontWeight: "800",
+    fontFamily: headingFont.fontFamily,
+    fontWeight: headingFont.fontWeight,
   },
   tapZone: {
     position: "absolute",
@@ -369,4 +376,5 @@ const makeStyles = (colors: any, fontSize: number, isBold?: boolean) => StyleShe
     color: colors.textPrimary,
     textAlign: "center",
   },
-});
+  });
+};

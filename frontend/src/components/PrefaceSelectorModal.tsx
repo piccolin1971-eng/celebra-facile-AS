@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput,
 import { Ionicons } from "@expo/vector-icons";
 import { Preface } from "../api";
 import { getSuggestedPrefaces } from "../prefaceUtils";
+import { FontFamilyId, resolveBodyFont, ResolvedAppFont } from "../fontFamily";
 
 interface Props {
   visible: boolean;
@@ -13,7 +14,8 @@ interface Props {
   currentSeasonKey: string;
   colors: any;
   scaledFont: (base: number) => number;
-  fontFamily?: string;
+  fontFamilyId: FontFamilyId;
+  isBold: boolean;
   expandedSeason: string | null;
   setExpandedSeason: (key: string | null) => void;
 }
@@ -27,12 +29,14 @@ export const PrefaceSelectorModal: React.FC<Props> = ({
   currentSeasonKey,
   colors,
   scaledFont,
-  fontFamily,
+  fontFamilyId,
+  isBold,
   expandedSeason,
   setExpandedSeason,
 }) => {
   const [search, setSearch] = useState("");
-  const styles = makeStyles(colors, scaledFont, fontFamily);
+  const bodyFont = resolveBodyFont(fontFamilyId, isBold);
+  const styles = makeStyles(colors, scaledFont, bodyFont);
 
   const query = search.toLowerCase().trim();
   const isSearching = query.length >= 2;
@@ -176,7 +180,7 @@ export const PrefaceSelectorModal: React.FC<Props> = ({
   );
 };
 
-const makeStyles = (colors: any, scaledFont: any, fontFamily?: string) => StyleSheet.create({
+const makeStyles = (colors: any, scaledFont: any, bodyFont: ResolvedAppFont) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   topBar: {
     flexDirection: "row",
@@ -199,7 +203,14 @@ const makeStyles = (colors: any, scaledFont: any, fontFamily?: string) => StyleS
     paddingHorizontal: 16,
     height: 56
   },
-  searchInput: { flex: 1, marginLeft: 12, fontSize: scaledFont(20), color: colors.textPrimary, fontFamily },
+  searchInput: {
+    flex: 1,
+    marginLeft: 12,
+    fontSize: scaledFont(20),
+    color: colors.textPrimary,
+    fontFamily: bodyFont.fontFamily,
+    fontWeight: bodyFont.fontWeight,
+  },
   content: { padding: 20 },
   resultsList: { backgroundColor: colors.bgSecondary, borderRadius: 12, overflow: 'hidden' },
   empty: { textAlign: 'center', marginTop: 40, fontSize: scaledFont(20), color: colors.textSecondary, fontStyle: 'italic' },

@@ -261,17 +261,19 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
               setAutoScrollPxPerSecState(s.autoScrollPxPerSec);
             }
           }
-          // Carattere (font family) — opzionale, default "system".
-          // I vecchi ID "garamond"/"cormorant" sono stati rimossi: chi li
-          // aveva selezionati torna automaticamente a "system".
+          // Carattere (font family) — migrazione da ID rimossi.
+          let fontId = s.fontFamilyId;
+          if (fontId === "varela") fontId = "sourgummy";
+          else if (fontId === "patrick") fontId = "playpen";
+          else if (fontId === "garamond" || fontId === "cormorant") fontId = "system";
           if (
-            s.fontFamilyId === "system" ||
-            s.fontFamilyId === "atkinson" ||
-            s.fontFamilyId === "lora" ||
-            s.fontFamilyId === "varela" ||
-            s.fontFamilyId === "patrick"
+            fontId === "system" ||
+            fontId === "atkinson" ||
+            fontId === "lora" ||
+            fontId === "playpen" ||
+            fontId === "sourgummy"
           ) {
-            setFontFamilyIdState(s.fontFamilyId);
+            setFontFamilyIdState(fontId);
           }
           if (typeof s.parchmentTone === "number") {
             let t = Math.round(s.parchmentTone);
