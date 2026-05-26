@@ -38,7 +38,7 @@ export type Reading = {
 
 export type Liturgy = LocalLiturgy;
 
-export type Preface = { id: string; title: string; season?: string; category?: string; text: string };
+export type Preface = { id: string; title: string; season?: string; category?: string; sortOrder?: number; text: string };
 export type EucharisticPrayer = { id: string; title: string; description: string; text: string };
 export type VotiveMass = { id: string; title: string; color: string };
 export type MysteryAcclamation = { id: string; label: string; celebrante: string; assemblea: string };

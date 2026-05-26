@@ -42,13 +42,18 @@ def extract():
 
         if text_start == -1: continue
 
-        # Raccogliamo il testo
+        # Raccogliamo il testo fino all'invito al Santo (prima di «Santo, Santo, Santo…»)
         text_lines = []
         for line in lines[text_start:]:
             clean_line = line.replace('+', '').replace('*', '').replace('**', '').strip()
-            if not clean_line: continue
+            if not clean_line:
+                continue
+            if clean_line.startswith("Santo, Santo, Santo"):
+                break
+            if clean_line.startswith("Ant. alla comunione"):
+                break
             text_lines.append(clean_line)
-            if "inno" in clean_line.lower() and ":" in clean_line:
+            if "inno" in clean_line.lower() and clean_line.rstrip().endswith(":"):
                 break
 
         text = "\n".join(text_lines)

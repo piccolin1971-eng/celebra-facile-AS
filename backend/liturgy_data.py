@@ -63,8 +63,12 @@ FIXED_PARTS = {
 "text": "Il sacerdote invita i fedeli all'atto penitenziale:"
 },
 {
-"type": "monologue",
-"celebrante": "Fratelli e sorelle, per celebrare degnamente i santi misteri, riconosciamo i nostri peccati."
+"type": "invitation_alternatives",
+"options": [
+"Fratelli e sorelle, per celebrare degnamente i santi misteri, riconosciamo i nostri peccati.",
+"Il Signore Gesù,\nche ci invita alla mensa della Parola e dell'Eucaristia,\nci chiama alla conversione.\nRiconosciamo di essere peccatori\ne invochiamo con fiducia la misericordia di Dio.",
+"Oggi, celebrando la vittoria di Cristo\nsul peccato e sulla morte,\nsiamo chiamati a morire al peccato\nper risorgere alla vita nuova.\nRiconosciamoci bisognosi della misericordia del Padre."
+]
 },
 {
 "type": "choice",

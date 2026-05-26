@@ -99,6 +99,47 @@ function parchmentToneToDelta(tone: number): number {
   return ((t - PARCHMENT_TONE_DEFAULT) / 15) * 8;
 }
 
+/** Colori accento liturgici (titoli, PE, selettori): pastelli su scuro, scuri su pergamena. */
+const ACCENT_DARK = {
+  accentSection: "#4DA8DA",
+  accentRito: "#FFC107",
+  accentAntifona: "#FFB74D",
+  accentReading: "#81C784",
+  accentOrazione: "#CE93D8",
+  accentTropario: "#FFA726",
+  accentPe: "#66BB6A",
+  accentPeConsecration: "#29B6F6",
+  accentPeSelectorBorder: "#FFA000",
+  accentPeSelectorLabel: "#FFB74D",
+  accentPeSelectorValue: "#FFE0B2",
+  accentPeModalBorder: "#FFA000",
+  accentPeModalActiveBg: "#FFF3CD",
+  accentPeModalActiveText: "#7B3F00",
+  accentAutoScrollBorder: "#FFA000",
+  accentAutoScrollText: "#FFB74D",
+  onPrimary: "#FFFFFF",
+};
+
+const ACCENT_PARCHMENT = {
+  accentSection: "#1565C0",
+  accentRito: "#7A5C00",
+  accentAntifona: "#B45309",
+  accentReading: "#1B5E20",
+  accentOrazione: "#4A148C",
+  accentTropario: "#BF360C",
+  accentPe: "#1B5E20",
+  accentPeConsecration: "#0D47A1",
+  accentPeSelectorBorder: "#8B6914",
+  accentPeSelectorLabel: "#8B4513",
+  accentPeSelectorValue: "#1A1A1A",
+  accentPeModalBorder: "#8B6914",
+  accentPeModalActiveBg: "#C8B89C",
+  accentPeModalActiveText: "#1A1A1A",
+  accentAutoScrollBorder: "#8B6914",
+  accentAutoScrollText: "#8B4513",
+  onPrimary: "#FFFFFF",
+};
+
 function getParchmentColors(tone: number) {
   const delta = parchmentToneToDelta(tone);
   return {
@@ -116,6 +157,7 @@ function getParchmentColors(tone: number) {
     liturgicalPurple: "#4A148C",
     liturgicalWhite: "#B8860B",
     liturgicalRose: "#AD1457",
+    ...ACCENT_PARCHMENT,
   };
 }
 
@@ -137,6 +179,7 @@ const getColors = (theme: ThemeMode, highContrast: boolean, parchmentTone = PARC
       liturgicalPurple: "#AB47BC",
       liturgicalWhite: "#FFE082",
       liturgicalRose: "#F48FB1",
+      ...ACCENT_DARK,
     };
   }
   if (theme === "parchment") {
@@ -157,6 +200,7 @@ const getColors = (theme: ThemeMode, highContrast: boolean, parchmentTone = PARC
     liturgicalPurple: "#4A148C",
     liturgicalWhite: "#D4AF37",
     liturgicalRose: "#AD1457",
+    ...ACCENT_DARK,
   };
 };
 

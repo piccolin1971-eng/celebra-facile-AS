@@ -42,16 +42,23 @@ export const PrefaceSelectorModal: React.FC<Props> = ({
     { key: 'natale', label: '🕒 Tempo di Natale ed Epifania' },
     { key: 'quaresima', label: '🕒 Tempo di Quaresima' },
     { key: 'passione', label: '🕒 Passione e Settimana Santa' },
-    { key: 'pasqua', label: '🕒 Tempo di Pasqua e Pentecoste' },
-    { key: 'ordinario', label: '🕒 Domeniche del Tempo Ordinario' },
-    { key: 'comune', label: '⛪ Prefazi Comuni' },
-    { key: 'misteri', label: '✝️ Misteri del Signore' },
-    { key: 'bvm', label: '😇 Beata Vergine Maria' },
+    { key: 'pasqua', label: '🕒 Pasqua, Ascensione e Pentecoste' },
+    { key: 'ordinario', label: '🕒 Tempo Ordinario (I–X)' },
+    { key: 'comune', label: '⛪ Prefazi comuni (I–IX)' },
+    { key: 'misteri', label: '✝️ Misteri del Signore e pericopi' },
+    { key: 'eucaristia', label: '🍞 Santissima Eucaristia' },
+    { key: 'sacramenti', label: '⛪ Sacramenti e riti' },
+    { key: 'bvm', label: '😇 Beata Vergine Maria e San Giuseppe' },
     { key: 'santi', label: '😇 Santi e Angeli' },
-    { key: 'rituali', label: '⛪ Riti e Messe Rituali' },
-    { key: 'pe', label: '📜 Preghiere Eucaristiche' },
     { key: 'defunti', label: '✟ Per i Defunti' },
   ];
+
+  const sortPrefaces = (items: Preface[], categoryKey: string) => {
+    if (categoryKey === 'pasqua' || categoryKey === 'ordinario') {
+      return [...items].sort((a, b) => (a.sortOrder ?? 999) - (b.sortOrder ?? 999));
+    }
+    return items;
+  };
 
   const handleSelect = (id: string) => {
     onSelect(id);
@@ -129,6 +136,7 @@ export const PrefaceSelectorModal: React.FC<Props> = ({
               if (filtered.length === 0) return null;
 
               const isExpanded = expandedSeason === cat.key;
+              const sorted = sortPrefaces(filtered, cat.key);
 
               return (
                 <View key={cat.key} style={{ marginBottom: 12 }}>
@@ -146,7 +154,7 @@ export const PrefaceSelectorModal: React.FC<Props> = ({
 
                   {isExpanded && (
                     <View style={styles.expandedList}>
-                      {filtered.map(p => (
+                      {sorted.map(p => (
                         <TouchableOpacity
                           key={p.id}
                           style={[styles.listItem, selectedId === p.id && styles.listItemActive]}

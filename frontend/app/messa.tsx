@@ -595,7 +595,7 @@ export default function MessaScreen() {
       return (
         <View key={keyPrefix}>
           {before ? renderPeTextNormal(before, `${keyPrefix}-pre`) : null}
-          {after ? <Text style={[styles.peDossologia, { color: "#F5F5F5" }]} selectable>{after}</Text> : null}
+          {after ? <Text style={styles.peDossologia} selectable>{after}</Text> : null}
         </View>
       );
     }
@@ -656,6 +656,18 @@ export default function MessaScreen() {
       );
     }
     if (section.type === "monologue") return <R key={idx} kind="celebrante">{section.celebrante}</R>;
+    if (section.type === "invitation_alternatives") {
+      return (
+        <View key={idx}>
+          {(section.options || []).map((text: string, i: number) => (
+            <View key={i}>
+              {i > 0 && <R kind="rubric">oppure</R>}
+              <R kind="celebrante">{text}</R>
+            </View>
+          ))}
+        </View>
+      );
+    }
     if (section.type === "prayer") {
       return (
         <View key={idx} style={styles.block}>
@@ -1017,7 +1029,7 @@ export default function MessaScreen() {
               onPress={() => setPenitentialForm(id)}
               testID={`btn-penitential-${id}`}
             >
-              <Text style={[styles.choiceBtnText, penitentialForm === id && { color: "#FFFFFF" }]}>Formula {id}</Text>
+              <Text style={[styles.choiceBtnText, penitentialForm === id && { color: colors.onPrimary }]}>Formula {id}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -1034,7 +1046,7 @@ export default function MessaScreen() {
                   onPress={() => setPenitentialSeason(key)}
                   testID={`btn-pen-season-${key}`}
                 >
-                  <Text style={[styles.choiceBtnText, penitentialSeason === key && { color: "#FFFFFF" }]}>{v.label}</Text>
+                  <Text style={[styles.choiceBtnText, penitentialSeason === key && { color: colors.onPrimary }]}>{v.label}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -1101,7 +1113,7 @@ export default function MessaScreen() {
               onPress={() => setSelectedCredoId(o.id)}
               testID={`btn-credo-${o.id}`}
             >
-              <Text style={[styles.choiceBtnText, selectedCredoId === o.id && { color: "#FFFFFF" }]}>
+              <Text style={[styles.choiceBtnText, selectedCredoId === o.id && { color: colors.onPrimary }]}>
                 {o.id === "niceno" ? "Niceno" : "Apostolico"}
               </Text>
             </TouchableOpacity>
@@ -1135,7 +1147,7 @@ export default function MessaScreen() {
                   onPress={() => setOrateFratresId(o.id)}
                   testID={`btn-orate-${o.id}`}
                 >
-                  <Text style={[styles.choiceBtnText, orateFratresId === o.id && { color: "#FFFFFF" }]}>{o.label}</Text>
+                  <Text style={[styles.choiceBtnText, orateFratresId === o.id && { color: colors.onPrimary }]}>{o.label}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -1171,7 +1183,7 @@ export default function MessaScreen() {
                   onPress={() => setPadreNostroIntroId(o.id)}
                   testID={`btn-pn-intro-${o.id}`}
                 >
-                  <Text style={[styles.choiceBtnText, padreNostroIntroId === o.id && { color: "#FFFFFF" }]}>Forma {o.id}</Text>
+                  <Text style={[styles.choiceBtnText, padreNostroIntroId === o.id && { color: colors.onPrimary }]}>Forma {o.id}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -1244,7 +1256,7 @@ export default function MessaScreen() {
                   testID={`btn-solemn-${b.id}`}
                   activeOpacity={0.7}
                 >
-                  <Text style={[styles.solemnChoiceText, solemnBlessingId === b.id && { color: "#FFFFFF" }]} numberOfLines={2}>
+                  <Text style={[styles.solemnChoiceText, solemnBlessingId === b.id && { color: colors.onPrimary }]} numberOfLines={2}>
                     {b.num ? `${b.num}. ` : ""}{b.title}
                   </Text>
                 </TouchableOpacity>
@@ -1268,7 +1280,7 @@ export default function MessaScreen() {
                   onPress={() => setBenedizioneId(o.id)}
                   testID={`btn-bened-${o.id}`}
                 >
-                  <Text style={[styles.choiceBtnText, benedizioneId === o.id && { color: "#FFFFFF" }]}>{o.label}</Text>
+                  <Text style={[styles.choiceBtnText, benedizioneId === o.id && { color: colors.onPrimary }]}>{o.label}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -1324,7 +1336,7 @@ export default function MessaScreen() {
                       onPress={() => setOrazionePopoloId(p.id)}
                       testID={`btn-orazione-popolo-${p.id}`}
                     >
-                      <Text style={[styles.numChoiceText, orazionePopoloId === p.id && { color: "#FFFFFF" }]}>
+                      <Text style={[styles.numChoiceText, orazionePopoloId === p.id && { color: colors.onPrimary }]}>
                         {p.num}
                       </Text>
                     </TouchableOpacity>
@@ -1365,7 +1377,7 @@ export default function MessaScreen() {
               onPress={() => setCongedoId(o.id)}
               testID={`btn-congedo-${o.id}`}
             >
-              <Text style={[styles.choiceBtnText, congedoId === o.id && { color: "#FFFFFF" }]}>
+              <Text style={[styles.choiceBtnText, congedoId === o.id && { color: colors.onPrimary }]}>
                 {o.label || o.id}
               </Text>
             </TouchableOpacity>
@@ -1386,7 +1398,7 @@ export default function MessaScreen() {
           accessibilityRole="button"
           accessibilityLabel="Scelte per la liturgia odierna completate, passa alla modalità lettura"
         >
-          <Ionicons name="checkmark-circle" size={scaledFont(36)} color="#FFFFFF" />
+          <Ionicons name="checkmark-circle" size={scaledFont(36)} color={colors.onPrimary} />
           <Text style={styles.celebrateNowBtnText}>
             Scelte per la liturgia odierna completate
           </Text>
@@ -1483,7 +1495,7 @@ export default function MessaScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Inizia la celebrazione"
               >
-                <Ionicons name="play-circle" size={scaledFont(40)} color="#FFFFFF" />
+                <Ionicons name="play-circle" size={scaledFont(40)} color={colors.onPrimary} />
                 <Text style={styles.startCelebrationBtnText}>Inizia la celebrazione</Text>
               </TouchableOpacity>
               <Text style={[styles.toggleLabel, { textAlign: "center", marginTop: 12, fontStyle: "italic", fontSize: Math.round(fontSize * 0.55) }]}>
@@ -1741,7 +1753,7 @@ export default function MessaScreen() {
                         onPress={() => setOrateFratresId(o.id)}
                         testID={`btn-orate-${o.id}`}
                       >
-                        <Text style={[styles.choiceBtnText, orateFratresId === o.id && { color: "#FFFFFF" }]}>{o.label}</Text>
+                        <Text style={[styles.choiceBtnText, orateFratresId === o.id && { color: colors.onPrimary }]}>{o.label}</Text>
                       </TouchableOpacity>
                     ))}
                   </View>
@@ -1893,12 +1905,12 @@ export default function MessaScreen() {
                           <Ionicons
                             name={peAutoScrollEnabled ? "play" : "pause"}
                             size={scaledFont(16)}
-                            color={peAutoScrollEnabled ? "#FFFFFF" : colors.textPrimary}
+                            color={peAutoScrollEnabled ? colors.onPrimary : colors.textPrimary}
                           />
                           <Text
                             style={[
                               styles.autoScrollBtnText,
-                              peAutoScrollEnabled && { color: "#FFFFFF" },
+                              peAutoScrollEnabled && { color: colors.onPrimary },
                             ]}
                           >
                             {peAutoScrollEnabled ? "Auto" : "Off"}
@@ -1921,7 +1933,7 @@ export default function MessaScreen() {
                                 <Text style={styles.peSelectorLabel}>{sel.label}</Text>
                                 <View style={styles.peSelectorValueRow}>
                                   <Text style={styles.peSelectorValue} numberOfLines={2}>{opt?.label || "—"}</Text>
-                                  <Ionicons name="chevron-down" size={scaledFont(14)} color="#FFB74D" />
+                                  <Ionicons name="chevron-down" size={scaledFont(14)} color={colors.accentPeSelectorLabel} />
                                 </View>
                               </TouchableOpacity>
                             );
@@ -1974,7 +1986,7 @@ export default function MessaScreen() {
                       <View style={styles.choiceRow}>
                         {acclamations.map(a => (
                           <TouchableOpacity key={a.id} style={[styles.choiceBtn, acclamationId === a.id && styles.choiceBtnActive]} onPress={() => setAcclamationId(a.id)} testID={`btn-acclamation-${a.id}`}>
-                            <Text style={[styles.choiceBtnText, acclamationId === a.id && { color: "#FFFFFF" }]}>Forma {a.id}</Text>
+                            <Text style={[styles.choiceBtnText, acclamationId === a.id && { color: colors.onPrimary }]}>Forma {a.id}</Text>
                           </TouchableOpacity>
                         ))}
                       </View>
@@ -2049,7 +2061,7 @@ export default function MessaScreen() {
                           onPress={() => setPadreNostroIntroId(o.id)}
                           testID={`btn-pn-intro-${o.id}`}
                         >
-                          <Text style={[styles.choiceBtnText, padreNostroIntroId === o.id && { color: "#FFFFFF" }]}>Forma {o.id}</Text>
+                          <Text style={[styles.choiceBtnText, padreNostroIntroId === o.id && { color: colors.onPrimary }]}>Forma {o.id}</Text>
                         </TouchableOpacity>
                       ))}
                     </View>
@@ -2442,10 +2454,10 @@ export default function MessaScreen() {
                           }}
                           testID={`pe-picker-option-${o.id}`}
                         >
-                          <Text style={[styles.peModalOptionText, isSel && { color: "#7B3F00", fontWeight: "800" }]}>
+                          <Text style={[styles.peModalOptionText, isSel && { color: colors.accentPeModalActiveText, fontWeight: "800" }]}>
                             {o.label}
                           </Text>
-                          {isSel ? <Ionicons name="checkmark" size={scaledFont(28)} color="#7B3F00" /> : null}
+                          {isSel ? <Ionicons name="checkmark" size={scaledFont(28)} color={colors.accentPeModalActiveText} /> : null}
                         </TouchableOpacity>
                       );
                     })}
@@ -2507,7 +2519,7 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string, isBold?:
   fontBtnText: {
     fontSize: Math.round(fontSize * 0.75),
     fontWeight: "800",
-    color: "#FFFFFF",
+    color: colors.onPrimary,
   },
   // Blocco saluto iniziale: dopo "A. E con il tuo spirito" lasciamo una
   // riga vuota di separazione tra le formule alternative.
@@ -2548,7 +2560,7 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string, isBold?:
   sectionTitle: {
     fontSize: Math.round(fontSize * 1.05),
     fontWeight: "800",
-    color: "#4DA8DA",      // Azzurro: titoli grandi delle parti della messa (es. "Atto Penitenziale", "Gloria", "Benedizione")
+    color: colors.accentSection,
     marginTop: 0,
     marginBottom: 6,
     lineHeight: Math.round(fontSize * 1.05),
@@ -2557,7 +2569,7 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string, isBold?:
   ritoTitle: {
     fontSize: Math.round(fontSize * 0.95),
     fontWeight: "800",
-    color: "#FFC107",      // Giallo/oro: macro-sezioni
+    color: colors.accentRito,
     marginTop: 0,
     marginBottom: 6,
     lineHeight: Math.round(fontSize * 0.95),
@@ -2568,7 +2580,7 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string, isBold?:
   antifonaTitle: {
     fontSize: Math.round(fontSize * 0.85),
     fontWeight: "800",
-    color: "#FFB74D",      // Ambra/oro chiaro: antifone e acclamazioni
+    color: colors.accentAntifona,
     marginTop: 0,
     marginBottom: 6,
     lineHeight: Math.round(fontSize * 0.85),
@@ -2577,7 +2589,7 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string, isBold?:
   readingTitle: {
     fontSize: Math.round(fontSize * 0.85),
     fontWeight: "800",
-    color: "#81C784",      // Verde chiaro: letture
+    color: colors.accentReading,
     marginTop: 0,
     marginBottom: 6,
     lineHeight: Math.round(fontSize * 0.85),
@@ -2586,7 +2598,7 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string, isBold?:
   orazioneTitle: {
     fontSize: Math.round(fontSize * 0.85),
     fontWeight: "800",
-    color: "#CE93D8",      // Lavanda: orazioni proprie del giorno
+    color: colors.accentOrazione,
     marginTop: 0,
     marginBottom: 6,
     lineHeight: Math.round(fontSize * 0.85),
@@ -2606,38 +2618,29 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string, isBold?:
   troparioTitle: {
     fontSize: Math.round(fontSize * 0.85),
     fontWeight: "800",
-    color: "#FFA726",
+    color: colors.accentTropario,
     marginTop: 8,
     marginBottom: 6,
     lineHeight: Math.round(fontSize * 1.0),
   },
-  // Titolo della Preghiera Eucaristica scelta (es. "Preghiera Eucaristica IV")
-  // Verde acceso, ridotto su richiesta utente (era 1.1× → 0.95× → 0.78× del testo).
   peTitle: {
     fontSize: Math.round(fontSize * 0.78),
     fontWeight: "800",
-    color: "#66BB6A",      // Verde liturgico acceso, ben distinguibile
+    color: colors.accentPe,
     marginTop: 0,
     marginBottom: 8,
     lineHeight: Math.round(fontSize * 0.95),
   },
-  // Titolo del prefazio scelto (es. "Prefazio Pasquale I - Il mistero pasquale").
-  // Stesso verde delle PE ma dimensione subtitle, per coerenza visiva con la
-  // sezione "Preghiera Eucaristica" successiva.
   prefaceTitle: {
     fontSize: Math.round(fontSize * 0.78),
     fontWeight: "800",
-    color: "#66BB6A",
+    color: colors.accentPe,
     marginTop: 0,
     marginBottom: 8,
     lineHeight: Math.round(fontSize * 0.95),
   },
-  // Parole della Consacrazione nelle PE: righe in MAIUSCOLO ("PRENDETE,
-  // E MANGIATENE TUTTI..." / "QUESTO È IL MIO CORPO..." / "PRENDETE, E
-  // BEVETENE TUTTI..." / "QUESTO È IL CALICE DEL MIO SANGUE..."). Azzurro
-  // brillante saturo per massima visibilità sull'OLED nero.
   peConsecration: {
-    color: "#29B6F6",
+    color: colors.accentPeConsecration,
     fontWeight: "800",
   },
   // Dossologia conclusiva ("PER CRISTO, CON CRISTO E IN CRISTO..."): stile
@@ -2735,7 +2738,7 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string, isBold?:
   celebrateNowBtnText: {
     fontSize: Math.round(fontSize * 0.7),
     fontWeight: "800",
-    color: "#FFFFFF",
+    color: colors.onPrimary,
     textAlign: "center",
     flexShrink: 1,
   },
@@ -2878,7 +2881,7 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string, isBold?:
   startCelebrationBtnText: {
     fontSize: Math.round(fontSize * 0.8),
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: colors.onPrimary,
   },
   choiceRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginVertical: 14 },
   choiceBtn: {
@@ -2928,19 +2931,19 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string, isBold?:
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderWidth: 2,
-    borderColor: "#FFA000",
+    borderColor: colors.accentAutoScrollBorder,
     borderRadius: 8,
     marginLeft: 12,
     backgroundColor: "transparent",
     minHeight: 50,
   },
   autoScrollBtnActive: {
-    backgroundColor: "#FFA000",
-    borderColor: "#FFA000",
+    backgroundColor: colors.accentAutoScrollBorder,
+    borderColor: colors.accentAutoScrollBorder,
   },
   autoScrollBtnText: {
     fontSize: Math.round(fontSize * 0.78),
-    color: "#FFB74D",
+    color: colors.accentAutoScrollText,
     fontWeight: "700",
   },
   // Riga flex per affiancare titolo + bottone "Scegli ..."
@@ -2967,12 +2970,12 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string, isBold?:
     borderRadius: 10,
     backgroundColor: "transparent",
     borderWidth: 1.5,
-    borderColor: "#FFA000",
+    borderColor: colors.accentPeSelectorBorder,
     minHeight: 70,
   },
   peSelectorLabel: {
     fontSize: Math.round(fontSize * 0.65),
-    color: "#FFB74D",
+    color: colors.accentPeSelectorLabel,
     fontWeight: "700",
     textTransform: "uppercase",
     letterSpacing: 0.6,
@@ -2985,7 +2988,7 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string, isBold?:
     gap: 6,
   },
   peSelectorValue: {
-    color: "#FFE0B2",
+    color: colors.accentPeSelectorValue,
     fontSize: Math.round(fontSize * 0.85),
     fontWeight: "600",
     flex: 1,
@@ -3002,7 +3005,7 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string, isBold?:
     borderRadius: 16,
     padding: 24,
     borderWidth: 3,
-    borderColor: "#FFA000",
+    borderColor: colors.accentPeModalBorder,
   },
   peModalTitle: {
     color: colors.textPrimary,
@@ -3021,18 +3024,18 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string, isBold?:
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  peModalOptionActive: { backgroundColor: "#FFF3CD" },
+  peModalOptionActive: { backgroundColor: colors.accentPeModalActiveBg },
   peModalOptionText: { color: colors.textPrimary, fontSize: Math.round(fontSize * 0.75), flex: 1, fontWeight: "600" },
   peModalClose: {
     alignItems: "center",
     paddingVertical: 16,
     marginTop: 10,
-    backgroundColor: "#FFA000",
+    backgroundColor: colors.accentPeModalBorder,
     borderRadius: 10,
     minHeight: 60,
     justifyContent: "center",
   },
-  peModalCloseText: { color: "#FFFFFF", fontWeight: "800", fontSize: Math.round(fontSize * 0.75) },
+  peModalCloseText: { color: colors.onPrimary, fontWeight: "800", fontSize: Math.round(fontSize * 0.75) },
   listItem: {
     padding: 22,
     borderWidth: 2,

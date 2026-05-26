@@ -1348,7 +1348,14 @@ function segmentsToHtml(
   const ff = fontName ? `'${fontName}', ` : "";
   const bg = colors?.background || "#000000";
   const textColor = colors?.textPrimary || "#FFFFFF";
+  const rubricColor = colors?.rubrics || "#E57373";
   const fs = Math.round(fontSize);
+  const accentSection = colors?.accentSection || "#4DA8DA";
+  const accentAntifona = colors?.accentAntifona || "#FFB74D";
+  const accentReading = colors?.accentReading || "#81C784";
+  const accentOrazione = colors?.accentOrazione || "#CE93D8";
+  const accentPe = colors?.accentPe || "#66BB6A";
+  const accentPeConsecration = colors?.accentPeConsecration || "#29B6F6";
 
   return `<!DOCTYPE html>
 <html><head>
@@ -1396,32 +1403,32 @@ ${fontHref ? `<link rel="preconnect" href="https://fonts.googleapis.com" crossor
   /* Tutti i font-size dei figli sono in 'em' (relativi al body.font-size).
      Così basta cambiare document.body.style.fontSize per scalare TUTTO
      dinamicamente senza dover rigenerare l'HTML. */
-  h2.section-title { font-size: 1.05em; font-weight: 800; color: #4DA8DA; margin: 16px 0 4px 0; line-height: 1.15; break-after: avoid-column; }
-  h3.antifona-title { font-size: 0.85em; font-weight: 800; color: #FFB74D; margin: 24px 0 4px 0; line-height: 1.1; break-after: avoid-column; }
-  h3.reading-title { font-size: 0.85em; font-weight: 800; color: #81C784; margin: 14px 0 4px 0; line-height: 1.1; break-after: avoid-column; }
-  h3.orazione-title { font-size: 0.85em; font-weight: 800; color: #CE93D8; margin: 14px 0 4px 0; line-height: 1.1; break-after: avoid-column; }
+  h2.section-title { font-size: 1.05em; font-weight: 800; color: ${accentSection}; margin: 16px 0 4px 0; line-height: 1.15; break-after: avoid-column; }
+  h3.antifona-title { font-size: 0.85em; font-weight: 800; color: ${accentAntifona}; margin: 24px 0 4px 0; line-height: 1.1; break-after: avoid-column; }
+  h3.reading-title { font-size: 0.85em; font-weight: 800; color: ${accentReading}; margin: 14px 0 4px 0; line-height: 1.1; break-after: avoid-column; }
+  h3.orazione-title { font-size: 0.85em; font-weight: 800; color: ${accentOrazione}; margin: 14px 0 4px 0; line-height: 1.1; break-after: avoid-column; }
   h3.subtitle { font-size: 0.85em; font-weight: 700; color: ${textColor}; margin: 12px 0 4px 0; line-height: 1.1; break-after: avoid-column; }
-  h3.pe-title { font-size: 0.78em; font-weight: 800; color: #66BB6A; margin: 12px 0 6px 0; line-height: 1.1; break-after: avoid-column; }
+  h3.pe-title { font-size: 0.78em; font-weight: 800; color: ${accentPe}; margin: 12px 0 6px 0; line-height: 1.1; break-after: avoid-column; }
   h2 + *, h3 + * { margin-top: 0 !important; }
   #book > *:first-child { margin-top: 0 !important; }
 
   p { margin: 4px 0 8px 0; }
-  p.rubric { color: #E57373; font-style: italic; font-size: 0.7em; line-height: 1.2; margin: 6px 0; }
+  p.rubric { color: ${rubricColor}; font-style: italic; font-size: 0.7em; line-height: 1.2; margin: 6px 0; }
   /* Riferimento biblico sotto Lettura/Vangelo: rosso (italico),
      stessa dimensione del body per migliore leggibilità. */
-  p.reading-ref { color: #E57373; font-style: italic; font-size: 1em; line-height: 1.4; margin: 4px 0 8px 0; }
+  p.reading-ref { color: ${rubricColor}; font-style: italic; font-size: 1em; line-height: 1.4; margin: 4px 0 8px 0; }
   p.celebrante { font-size: 1em; color: ${textColor}; margin: 4px 0 10px 0; }
   p.assemblea { font-size: 0.95em; color: ${textColor}; font-style: italic; margin: 4px 0 10px 0; }
   p.umili { font-size: 0.85em; color: ${textColor}; margin: 4px 0 10px 0; line-height: 1.55; }
   p.salmo { font-size: 1em; color: ${textColor}; line-height: 1.55; margin: 6px 0; }
-  span.salmo-r { color: #E57373; font-weight: 700; }
+  span.salmo-r { color: ${rubricColor}; font-weight: 700; }
   /* Preghiera dei Fedeli: R/. in rosso, riga vuota dopo (gestita da
      preghieraFedeliToHtml che inserisce un <br> aggiuntivo). */
   p.preghiera-fedeli { font-size: 1em; color: ${textColor}; line-height: 1.7; margin: 6px 0; }
-  span.resp-r { color: #E57373; font-weight: 700; }
+  span.resp-r { color: ${rubricColor}; font-weight: 700; }
   div.pe-text { font-size: 1em; color: ${textColor}; }
-  span.pe-consacration { color: #29B6F6; padding: 0 4px; }
-  div.pe-dossologia-label { font-size: 0.78em; font-weight: 800; color: #29B6F6; margin: 12px 0 0 0; line-height: 1.1; }
+  span.pe-consacration { color: ${accentPeConsecration}; padding: 0 4px; }
+  div.pe-dossologia-label { font-size: 0.78em; font-weight: 800; color: ${accentPeConsecration}; margin: 12px 0 0 0; line-height: 1.1; }
   div.pe-dossologia-label + * { margin-top: 0 !important; }
   div.pe-dossologia { font-size: 1em; color: ${textColor}; text-transform: uppercase; line-height: 1.5; margin: 0 0 12px 0; }
   p.pe-dossologia { text-transform: uppercase; line-height: 1.5; }
@@ -1679,6 +1686,14 @@ function buildSegments(args: BuildArgs): Segment[] {
     }
     if (s.type === "monologue") {
       push("celebrante", s.celebrante);
+      return;
+    }
+    if (s.type === "invitation_alternatives") {
+      const options = s.options || [];
+      for (let i = 0; i < options.length; i++) {
+        if (i > 0) push("rubric", "oppure");
+        push("celebrante", options[i]);
+      }
       return;
     }
     if (s.type === "prayer") {
@@ -2189,7 +2204,7 @@ const makeStyles = (
     fontBtnText: {
       fontSize: Math.round(fontSize * 0.75),  // testo più grande (era 0.6)
       fontWeight: "800",
-      color: "#FFFFFF",
+      color: colors.onPrimary,
     },
     pageArea: {
       flex: 1,
@@ -2227,7 +2242,7 @@ const makeStyles = (
     segSectionTitle: {
       fontSize: Math.round(fontSize * 1.05),
       fontWeight: "800",
-      color: "#4DA8DA",
+      color: colors.accentSection,
       marginTop: 16,
       marginBottom: 4,
       lineHeight: Math.round(fontSize * 1.25),
@@ -2235,21 +2250,21 @@ const makeStyles = (
     segAntifonaTitle: {
       fontSize: Math.round(fontSize * 0.85),
       fontWeight: "800",
-      color: "#FFB74D",
+      color: colors.accentAntifona,
       marginTop: 24,
       marginBottom: 4,
     },
     segReadingTitle: {
       fontSize: Math.round(fontSize * 0.85),
       fontWeight: "800",
-      color: "#81C784",
+      color: colors.accentReading,
       marginTop: 14,
       marginBottom: 4,
     },
     segOrazioneTitle: {
       fontSize: Math.round(fontSize * 0.85),
       fontWeight: "800",
-      color: "#CE93D8",
+      color: colors.accentOrazione,
       marginTop: 14,
       marginBottom: 4,
     },
@@ -2267,14 +2282,14 @@ const makeStyles = (
     segTroparioTitle: {
       fontSize: Math.round(fontSize * 0.85),
       fontWeight: "800",
-      color: "#FFA726",
+      color: colors.accentTropario,
       marginTop: 14,
       marginBottom: 4,
     },
     segPeTitle: {
       fontSize: Math.round(fontSize * 0.78),
       fontWeight: "800",
-      color: "#66BB6A",
+      color: colors.accentPe,
       marginTop: 12,
       marginBottom: 6,
     },
@@ -2288,14 +2303,14 @@ const makeStyles = (
     },
     segRubric: {
       fontSize: Math.round(fontSize * 0.7),
-      color: "#E57373",
+      color: colors.rubrics,
       fontStyle: "italic",
       lineHeight: Math.round(fontSize * 1.0),
       marginVertical: 6,
     },
     segReadingRef: {
       fontSize: fontSize,
-      color: "#E57373",
+      color: colors.rubrics,
       fontStyle: "italic",
       fontFamily,
       lineHeight: Math.round(fontSize * 1.4),
@@ -2338,7 +2353,7 @@ const makeStyles = (
     // azzurro brillante saturo #29B6F6 bold, allineato a /messa.
     // Usato inline da renderPeTextLines per le righe interamente in maiuscolo.
     segPeConsecration: {
-      color: "#29B6F6",
+      color: colors.accentPeConsecration,
       fontWeight: "800",
     },
     // Dossologia conclusiva ("PER CRISTO, CON CRISTO E IN CRISTO..."):
@@ -2356,7 +2371,7 @@ const makeStyles = (
     },
     // R/. marker rosso bold (regola globale Preghiera dei Fedeli + salmo)
     segRespMarker: {
-      color: "#E57373",
+      color: colors.rubrics,
       fontWeight: "700",
     },
     segSpacer: {
@@ -2379,11 +2394,11 @@ const makeStyles = (
       right: 0,
       bottom: 10,
       height: 3,
-      backgroundColor: "#2A2A2A", // grigio scuro elegante su sfondo nero
+      backgroundColor: colors.border,
     },
     progressFill: {
       height: 3,
-      backgroundColor: "#D4AF37", // oro liturgico, sobrio
+      backgroundColor: colors.primary,
     },
     // ----- Tipografia (stessi colori/taglie di /messa) -----
     // I titoli sezione e PE hanno marginTop per respiro visivo quando seguono
@@ -2392,7 +2407,7 @@ const makeStyles = (
     sectionTitle: {
       fontSize: Math.round(fontSize * 1.05),
       fontWeight: "800",
-      color: "#4DA8DA",
+      color: colors.accentSection,
       marginTop: 14,
       marginBottom: 8,
       lineHeight: Math.round(fontSize * 1.15),
@@ -2400,7 +2415,7 @@ const makeStyles = (
     antifonaTitle: {
       fontSize: Math.round(fontSize * 0.85),
       fontWeight: "800",
-      color: "#FFB74D",
+      color: colors.accentAntifona,
       marginTop: 10,
       marginBottom: 6,
       lineHeight: Math.round(fontSize * 0.95),
@@ -2408,7 +2423,7 @@ const makeStyles = (
     readingTitle: {
       fontSize: Math.round(fontSize * 0.85),
       fontWeight: "800",
-      color: "#81C784",
+      color: colors.accentReading,
       marginTop: 10,
       marginBottom: 6,
       lineHeight: Math.round(fontSize * 0.95),
@@ -2416,7 +2431,7 @@ const makeStyles = (
     orazioneTitle: {
       fontSize: Math.round(fontSize * 0.85),
       fontWeight: "800",
-      color: "#CE93D8",
+      color: colors.accentOrazione,
       marginTop: 10,
       marginBottom: 6,
       lineHeight: Math.round(fontSize * 0.95),
@@ -2432,13 +2447,13 @@ const makeStyles = (
     peTitle: {
       fontSize: Math.round(fontSize * 0.78),
       fontWeight: "800",
-      color: "#66BB6A",
+      color: colors.accentPe,
       marginTop: 6,
       marginBottom: 10,
       lineHeight: Math.round(fontSize * 0.95),
     },
     peConsecration: {
-      color: "#29B6F6",
+      color: colors.accentPeConsecration,
       fontWeight: "800",
     },
     peDossologia: {
@@ -2538,6 +2553,6 @@ const makeStyles = (
     primaryBtnText: {
       fontSize: Math.round(fontSize * 0.75),
       fontWeight: "700",
-      color: "#FFFFFF",
+      color: colors.onPrimary,
     },
   });
