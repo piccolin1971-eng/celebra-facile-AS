@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { FontFamilyId, getFontFamilyString } from "./fontFamily";
 
-type ThemeMode = "light" | "dark";
+type ThemeMode = "light" | "dark" | "parchment";
 type ReadingMode = "scroll" | "tap";
 
 interface SettingsState {
@@ -35,6 +35,7 @@ const getColors = (theme: ThemeMode, highContrast: boolean) => {
       // Sfondo NERO ASSOLUTO per risparmio energia su schermi OLED
       background: "#000000",
       surface: highContrast ? "#000000" : "#0A0A0A",
+      bgSecondary: "#1A1A1A",
       textPrimary: highContrast ? "#FFFFFF" : "#F5F5F5",
       textSecondary: highContrast ? "#E0E0E0" : "#CCCCCC",
       border: highContrast ? "#FFFFFF" : "#333333",
@@ -48,9 +49,28 @@ const getColors = (theme: ThemeMode, highContrast: boolean) => {
       liturgicalRose: "#F48FB1",
     };
   }
+  if (theme === "parchment") {
+    return {
+      background: "#FDF5E6", // OldLace / Pergamena
+      surface: "#FFF8DC",   // Cornsilk
+      bgSecondary: "#F5DEB3", // Wheat
+      textPrimary: "#000000", // Nero assoluto richiesto
+      textSecondary: "#2C2C2C",
+      border: "#D2B48C",    // Tan
+      rubrics: "#B71C1C",   // Rosso scuro
+      primary: "#8B4513",   // SaddleBrown (tonalità cuoio)
+      focus: "#CD853F",     // Peru
+      liturgicalGreen: "#1B5E20",
+      liturgicalRed: "#B71C1C",
+      liturgicalPurple: "#4A148C",
+      liturgicalWhite: "#B8860B", // DarkGoldenRod
+      liturgicalRose: "#AD1457",
+    };
+  }
   return {
     background: highContrast ? "#FFFFFF" : "#FDFBF7",
     surface: "#FFFFFF",
+    bgSecondary: "#F2F0E9",
     textPrimary: highContrast ? "#000000" : "#111111",
     textSecondary: highContrast ? "#000000" : "#333333",
     border: highContrast ? "#000000" : "#D7D3C8",
@@ -91,7 +111,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         } catch {}
         if (saved) {
           const s = JSON.parse(saved);
-          if (s.theme) setThemeState(s.theme);
+          if (s.theme === "light" || s.theme === "dark" || s.theme === "parchment") setThemeState(s.theme);
           if (s.fontSize) setFontSizeState(s.fontSize);
           if (typeof s.highContrast === "boolean") setHighContrastState(s.highContrast);
           if (s.readingMode === "tap" || s.readingMode === "scroll") setReadingModeState(s.readingMode);

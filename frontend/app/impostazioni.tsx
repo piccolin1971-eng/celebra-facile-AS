@@ -141,6 +141,15 @@ export default function Impostazioni() {
               <Text style={[styles.themeCardText, theme === "light" && { color: colors.primary }]}>Chiaro</Text>
             </TouchableOpacity>
             <TouchableOpacity
+              style={[styles.themeCard, theme === "parchment" && styles.themeCardActive]}
+              onPress={() => setTheme("parchment")}
+              testID="btn-theme-parchment"
+              accessibilityLabel="Tema pergamena"
+            >
+              <Ionicons name="document-text" size={scaledFont(28)} color={theme === "parchment" ? colors.primary : colors.textSecondary} />
+              <Text style={[styles.themeCardText, theme === "parchment" && { color: colors.primary }]}>Pergamena</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
               style={[styles.themeCard, theme === "dark" && styles.themeCardActive]}
               onPress={() => setTheme("dark")}
               testID="btn-theme-dark"

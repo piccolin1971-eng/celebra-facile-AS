@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Modal, Switch, Pressable, Platform, useWindowDimensions } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Modal, Switch, Pressable, Platform, useWindowDimensions, TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 import { useSettings } from "../src/SettingsContext";
 import { api, Liturgy, Preface, EucharisticPrayer, MysteryAcclamation, SolemnBlessing } from "../src/api";
+import { PrefaceSelectorModal } from "../src/components/PrefaceSelectorModal";
 import { getOrazionaleSections, getPrayerById, suggestPrayerForLiturgy, OrazionalePrayer } from "../src/orazionale";
 import { loadSession, loadSessionOrLatest, saveSession, cleanupOldSessions, MassSession } from "../src/massSession";
 import peFullData from "../src/data/eucharisticPrayersFull.json";
@@ -133,6 +134,7 @@ export default function MessaScreen() {
 
   const [showPrefaces, setShowPrefaces] = useState(false);
   const [expandedPrefaceSeason, setExpandedPrefaceSeason] = useState<string | null>(null);
+  const [prefaceSearch, setPrefaceSearch] = useState("");
   const [showPrayers, setShowPrayers] = useState(false);
   const [showOrazionale, setShowOrazionale] = useState(false);
 
@@ -733,12 +735,12 @@ export default function MessaScreen() {
   // Quando l'utente cambia il font size, il numero di pagine si aggiorna
   // automaticamente (ricalcolo nel render successivo).
   //
-  // Stima: usiamo lineHeight = fontSize * 1.55 (vedi styles.text)
+  // Stima: usiamo lineHeight = fontSize * 1.6 (nuova spaziatura dinamica)
   // larghezza utile del testo = screenWidth - padding (32 outer + 32 partBox)
   // larghezza media di un carattere = fontSize * 0.52 (sans-serif italiano)
   const HEADER_FOOTER_OVERHEAD = 130; // top header (~36) + tap nav footer (~60) + page title (~24) + padding
   const TEXT_HORIZONTAL_PADDING = 32;  // 16 outer (content padding ridotto)
-  const lineHeightPx = Math.max(20, Math.round(fontSize * 1.45));
+  const lineHeightPx = Math.max(20, Math.round(fontSize * 1.6));
   const usableHeightPx = Math.max(300, screenHeight - HEADER_FOOTER_OVERHEAD);
   const usableWidthPx = Math.max(280, screenWidth - TEXT_HORIZONTAL_PADDING);
   const linesPerPage = Math.max(4, Math.floor(usableHeightPx / lineHeightPx));
@@ -2308,82 +2310,19 @@ export default function MessaScreen() {
       })()}
 
       {/* Modal Prefazi */}
-      <Modal visible={showPrefaces} animationType="slide" onRequestClose={() => setShowPrefaces(false)}>
-        <SafeAreaView style={styles.container} testID="modal-prefaces">
-          <View style={styles.topBar}>
-            <TouchableOpacity style={styles.backBtn} onPress={() => setShowPrefaces(false)} testID="btn-close-prefaces">
-              <Ionicons name="close" size={scaledFont(36)} color={colors.textPrimary} />
-              <Text style={styles.backBtnText}>Chiudi</Text>
-            </TouchableOpacity>
-            <Text style={styles.title}>Scegli Prefazio (2020)</Text>
-            <View style={{ width: 100 }} />
-          </View>
-          <ScrollView contentContainerStyle={styles.content}>
-            {(() => {
-              const categories = [
-                { key: 'suggeriti', label: '⭐ Suggeriti per oggi' },
-                { key: 'avvento', label: '🕒 Tempo di Avvento' },
-                { key: 'natale', label: '🕒 Tempo di Natale ed Epifania' },
-                { key: 'quaresima', label: '🕒 Tempo di Quaresima' },
-                { key: 'passione', label: '🕒 Passione e Settimana Santa' },
-                { key: 'pasqua', label: '🕒 Tempo di Pasqua e Pentecoste' },
-                { key: 'ordinario', label: '🕒 Domeniche del Tempo Ordinario' },
-                { key: 'comune', label: '⛪ Prefazi Comuni' },
-                { key: 'misteri', label: '✝️ Misteri del Signore' },
-                { key: 'bvm', label: '😇 Beata Vergine Maria' },
-                { key: 'santi', label: '😇 Santi e Angeli' },
-                { key: 'rituali', label: '⛪ Riti e Messe Rituali' },
-                { key: 'pe', label: '📜 Preghiere Eucaristiche' },
-                { key: 'defunti', label: '✟ Per i Defunti' },
-              ];
-
-              return categories.map(cat => {
-                let filtered = [];
-                if (cat.key === 'suggeriti') {
-                  filtered = prefaces.filter(p => (p.season === currentSeasonKey || p.category === currentSeasonKey));
-                  if (filtered.length === 0) return null;
-                } else {
-                  filtered = prefaces.filter(p => (p.season === cat.key || p.category === cat.key));
-                }
-
-                if (filtered.length === 0) return null;
-
-                const isExpanded = expandedPrefaceSeason === cat.key;
-
-                return (
-                  <View key={cat.key} style={{ marginBottom: 12 }}>
-                    <TouchableOpacity
-                      style={[styles.sectionHeader, isExpanded && { borderBottomWidth: 0, borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }]}
-                      onPress={() => setExpandedPrefaceSeason(isExpanded ? null : cat.key)}
-                    >
-                      <Text style={styles.sectionTitle}>{cat.label}</Text>
-                      <Ionicons
-                        name={isExpanded ? "chevron-up" : "chevron-down"}
-                        size={24}
-                        color={colors.textPrimary}
-                      />
-                    </TouchableOpacity>
-
-                    {isExpanded && (
-                      <View style={{ backgroundColor: colors.bgSecondary, borderBottomLeftRadius: 12, borderBottomRightRadius: 12, overflow: 'hidden' }}>
-                        {filtered.map(p => (
-                          <TouchableOpacity
-                            key={p.id}
-                            style={[styles.listItem, selectedPrefaceId === p.id && styles.listItemActive]}
-                            onPress={() => { setSelectedPrefaceId(p.id); setShowPrefaces(false); }}
-                          >
-                            <Text style={styles.listItemText}>{p.title}</Text>
-                          </TouchableOpacity>
-                        ))}
-                      </View>
-                    )}
-                  </View>
-                );
-              });
-            })()}
-          </ScrollView>
-        </SafeAreaView>
-      </Modal>
+      <PrefaceSelectorModal
+        visible={showPrefaces}
+        onClose={() => setShowPrefaces(false)}
+        prefaces={prefaces}
+        selectedId={selectedPrefaceId}
+        onSelect={setSelectedPrefaceId}
+        currentSeasonKey={currentSeasonKey}
+        colors={colors}
+        scaledFont={scaledFont}
+        fontFamily={fontFamily}
+        expandedSeason={expandedPrefaceSeason}
+        setExpandedSeason={setExpandedPrefaceSeason}
+      />
 
       {/* Modal Preghiere Eucaristiche */}
       <Modal visible={showPrayers} animationType="slide" onRequestClose={() => setShowPrayers(false)}>
@@ -2706,7 +2645,7 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string) => Style
   // su richiesta utente: il bold rendeva il testo troppo pesante a video).
   peDossologia: {
     fontSize: fontSize,
-    lineHeight: fontSize * 1.45,
+    lineHeight: fontSize * 1.6,
     color: colors.textPrimary,
     fontWeight: "400",
     fontFamily,
@@ -2724,7 +2663,7 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string) => Style
   },
   text: {
     fontSize: fontSize,
-    lineHeight: fontSize * 1.45,
+    lineHeight: fontSize * 1.6,
     color: colors.textPrimary,
     fontFamily,
     marginTop: 0,
@@ -2756,7 +2695,7 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string) => Style
     color: colors.textPrimary,
     fontFamily,
     marginVertical: 6,
-    lineHeight: fontSize * 1.5,
+    lineHeight: fontSize * 1.6,
   },
   // Risposte dell'assemblea (A. ...): corsivo, -1pt rispetto al base, NON bold.
   // Pensato per dare meno "peso" visivo alle risposte rispetto alle parti del
@@ -2768,7 +2707,7 @@ const makeStyles = (colors: any, fontSize: number, fontFamily?: string) => Style
     color: colors.textPrimary,
     fontFamily,
     marginVertical: 6,
-    lineHeight: fontSize * 1.5,
+    lineHeight: fontSize * 1.6,
   },
   block: { marginVertical: 10 },
   // Pulsante grande sulla pagina del Congedo: passa alla modalità "Celebra la
