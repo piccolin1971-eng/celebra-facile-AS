@@ -1,6 +1,7 @@
 import { fetchCeiUrl } from "../liturgyScraper";
 import { DEFAULT_INVIT_ANT } from "./bundled";
 import { hourHeadMeta } from "./dayHead";
+import { extractHoursBanner } from "./html";
 import { extractInvitatoryAntiphon, parseHourHtml, splitOraMediaHtml } from "./parseHour";
 import { loadDayHours, saveDayHours } from "./cache";
 import { ceiHourSlug } from "./titles";
@@ -20,6 +21,18 @@ export function hoursUrl(dateISO: string, slug: string): string {
 }
 
 async function fetchHourHtml(dateISO: string, slug: string): Promise<string | null> {
+  if (typeof document !== "undefined") {
+    try {
+      const local = `/cei-ore?data-liturgia=${ceiDateParam(dateISO)}&ora=${encodeURIComponent(slug)}`;
+      const res = await fetch(local);
+      if (res.ok) {
+        const txt = await res.text();
+        if (txt.length > 500) return txt;
+      }
+    } catch {
+      /* fallback CORS */
+    }
+  }
   return fetchCeiUrl(hoursUrl(dateISO, slug));
 }
 
@@ -65,6 +78,7 @@ export async function mergeDayHours(
 type HourPatch = Partial<Record<OreHourId | MediaId, ParsedHour>> & {
   invitAnt?: string;
   invitFetched?: boolean;
+  hoursBanner?: string;
 };
 
 async function ingestHtml(
@@ -75,9 +89,10 @@ async function ingestHtml(
     if (hour === "invitatorio") return {};
     return { [hour]: { hour, blocks: [], error: "Pagina CEI non disponibile." } };
   }
+  const hoursBanner = extractHoursBanner(html);
   if (hour === "invitatorio") {
     const ant = extractInvitatoryAntiphon(html);
-    return { invitAnt: ant || DEFAULT_INVIT_ANT, invitFetched: true };
+    return { invitAnt: ant || DEFAULT_INVIT_ANT, invitFetched: true, hoursBanner };
   }
   if (hour === "ora-media") {
     const parts = splitOraMediaHtml(html);
@@ -85,9 +100,9 @@ async function ingestHtml(
     (["terza", "sesta", "nona"] as MediaId[]).forEach((id) => {
       out[id] = parseHourHtml(parts[id], id);
     });
-    return out;
+    return { ...out, hoursBanner };
   }
-  return { [hour]: parseHourHtml(html, hour) };
+  return { [hour]: parseHourHtml(html, hour), hoursBanner };
 }
 
 const FETCH_HOURS: OreHourId[] = [
@@ -108,10 +123,12 @@ export async function fetchDayHours(dateISO: string, ceiTitle = ""): Promise<Day
   let hours: DayHoursCache["hours"] = {};
   let invitAnt: string | undefined;
   let invitFetched = false;
+  let hoursBanner = "";
   for (const p of results) {
     if (p.invitFetched) invitFetched = true;
     if (p.invitAnt) invitAnt = p.invitAnt;
-    const { invitAnt: _a, invitFetched: _f, ...rest } = p;
+    if (p.hoursBanner && !hoursBanner) hoursBanner = p.hoursBanner;
+    const { invitAnt: _a, invitFetched: _f, hoursBanner: _b, ...rest } = p;
     hours = { ...hours, ...rest };
   }
   return mergeDayHours(
@@ -120,7 +137,7 @@ export async function fetchDayHours(dateISO: string, ceiTitle = ""): Promise<Day
       hours,
       ...(invitAnt !== undefined ? { invitAnt } : {}),
       invitFetched,
-      meta: hourHeadMeta(dateISO, ceiTitle),
+      meta: hourHeadMeta(dateISO, ceiTitle, hoursBanner),
     },
     ceiTitle,
   );
@@ -142,14 +159,14 @@ export async function ensureHour(
   const date = parseLocalDate(dateISO);
   const html = await fetchHourHtml(dateISO, ceiHourSlug(hour, date));
   const patch = await ingestHtml(hour, html);
-  const { invitAnt, invitFetched, ...hourMap } = patch;
+  const { invitAnt, invitFetched, hoursBanner, ...hourMap } = patch;
   return mergeDayHours(
     dateISO,
     {
       hours: hourMap,
       ...(invitAnt !== undefined ? { invitAnt } : {}),
       ...(invitFetched ? { invitFetched: true } : {}),
-      meta: existing?.meta || hourHeadMeta(dateISO, ceiTitle),
+      meta: hourHeadMeta(dateISO, ceiTitle, hoursBanner || ""),
     },
     ceiTitle,
   );

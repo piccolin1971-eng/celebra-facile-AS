@@ -3,19 +3,24 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from "
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSettings } from "../src/SettingsContext";
 import { HomeCircleButton } from "../src/components/HomeCircleButton";
 import { BrandScreenTitle } from "../src/components/BrandScreenTitle";
 import { italianDateLabel, parseLocalDate, localDateStr } from "../src/dateUtils";
 import { loadDayHours } from "../src/ore/cache";
 import { hourHeadMeta } from "../src/ore/dayHead";
+import { ensureHour } from "../src/ore/scraper";
 import { INDEX_HOURS, hourTitle } from "../src/ore/titles";
-import { ACTION_MIN_HEIGHT, ACTION_RADIUS, ACTION_TITLE_WEIGHT } from "../src/uiActionTokens";
+import { ACTION_MIN_HEIGHT, ACTION_TITLE_WEIGHT } from "../src/uiActionTokens";
 import { SECTION_TOP_BAR_PAD_H } from "../src/components/SectionScreenTopBar";
 import type { OreHourId } from "../src/ore/types";
 
 const webClickable = Platform.OS === "web" ? ({ cursor: "pointer" } as const) : undefined;
 const ORE_BLUE = "#4DA8DA";
+const ORE_BLUE_ALT = "#B8E6FA";
+const GOLD = "#E0B429";
+const LAST_KEY = "ore_last_hour";
 
 export default function OreIndex() {
   const router = useRouter();
@@ -28,16 +33,25 @@ export default function OreIndex() {
   const date = parseLocalDate(dateISO);
   const [seasonLine, setSeasonLine] = useState("");
   const [psalterLine, setPsalterLine] = useState("");
+  const [colorHex, setColorHex] = useState("#1b5e20");
+  const [lastHour, setLastHour] = useState<string>("");
 
   useFocusEffect(
     useCallback(() => {
       let live = true;
       (async () => {
         const cached = await loadDayHours(dateISO);
-        const meta = cached?.meta || hourHeadMeta(dateISO);
+        let meta = cached?.meta || hourHeadMeta(dateISO);
+        if (!meta.psalterLine) {
+          const next = await ensureHour(dateISO, "invitatorio");
+          meta = next.meta;
+        }
+        const last = (await AsyncStorage.getItem(LAST_KEY)) || "";
         if (!live) return;
         setSeasonLine(meta.seasonLine);
         setPsalterLine(meta.psalterLine);
+        setColorHex(meta.colorHex || "#1b5e20");
+        setLastHour(last);
       })();
       return () => {
         live = false;
@@ -47,6 +61,8 @@ export default function OreIndex() {
 
   const styles = makeStyles(colors, fontSize);
   const openHour = (hour: OreHourId) => {
+    void AsyncStorage.setItem(LAST_KEY, hour);
+    setLastHour(hour);
     router.push({ pathname: "/ore-leggi", params: { date: dateISO, hour } } as any);
   };
 
@@ -76,25 +92,35 @@ export default function OreIndex() {
       </View>
 
       <ScrollView contentContainerStyle={styles.body}>
-        <View style={styles.banner}>
-          <Text style={styles.bannerDate}>{italianDateLabel(date)}</Text>
-          {seasonLine ? <Text style={styles.bannerSub}>{seasonLine}</Text> : null}
-          {psalterLine ? <Text style={styles.bannerSub}>{psalterLine}</Text> : null}
+        <View style={[styles.banner, { borderColor: colorHex }]}>
+          <View style={[styles.bannerPill, { backgroundColor: colorHex }]} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.bannerDate}>{italianDateLabel(date)}</Text>
+            {seasonLine ? <Text style={styles.bannerSub}>{seasonLine}</Text> : null}
+            {psalterLine ? <Text style={styles.bannerSub}>{psalterLine}</Text> : null}
+          </View>
         </View>
 
-        {INDEX_HOURS.map((hour) => (
-          <TouchableOpacity
-            key={hour}
-            style={styles.item}
-            onPress={() => openHour(hour)}
-            testID={`btn-ore-${hour}`}
-            accessibilityRole="button"
-            accessibilityLabel={hourTitle(hour, date)}
-            {...webClickable}
-          >
-            <Text style={styles.itemLab}>{hourTitle(hour, date)}</Text>
-          </TouchableOpacity>
-        ))}
+        {INDEX_HOURS.map((hour, idx) => {
+          const last = lastHour === hour;
+          return (
+            <TouchableOpacity
+              key={hour}
+              style={[
+                styles.item,
+                idx % 2 === 1 && styles.itemAlt,
+                last && styles.itemLast,
+              ]}
+              onPress={() => openHour(hour)}
+              testID={`btn-ore-${hour}`}
+              accessibilityRole="button"
+              accessibilityLabel={hourTitle(hour, date)}
+              {...webClickable}
+            >
+              <Text style={[styles.itemLab, last && styles.itemLabLast]}>{hourTitle(hour, date)}</Text>
+            </TouchableOpacity>
+          );
+        })}
       </ScrollView>
     </SafeAreaView>
   );
@@ -123,42 +149,61 @@ const makeStyles = (colors: any, fontSize: number) =>
       justifyContent: "center",
       flexShrink: 0,
     },
-    body: { padding: 16, gap: 10, paddingBottom: 40 },
+    body: { padding: 16, gap: 12, paddingBottom: 40 },
     banner: {
-      backgroundColor: colors.surface,
+      flexDirection: "row",
+      alignItems: "stretch",
+      gap: 10,
+      backgroundColor: "#000",
       borderRadius: 12,
-      padding: 14,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
       marginBottom: 8,
-      borderWidth: 1,
-      borderColor: colors.border,
+      borderWidth: 3,
+    },
+    bannerPill: {
+      width: 8,
+      borderRadius: 99,
     },
     bannerDate: {
-      color: colors.textPrimary,
+      color: "#fff",
       fontWeight: "800",
       fontSize: Math.round(fontSize * 0.78),
     },
     bannerSub: {
-      color: colors.textSecondary,
+      color: "#fff",
       fontWeight: "700",
       marginTop: 4,
       fontSize: Math.round(fontSize * 0.62),
     },
     item: {
       minHeight: ACTION_MIN_HEIGHT,
-      borderRadius: ACTION_RADIUS,
-      borderWidth: 3,
+      borderRadius: 14,
+      borderWidth: 5,
       borderColor: ORE_BLUE,
-      alignItems: "center",
+      alignItems: "flex-start",
       justifyContent: "center",
-      backgroundColor: "transparent",
-      paddingHorizontal: 12,
+      backgroundColor: "#000",
+      paddingHorizontal: 14,
+      paddingVertical: 15,
+    },
+    itemAlt: {
+      borderColor: ORE_BLUE_ALT,
+    },
+    itemLast: {
+      borderWidth: 6,
+      borderColor: GOLD,
+      backgroundColor: "#121200",
     },
     itemLab: {
-      color: ORE_BLUE,
+      color: "#fff",
       fontWeight: ACTION_TITLE_WEIGHT,
-      fontSize: Math.round(fontSize * 1.0),
-      letterSpacing: Math.round(fontSize * 0.08),
-      fontVariant: ["small-caps"],
-      textAlign: "center",
+      fontSize: Math.round(fontSize * 1.05),
+      letterSpacing: 1.2,
+      textTransform: "uppercase",
+      textAlign: "left",
+    },
+    itemLabLast: {
+      color: GOLD,
     },
   });

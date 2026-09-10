@@ -355,20 +355,19 @@ export default function OreLeggi() {
             fontSize={fontSize}
             lineHeight={lineHeight}
             textColor={colors.textPrimary}
-            rubricColor={colors.textSecondary}
             afterFirstAnt={
               hour === "invitatorio" ? (
-                <View style={styles.chips} accessibilityRole="tablist">
+                <View style={styles.invNums} accessibilityRole="tablist">
                   {INVIT_PSALM_IDS.map((id) => (
                     <TouchableOpacity
                       key={id}
                       onPress={() => changePsalm(id)}
-                      style={[styles.chip, psalmId === id && styles.chipOn]}
+                      style={[styles.invChip, psalmId === id && styles.invChipOn]}
                       accessibilityRole="tab"
                       accessibilityState={{ selected: psalmId === id }}
                       {...webClickable}
                     >
-                      <Text style={[styles.chipLab, psalmId === id && styles.chipLabOn]}>{id}</Text>
+                      <Text style={[styles.invChipLab, psalmId === id && styles.invChipLabOn]}>{id}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -431,6 +430,33 @@ const makeStyles = (colors: any, fontSize: number) =>
       paddingVertical: 8,
       paddingHorizontal: 12,
     },
+    invNums: {
+      flexDirection: "row",
+      justifyContent: "center",
+      gap: 13,
+      marginTop: 8,
+      marginBottom: 14,
+    },
+    invChip: {
+      width: 60,
+      height: 52,
+      borderRadius: 10,
+      borderWidth: 2,
+      borderColor: ORE_BLUE,
+      backgroundColor: "#000",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    invChipOn: {
+      borderWidth: 3,
+      borderColor: GOLD,
+    },
+    invChipLab: {
+      color: "#fff",
+      fontWeight: "400",
+      fontSize: Math.round(fontSize * 1.05),
+    },
+    invChipLabOn: { color: "#fff" },
     chip: {
       borderWidth: 2,
       borderColor: colors.border,

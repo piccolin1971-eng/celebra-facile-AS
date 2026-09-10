@@ -7,12 +7,38 @@ export function decodeHtmlEntities(s: string): string {
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
     .replace(/&#39;|&apos;/g, "'")
-    .replace(/&laquo;/g, "«")
-    .replace(/&raquo;/g, "»")
-    .replace(/&rsquo;|&apos;/g, "’")
-    .replace(/&lsquo;/g, "‘")
-    .replace(/&ndash;/g, "–")
-    .replace(/&mdash;/g, "—")
+    .replace(/&laquo;/gi, "«")
+    .replace(/&raquo;/gi, "»")
+    .replace(/&rsquo;/gi, "’")
+    .replace(/&lsquo;/gi, "‘")
+    .replace(/&ldquo;/gi, "“")
+    .replace(/&rdquo;/gi, "”")
+    .replace(/&ndash;/gi, "–")
+    .replace(/&mdash;/gi, "—")
+    .replace(/&dagger;/gi, "†")
+    .replace(/&Dagger;/g, "‡")
+    .replace(/&hellip;/gi, "…")
+    .replace(/&agrave;/gi, "à")
+    .replace(/&aacute;/gi, "á")
+    .replace(/&acirc;/gi, "â")
+    .replace(/&egrave;/gi, "è")
+    .replace(/&eacute;/gi, "é")
+    .replace(/&ecirc;/gi, "ê")
+    .replace(/&igrave;/gi, "ì")
+    .replace(/&iacute;/gi, "í")
+    .replace(/&icirc;/gi, "î")
+    .replace(/&ograve;/gi, "ò")
+    .replace(/&oacute;/gi, "ó")
+    .replace(/&ocirc;/gi, "ô")
+    .replace(/&ugrave;/gi, "ù")
+    .replace(/&uacute;/gi, "ú")
+    .replace(/&ucirc;/gi, "û")
+    .replace(/&uuml;/gi, "ü")
+    .replace(/&ccedil;/gi, "ç")
+    .replace(/&aelig;/gi, "æ")
+    .replace(/&AElig;/g, "Æ")
+    .replace(/&oelig;/gi, "œ")
+    .replace(/&OElig;/g, "Œ")
     .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
     .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCharCode(parseInt(n, 16)));
 }
@@ -30,6 +56,10 @@ export function stripTags(html: string): string {
 
 export function hasClass(cls: string, name: string): boolean {
   return cls.split(/\s+/).includes(name);
+}
+
+export function hasClassPrefix(cls: string, prefix: string): boolean {
+  return cls.split(/\s+/).some((c) => c === prefix || c.startsWith(`${prefix}`));
 }
 
 export type HtmlNode =
@@ -142,13 +172,74 @@ export function hymnLineSplit(htmlOrText: string): string[] {
     .filter(Boolean);
 }
 
+const JUNK_CLASS =
+  /share|social|facebook|twitter|widget|breadcrumb|fontsize|sidebar|navbar|cookie|comment|related|footer|header-share|cci_get_social/i;
+const JUNK_TAG = /^(script|style|nav|footer|form|iframe|svg|noscript)$/i;
+
+export function isJunkNode(n: HtmlNode): boolean {
+  if (n.kind !== "el") return false;
+  if (JUNK_TAG.test(n.tag)) return true;
+  if (JUNK_CLASS.test(n.cls)) return true;
+  return false;
+}
+
+export function isLiturgyClass(cls: string): boolean {
+  return cls.split(/\s+/).some((c) => c.startsWith("lo_"));
+}
+
+export function extractHoursBanner(html: string): string {
+  const m = html.match(
+    /<div[^>]*class="[^"]*cci-opere-giorni-liturgia[^"]*"[^>]*>([\s\S]*?)<\/div>/i,
+  );
+  if (!m) return "";
+  return stripTags(m[1]).replace(/\s+/g, " ").trim();
+}
+
+/** Solo il corpo liturgico CEI, senza share Facebook / sidebar. */
 export function liturgicalFragment(html: string): string {
+  const openRe = /<div[^>]*class="[^"]*cci-liturgia-ore(?![-\w])[^"]*"[^>]*>/i;
+  const open = html.match(openRe);
+  if (open && open.index != null) {
+    const el = extractMatchingElement(html, open.index);
+    if (el?.inner && el.inner.length > 80) {
+      return cutChrome(el.inner);
+    }
+  }
   const first = html.search(/<div[^>]*class="[^"]*lo_(titolo|versetto|antifona|sottotitolo)/i);
   const start = first >= 0 ? first : 0;
-  let cut = html.slice(start);
+  return cutChrome(html.slice(start));
+}
+
+function cutChrome(html: string): string {
+  let cut = html;
   const end = cut.search(
-    /<footer\b|id="footer"|class="[^"]*(comments|related|wp-block-query|site-footer)/i,
+    /class="[^"]*(share-container|cci_get_social_share|comments|related|wp-block-query|site-footer|cci-sidebar)|<footer\b|id="footer"/i,
   );
-  if (end > 400) cut = cut.slice(0, end);
+  if (end > 200) cut = cut.slice(0, end);
   return cut;
+}
+
+/** Linearizza wrapper HTML: restano nodi lo_* e testo liturgico. */
+export function flattenLiturgyNodes(html: string): HtmlNode[] {
+  const out: HtmlNode[] = [];
+  const walk = (nodes: HtmlNode[]) => {
+    for (const n of nodes) {
+      if (n.kind === "br") {
+        out.push(n);
+        continue;
+      }
+      if (n.kind === "text") {
+        if (n.text.replace(/\s+/g, " ").trim()) out.push(n);
+        continue;
+      }
+      if (isJunkNode(n)) continue;
+      if (isLiturgyClass(n.cls)) {
+        out.push(n);
+        continue;
+      }
+      walk(topLevelNodes(n.inner));
+    }
+  };
+  walk(topLevelNodes(html));
+  return out;
 }

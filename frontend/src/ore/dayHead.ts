@@ -1,6 +1,6 @@
 import { getLiturgicalSeason } from "../liturgicalDates";
 import { italianDateLabel, parseLocalDate } from "../dateUtils";
-import { LITURGICAL_COLOR_HEX } from "../saintsCalendar";
+import { calculateLiturgicalColor, getSaintsForDate, LITURGICAL_COLOR_HEX } from "../saintsCalendar";
 import type { DayHoursMeta } from "./types";
 
 const ROMAN: Record<string, number> = {
@@ -42,39 +42,65 @@ const ROMAN: Record<string, number> = {
 
 const ROMAN_OUT = ["", "I", "II", "III", "IV"];
 
-function romanWeek(title: string): number | null {
-  const m = title.match(/\b(X{0,3}(?:IX|IV|V?I{0,3}))\s+settimana/i);
-  if (!m) return null;
-  const n = ROMAN[m[1].toUpperCase()];
+function romanOf(token: string): number | null {
+  const n = ROMAN[token.toUpperCase()];
   return n || null;
 }
 
-export function hourHeadMeta(dateISO: string, ceiTitle = ""): DayHoursMeta {
+function psalterFromText(text: string): string {
+  const m = text.match(/\b(I{1,3}|IV)\s+settimana del salterio/i);
+  if (m) return `${m[1].toUpperCase()} settimana del salterio`;
+  if (/liturgia propria/i.test(text)) return "Liturgia propria";
+  return "";
+}
+
+function ordinaryWeekFromText(text: string): { n: number; sunday: boolean } | null {
+  const m = text.match(
+    /\b(X{0,3}(?:IX|IV|V?I{0,3}))\s+(settimana|domenica) del tempo ordinario/i,
+  );
+  if (!m) return null;
+  const n = romanOf(m[1]);
+  if (!n) return null;
+  return { n, sunday: /^domenica$/i.test(m[2]) };
+}
+
+function feastNameFromBanner(title: string): string {
+  const parts = title.split(/\s+[-–—]\s+/).map((s) => s.trim()).filter(Boolean);
+  const head = parts[0] || title;
+  if (/settimana/i.test(head)) return "";
+  return head.replace(/\s+/g, " ").trim();
+}
+
+export function hourHeadMeta(dateISO: string, ceiTitle = "", hoursBanner = ""): DayHoursMeta {
   const d = parseLocalDate(dateISO);
   const dateLabel = italianDateLabel(d);
-  const title = ceiTitle.trim();
-  const week = romanWeek(title);
-  let seasonLine = title
-    .replace(/\s+/g, " ")
-    .replace(/tempo ordinario/gi, "T.O.")
-    .replace(/^.*?(\b[IVX]+\s+settimana\b.*)$/i, "$1");
-  if (week && /T\.O\.|ordinario/i.test(title)) {
-    seasonLine = `${Object.keys(ROMAN).find((k) => ROMAN[k] === week) || week} settimana T.O.`;
-  } else if (!title) {
-    const season = getLiturgicalSeason(d).season;
-    seasonLine = season === "Tempo Ordinario" ? "Tempo Ordinario" : season;
-  } else if (seasonLine.length > 80) {
-    seasonLine = title.slice(0, 80);
+  const title = (hoursBanner || ceiTitle).trim();
+  const feast = feastNameFromBanner(title);
+  const ranked = /memoria|festa|solennit/i.test(title);
+  const to = ordinaryWeekFromText(title);
+  let seasonLine = "";
+  let psalterLine = psalterFromText(title);
+
+  if (ranked && feast) {
+    seasonLine = feast;
+  } else if (to) {
+    const roman = Object.keys(ROMAN).find((k) => ROMAN[k] === to.n) || String(to.n);
+    seasonLine = to.sunday ? `${roman} Domenica T.O.` : `${roman} settimana T.O.`;
+  } else if (title) {
+    seasonLine = title.replace(/\s+/g, " ");
+    if (seasonLine.length > 80) seasonLine = title.slice(0, 80);
+  } else {
+    const seasonName = getLiturgicalSeason(d).season;
+    seasonLine = seasonName === "Tempo Ordinario" ? "Tempo Ordinario" : seasonName;
   }
-  let psalterLine = "";
-  if (week) {
-    const p = week % 4 === 0 ? 4 : week % 4;
+
+  if (!psalterLine && to) {
+    const p = to.n % 4 === 0 ? 4 : to.n % 4;
     psalterLine = `${ROMAN_OUT[p]} settimana del salterio`;
   }
+
   const season = getLiturgicalSeason(d);
-  const colorHex =
-    season.season === "Tempo Ordinario"
-      ? "#1b5e20"
-      : LITURGICAL_COLOR_HEX[season.color] || season.color_hex;
+  const color = calculateLiturgicalColor(season, getSaintsForDate(d), title || seasonLine, d);
+  const colorHex = color.color_hex || LITURGICAL_COLOR_HEX[season.color] || season.color_hex;
   return { dateLabel, seasonLine, psalterLine, colorHex };
 }
