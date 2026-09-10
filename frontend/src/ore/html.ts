@@ -197,6 +197,14 @@ export function extractHoursBanner(html: string): string {
 
 /** Solo il corpo liturgico CEI, senza share Facebook / sidebar. */
 export function liturgicalFragment(html: string): string {
+  const first = html.search(
+    /<div[^>]*class="[^"]*lo_(titolo|versetto|antifona|sottotitolo|rosso)[^"]*"[^>]*>/i,
+  );
+  const share = html.search(/<[^>]*class="[^"]*(share-container|cci_get_social_share)/i);
+  if (first >= 0) {
+    const end = share > first ? share : html.length;
+    return html.slice(first, end);
+  }
   const openRe = /<div[^>]*class="[^"]*cci-liturgia-ore(?![-\w])[^"]*"[^>]*>/i;
   const open = html.match(openRe);
   if (open && open.index != null) {
@@ -205,15 +213,13 @@ export function liturgicalFragment(html: string): string {
       return cutChrome(el.inner);
     }
   }
-  const first = html.search(/<div[^>]*class="[^"]*lo_(titolo|versetto|antifona|sottotitolo)/i);
-  const start = first >= 0 ? first : 0;
-  return cutChrome(html.slice(start));
+  return cutChrome(html);
 }
 
 function cutChrome(html: string): string {
   let cut = html;
   const end = cut.search(
-    /class="[^"]*(share-container|cci_get_social_share|comments|related|wp-block-query|site-footer|cci-sidebar)|<footer\b|id="footer"/i,
+    /<[^>]*class="[^"]*(share-container|cci_get_social_share|site-footer)|<footer\b|id="footer"/i,
   );
   if (end > 200) cut = cut.slice(0, end);
   return cut;

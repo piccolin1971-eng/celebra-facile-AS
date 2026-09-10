@@ -1,11 +1,13 @@
 import React from "react";
 import { Text, View, StyleSheet } from "react-native";
 import type { OreBlock, DayHoursMeta } from "./types";
+import { formatHourHeadLine } from "./dayHead";
 
 const GOLD_TITLE = "#c4b06a";
 const RUBRIC = "#E24B4B";
 const SUB = "#b7c4b0";
 const CITE = "#8a9688";
+const TONE_REFRAIN = "#c4b06a";
 const FONT = "LibreBaskerville_400Regular";
 const FONT_IT = "LibreBaskerville_400Regular_Italic";
 
@@ -28,28 +30,37 @@ export function OreHourHead({
   fontSize: number;
 }) {
   const pill = meta.colorHex || "#1b5e20";
-  const dateSize = Math.round(fontSize * 0.95);
-  const subSize = Math.round(fontSize * 0.82);
+  const dateSize = fontSize;
+  const subSize = fontSize;
+  const lh = Math.round(fontSize * 1.35);
   return (
     <View style={[headStyles.box, { borderColor: pill }]}>
       <View style={[headStyles.pill, { backgroundColor: pill }]} />
       <View style={headStyles.body}>
-        <Text style={[headStyles.date, { fontSize: dateSize, lineHeight: Math.round(dateSize * 1.28) }]}>
+        <Text style={[headStyles.line, { fontSize: dateSize, lineHeight: lh }]}>
           {meta.dateLabel}
         </Text>
         {meta.seasonLine ? (
-          <Text style={[headStyles.sub, { fontSize: subSize, lineHeight: Math.round(subSize * 1.28) }]}>
-            {meta.seasonLine}
+          <Text style={[headStyles.line, { fontSize: subSize, lineHeight: lh }]}>
+            {formatHourHeadLine(meta.seasonLine)}
           </Text>
         ) : null}
         {meta.psalterLine ? (
-          <Text style={[headStyles.sub, { fontSize: subSize, lineHeight: Math.round(subSize * 1.28) }]}>
-            {meta.psalterLine}
+          <Text style={[headStyles.line, { fontSize: subSize, lineHeight: lh }]}>
+            {formatHourHeadLine(meta.psalterLine)}
           </Text>
         ) : null}
       </View>
     </View>
   );
+}
+
+function stanzaHang(lines: string[], j: number): boolean {
+  const line = lines[j] || "";
+  if (/^—/.test(line)) return true;
+  if (j <= 0) return false;
+  if (/[*†]\s*$/.test(lines[j - 1])) return true;
+  return lines.length === 2;
 }
 
 function LitLine({
@@ -264,7 +275,7 @@ function renderBlock(
     return (
       <View key={i} style={{ marginVertical: em(0.85) }}>
         {b.lines.map((line, j) => (
-          <LitLine key={j} text={line} body={body} hang={j > 0} />
+          <LitLine key={j} text={line} body={body} hang={stanzaHang(b.lines, j)} />
         ))}
       </View>
     );
@@ -344,6 +355,42 @@ function renderBlock(
       </View>
     );
   }
+  if (b.k === "tone") {
+    return (
+      <View key={i} style={{ marginTop: em(0.85), marginBottom: em(0.55) }}>
+        <Text
+          style={{
+            fontFamily: FONT,
+            fontSize,
+            lineHeight,
+            color: textColor,
+          }}
+        >
+          {b.intro}
+        </Text>
+        {b.refrain ? (
+          <Text
+            style={{
+              fontFamily: FONT_IT,
+              fontSize,
+              lineHeight,
+              color: TONE_REFRAIN,
+              marginTop: em(0.4),
+            }}
+          >
+            {b.refrain}
+          </Text>
+        ) : null}
+      </View>
+    );
+  }
+  if (b.k === "prose") {
+    return (
+      <Text key={i} style={[body, { marginTop: em(0.85), marginBottom: em(0.45) }]}>
+        {b.text}
+      </Text>
+    );
+  }
   return (
     <Text key={i} style={[body, { marginTop: em(0.85), marginBottom: em(0.45) }]}>
       {b.text}
@@ -370,16 +417,12 @@ const headStyles = StyleSheet.create({
   body: {
     flex: 1,
     minWidth: 0,
-    gap: 4,
+    gap: 6,
+    justifyContent: "center",
   },
-  date: {
+  line: {
     color: "#fff",
-    fontWeight: "800",
-    fontFamily: undefined,
-  },
-  sub: {
-    color: "#fff",
-    fontWeight: "800",
-    fontFamily: undefined,
+    fontFamily: FONT,
+    fontWeight: "400",
   },
 });

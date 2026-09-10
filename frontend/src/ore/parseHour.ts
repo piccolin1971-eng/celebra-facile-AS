@@ -1,4 +1,5 @@
 import {
+  decodeHtmlEntities,
   liturgicalFragment,
   flattenLiturgyNodes,
   hasClass,
@@ -60,11 +61,36 @@ function extractRif(inner: string): { title: string; rif: string } {
   return { title, rif };
 }
 
-function stanzaLinesFromInner(inner: string): string[] {
-  return stripTags(inner.replace(/<br\s*\/?>/gi, "\n"))
-    .split(/\n/)
-    .map((s) => s.replace(/\s+/g, " ").trim())
-    .filter(Boolean);
+type VerseLine = { text: string; hang: boolean };
+
+function coalesceCeiVerseLines(inner: string): VerseLine[] {
+  const text = decodeHtmlEntities(inner.replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, "")).replace(
+    /\u00a0/g,
+    " ",
+  );
+  const rawLines = text.split(/\n/);
+  const merged: VerseLine[] = [];
+  for (const raw of rawLines) {
+    if (!raw.trim()) continue;
+    const indent = /^\s{2,}/.test(raw);
+    const t = raw.replace(/\s+/g, " ").trim();
+    if (!t) continue;
+    const prev = merged[merged.length - 1];
+    const joinWrap =
+      indent &&
+      prev &&
+      !/[*†]\s*$/.test(prev.text) &&
+      prev.text.length >= 40 &&
+      !/^—/.test(t) &&
+      !/^(V\.|R\.|Ant\.)/i.test(t);
+    if (joinWrap) {
+      prev.text = `${prev.text} ${t}`;
+      continue;
+    }
+    const hang = indent || /^—/.test(t) || !!(prev && /[*†]\s*$/.test(prev.text));
+    merged.push({ text: t, hang });
+  }
+  return mergeLoneRubricLines(merged);
 }
 
 function parseRubricLine(inner: string): OreBlock | null {
@@ -201,17 +227,196 @@ function serializeRosso(inner: string): string {
   });
 }
 
-function mergeLoneRubrics(lines: string[]): string[] {
-  const out: string[] = [];
+function mergeLoneRubricLines(lines: VerseLine[]): VerseLine[] {
+  const out: VerseLine[] = [];
   for (let i = 0; i < lines.length; i++) {
-    if (/^(V\.|R\.|\*|†|—)\s*$/.test(lines[i]) && lines[i + 1]) {
-      out.push(`${lines[i].trim()} ${lines[i + 1]}`);
+    if (/^(V\.|R\.|\*|†|—)\s*$/.test(lines[i].text) && lines[i + 1]) {
+      out.push({
+        text: `${lines[i].text.trim()} ${lines[i + 1].text}`,
+        hang: lines[i].hang || /^—/.test(lines[i].text),
+      });
       i += 1;
     } else {
       out.push(lines[i]);
     }
   }
   return out;
+}
+
+function blocksFromVerseLines(lines: VerseLine[]): OreBlock[] {
+  const texts = lines.map((l) => l.text).filter(Boolean);
+  if (!texts.length) return [];
+  if (texts.some((t) => /^—/.test(t))) return splitDashStanzas(texts);
+  if (
+    lines.length >= 4 &&
+    lines.length % 2 === 0 &&
+    lines.every((l, i) => l.hang === (i % 2 === 1))
+  ) {
+    const out: OreBlock[] = [];
+    for (let i = 0; i < lines.length; i += 2) {
+      out.push({ k: "stanza", lines: [lines[i].text, lines[i + 1].text] });
+    }
+    return out;
+  }
+  if (texts.length === 1 && !/[*†]/.test(texts[0]) && !/^(V\.|R\.)/.test(texts[0])) {
+    return [{ k: "prose", text: texts[0] }];
+  }
+  return [{ k: "stanza", lines: texts }];
+}
+
+function splitDashStanzas(lines: string[]): OreBlock[] {
+  const out: OreBlock[] = [];
+  let petition: string[] = [];
+  const flushPetition = () => {
+    if (!petition.length) return;
+    out.push({ k: "stanza", lines: petition });
+    petition = [];
+  };
+  for (const line of lines) {
+    if (/^—/.test(line)) {
+      const pet = petition.length ? petition.join(" ") : "";
+      out.push({ k: "stanza", lines: pet ? [pet, line] : [line] });
+      petition = [];
+    } else {
+      petition.push(line);
+    }
+  }
+  flushPetition();
+  return out;
+}
+
+function looksLikeToneIntro(text: string): boolean {
+  if (!text || /^—/.test(text) || /[*†]/.test(text)) return false;
+  return (
+    /:\s*$/.test(text) ||
+    /\bacclamiamo\b|\brivolgiamo\b|\bpreghiamo\b|\bdiciamo\b|\buniamo\b/i.test(text)
+  );
+}
+
+/** Se il CEI mette la risposta nello stesso versetto dopo i due punti. */
+function splitIntroRefrain(text: string): { intro: string; refrain: string } {
+  const m = text.match(/^(.*?:\s*)(.+)$/s);
+  if (!m) return { intro: text.trim(), refrain: "" };
+  const refrain = m[2].replace(/\s+/g, " ").trim();
+  if (refrain.length < 8 || refrain.length > 140 || /^—/.test(refrain)) {
+    return { intro: text.trim(), refrain: "" };
+  }
+  return { intro: m[1].replace(/\s+/g, " ").trim(), refrain };
+}
+
+function flattenPrecesLines(blocks: OreBlock[]): { lines: string[]; refrainHint: string } {
+  const lines: string[] = [];
+  let refrainHint = "";
+  for (const b of blocks) {
+    if (b.k === "sub") {
+      refrainHint = b.text;
+      continue;
+    }
+    if (b.k === "tone") {
+      if (b.intro) lines.push(b.intro);
+      if (b.refrain) refrainHint = refrainHint || b.refrain;
+      continue;
+    }
+    if (b.k === "prose") lines.push(b.text);
+    if (b.k === "stanza") lines.push(...b.lines);
+  }
+  return { lines, refrainHint };
+}
+
+function joinPrecesWrap(lines: string[]): string[] {
+  const out: string[] = [];
+  for (const raw of lines) {
+    const t = raw.replace(/\s+/g, " ").trim();
+    if (!t) continue;
+    if (/^—/.test(t)) {
+      out.push(/^—\s/.test(t) ? t : `— ${t.replace(/^—\s*/, "")}`);
+      continue;
+    }
+    const prev = out[out.length - 1];
+    const cont =
+      prev &&
+      !/^—/.test(prev) &&
+      !/:\s*$/.test(prev) &&
+      !/[.!?]$/.test(prev) &&
+      !/^(V\.|R\.|Ant\.)/i.test(t);
+    if (cont) out[out.length - 1] = `${prev} ${t}`;
+    else out.push(t);
+  }
+  return out;
+}
+
+function rebuildPreces(grabbed: OreBlock[]): OreBlock[] | null {
+  if (!grabbed.length) return null;
+  const { lines: rawLines, refrainHint } = flattenPrecesLines(grabbed);
+  const lines = joinPrecesWrap(rawLines);
+  if (!lines.length && !refrainHint) return null;
+  let introEnd = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (/:\s*$/.test(lines[i]) || /:\s+\S/.test(lines[i])) {
+      introEnd = i;
+      break;
+    }
+  }
+  if (introEnd < 0) {
+    if (!looksLikeToneIntro(lines.join(" "))) return null;
+    introEnd = lines.length - 1;
+  }
+  let intro = "";
+  let refrain = refrainHint;
+  let rest = lines.slice(introEnd + 1);
+  const last = lines[introEnd] || "";
+  const inline = last.match(/^(.*?:\s*)(.+)$/);
+  if (inline && inline[2].trim() && inline[2].trim().length <= 140 && !/^—/.test(inline[2].trim())) {
+    intro = [...lines.slice(0, introEnd), inline[1].trim()].join(" ");
+    if (!refrain) refrain = inline[2].trim();
+  } else {
+    intro = lines.slice(0, introEnd + 1).join(" ");
+    if (!refrain && rest[0] && rest[0].length <= 140 && !/^—/.test(rest[0]) && !/,$/.test(rest[0])) {
+      refrain = rest[0];
+      rest = rest.slice(1);
+    }
+  }
+  intro = intro.replace(/\s+/g, " ").trim();
+  refrain = (refrain || "").replace(/\s+/g, " ").trim();
+  if (!intro || intro.length < 8) return null;
+  const out: OreBlock[] = [{ k: "tone", intro, refrain }];
+  out.push(...splitDashStanzas(rest));
+  return out;
+}
+
+function applyTonePhrases(blocks: OreBlock[]): OreBlock[] {
+  const out: OreBlock[] = [];
+  for (let i = 0; i < blocks.length; i++) {
+    const b = blocks[i];
+    out.push(b);
+    if (b.k !== "title" || !/^(INVOCAZIONI|INTERCESSIONI)\b/i.test(b.text)) continue;
+    const grabbed: OreBlock[] = [];
+    let j = i + 1;
+    while (j < blocks.length) {
+      const n = blocks[j];
+      if (n.k === "title") break;
+      if (n.k === "marian") break;
+      if (n.k === "prose" && /^Padre nostro\.?$/i.test(n.text.trim())) break;
+      grabbed.push(n);
+      j += 1;
+    }
+    const rebuilt = rebuildPreces(grabbed);
+    if (rebuilt && rebuilt.some((x) => x.k === "tone" && x.intro.length > 8)) {
+      out.push(...rebuilt);
+      i = j - 1;
+    }
+  }
+  return out;
+}
+
+function dropOrphanStarLines(blocks: OreBlock[]): OreBlock[] {
+  return blocks
+    .map((b) => {
+      if (b.k !== "stanza") return b;
+      const lines = b.lines.filter((l) => !/^[*†]\s*$/.test(l));
+      return lines.length ? { k: "stanza" as const, lines } : null;
+    })
+    .filter((b): b is OreBlock => !!b);
 }
 
 function blocksFromVersetto(inner: string): OreBlock[] {
@@ -223,6 +428,12 @@ function blocksFromVersetto(inner: string): OreBlock[] {
       if (n.kind === "el" && hasClass(n.cls, "lo_versetto")) out.push(...blocksFromVersetto(n.inner));
       else if (n.kind === "el" && hasClass(n.cls, "lo_antifona")) {
         out.push({ k: "rubric", lab: normalizeLab(stripTags(n.inner)), text: "" });
+      } else if (n.kind === "el" && hasClassPrefix(n.cls, "lo_sottotitolo")) {
+        const t = stripTags(n.inner).replace(/\s+/g, " ").trim();
+        if (t) out.push({ k: "sub", text: t });
+      } else if (n.kind === "el" && /^(i|em)$/i.test(n.tag)) {
+        const t = stripTags(n.inner).replace(/\s+/g, " ").trim();
+        if (t) out.push({ k: "sub", text: t });
       } else if (n.kind === "text" && n.text.trim()) {
         const t = stripTags(n.text);
         if (t) out.push({ k: "prose", text: t });
@@ -233,9 +444,21 @@ function blocksFromVersetto(inner: string): OreBlock[] {
   if (/lo_antifona/.test(inner) && !/lo_rosso/.test(inner)) {
     return blocksFromAntiphonal(inner);
   }
-  const lines = mergeLoneRubrics(stanzaLinesFromInner(serializeRosso(inner)));
-  if (!lines.length) return [];
-  return [{ k: "stanza", lines }];
+  const subMatch = inner.match(/<div[^>]*class="[^"]*lo_sottotitolo[^"]*"[^>]*>([\s\S]*?)<\/div>/i);
+  const italics: string[] = [];
+  let withoutSub = subMatch
+    ? inner.replace(/<div[^>]*class="[^"]*lo_sottotitolo[^"]*"[^>]*>[\s\S]*?<\/div>/i, "")
+    : inner;
+  withoutSub = withoutSub.replace(/<(i|em)[^>]*>([\s\S]*?)<\/\1>/gi, (_m, _tag, body) => {
+    const t = stripTags(body).replace(/\s+/g, " ").trim();
+    if (t) italics.push(t);
+    return " ";
+  });
+  const lines = coalesceCeiVerseLines(serializeRosso(withoutSub));
+  const out = blocksFromVerseLines(lines);
+  const refrain = (subMatch ? stripTags(subMatch[1]).replace(/\s+/g, " ").trim() : "") || italics.join(" ");
+  if (refrain) out.push({ k: "sub", text: refrain });
+  return out;
 }
 
 export function parseHourHtml(html: string, hour: OreHourId | MediaId): ParsedHour {
@@ -358,10 +581,29 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId): ParsedHo
       }
     }
 
+    if (node.kind === "el" && /^(i|em)$/i.test(node.tag)) {
+      const t = stripTags(node.inner).replace(/\s+/g, " ").trim();
+      if (t) blocks.push({ k: "sub", text: t });
+      i += 1;
+      continue;
+    }
+
     if (hasClass(node.cls, "lo_rosso")) {
       const t = stripTags(node.inner).replace(/\s+/g, " ").trim();
       if (/^Oppure\b/i.test(t)) {
         blocks.push({ k: "omit", text: t.endsWith(":") ? t : `${t}:` });
+      } else if (
+        /^(ORAZIONE|INVOCAZIONI|INTERCESSIONI|LETTURA(?:\s+BREVE)?|RESPONSORIO(?:\s+BREVE)?|TE DEUM|PREGHIERA)\b/i.test(
+          t,
+        )
+      ) {
+        blocks.push({ k: "title", text: t.replace(/\s+/g, " ") });
+      } else if (t === "—" || t === "–" || t === "-") {
+        nodes.splice(i, 1, { kind: "text", text: "—" });
+        continue;
+      } else if (t === "*" || t === "†") {
+        nodes.splice(i, 1, { kind: "text", text: t });
+        continue;
       }
       i += 1;
       continue;
@@ -402,12 +644,17 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId): ParsedHo
     }
   }
 
-  const clean = blocks.filter((b) => {
-    if (b.k === "prose") return !isChromeText(b.text) && b.text.length > 1;
-    if (b.k === "rubric") return !!(b.lab || b.text);
-    if (b.k === "stanza") return b.lines.length > 0;
-    return true;
-  });
+  const clean = applyTonePhrases(
+    dropOrphanStarLines(
+      blocks.filter((b) => {
+        if (b.k === "prose") return !isChromeText(b.text) && b.text.length > 1;
+        if (b.k === "tone") return b.intro.length > 1 && !isChromeText(b.intro);
+        if (b.k === "rubric") return !!(b.lab || b.text);
+        if (b.k === "stanza") return b.lines.length > 0;
+        return true;
+      }),
+    ),
+  );
 
   if (clean.length === 0) {
     return {
@@ -420,28 +667,56 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId): ParsedHo
 }
 
 function isChromeText(t: string): boolean {
+  const s = t.trim();
+  if (/^<\/?[a-zA-Z][\w:-]*[^>]*>?$/.test(s) || /^\/?[a-z][\w-]*>$/.test(s)) return true;
   return /facebook|twitter|whatsapp|condividi|grandezza testo|\bstampa\b|\binvia\b|javascript:|sharer\.php|cookie|privacy policy/i.test(
     t,
   );
 }
 
+const MEDIA_HEAD: Record<MediaId, { it: string; la: string }> = {
+  terza: { it: "terza", la: "Tertiam" },
+  sesta: { it: "sesta", la: "Sextam" },
+  nona: { it: "nona", la: "Nonam" },
+};
+
+/** Indice del titolo d'ora, non di inni («L'ora terza risuona») o orazioni («all'ora terza»). */
+function mediaHeadingIndex(frag: string, id: MediaId): number {
+  const { it, la } = MEDIA_HEAD[id];
+  const patterns = [
+    new RegExp(`<h[1-3]\\b[^>]*>\\s*Ora\\s+${it}\\s*</h[1-3]>`, "i"),
+    new RegExp(`<h[1-3]\\b[^>]*>\\s*Ad\\s+${la}\\s*</h[1-3]>`, "i"),
+    new RegExp(`<(?:div|span)[^>]*class="[^"]*lo_titolo[^"]*"[^>]*>\\s*ORA\\s+${it}\\s*<`, "i"),
+  ];
+  let best = -1;
+  for (const re of patterns) {
+    const idx = frag.search(re);
+    if (idx >= 0 && (best < 0 || idx < best)) best = idx;
+  }
+  return best;
+}
+
 export function splitOraMediaHtml(html: string): Record<MediaId, string> {
   const frag = liturgicalFragment(html);
-  const markers: { id: MediaId; re: RegExp }[] = [
-    { id: "terza", re: /ORA\s+TERZA|Ad Tertiam|Ora terza/i },
-    { id: "sesta", re: /ORA\s+SESTA|Ad Sextam|Ora sesta/i },
-    { id: "nona", re: /ORA\s+NONA|Ad Nonam|Ora nona/i },
-  ];
-  const hits = markers
-    .map((m) => ({ id: m.id, idx: frag.search(m.re) }))
-    .filter((h) => h.idx >= 0)
-    .sort((a, b) => a.idx - b.idx);
+  const terzaAt = mediaHeadingIndex(frag, "terza");
+  const sestaAt = mediaHeadingIndex(frag, "sesta");
+  const nonaAt = mediaHeadingIndex(frag, "nona");
   const out: Record<MediaId, string> = { terza: frag, sesta: frag, nona: frag };
-  if (hits.length < 2) return out;
-  for (let i = 0; i < hits.length; i++) {
-    const start = hits[i].idx;
-    const end = i + 1 < hits.length ? hits[i + 1].idx : frag.length;
-    out[hits[i].id] = frag.slice(start, end);
+  if (sestaAt < 0 && nonaAt < 0) return out;
+
+  const terzaStart = terzaAt >= 0 && (sestaAt < 0 || terzaAt < sestaAt) ? terzaAt : 0;
+  if (sestaAt >= 0) {
+    out.terza = frag.slice(terzaStart, sestaAt);
+    if (nonaAt > sestaAt) {
+      out.sesta = frag.slice(sestaAt, nonaAt);
+      out.nona = frag.slice(nonaAt);
+    } else {
+      out.sesta = frag.slice(sestaAt);
+      if (nonaAt >= 0) out.nona = frag.slice(nonaAt);
+    }
+  } else if (nonaAt >= 0) {
+    out.terza = frag.slice(terzaStart, nonaAt);
+    out.nona = frag.slice(nonaAt);
   }
   return out;
 }

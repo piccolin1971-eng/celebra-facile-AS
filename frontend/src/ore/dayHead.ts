@@ -42,6 +42,80 @@ const ROMAN: Record<string, number> = {
 
 const ROMAN_OUT = ["", "I", "II", "III", "IV"];
 
+const SMALL = new Set([
+  "a",
+  "ad",
+  "al",
+  "alla",
+  "alle",
+  "ai",
+  "agli",
+  "allo",
+  "con",
+  "da",
+  "dal",
+  "dalla",
+  "dalle",
+  "dai",
+  "dagli",
+  "dallo",
+  "de",
+  "dei",
+  "del",
+  "della",
+  "delle",
+  "dello",
+  "degli",
+  "di",
+  "e",
+  "ed",
+  "il",
+  "in",
+  "i",
+  "gli",
+  "la",
+  "le",
+  "lo",
+  "nel",
+  "nella",
+  "nelle",
+  "nello",
+  "nei",
+  "negli",
+  "o",
+  "per",
+  "propria",
+  "su",
+  "un",
+  "una",
+  "uno",
+]);
+
+function isRomanNumeral(w: string): boolean {
+  return /^(X{0,3}(?:IX|IV|V?I{0,3}))$/i.test(w) && w.length >= 1 && w.length <= 6;
+}
+
+function capToken(w: string): string {
+  return w.toLowerCase().replace(/(^|['’])([a-zàèéìíîòóùú])/g, (_m, a, c) => a + String(c).toUpperCase());
+}
+
+/** Titolo liturgico leggibile: niente T.O., niente tutto-maiuscolo CEI. */
+export function formatHourHeadLine(s: string): string {
+  let t = String(s || "").replace(/\s+/g, " ").trim();
+  if (!t) return t;
+  t = t.replace(/\bT\.O\.?\s*$/i, "Tempo Ordinario");
+  t = t.replace(/\b(settimana|domenica)\s+Tempo Ordinario\b/i, "$1 del Tempo Ordinario");
+  return t
+    .split(" ")
+    .map((w, i) => {
+      if (isRomanNumeral(w)) return w.toUpperCase();
+      const low = w.toLowerCase();
+      if (i > 0 && SMALL.has(low)) return low;
+      return capToken(w);
+    })
+    .join(" ");
+}
+
 function romanOf(token: string): number | null {
   const n = ROMAN[token.toUpperCase()];
   return n || null;
@@ -85,7 +159,9 @@ export function hourHeadMeta(dateISO: string, ceiTitle = "", hoursBanner = ""): 
     seasonLine = feast;
   } else if (to) {
     const roman = Object.keys(ROMAN).find((k) => ROMAN[k] === to.n) || String(to.n);
-    seasonLine = to.sunday ? `${roman} Domenica T.O.` : `${roman} settimana T.O.`;
+    seasonLine = to.sunday
+      ? `${roman} domenica del Tempo Ordinario`
+      : `${roman} settimana del Tempo Ordinario`;
   } else if (title) {
     seasonLine = title.replace(/\s+/g, " ");
     if (seasonLine.length > 80) seasonLine = title.slice(0, 80);
@@ -102,5 +178,10 @@ export function hourHeadMeta(dateISO: string, ceiTitle = "", hoursBanner = ""): 
   const season = getLiturgicalSeason(d);
   const color = calculateLiturgicalColor(season, getSaintsForDate(d), title || seasonLine, d);
   const colorHex = color.color_hex || LITURGICAL_COLOR_HEX[season.color] || season.color_hex;
-  return { dateLabel, seasonLine, psalterLine, colorHex };
+  return {
+    dateLabel,
+    seasonLine: formatHourHeadLine(seasonLine),
+    psalterLine: formatHourHeadLine(psalterLine),
+    colorHex,
+  };
 }

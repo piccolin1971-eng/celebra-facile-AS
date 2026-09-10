@@ -6,8 +6,8 @@
 /** Rapporto lineHeight/fontSize per il testo di lettura (corpo, dialoghi, PE). */
 export const BODY_LINE_HEIGHT = 1.55;
 
-/** Corpo Liturgia delle Ore: +10% rispetto alla Messa. */
-export const ORE_BODY_LINE_HEIGHT = BODY_LINE_HEIGHT * 1.1;
+/** Corpo Liturgia delle Ore: +20% rispetto alla Messa, così a 1,00 è già recitabile. */
+export const ORE_BODY_LINE_HEIGHT = BODY_LINE_HEIGHT * 1.2;
 
 /** Rubriche e testi secondari (font più piccolo). */
 export const RUBRIC_LINE_HEIGHT = 1.25;

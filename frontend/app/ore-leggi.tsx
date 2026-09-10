@@ -29,6 +29,8 @@ import type { InvitPsalmId, MediaId, OreBlock, OreHourId } from "../src/ore/type
 const webClickable = Platform.OS === "web" ? ({ cursor: "pointer" } as const) : undefined;
 const ORE_BLUE = "#4DA8DA";
 const GOLD = "#E0B429";
+const SPD_BORDER = "#c4b06a";
+const SPD_VAL_BORDER = "#b8c0bc";
 const SPD_PX = [0, 4, 6.5, 10, 16, 25, 38];
 const SPD_MIN = 1;
 const SPD_MAX = 6;
@@ -88,6 +90,7 @@ export default function OreLeggi() {
   }, []);
   const carryRef = useRef(0);
   const autoOnRef = useRef(false);
+  const draggingRef = useRef(false);
   const lastTsRef = useRef(0);
   const rafRef = useRef<number | null>(null);
   const speedRef = useRef(3);
@@ -114,8 +117,9 @@ export default function OreLeggi() {
       rafRef.current = requestAnimationFrame(tick);
       return;
     }
-    if (yRef.current >= max - 0.5) {
-      stopAuto();
+    if (draggingRef.current || yRef.current >= max - 0.5) {
+      lastTsRef.current = ts;
+      rafRef.current = requestAnimationFrame(tick);
       return;
     }
     carryRef.current += (SPD_PX[speedRef.current] || 10) * dt;
@@ -126,7 +130,7 @@ export default function OreLeggi() {
       scrollRef.current?.scrollTo({ y: yRef.current, animated: false });
     }
     rafRef.current = requestAnimationFrame(tick);
-  }, [stopAuto]);
+  }, []);
 
   const startAuto = useCallback(() => {
     if (yRef.current >= maxRef.current - 1) {
@@ -253,7 +257,7 @@ export default function OreLeggi() {
   return (
     <SafeAreaView style={styles.container} testID="ore-read-screen">
       <View style={[styles.topBar, { borderBottomColor: colors.border }]}>
-        <View style={styles.barRow}>
+        <View style={styles.titleRow}>
           <TouchableOpacity
             onPress={() => router.back()}
             accessibilityRole="button"
@@ -267,9 +271,11 @@ export default function OreLeggi() {
           <Text style={styles.hourTitle} numberOfLines={1}>
             {title}
           </Text>
-          <View style={{ width: 44 }} />
+          <View style={styles.fonts}>
+            <FontSizeButtons decreaseTestID="btn-ore-read-a-minus" increaseTestID="btn-ore-read-a-plus" />
+          </View>
         </View>
-        <View style={styles.barRow}>
+        <View style={styles.scrollRow}>
           <TouchableOpacity
             onPress={() => (autoOn ? stopAuto() : startAuto())}
             style={[styles.autoBtn, autoOn && styles.autoOn]}
@@ -289,7 +295,9 @@ export default function OreLeggi() {
           >
             <Text style={styles.spdLab}>−</Text>
           </TouchableOpacity>
-          <Text style={styles.spdVal}>{speed}</Text>
+          <View style={styles.spdValBox} accessibilityLabel={`Velocità ${speed}`}>
+            <Text style={styles.spdVal}>{speed}</Text>
+          </View>
           <TouchableOpacity
             onPress={() => changeSpeed(speed + 1)}
             style={styles.spdBtn}
@@ -298,8 +306,6 @@ export default function OreLeggi() {
           >
             <Text style={styles.spdLab}>+</Text>
           </TouchableOpacity>
-          <View style={{ flex: 1 }} />
-          <FontSizeButtons decreaseTestID="btn-ore-read-a-minus" increaseTestID="btn-ore-read-a-plus" />
         </View>
       </View>
 
@@ -344,7 +350,20 @@ export default function OreLeggi() {
             contentHRef.current = contentSize.height;
             updateMax();
           }}
-          onScrollBeginDrag={stopAuto}
+          onScrollBeginDrag={() => {
+            draggingRef.current = true;
+          }}
+          onScrollEndDrag={() => {
+            draggingRef.current = false;
+            lastTsRef.current = 0;
+          }}
+          onMomentumScrollBegin={() => {
+            draggingRef.current = true;
+          }}
+          onMomentumScrollEnd={() => {
+            draggingRef.current = false;
+            lastTsRef.current = 0;
+          }}
           scrollEventThrottle={16}
           testID="ore-read-scroll"
         >
@@ -390,39 +409,63 @@ const makeStyles = (colors: any, fontSize: number) =>
       borderBottomWidth: 1,
       gap: 8,
     },
-    barRow: {
+    titleRow: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 8,
-      flexWrap: "wrap",
+      gap: 6,
     },
+    scrollRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 9,
+      paddingLeft: 4,
+    },
+    fonts: { flexDirection: "row", alignItems: "center", gap: 6, flexShrink: 0 },
     iconBtn: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
     hourTitle: {
       flex: 1,
       textAlign: "center",
       color: colors.textPrimary,
       fontWeight: ACTION_TITLE_WEIGHT,
-      fontSize: Math.round(fontSize * 0.78),
+      fontSize: Math.round(fontSize * 0.82),
+      letterSpacing: Math.max(0.6, fontSize * 0.045),
+      fontVariant: ["small-caps"],
+      ...(Platform.OS === "web" ? ({ fontVariant: "small-caps" } as const) : {}),
     },
     autoBtn: {
       borderWidth: 2,
       borderColor: ORE_BLUE,
-      borderRadius: 8,
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-    },
-    autoOn: { backgroundColor: GOLD, borderColor: GOLD },
-    autoLab: { color: ORE_BLUE, fontWeight: "800", fontSize: Math.round(fontSize * 0.55) },
-    spdBtn: {
-      minWidth: 36,
-      height: 36,
+      borderRadius: 9,
+      minWidth: 68,
+      minHeight: 46,
+      paddingHorizontal: 14,
+      marginRight: 12,
       alignItems: "center",
       justifyContent: "center",
-      borderRadius: 8,
-      backgroundColor: colors.surface,
     },
-    spdLab: { color: colors.textPrimary, fontSize: 22, fontWeight: "700" },
-    spdVal: { color: colors.textPrimary, fontWeight: "800", minWidth: 18, textAlign: "center" },
+    autoOn: { backgroundColor: GOLD, borderColor: GOLD },
+    autoLab: { color: ORE_BLUE, fontWeight: "800", fontSize: Math.round(fontSize * 0.78) },
+    spdBtn: {
+      minWidth: 46,
+      minHeight: 46,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: 9,
+      borderWidth: 2,
+      borderColor: SPD_BORDER,
+      backgroundColor: colors.background,
+    },
+    spdLab: { color: colors.textPrimary, fontSize: 32, fontWeight: "700" },
+    spdValBox: {
+      minWidth: 46,
+      minHeight: 46,
+      borderRadius: 9,
+      borderWidth: 2,
+      borderColor: SPD_VAL_BORDER,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    spdVal: { color: colors.textPrimary, fontWeight: "800", fontSize: Math.round(fontSize * 0.88) },
     chips: {
       flexDirection: "row",
       justifyContent: "center",

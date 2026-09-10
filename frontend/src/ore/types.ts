@@ -20,6 +20,7 @@ export type OreBlock =
   | { k: "stanza"; lines: string[] }
   | { k: "hymn"; hymns: Hymn[] }
   | { k: "prose"; text: string }
+  | { k: "tone"; intro: string; refrain: string }
   | { k: "marian"; antiphons: string[][] };
 
 export type ParsedHour = {

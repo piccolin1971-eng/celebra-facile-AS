@@ -29,6 +29,7 @@ function blobOf(blocks: OreBlock[]): string {
       if (b.k === "rubric") return `${b.lab} ${b.text}`;
       if (b.k === "psalmHead") return `${b.num} ${b.name} ${b.sub} ${b.cite}`;
       if (b.k === "marian") return b.antiphons.map((a) => a.join(" ")).join(" ");
+      if (b.k === "tone") return `${b.intro}\n${b.refrain}`;
       if (b.k === "title" || b.k === "sub" || b.k === "omit" || b.k === "prose") return b.text;
       return "";
     })
@@ -76,10 +77,12 @@ function issuesFor(label: string, blocks: OreBlock[], extra: string[] = []): str
     blocks.some((b, i) => {
       if (b.k !== "prose" || b.text.length <= 400) return false;
       if (JUNK.test(b.text)) return true;
-      for (let j = i - 1; j >= Math.max(0, i - 3); j--) {
+      for (let j = i - 1; j >= Math.max(0, i - 8); j--) {
         const prev = blocks[j];
-        if (prev.k === "title" && /LETTURA|ORAZIONE/i.test(prev.text)) return false;
-        if (prev.k === "sub") continue;
+        if (prev.k === "title" && /LETTURA|ORAZIONE|RESPONSORIO/i.test(prev.text)) return false;
+        if (prev.k === "sub" || prev.k === "omit") continue;
+        if (prev.k === "prose" && prev.text.length < 400) continue;
+        if (prev.k === "stanza") continue;
         break;
       }
       return b.text.length > 1200;
@@ -172,15 +175,15 @@ function selfTests(): string[] {
 
   const banner = extractHoursBanner(oppureHtml);
   const meta = hourHeadMeta("2026-09-10", "", banner);
-  if (!/XXIII settimana T\.O\./i.test(meta.seasonLine)) fails.push(`fixture banner season=${meta.seasonLine}`);
-  if (!/III settimana del salterio/i.test(meta.psalterLine)) fails.push(`fixture banner psalter=${meta.psalterLine}`);
+  if (!/XXIII Settimana del Tempo Ordinario/i.test(meta.seasonLine)) fails.push(`fixture banner season=${meta.seasonLine}`);
+  if (!/III Settimana del Salterio/i.test(meta.psalterLine)) fails.push(`fixture banner psalter=${meta.psalterLine}`);
 
   const sunBanner = extractHoursBanner(
     `<div class="cci-opere-giorni-liturgia">DOMENICA - XXIV DOMENICA DEL TEMPO ORDINARIO - IV SETTIMANA DEL SALTERIO</div><div class="cci-liturgia-ore"></div>`,
   );
   const metaS = hourHeadMeta("2026-09-13", "", sunBanner);
-  if (!/XXIV Domenica T\.O\./i.test(metaS.seasonLine)) fails.push(`fixture domenica season=${metaS.seasonLine}`);
-  if (!/IV settimana del salterio/i.test(metaS.psalterLine)) fails.push(`fixture domenica psalter=${metaS.psalterLine}`);
+  if (!/XXIV Domenica del Tempo Ordinario/i.test(metaS.seasonLine)) fails.push(`fixture domenica season=${metaS.seasonLine}`);
+  if (!/IV Settimana del Salterio/i.test(metaS.psalterLine)) fails.push(`fixture domenica psalter=${metaS.psalterLine}`);
 
   const ones = wrap(`
     <div class="lo_titolo">INNO</div>
@@ -209,6 +212,50 @@ function selfTests(): string[] {
     fails.push("fixture strofa lunga non spezzata");
   }
 
+  const interHtml = wrap(`
+    <div class="lo_titolo">INNO</div>
+    <div class="lo_versetto">Dio, che di chiara luce<br>tessi la trama al giorno,</div>
+    <div class="lo_titolo">INTERCESSIONI</div>
+    <div class="lo_versetto">A Cristo, buon pastore, aiuto, guida e conforto del<br />
+&nbsp;&nbsp;&nbsp; suo popolo, rivolgiamo con fede la nostra<br />
+&nbsp;&nbsp;&nbsp; preghiera:
+<div class="lo_sottotitolo">&nbsp;&nbsp;&nbsp; Signore, nostro rifugio e nostra forza, ascoltaci.</div>
+</div>
+    <div class="lo_versetto">Benedetto sii tu, Signore, che ci hai chiamati a far<br />
+&nbsp;&nbsp; &nbsp; parte della tua famiglia,
+<div class="lo_rosso"><br />&mdash;</div>
+conservaci sempre membra vive della tua santa Chiesa.</div>
+  `);
+  const inter = parseHourHtml(interHtml, "vespri");
+  const tone = inter.blocks.find((b) => b.k === "tone");
+  if (!tone || tone.k !== "tone") fails.push("fixture intercessioni senza frase del tono");
+  else {
+    if (!/rivolgiamo/i.test(tone.intro) || /ascoltaci/i.test(tone.intro)) {
+      fails.push("fixture tono intro sbagliata");
+    }
+    if (!/Signore, nostro rifugio/i.test(tone.refrain)) fails.push("fixture tono senza risposta");
+    if (/rivolgiamo/i.test(tone.refrain)) fails.push("fixture tono risposta con intro");
+  }
+  const lodiHtml = wrap(`
+    <div class="lo_titolo">INNO</div>
+    <div class="lo_versetto">Al sorger della luce,<br>ascolta, o Padre santo,</div>
+    <div class="lo_titolo">INVOCAZIONI</div>
+    <div class="lo_versetto">Rendiamo grazie a Dio che nutre e guida il suo<br />
+&nbsp;&nbsp;&nbsp; popolo. Uniti nella preghiera del mattino,<br />
+&nbsp;&nbsp;&nbsp; acclamiamo:&nbsp;<i>Gloria a te nei secoli, Signore.</i></div>
+  `);
+  const lodiTone = parseHourHtml(lodiHtml, "lodi").blocks.find((b) => b.k === "tone");
+  if (!lodiTone || lodiTone.k !== "tone") fails.push("fixture lodi senza frase del tono");
+  else {
+    if (!/acclamiamo/i.test(lodiTone.intro) || /Gloria a te/i.test(lodiTone.intro)) {
+      fails.push("fixture lodi intro sbagliata");
+    }
+    if (!/Gloria a te nei secoli/i.test(lodiTone.refrain)) fails.push("fixture lodi senza risposta");
+  }
+  const dash = inter.blocks.find((b) => b.k === "stanza" && b.lines.some((l) => /^—/.test(l)));
+  if (!dash || dash.k !== "stanza") fails.push("fixture intercessioni senza coppia —");
+  else if (dash.lines.length !== 2) fails.push(`fixture coppia — righe=${dash.lines.length}`);
+
   const propria = extractHoursBanner(
     `<div class="cci-opere-giorni-liturgia">ESALTAZIONE DELLA SANTA CROCE - Festa - Liturgia propria</div><div class="cci-liturgia-ore"></div>`,
   );
@@ -234,6 +281,45 @@ function selfTests(): string[] {
   if (ceiHourSlug("compieta", sat) !== "compieta-dopo-i-primi-vespri") fails.push("slug sab compieta");
   if (ceiHourSlug("vespri", sun) !== "secondi-vespri") fails.push("slug dom vespri");
   if (ceiHourSlug("compieta", sun) !== "compieta-dopo-i-secondi-vespri") fails.push("slug dom compieta");
+
+  const rossoOra = wrap(`
+    <div class="lo_titolo">INVOCAZIONI</div>
+    <div class="lo_versetto">Acclamiamo:<br /><i>Signore, ascoltaci.</i></div>
+    <div class="lo_rosso">ORAZIONE</div>
+    <div class="lo_versetto">O Dio, vera luce, ascoltaci.</div>
+  `);
+  const rosso = parseHourHtml(rossoOra, "lodi");
+  if (!rosso.blocks.some((b) => b.k === "title" && /ORAZIONE/i.test(b.text))) {
+    fails.push("fixture lo_rosso ORAZIONE senza titolo");
+  }
+  const rossoTone = rosso.blocks.find((b) => b.k === "tone");
+  if (!rossoTone || rossoTone.k !== "tone" || !/ascoltaci/i.test(rossoTone.refrain)) {
+    fails.push("fixture italic risposta invocazioni");
+  }
+
+  const mediaHtml = wrap(`
+    <div class="lo_titolo">INNO</div>
+    <div class="lo_versetto">L'ora terza risuona<br>nel servizio di lode,<br>con cuore puro e ardente,<br>preghiamo il Dio glorioso.</div>
+    <div class="lo_titolo">ORAZIONE</div>
+    <div class="lo_versetto">O Dio, che all'ora terza hai effuso lo Spirito Santo.</div>
+    <h2>Ora sesta</h2>
+    <div class="lo_titolo">INNO</div>
+    <div class="lo_versetto">L'ora sesta c'invita<br>alla lode di Dio,<br>inneggiamo al Signore<br>con cuore riconoscente.</div>
+    <h2>Ora nona</h2>
+    <div class="lo_titolo">INNO</div>
+    <div class="lo_versetto">L'ora nona ci chiama<br>al servizio divino,<br>adoriamo cantando<br>l'uno e trino Signore.</div>
+  `);
+  const media = splitOraMediaHtml(mediaHtml);
+  if (/Inno di sesta|ora sesta c.invita/i.test(media.terza)) fails.push("fixture terza contiene sesta");
+  if (!/ora terza risuona/i.test(media.terza) || !/hai effuso/i.test(media.terza)) {
+    fails.push("fixture terza tagliata da «ora terza» nel testo");
+  }
+  if (!/ora sesta c.invita/i.test(media.sesta) || /ora nona ci chiama/i.test(media.sesta)) {
+    fails.push("fixture sesta slice");
+  }
+  if (!/ora nona ci chiama/i.test(media.nona) || /ora sesta c.invita/i.test(media.nona)) {
+    fails.push("fixture nona slice");
+  }
 
   return fails;
 }
