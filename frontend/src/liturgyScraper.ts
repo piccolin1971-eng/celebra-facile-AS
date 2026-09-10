@@ -6,6 +6,16 @@
  * - chiesacattolica.it supporta CORS sul mobile (native fetch non applica CORS)
  * - Su web potrebbe essere necessario un proxy CORS, ma l'app finale è un APK Android
  */
+import {
+  resolveCeiPrimaryCelebration,
+  extractCelebrationColorBlocksFromHtml,
+  pickCeiMassBlockForMode,
+  celebrationTitlesMatch,
+  isVigilOrVespertineMass,
+} from "./liturgicalColorUtils";
+import { getVigilEveContext } from "./vigilCatalog";
+import type { CelebrationMode } from "./massSession";
+import { localDateStr, parseLocalDate } from "./dateUtils";
 
 export type Reading = {
   type: string;
@@ -142,6 +152,176 @@ function extractReference(fullText: string, rtype: string): [string, string] {
   return ["", fullText];
 }
 
+function extractH3Chunks(html: string): Array<{ title: string; chunk: string }> {
+  const h3Re = /<h3[^>]*class="[^"]*single_title[^"]*"[^>]*>([\s\S]*?)<\/h3>/gi;
+  const headers: Array<{ title: string; after: number; start: number }> = [];
+  let m: RegExpExecArray | null;
+  while ((m = h3Re.exec(html)) !== null) {
+    if (/visually-hidden/i.test(m[1])) continue;
+    const title = cleanText(stripTags(m[1]));
+    if (!title) continue;
+    headers.push({ title, start: m.index, after: m.index + m[0].length });
+  }
+  return headers.map((h, i) => ({
+    title: h.title,
+    chunk: html.slice(h.after, i + 1 < headers.length ? headers[i + 1].start : html.length),
+  }));
+}
+
+function readingsFromHtmlChunk(chunkHtml: string): Reading[] {
+  const sections = extractSections(chunkHtml);
+  const seen = new Set<string>();
+  const readings: Reading[] = [];
+  for (const sec of sections) {
+    const rtype = classify(sec.title);
+    if (!rtype || seen.has(rtype)) continue;
+    seen.add(rtype);
+    const [reference, body] = extractReference(sec.body, rtype);
+    readings.push({
+      type: rtype,
+      title: TYPE_LABELS[rtype] || sec.title,
+      reference,
+      text: body,
+    });
+  }
+  readings.sort((a, b) => {
+    const ia = ORDER.indexOf(a.type);
+    const ib = ORDER.indexOf(b.type);
+    return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+  });
+  return readings;
+}
+
+function pickChunkForMode(
+  chunks: Array<{ title: string; chunk: string }>,
+  colorBlock: { title: string } | null,
+  mode: CelebrationMode,
+  vigilEve: ReturnType<typeof getVigilEveContext>,
+): { title: string; chunk: string } | null {
+  if (chunks.length === 0) return null;
+
+  if (colorBlock) {
+    const matched = chunks.find((c) => celebrationTitlesMatch(c.title, colorBlock.title));
+    if (matched) return matched;
+  }
+
+  if (vigilEve && mode === "vigil_proper") {
+    const vigil = chunks.find(
+      (c) =>
+        isVigilOrVespertineMass(c.title) &&
+        celebrationTitlesMatch(c.title, vigilEve.solemnityTitle),
+    );
+    if (vigil) return vigil;
+    return chunks.find((c) => isVigilOrVespertineMass(c.title)) ?? null;
+  }
+
+  if (vigilEve && mode === "solemnity_day") {
+    const sol = chunks.find(
+      (c) =>
+        !isVigilOrVespertineMass(c.title) &&
+        celebrationTitlesMatch(c.title, vigilEve.solemnityTitle),
+    );
+    if (sol) return sol;
+    return null;
+  }
+
+  if (vigilEve) {
+    const fallback = chunks.find(
+      (c) =>
+        !isVigilOrVespertineMass(c.title) &&
+        !celebrationTitlesMatch(c.title, vigilEve.solemnityTitle),
+    );
+    if (fallback) return fallback;
+  }
+
+  return chunks[0];
+}
+
+function resolveLiturgyFromCeiHtmlInternal(
+  html: string,
+  targetDate: Date,
+  mode: CelebrationMode,
+): { title: string; liturgical_color: string; readings: Reading[] } | null {
+  const chunks = extractH3Chunks(html);
+  if (chunks.length === 0) return null;
+
+  const colorBlocks = extractCelebrationColorBlocksFromHtml(html);
+  const vigilEve = getVigilEveContext(targetDate);
+  const colorBlock = pickCeiMassBlockForMode(colorBlocks, mode, vigilEve);
+  const primaryChunk = pickChunkForMode(chunks, colorBlock, mode, vigilEve);
+  if (!primaryChunk) return null;
+
+  const readings = readingsFromHtmlChunk(primaryChunk.chunk);
+  const title = colorBlock?.title || primaryChunk.title;
+  const liturgical_color =
+    colorBlock?.color ||
+    resolveCeiPrimaryCelebration(html, extractOgTitle(html)).color ||
+    "";
+
+  if (!title && readings.length === 0) return null;
+  return { title, liturgical_color, readings };
+}
+
+/** Risolve titolo, colore e letture da HTML CEI (testabile / offline). */
+export function resolveLiturgyFromCeiHtml(
+  html: string,
+  targetDate: Date,
+  mode: CelebrationMode = "calendar_day",
+): { title: string; liturgical_color: string; readings: Reading[] } {
+  const fromBlocks = resolveLiturgyFromCeiHtmlInternal(html, targetDate, mode);
+
+  if (fromBlocks && fromBlocks.readings.length > 0) {
+    return fromBlocks;
+  }
+
+  const vigilEve = getVigilEveContext(targetDate);
+  if (vigilEve && mode !== "calendar_day") {
+    return {
+      title: fromBlocks?.title || "",
+      liturgical_color: fromBlocks?.liturgical_color || "",
+      readings: [],
+    };
+  }
+
+  const pageTitle = extractOgTitle(html);
+  const ceiPrimary = resolveCeiPrimaryCelebration(html, pageTitle);
+  const sections = extractSections(html);
+  const seen = new Set<string>();
+  const readings: Reading[] = [];
+  for (const sec of sections) {
+    const rtype = classify(sec.title);
+    if (!rtype || seen.has(rtype)) continue;
+    seen.add(rtype);
+    const [reference, body] = extractReference(sec.body, rtype);
+    readings.push({
+      type: rtype,
+      title: TYPE_LABELS[rtype] || sec.title,
+      reference,
+      text: body,
+    });
+  }
+  readings.sort((a, b) => {
+    const ia = ORDER.indexOf(a.type);
+    const ib = ORDER.indexOf(b.type);
+    return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+  });
+
+  return {
+    title: fromBlocks?.title || ceiPrimary.title,
+    liturgical_color: fromBlocks?.liturgical_color || ceiPrimary.color || "",
+    readings: fromBlocks?.readings?.length ? fromBlocks.readings : readings,
+  };
+}
+
+function resolvePrimaryFromMassBlocks(
+  html: string,
+  targetDate: Date,
+  _pageTitle: string,
+  mode: CelebrationMode = "calendar_day",
+): { title: string; liturgical_color: string; readings: Reading[] } | null {
+  return resolveLiturgyFromCeiHtmlInternal(html, targetDate, mode);
+}
+
 function extractSections(html: string): Array<{ title: string; body: string }> {
   // Trova tutte le coppie: <h2 class="cci-liturgia-giorno-section-title">TITLE</h2> ... <div class="cci-liturgia-giorno-section-content">BODY</div>
   const sections: Array<{ title: string; body: string }> = [];
@@ -196,20 +376,129 @@ function buildUrl(d: Date): string {
 
 // Su web (browser/preview Expo) il fetch cross-origin è bloccato dal CORS.
 // Su React Native (APK Android) non c'è CORS e il fetch è diretto.
-// Usiamo un proxy CORS pubblico solo quando siamo in ambiente browser.
-// Lista di proxy gratuiti tentati in ordine, fallback automatico.
+// Usiamo proxy CORS pubblici solo in browser, in parallelo (prima risposta valida).
 const CORS_PROXIES: Array<(u: string) => string> = [
-  (u) => `https://api.codetabs.com/v1/proxy?quest=${u}`,
-  (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
   (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+  (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+  (u) => `https://api.codetabs.com/v1/proxy?quest=${u}`,
 ];
 
-function isWebEnvironment(): boolean {
+const CEI_FETCH_HEADERS = {
+  "User-Agent":
+    "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+  "Accept-Language": "it-IT,it;q=0.9",
+  Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+} as const;
+
+/** Timeout per singolo tentativo (web: proxy in parallelo; APK: fetch diretto). */
+const CEI_FETCH_TIMEOUT_MS = 12_000;
+
+export function isCeiWebFetch(): boolean {
   // @ts-ignore - "document" esiste solo nei browser
   return typeof document !== "undefined";
 }
 
-export async function scrapeLiturgy(targetDate: Date): Promise<{
+function isWebEnvironment(): boolean {
+  return isCeiWebFetch();
+}
+
+const ceiHtmlCache = new Map<string, string>();
+const ceiHtmlInflight = new Map<string, Promise<string | null>>();
+
+/** Fetch HTML CEI (Ore, letture). Su APK: diretto; su web: proxy CORS. */
+export async function fetchCeiUrl(url: string): Promise<string | null> {
+  if (!isWebEnvironment()) {
+    try {
+      return await fetchCeiHtmlViaCandidate(url);
+    } catch (e) {
+      if (__DEV__) console.log("fetchCeiUrl err:", e);
+      return null;
+    }
+  }
+  try {
+    return await Promise.any(CORS_PROXIES.map((p) => fetchCeiHtmlViaCandidate(p(url))));
+  } catch (e) {
+    if (__DEV__) console.log("fetchCeiUrl web err:", e);
+    return null;
+  }
+}
+
+async function fetchCeiHtmlViaCandidate(candidate: string): Promise<string> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), CEI_FETCH_TIMEOUT_MS);
+  try {
+    const res = await fetch(candidate, {
+      headers: CEI_FETCH_HEADERS,
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const txt = await res.text();
+    if (txt.length < 500 || /\"error\":/i.test(txt.substring(0, 200))) {
+      throw new Error("Risposta proxy non valida");
+    }
+    return txt;
+  } catch (e) {
+    clearTimeout(timer);
+    throw e;
+  }
+}
+
+async function fetchCeiHtmlUncached(targetDate: Date): Promise<string | null> {
+  const url = buildUrl(targetDate);
+  if (!isWebEnvironment()) {
+    try {
+      return await fetchCeiHtmlViaCandidate(url);
+    } catch (e) {
+      if (__DEV__) console.log("fetchCeiHtml err:", e);
+      return null;
+    }
+  }
+
+  // 1) Proxy locale Metro (stesso origin del preview web) — affidabile in DEV.
+  try {
+    const y = targetDate.getFullYear();
+    const mo = String(targetDate.getMonth() + 1).padStart(2, "0");
+    const da = String(targetDate.getDate()).padStart(2, "0");
+    const localProxy = `/cei-liturgia?data-liturgia=${y}${mo}${da}`;
+    const localTxt = await fetchCeiHtmlViaCandidate(localProxy);
+    if (localTxt) return localTxt;
+  } catch (e) {
+    if (__DEV__) console.log("fetchCeiHtml local proxy:", e);
+  }
+
+  // 2) Fallback: proxy CORS pubblici
+  const candidates = CORS_PROXIES.map((p) => p(url));
+  try {
+    return await Promise.any(candidates.map((candidate) => fetchCeiHtmlViaCandidate(candidate)));
+  } catch (e) {
+    if (__DEV__) console.log("fetchCeiHtml err:", e);
+    return null;
+  }
+}
+
+/** Scarica HTML grezzo dalla pagina CEI del giorno (o via proxy su web). */
+export async function fetchCeiHtml(targetDate: Date): Promise<string | null> {
+  const iso = localDateStr(targetDate);
+  const cached = ceiHtmlCache.get(iso);
+  if (cached) return cached;
+
+  let inflight = ceiHtmlInflight.get(iso);
+  if (!inflight) {
+    inflight = fetchCeiHtmlUncached(targetDate).then((txt) => {
+      ceiHtmlInflight.delete(iso);
+      if (txt) ceiHtmlCache.set(iso, txt);
+      return txt;
+    });
+    ceiHtmlInflight.set(iso, inflight);
+  }
+  return inflight;
+}
+
+export async function scrapeLiturgy(
+  targetDate: Date,
+  mode: CelebrationMode = "calendar_day",
+): Promise<{
   date: string;
   title: string;
   liturgical_color: string;
@@ -230,72 +519,39 @@ export async function scrapeLiturgy(targetDate: Date): Promise<{
     source_url: url,
   };
 
-  let html: string | null = null;
-  let lastErr: any = null;
-  // Sull'APK Android: fetch diretto. Sul web: tenta proxy CORS in cascata.
-  const candidates: string[] = isWebEnvironment()
-    ? CORS_PROXIES.map((p) => p(url))
-    : [url];
-  for (const candidate of candidates) {
-    try {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 25000);
-      const res = await fetch(candidate, {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
-          "Accept-Language": "it-IT,it;q=0.9",
-          Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        },
-        signal: controller.signal,
-      });
-      clearTimeout(timer);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const txt = await res.text();
-      // Verifica che la risposta contenga effettivamente HTML del sito CEI
-      // (alcuni proxy gratuiti restituiscono JSON di errore con status 200)
-      if (txt.length < 500 || /\"error\":/i.test(txt.substring(0, 200))) {
-        throw new Error("Risposta proxy non valida");
+  const vigilEve = getVigilEveContext(targetDate);
+  const html = await fetchCeiHtml(targetDate);
+  if (!html) {
+    return {
+      ...result,
+      error: "Impossibile connettersi a chiesacattolica.it",
+    };
+  }
+
+  let resolved = resolveLiturgyFromCeiHtml(html, targetDate, mode);
+
+  if (
+    mode === "solemnity_day" &&
+    vigilEve &&
+    resolved.readings.length === 0
+  ) {
+    const solDate = parseLocalDate(vigilEve.solemnityDateISO);
+    const htmlSol = await fetchCeiHtml(solDate);
+    if (htmlSol) {
+      const fromSol = resolveLiturgyFromCeiHtml(htmlSol, solDate, "calendar_day");
+      if (fromSol.readings.length > 0) {
+        resolved = fromSol;
+        result.source_url = buildUrl(solDate);
       }
-      html = txt;
-      break;
-    } catch (e: any) {
-      lastErr = e;
-      continue;
     }
   }
-  if (!html) {
-    return { ...result, error: `Impossibile connettersi a chiesacattolica.it: ${lastErr?.message || lastErr}` };
-  }
 
-  // Titolo
-  result.title = extractOgTitle(html);
+  result.title = resolved.title;
+  if (resolved.liturgical_color) result.liturgical_color = resolved.liturgical_color;
+  result.readings = resolved.readings;
 
-  // Sezioni → letture (primo match per tipo)
-  const sections = extractSections(html);
-  const seen = new Set<string>();
-  const readings: Reading[] = [];
-  for (const sec of sections) {
-    const rtype = classify(sec.title);
-    if (!rtype || seen.has(rtype)) continue;
-    seen.add(rtype);
-    const [reference, body] = extractReference(sec.body, rtype);
-    readings.push({
-      type: rtype,
-      title: TYPE_LABELS[rtype] || sec.title,
-      reference,
-      text: body,
-    });
-  }
-
-  readings.sort((a, b) => {
-    const ia = ORDER.indexOf(a.type);
-    const ib = ORDER.indexOf(b.type);
-    return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
-  });
-
-  result.readings = readings;
-  if (readings.length === 0) {
-    (result as any).error = "Impossibile estrarre le letture dalla pagina.";
+  if (result.readings.length === 0) {
+    (result as { error?: string }).error = "Impossibile estrarre le letture dalla pagina.";
   }
   return result;
 }

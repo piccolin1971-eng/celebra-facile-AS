@@ -213,7 +213,7 @@
       },
       {
         "type": "t",
-        "text": "Noi te l'offriamo anzitutto\nper la tua Chiesa santa e cattolica,\nperché tu le dia pace,\nla protegga, la raduni\ne la governi su tutta la terra\nin unione con il tuo servo il nostro Papa N.,\nil nostro Vescovo N. [con me indegno tuo servo]\ne con tutti quelli che custodiscono\nla fede cattolica,\ntrasmessa dagli Apostoli."
+        "text": "Noi te l'offriamo anzitutto\nper la tua Chiesa santa e cattolica,\nperché tu le dia pace,\nla protegga, la raduni\ne la governi su tutta la terra\nin unione con il tuo servo il nostro Papa N.,\nil nostro Vescovo N.\ne con tutti quelli che custodiscono\nla fede cattolica,\ntrasmessa dagli Apostoli."
       },
       {
         "type": "title",
@@ -226,10 +226,6 @@
       {
         "type": "r",
         "text": "Congiunge le mani e prega brevemente per quelli che vuole ricordare."
-      },
-      {
-        "type": "r",
-        "text": "Poi, con le braccia allargate, continua:"
       },
       {
         "type": "t",
@@ -266,10 +262,6 @@
         "text": "Racconto dell'istituzione e consacrazione"
       },
       {
-        "type": "r",
-        "text": "Nelle formule seguenti, le parole del Signore si pronuncino con voce chiara e distinta, come è richiesto dalla loro natura."
-      },
-      {
         "type": "t",
         "text": "La vigilia della sua passione,"
       },
@@ -290,20 +282,8 @@
         "text": "e alzando gli occhi al cielo\na te, Dio Padre suo onnipotente,\nrese grazie con la preghiera di benedizione,\nspezzò il pane,\nlo diede ai suoi discepoli e disse:"
       },
       {
-        "type": "r",
-        "text": "Si inchina leggermente."
-      },
-      {
         "type": "c",
         "text": "PRENDETE, E MANGIATENE TUTTI:\nQUESTO È IL MIO CORPO\nOFFERTO IN SACRIFICIO PER VOI."
-      },
-      {
-        "type": "r",
-        "text": "Presenta al popolo l'ostia consacrata, la depone sulla patena e genuflette in adorazione."
-      },
-      {
-        "type": "r",
-        "text": "Poi prosegue:"
       },
       {
         "type": "t",
@@ -318,28 +298,12 @@
         "text": "prese nelle sue mani sante e venerabili\nquesto glorioso calice,\nti rese grazie con la preghiera di benedizione,\nlo diede ai suoi discepoli e disse:"
       },
       {
-        "type": "r",
-        "text": "Si inchina leggermente."
-      },
-      {
         "type": "c",
         "text": "PRENDETE, E BEVETENE TUTTI:\nQUESTO È IL CALICE DEL MIO SANGUE,\nPER LA NUOVA ED ETERNA ALLEANZA,\nVERSATO PER VOI E PER TUTTI\nIN REMISSIONE DEI PECCATI.\nFATE QUESTO IN MEMORIA DI ME."
       },
       {
-        "type": "r",
-        "text": "Presenta al popolo il calice, lo depone sul corporale e genuflette in adorazione."
-      },
-      {
-        "type": "r",
-        "text": "Quindi, il sacerdote canta o dice:"
-      },
-      {
         "type": "t",
         "text": "Mistero della fede."
-      },
-      {
-        "type": "r",
-        "text": "Il popolo prosegue acclamando:"
       },
       {
         "type": "acc",
@@ -348,10 +312,6 @@
       {
         "type": "title",
         "text": "Anamnesi e offerta"
-      },
-      {
-        "type": "r",
-        "text": "Poi, con le braccia allargate, il sacerdote dice:"
       },
       {
         "type": "t",
@@ -378,10 +338,6 @@
         "text": "perché su tutti noi che partecipiamo di questo altare,\ncomunicando al santo mistero del Corpo e Sangue del tuo Figlio,\nscenda la pienezza di ogni grazia e benedizione del cielo."
       },
       {
-        "type": "r",
-        "text": "Congiunge le mani."
-      },
-      {
         "type": "title",
         "text": "Intercessione per i defunti"
       },
@@ -395,7 +351,7 @@
       },
       {
         "type": "r",
-        "text": "Congiunge le mani e prega brevemente per i defunti che vuole ricordare. Poi, con le braccia allargate, prosegue:"
+        "text": "Congiunge le mani e prega brevemente per i defunti che vuole ricordare."
       },
       {
         "type": "t",
@@ -438,16 +394,8 @@
         "text": "Dossologia finale"
       },
       {
-        "type": "r",
-        "text": "Prende la patena con l'ostia e il calice ed elevandoli insieme dice:"
-      },
-      {
         "type": "c",
         "text": "PER CRISTO, CON CRISTO E IN CRISTO,\nA TE, DIO PADRE ONNIPOTENTE,\nNELL'UNITÀ DELLO SPIRITO SANTO,\nOGNI ONORE E GLORIA\nPER TUTTI I SECOLI DEI SECOLI."
-      },
-      {
-        "type": "r",
-        "text": "Il popolo acclama:"
       },
       {
         "type": "acc",

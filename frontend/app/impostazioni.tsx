@@ -1,83 +1,98 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch, Platform } from "react-native";
+import Constants from "expo-constants";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import Slider from "@react-native-community/slider";
 import { useSettings, PARCHMENT_TONE_MIN, PARCHMENT_TONE_MAX } from "../src/SettingsContext";
+import { LINE_SPACING_MIN, LINE_SPACING_MAX, LINE_SPACING_STEP, formatLineSpacingValue } from "../src/liturgyTypography";
+import { SettingsStepperSlider } from "../src/components/SettingsStepperSlider";
 import { FONT_OPTIONS, FontFamilyId, resolveBodyFont } from "../src/fontFamily";
+import { SectionScreenTopBar } from "../src/components/SectionScreenTopBar";
 
 export default function Impostazioni() {
   const router = useRouter();
-  const { theme, setTheme, fontSize, highContrast, setHighContrast, isBold, setIsBold, autoScrollDelaySec, setAutoScrollDelaySec, autoScrollPxPerSec, setAutoScrollPxPerSec, fontFamilyId, setFontFamilyId, parchmentTone, setParchmentTone, colors, scaledFont } = useSettings();
+  const { theme, setTheme, fontSize, highContrast, setHighContrast, isBold, setIsBold, lineSpacing, setLineSpacing, fontFamilyId, setFontFamilyId, parchmentTone, setParchmentTone, celebraSubitoEnabled, setCelebraSubitoEnabled, hapticFeedbackEnabled, setHapticFeedbackEnabled, colors, scaledFont } = useSettings();
   const styles = makeStyles(colors, fontSize);
+  const appVersion = Constants.expoConfig?.version ?? "—";
+  const buildNumber =
+    Platform.OS === "android"
+      ? String(Constants.expoConfig?.android?.versionCode ?? "—")
+      : (Constants.nativeBuildVersion ?? "—");
 
   return (
     <SafeAreaView style={styles.container} testID="settings-screen">
-      <View style={styles.topBar}>
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={() => router.back()}
-          testID="btn-back"
-          accessibilityLabel="Indietro"
-        >
-          <Ionicons name="arrow-back" size={scaledFont(36)} color={colors.textPrimary} />
-          <Text style={styles.backBtnText}>Indietro</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Impostazioni</Text>
-        <View style={{ width: 120 }} />
-      </View>
+      <SectionScreenTopBar
+        title="Impostazioni"
+        onHome={() => router.back()}
+        colors={colors}
+        fontSize={fontSize}
+        textStyle={styles.title}
+        homeTestID="btn-back"
+      />
 
       <ScrollView contentContainerStyle={styles.content}>
-        {/* Sezione "Dimensione testo" rimossa (richiesta utente v2.16.8):
-            la dimensione del testo si regola ora solo dai bottoni A- / A+
-            in alto nelle schermate (Home, Messa, Celebra, Orazionale).
-            Il valore continua a essere persistito in SettingsContext. */}
+        {/* Dimensione testo: bottoni A- / A+ in Home, Messa, Celebra (e altre schermate).
+            Ogni modifica aggiorna il valore globale persistito in SettingsContext. */}
 
-        <View style={styles.section} testID="section-autoscroll-speed">
-          <Text style={styles.sectionTitle}>Velocità auto-scroll PE</Text>
-          <Text style={styles.sectionDesc}>
-            Quanto velocemente scorre il testo nelle Preghiere Eucaristiche ({autoScrollPxPerSec} px/s)
-          </Text>
-          <View style={styles.sliderRow}>
-            <Text style={[styles.fontBtnText, { width: 56, textAlign: "center" }]}>2</Text>
-            <Slider
-              style={{ flex: 1, height: 60 }}
-              minimumValue={2}
-              maximumValue={15}
-              step={1}
-              value={autoScrollPxPerSec}
-              onValueChange={(v) => setAutoScrollPxPerSec(Math.round(v))}
-              minimumTrackTintColor={colors.primary}
-              maximumTrackTintColor={colors.border}
-              thumbTintColor={colors.primary}
-              testID="slider-autoscroll-speed"
+        <View style={styles.section} testID="section-celebra-subito">
+          <View style={styles.switchRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.sectionTitle}>Celebra subito la Messa</Text>
+              <Text style={styles.sectionDesc}>
+                {celebraSubitoEnabled
+                  ? "Attivo: in Home compare «Celebra subito la Messa» (indice a parti), senza nascondere le scelte preparate né «Scegli la liturgia» e «Celebra la Messa». Disattiva per togliere solo il tasto oro."
+                  : "Disattivo (predefinito): in Home restano «Scegli la liturgia» e «Celebra la Messa». Attiva per aggiungere «Celebra subito» sopra quei tasti, lasciando visibile l’elenco delle scelte con Azzera."}
+              </Text>
+            </View>
+            <Switch
+              value={celebraSubitoEnabled}
+              onValueChange={setCelebraSubitoEnabled}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor="#FFFFFF"
+              style={{ transform: [{ scaleX: 1.3 }, { scaleY: 1.3 }] }}
+              testID="switch-celebra-subito"
             />
-            <Text style={[styles.fontBtnText, { width: 56, textAlign: "center" }]}>15</Text>
           </View>
         </View>
 
-        <View style={styles.section} testID="section-autoscroll-delay">
-          <Text style={styles.sectionTitle}>Attesa prima dell'auto-scroll</Text>
-          <Text style={styles.sectionDesc}>
-            Tempo (in secondi) prima che parta lo scorrimento automatico ({autoScrollDelaySec} sec.)
-          </Text>
-          <View style={styles.sliderRow}>
-            <Text style={[styles.fontBtnText, { width: 56, textAlign: "center" }]}>3 s</Text>
-            <Slider
-              style={{ flex: 1, height: 60 }}
-              minimumValue={3}
-              maximumValue={10}
-              step={1}
-              value={autoScrollDelaySec}
-              onValueChange={(v) => setAutoScrollDelaySec(Math.round(v))}
-              minimumTrackTintColor={colors.primary}
-              maximumTrackTintColor={colors.border}
-              thumbTintColor={colors.primary}
-              testID="slider-autoscroll-delay"
+        <View style={styles.section} testID="section-haptic">
+          <View style={styles.switchRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.sectionTitle}>Feedback tattile</Text>
+              <Text style={styles.sectionDesc}>
+                Vibrazione leggera ai tap principali (indice, celebrazione, Home). Utile se si vede poco; su tablet senza motore vibrazione non ha effetto.
+              </Text>
+            </View>
+            <Switch
+              value={hapticFeedbackEnabled}
+              onValueChange={setHapticFeedbackEnabled}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor="#FFFFFF"
+              style={{ transform: [{ scaleX: 1.3 }, { scaleY: 1.3 }] }}
+              testID="switch-haptic-feedback"
             />
-            <Text style={[styles.fontBtnText, { width: 56, textAlign: "center" }]}>10 s</Text>
           </View>
+        </View>
+
+        <View style={styles.section} testID="section-line-spacing">
+          <Text style={styles.sectionTitle}>Interlinea del testo</Text>
+          <Text style={styles.sectionDesc}>
+            Spaziatura verticale tra le righe in Celebra e in Scegli la liturgia (Messa). Utile con carattere grande o per leggere con più respiro. Si adatta alla dimensione testo (A-/A+).
+          </Text>
+          <Text style={[styles.sectionDesc, { marginTop: 12 }]}>
+            Interlinea: {formatLineSpacingValue(lineSpacing)} (1,00 = normale)
+          </Text>
+          <SettingsStepperSlider
+            value={lineSpacing}
+            minimumValue={LINE_SPACING_MIN}
+            maximumValue={LINE_SPACING_MAX}
+            step={LINE_SPACING_STEP}
+            onValueChange={setLineSpacing}
+            colors={colors}
+            scaledFont={scaledFont}
+            testID="slider-line-spacing"
+          />
         </View>
 
         <View style={styles.section} testID="section-font-family">
@@ -154,15 +169,6 @@ export default function Impostazioni() {
           <Text style={styles.sectionTitle}>Tema</Text>
           <View style={styles.themeRow}>
             <TouchableOpacity
-              style={[styles.themeCard, theme === "light" && styles.themeCardActive]}
-              onPress={() => setTheme("light")}
-              testID="btn-theme-light"
-              accessibilityLabel="Tema chiaro"
-            >
-              <Ionicons name="sunny" size={scaledFont(28)} color={theme === "light" ? colors.primary : colors.textSecondary} />
-              <Text style={[styles.themeCardText, theme === "light" && { color: colors.primary }]}>Chiaro</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
               style={[styles.themeCard, theme === "parchment" && styles.themeCardActive]}
               onPress={() => setTheme("parchment")}
               testID="btn-theme-parchment"
@@ -206,22 +212,16 @@ export default function Impostazioni() {
                 Regola la tonalità dello sfondo seppia ({parchmentTone}).
                 Il range è limitato per mantenere il testo nero sempre leggibile.
               </Text>
-              <View style={styles.sliderRow}>
-                <Text style={[styles.fontBtnText, { width: 56, textAlign: "center", fontSize: scaledFont(18) }]}>{PARCHMENT_TONE_MIN}</Text>
-                <Slider
-                  style={{ flex: 1, height: 60 }}
-                  minimumValue={PARCHMENT_TONE_MIN}
-                  maximumValue={PARCHMENT_TONE_MAX}
-                  step={1}
-                  value={parchmentTone}
-                  onValueChange={(v) => setParchmentTone(Math.round(v))}
-                  minimumTrackTintColor={colors.primary}
-                  maximumTrackTintColor={colors.border}
-                  thumbTintColor={colors.primary}
-                  testID="slider-parchment-tone"
-                />
-                <Text style={[styles.fontBtnText, { width: 56, textAlign: "center", fontSize: scaledFont(18) }]}>{PARCHMENT_TONE_MAX}</Text>
-              </View>
+              <SettingsStepperSlider
+                value={parchmentTone}
+                minimumValue={PARCHMENT_TONE_MIN}
+                maximumValue={PARCHMENT_TONE_MAX}
+                step={1}
+                onValueChange={setParchmentTone}
+                colors={colors}
+                scaledFont={scaledFont}
+                testID="slider-parchment-tone"
+              />
               <View
                 style={[
                   styles.parchmentPreview,
@@ -257,6 +257,24 @@ export default function Impostazioni() {
           </View>
         </View>
 
+        {Platform.OS === "web" || __DEV__ ? (
+          <View style={styles.section} testID="section-web-preview">
+            <Text style={styles.sectionTitle}>Anteprima web</Text>
+            <Text style={styles.sectionDesc}>
+              Hub di navigazione rapida per provare Celebra, Messa e impostazioni nel browser durante lo sviluppo.
+            </Text>
+            <TouchableOpacity
+              style={styles.previewLinkBtn}
+              onPress={() => router.push("/anteprima" as never)}
+              testID="btn-open-preview-hub"
+            >
+              <Ionicons name="desktop-outline" size={scaledFont(24)} color={colors.primary} />
+              <Text style={styles.previewLinkText}>Apri hub anteprima</Text>
+              <Ionicons name="chevron-forward" size={scaledFont(22)} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Informazioni</Text>
           <Text style={styles.info}>
@@ -268,6 +286,9 @@ export default function Impostazioni() {
           <Text style={styles.info}>
             I testi dell'Ordinario seguono la liturgia del Messale Romano. Si raccomanda il confronto con l'edizione CEI ufficiale.
           </Text>
+          <Text style={styles.versionInfo} testID="app-version">
+            Versione {appVersion} (build {buildNumber}) by AP
+          </Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -276,25 +297,6 @@ export default function Impostazioni() {
 
 const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  topBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderBottomWidth: 2,
-    borderBottomColor: colors.border,
-  },
-  backBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    minHeight: 64,
-    minWidth: 120,
-  },
-  backBtnText: { fontSize: Math.round(fontSize * 0.7), color: colors.textPrimary, fontWeight: "600" },
   title: { fontSize: Math.round(fontSize * 0.9), fontWeight: "700", color: colors.textPrimary },
   content: { padding: 16, gap: 12 },
   section: {
@@ -306,17 +308,18 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
   },
   sectionTitle: { fontSize: Math.round(fontSize * 0.85), fontWeight: "700", color: colors.textPrimary },
   sectionDesc: { fontSize: Math.round(fontSize * 0.6), color: colors.textSecondary, marginTop: 4 },
-  sliderRow: { flexDirection: "row", alignItems: "center", gap: 12, marginTop: 8 },
-  fontBtn: {
-    width: 68,
-    height: 60,
-    borderWidth: 2,
-    borderColor: colors.border,
-    borderRadius: 10,
+  previewLinkBtn: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    gap: 10,
+    marginTop: 12,
+    padding: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.background,
   },
-  fontBtnText: { fontSize: 26, fontWeight: "800", color: colors.textPrimary },
+  previewLinkText: { flex: 1, fontSize: Math.round(fontSize * 0.65), fontWeight: "700", color: colors.textPrimary },
   previewText: { fontSize: Math.round(fontSize * 0.85), color: colors.textPrimary, marginTop: 8, fontStyle: "italic", lineHeight: fontSize * 1.2 },
   themeRow: { flexDirection: "row", gap: 12, marginTop: 8 },
   themeCard: {
@@ -355,6 +358,12 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
   themePreviewRubric: { fontSize: Math.round(fontSize * 0.55), fontStyle: "italic", marginTop: 4 },
   switchRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   info: { fontSize: Math.round(fontSize * 0.6), color: colors.textSecondary, marginTop: 6, lineHeight: fontSize * 0.85 },
+  versionInfo: {
+    fontSize: Math.round(fontSize * 0.65),
+    color: colors.textPrimary,
+    marginTop: 16,
+    fontWeight: "700",
+  },
   // ----- Sezione Carattere -----
   fontFamilyList: { gap: 12, marginTop: 12 },
   fontFamilyCard: {

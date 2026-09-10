@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSettings } from "../src/SettingsContext";
+import { SectionScreenTopBar } from "../src/components/SectionScreenTopBar";
 import { api, prefetchLiturgies, prefetchStatic, PrefetchProgress } from "../src/api";
 import {
   getLiturgyIndex,
@@ -106,19 +107,14 @@ export default function ScaricaLetture() {
 
   return (
     <SafeAreaView style={styles.container} testID="download-screen">
-      <View style={styles.topBar}>
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={() => router.back()}
-          testID="btn-back"
-          accessibilityLabel="Indietro"
-        >
-          <Ionicons name="arrow-back" size={scaledFont(36)} color={colors.textPrimary} />
-          <Text style={styles.backBtnText}>Indietro</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Scarica letture</Text>
-        <View style={{ width: 120 }} />
-      </View>
+      <SectionScreenTopBar
+        title="Scarica letture"
+        onHome={() => router.back()}
+        colors={colors}
+        fontSize={fontSize}
+        textStyle={styles.title}
+        homeTestID="btn-back"
+      />
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.section}>
@@ -146,7 +142,7 @@ export default function ScaricaLetture() {
         ) : (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Quanti giorni scaricare?</Text>
-            <View style={styles.optionsGrid}>
+            <View style={styles.optionsRow}>
               {PRESET_OPTIONS.map((opt) => (
                 <TouchableOpacity
                   key={opt.days}
@@ -157,9 +153,11 @@ export default function ScaricaLetture() {
                   accessibilityRole="button"
                   accessibilityLabel={`Scarica ${opt.label}`}
                 >
-                  <Ionicons name="cloud-download" size={scaledFont(40)} color={colors.primary} />
+                  <Ionicons name="cloud-download" size={scaledFont(28)} color={colors.primary} />
                   <Text style={styles.optionDays}>{opt.days}</Text>
-                  <Text style={styles.optionLabel}>{opt.label}</Text>
+                  <Text style={styles.optionLabel} numberOfLines={2}>
+                    {opt.label}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -225,26 +223,12 @@ export default function ScaricaLetture() {
 
 const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  topBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderBottomWidth: 2,
-    borderBottomColor: colors.border,
+  title: {
+    fontSize: Math.round(fontSize * 0.9),
+    fontWeight: "700",
+    color: colors.textPrimary,
+    textAlign: "left",
   },
-  backBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    minHeight: 64,
-    minWidth: 120,
-  },
-  backBtnText: { fontSize: Math.round(fontSize * 0.7), color: colors.textPrimary, fontWeight: "600" },
-  title: { fontSize: Math.round(fontSize * 0.9), fontWeight: "700", color: colors.textPrimary },
   content: { padding: 20, gap: 20 },
   section: {
     padding: 24,
@@ -255,26 +239,27 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
   },
   sectionTitle: { fontSize: Math.round(fontSize * 0.85), fontWeight: "700", color: colors.textPrimary },
   sectionDesc: { fontSize: Math.round(fontSize * 0.65), color: colors.textSecondary, marginTop: 10, lineHeight: fontSize * 0.95 },
-  optionsGrid: {
+  optionsRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
+    flexWrap: "nowrap",
+    gap: 8,
     marginTop: 16,
   },
   optionCard: {
-    flexBasis: "30%",
-    flexGrow: 1,
-    padding: 18,
+    flex: 1,
+    minWidth: 0,
+    paddingVertical: 12,
+    paddingHorizontal: 6,
     borderWidth: 2,
     borderColor: colors.border,
     borderRadius: 12,
     alignItems: "center",
-    gap: 8,
-    minHeight: 130,
+    gap: 4,
+    minHeight: 100,
     justifyContent: "center",
   },
-  optionDays: { fontSize: Math.round(fontSize * 1.0), fontWeight: "800", color: colors.textPrimary },
-  optionLabel: { fontSize: Math.round(fontSize * 0.6), color: colors.textSecondary, textAlign: "center" },
+  optionDays: { fontSize: Math.round(fontSize * 0.85), fontWeight: "800", color: colors.textPrimary },
+  optionLabel: { fontSize: Math.round(fontSize * 0.5), color: colors.textSecondary, textAlign: "center" },
   progressText: { fontSize: Math.round(fontSize * 1.0), fontWeight: "800", color: colors.textPrimary, marginTop: 14, textAlign: "center" },
   currentDate: { fontSize: Math.round(fontSize * 0.65), color: colors.textSecondary, textAlign: "center", marginTop: 8 },
   progressBar: {

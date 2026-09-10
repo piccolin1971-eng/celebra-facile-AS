@@ -5,6 +5,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSettings } from "../../src/SettingsContext";
 import { api, VotiveMass, Preface } from "../../src/api";
+import { resolveVotivePrefaceId } from "../../src/votiveLiturgy";
 
 type VotiveMassFull = VotiveMass & {
   preface_id?: string;
@@ -43,7 +44,8 @@ export default function VotiveMassDetail() {
         }
         setMass(found);
         if (found.preface_id) {
-          const matchedPreface = pf.prefaces.find((p) => p.id === found.preface_id);
+          const resolvedId = resolveVotivePrefaceId(found.preface_id);
+          const matchedPreface = pf.prefaces.find((p) => p.id === resolvedId);
           if (matchedPreface) setPreface(matchedPreface);
         }
       } catch (e) {
@@ -195,7 +197,10 @@ export default function VotiveMassDetail() {
           onPress={() =>
             router.push({
               pathname: "/messa",
-              params: { votive: mass.id, preface: mass.preface_id || "" },
+              params: {
+                votive: mass.id,
+                preface: resolveVotivePrefaceId(mass.preface_id) || "",
+              },
             })
           }
           testID="btn-celebrate-votive"

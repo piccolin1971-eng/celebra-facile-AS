@@ -9,11 +9,17 @@
  *                                          mysteryAcclamations, solemnBlessings, votiveMasses, timestamp }
  */
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { localDateStr, todayStr as getTodayStr } from "./dateUtils";
+import { localDateStr } from "./dateUtils";
+import type { CelebrationMode } from "./massSession";
 
 const LITURGY_PREFIX = "messale_liturgy_";
 const INDEX_KEY = "messale_liturgy_index";
 const STATIC_KEY = "messale_static_cache";
+
+function liturgyStorageKey(date: string, mode: CelebrationMode = "calendar_day"): string {
+  if (mode === "calendar_day") return `${LITURGY_PREFIX}${date}`;
+  return `${LITURGY_PREFIX}${date}_${mode}`;
+}
 
 export type CachedLiturgyIndexEntry = {
   date: string;          // YYYY-MM-DD
@@ -22,14 +28,19 @@ export type CachedLiturgyIndexEntry = {
   date_label?: string;
 };
 
-export async function saveLiturgy(date: string, data: any): Promise<void> {
+export async function saveLiturgy(
+  date: string,
+  data: any,
+  mode: CelebrationMode = "calendar_day",
+): Promise<void> {
   try {
-    await AsyncStorage.setItem(`${LITURGY_PREFIX}${date}`, JSON.stringify(data));
-    // aggiorna index
+    const key = liturgyStorageKey(date, mode);
+    await AsyncStorage.setItem(key, JSON.stringify({ ...data, celebrationMode: mode }));
     const index = await getLiturgyIndex();
-    const next = index.filter((e) => e.date !== date);
+    const indexId = mode === "calendar_day" ? date : `${date}:${mode}`;
+    const next = index.filter((e) => e.date !== indexId);
     next.push({
-      date,
+      date: indexId,
       cachedAt: Date.now(),
       title: data?.title,
       date_label: data?.date_label,
@@ -41,9 +52,15 @@ export async function saveLiturgy(date: string, data: any): Promise<void> {
   }
 }
 
-export async function loadLiturgy(date: string): Promise<any | null> {
+export async function loadLiturgy(
+  date: string,
+  mode: CelebrationMode = "calendar_day",
+): Promise<any | null> {
   try {
-    const raw = await AsyncStorage.getItem(`${LITURGY_PREFIX}${date}`);
+    let raw = await AsyncStorage.getItem(liturgyStorageKey(date, mode));
+    if (!raw && mode === "calendar_day") {
+      raw = await AsyncStorage.getItem(`${LITURGY_PREFIX}${date}`);
+    }
     if (!raw) return null;
     return JSON.parse(raw);
   } catch (e) {

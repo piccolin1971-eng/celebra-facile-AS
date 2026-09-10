@@ -1,9 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React, { useMemo } from "react";
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView, StatusBar } from "react-native";
 import { useRouter, Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSettings } from "../../src/SettingsContext";
 import data from "../../src/data/eucharisticPrayersFull.json";
+import childrenData from "../../src/data/eucharisticPrayersChildren.json";
+import {
+  eucharisticPrayerAccentColor,
+  eucharisticPrayerFamilyLabel,
+} from "../../src/eucharisticPrayerUi";
 
 interface PE {
   id: string;
@@ -15,7 +20,10 @@ interface PE {
 export default function PreghiereEucaristicheList() {
   const router = useRouter();
   const { colors, fontSize } = useSettings();
-  const list: PE[] = (data as any) || [];
+  const list: PE[] = useMemo(
+    () => [...((data as PE[]) || []), ...((childrenData as PE[]) || [])],
+    [],
+  );
 
   const styles = makeStyles(colors, fontSize);
 
@@ -36,19 +44,26 @@ export default function PreghiereEucaristicheList() {
         data={list}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ paddingBottom: 32 }}
-        renderItem={({ item }) => (
+        renderItem={({ item }) => {
+          const accent = eucharisticPrayerAccentColor(item.id);
+          const familyLabel = eucharisticPrayerFamilyLabel(item.id);
+          return (
           <TouchableOpacity
-            style={styles.card}
+            style={[styles.card, { borderColor: accent, borderWidth: 3 }]}
             onPress={() => router.push(`/preghiere-eucaristiche/${item.id}`)}
             testID={`pe-card-${item.id}`}
           >
             <View style={{ flex: 1 }}>
+              {familyLabel ? (
+                <Text style={[styles.cardFamily, { color: accent }]}>{familyLabel}</Text>
+              ) : null}
               <Text style={styles.cardTitle}>{item.title}</Text>
               {item.description ? <Text style={styles.cardDesc}>{item.description}</Text> : null}
             </View>
-            <Ionicons name="chevron-forward" size={Math.max(28, fontSize * 0.9)} color={colors.primary} />
+            <Ionicons name="chevron-forward" size={Math.max(28, fontSize * 0.9)} color={accent} />
           </TouchableOpacity>
-        )}
+          );
+        }}
       />
     </SafeAreaView>
   );
@@ -69,8 +84,15 @@ const makeStyles = (c: any, fs: number) => StyleSheet.create({
     marginVertical: 8,
     padding: 20,
     borderRadius: 14,
-    borderWidth: 1,
+    borderWidth: 3,
     borderColor: c.border,
+  },
+  cardFamily: {
+    fontSize: Math.max(13, fs * 0.38),
+    fontWeight: "800",
+    letterSpacing: 1.1,
+    textTransform: "uppercase",
+    marginBottom: 6,
   },
   cardTitle: { color: c.textPrimary, fontSize: Math.max(20, fs * 0.65), fontWeight: "700", marginBottom: 4 },
   cardDesc: { color: c.textSecondary, fontSize: Math.max(15, fs * 0.45) },

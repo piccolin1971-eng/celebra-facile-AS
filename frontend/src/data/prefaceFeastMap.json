@@ -1,0 +1,393 @@
+{
+  "version": 1,
+  "source": "Messale Romano CEI, 3ª ed. 2020",
+  "moveableFeasts": [
+    {
+      "titlePatterns": ["corpus", "corpo e sangue", "santissimo corpo"],
+      "prefaceIds": [
+        "della_santissima_eucaristia_ii_i_frutti_d",
+        "della_santissima_eucaristia_i_l_eucarist",
+        "della_santissima_eucaristia_iii_l_eucarist"
+      ],
+      "kind": "proprio",
+      "note": "Corpus Domini — Eucaristia II preferito (Messale)"
+    },
+    {
+      "titlePatterns": ["santissima trinit"],
+      "prefaceIds": ["il_mistero_della_santissima_trinit"],
+      "kind": "proprio"
+    },
+    {
+      "titlePatterns": ["sacro cuore", "sacratissimo cuore"],
+      "prefaceIds": ["l_immenso_amore_di_cristo"],
+      "kind": "proprio"
+    },
+    {
+      "titlePatterns": ["cristo re", "re dell'universo", "re delluniverso"],
+      "prefaceIds": ["cristo_re_dell_universo"],
+      "kind": "proprio"
+    },
+    {
+      "titlePatterns": ["pentecoste"],
+      "prefaceIds": ["il_mistero_della_pentecoste"],
+      "kind": "proprio"
+    },
+    {
+      "titlePatterns": ["ascensione del signore", "ascensione"],
+      "prefaceIds": [
+        "dell_ascensione_del_signore_i_il_mistero",
+        "dell_ascensione_del_signore_ii_il_mistero",
+        "dopo_l_ascensione_nell_attes"
+      ],
+      "kind": "proprio"
+    },
+    {
+      "titlePatterns": ["battesimo del signore"],
+      "prefaceIds": ["consacrazione_e_missione_di_ges"],
+      "kind": "proprio",
+      "note": "Festa Battesimo del Signore — Consacrazione e missione di Gesù"
+    },
+    {
+      "titlePatterns": ["cena del signore", "giovedi santo"],
+      "prefaceIds": ["della_santissima_eucaristia_i_l_eucarist"],
+      "kind": "proprio",
+      "note": "Messa vespertina Cena del Signore"
+    }
+  ],
+  "celebrations": [
+    {
+      "monthDay": "01-01",
+      "titlePatterns": ["maria santissima madre di dio", "madre di dio"],
+      "prefaceIds": ["di_natale_i_cristo_luc", "di_natale_ii_nell_incar", "di_natale_iii_il_sublime", "della_beata_vergine_maria_i_la_materni"],
+      "kind": "tempo",
+      "note": "Messale: Prefazio di Natale; in alcune messe BVM I (maternità)"
+    },
+    {
+      "monthDay": "01-06",
+      "titlePatterns": ["epifania del signore", "epifania"],
+      "prefaceIds": ["dell_epifania_cristo_luc", "di_natale_i_cristo_luc", "di_natale_ii_nell_incar", "di_natale_iii_il_sublime"],
+      "kind": "proprio",
+      "note": "Epifania; oppure Natale nei giorni seguenti"
+    },
+    {
+      "monthDay": "01-25",
+      "titlePatterns": ["conversione di san paolo"],
+      "prefaceIds": ["degli_apostoli_i_gli_aposto", "degli_apostoli_ii_la_chiesa"],
+      "kind": "comune"
+    },
+    {
+      "monthDay": "02-02",
+      "titlePatterns": ["presentazione del signore"],
+      "prefaceIds": ["il_mistero_della_presentazione_del_signore"],
+      "kind": "proprio"
+    },
+    {
+      "monthDay": "02-14",
+      "titlePatterns": ["cirillo", "metodio"],
+      "prefaceIds": [
+        "dei_santi_dottori_della_chiesa_i_i_dottori",
+        "dei_santi_dottori_della_chiesa_ii_i_dottori",
+        "dei_santi_pastori_i_la_presenz",
+        "dei_santi_pastori_ii_i_pastori"
+      ],
+      "kind": "comune",
+      "note": "Patroni d'Europa — pastori o dottori (Messale)"
+    },
+    {
+      "monthDay": "02-22",
+      "titlePatterns": ["cattedra di san pietro", "cattedra"],
+      "prefaceIds": ["degli_apostoli_i_gli_aposto", "degli_apostoli_ii_la_chiesa"],
+      "kind": "comune"
+    },
+    {
+      "monthDay": "03-19",
+      "titlePatterns": ["san giuseppe", "giuseppe"],
+      "excludePatterns": ["lavoratore"],
+      "prefaceIds": ["di_san_giuseppe_sposo_dell"],
+      "kind": "proprio"
+    },
+    {
+      "monthDay": "03-25",
+      "titlePatterns": ["annunciazione del signore", "annunciazione"],
+      "prefaceIds": ["il_mistero_dell_incarnazione"],
+      "kind": "proprio"
+    },
+    {
+      "monthDay": "04-25",
+      "titlePatterns": ["san marco", "marco, evangelista"],
+      "prefaceIds": ["degli_apostoli_ii_la_chiesa"],
+      "kind": "comune",
+      "note": "Messale: Apostoli II"
+    },
+    {
+      "monthDay": "04-29",
+      "titlePatterns": ["caterina da siena"],
+      "prefaceIds": [
+        "dei_santi_dottori_della_chiesa_i_i_dottori",
+        "dei_santi_dottori_della_chiesa_ii_i_dottori",
+        "delle_sante_vergini_e_dei_sant"
+      ],
+      "kind": "comune"
+    },
+    {
+      "monthDay": "05-03",
+      "titlePatterns": ["filippo e giacomo"],
+      "prefaceIds": ["degli_apostoli_i_gli_aposto", "degli_apostoli_ii_la_chiesa"],
+      "kind": "comune"
+    },
+    {
+      "monthDay": "05-14",
+      "titlePatterns": ["san mattia", "mattia, apostolo"],
+      "prefaceIds": ["degli_apostoli_i_gli_aposto", "degli_apostoli_ii_la_chiesa"],
+      "kind": "comune"
+    },
+    {
+      "monthDay": "05-31",
+      "titlePatterns": ["visitazione"],
+      "prefaceIds": ["della_beata_vergine_maria_i_la_materni", "della_beata_vergine_maria_ii_la_chiesa"],
+      "kind": "comune"
+    },
+    {
+      "monthDay": "06-24",
+      "titlePatterns": ["nativita di san giovanni battista", "giovanni battista"],
+      "excludePatterns": ["de la salle", "martirio"],
+      "prefaceIds": ["la_missione_del_precursore"],
+      "kind": "proprio"
+    },
+    {
+      "monthDay": "06-29",
+      "titlePatterns": ["pietro e paolo", "pietro, apostoli", "santi apostoli", "ss. pietro"],
+      "excludePatterns": ["dedicazione"],
+      "prefaceIds": ["la_duplice_missione_di_pietro_e_di_paolo_nella_chiesa"],
+      "kind": "proprio"
+    },
+    {
+      "monthDay": "07-03",
+      "titlePatterns": ["san tommaso", "tommaso, apostolo"],
+      "prefaceIds": ["degli_apostoli_i_gli_aposto", "degli_apostoli_ii_la_chiesa"],
+      "kind": "comune"
+    },
+    {
+      "monthDay": "07-11",
+      "titlePatterns": ["san benedetto", "benedetto, abate"],
+      "prefaceIds": ["delle_sante_vergini_e_dei_sant", "la_vita_religiosa_come_servizio_a_dio_nell_imitazione_di_cristo"],
+      "kind": "comune"
+    },
+    {
+      "monthDay": "07-22",
+      "titlePatterns": ["maria maddalena", "maddalena"],
+      "excludePatterns": ["de pazzi", "de' pazzi"],
+      "prefaceIds": ["apostola_degli_apostoli"],
+      "kind": "proprio"
+    },
+    {
+      "monthDay": "07-23",
+      "titlePatterns": ["brigida"],
+      "prefaceIds": ["delle_sante_vergini_e_dei_sant", "la_vita_religiosa_come_servizio_a_dio_nell_imitazione_di_cristo"],
+      "kind": "comune"
+    },
+    {
+      "monthDay": "07-25",
+      "titlePatterns": ["san giacomo", "giacomo, apostolo"],
+      "prefaceIds": ["degli_apostoli_i_gli_aposto", "degli_apostoli_ii_la_chiesa"],
+      "kind": "comune"
+    },
+    {
+      "monthDay": "08-06",
+      "titlePatterns": ["trasfigurazione del signore", "trasfigurazione"],
+      "prefaceIds": ["il_mistero_della_trasfigurazione"],
+      "kind": "proprio"
+    },
+    {
+      "monthDay": "08-09",
+      "titlePatterns": ["teresa benedetta"],
+      "prefaceIds": ["dei_santi_martiri_i_il_segno_e", "dei_santi_martiri_ii_le_meravig", "delle_sante_vergini_e_dei_sant"],
+      "kind": "comune"
+    },
+    {
+      "monthDay": "08-10",
+      "titlePatterns": ["san lorenzo", "lorenzo, diacono"],
+      "excludePatterns": ["da brindisi"],
+      "prefaceIds": ["dei_santi_martiri_i_il_segno_e", "dei_santi_martiri_ii_le_meravig"],
+      "kind": "comune"
+    },
+    {
+      "monthDay": "08-15",
+      "titlePatterns": ["assunzione"],
+      "prefaceIds": ["la_gloria_di_maria_assunta_in_cielo"],
+      "kind": "proprio"
+    },
+    {
+      "monthDay": "08-24",
+      "titlePatterns": ["san bartolomeo", "bartolomeo, apostolo"],
+      "prefaceIds": ["degli_apostoli_i_gli_aposto", "degli_apostoli_ii_la_chiesa"],
+      "kind": "comune"
+    },
+    {
+      "monthDay": "08-29",
+      "titlePatterns": ["martirio di san giovanni battista", "martirio.*giovanni battista"],
+      "prefaceIds": ["la_missione_del_precursore"],
+      "kind": "proprio"
+    },
+    {
+      "monthDay": "09-08",
+      "titlePatterns": ["nativita della beata vergine", "nativita.*vergine maria"],
+      "prefaceIds": ["della_beata_vergine_maria_i_la_materni", "della_beata_vergine_maria_ii_la_chiesa"],
+      "kind": "comune"
+    },
+    {
+      "monthDay": "09-14",
+      "titlePatterns": ["esaltazione della santa croce", "esaltazione.*croce"],
+      "prefaceIds": ["la_vittoria_della_croce_gloriosa"],
+      "kind": "proprio"
+    },
+    {
+      "monthDay": "09-15",
+      "titlePatterns": ["addolorata"],
+      "prefaceIds": ["della_beata_vergine_maria_i_la_materni", "della_beata_vergine_maria_ii_la_chiesa"],
+      "kind": "comune"
+    },
+    {
+      "monthDay": "09-21",
+      "titlePatterns": ["san matteo", "matteo, apostolo"],
+      "prefaceIds": ["degli_apostoli_i_gli_aposto", "degli_apostoli_ii_la_chiesa"],
+      "kind": "comune"
+    },
+    {
+      "monthDay": "09-29",
+      "titlePatterns": ["michele", "gabriele", "raffaele", "arcangeli"],
+      "prefaceIds": ["degli_angeli_la_gloria"],
+      "kind": "comune"
+    },
+    {
+      "monthDay": "10-04",
+      "titlePatterns": ["francesco d'assisi", "francesco d assisi"],
+      "prefaceIds": ["delle_sante_vergini_e_dei_sant", "la_vita_religiosa_come_servizio_a_dio_nell_imitazione_di_cristo"],
+      "kind": "comune"
+    },
+    {
+      "monthDay": "10-18",
+      "titlePatterns": ["san luca", "luca, evangelista"],
+      "prefaceIds": ["degli_apostoli_i_gli_aposto", "degli_apostoli_ii_la_chiesa"],
+      "kind": "comune"
+    },
+    {
+      "monthDay": "10-28",
+      "titlePatterns": ["simone e giuda", "simone.*giuda"],
+      "prefaceIds": ["degli_apostoli_i_gli_aposto", "degli_apostoli_ii_la_chiesa"],
+      "kind": "comune"
+    },
+    {
+      "monthDay": "11-01",
+      "titlePatterns": ["tutti i santi"],
+      "prefaceIds": ["la_gloria_della_gerusalemme_del_cielo__nostra_madre"],
+      "kind": "proprio"
+    },
+    {
+      "monthDay": "11-02",
+      "titlePatterns": ["fedeli defunti", "commemorazione di tutti i fedeli"],
+      "prefaceIds": [
+        "dei_defunti_i_la_speranz",
+        "dei_defunti_ii_cristo___m",
+        "dei_defunti_iii_cristo__sa",
+        "dei_defunti_iv_dalla_vita",
+        "dei_defunti_v_la_nostra"
+      ],
+      "kind": "proprio"
+    },
+    {
+      "monthDay": "11-09",
+      "titlePatterns": ["lateranense", "dedicazione della basilica"],
+      "prefaceIds": ["il_mistero_del_tempio_di_dio_che___la_chiesa", "il_mistero_del_tempio_di_dio"],
+      "kind": "proprio"
+    },
+    {
+      "monthDay": "11-18",
+      "titlePatterns": ["dedicazione", "pietro", "paolo"],
+      "prefaceIds": ["degli_apostoli_i_gli_aposto", "degli_apostoli_ii_la_chiesa"],
+      "kind": "comune",
+      "note": "Dedicazione basiliche Ss. Pietro e Paolo"
+    },
+    {
+      "monthDay": "11-30",
+      "titlePatterns": ["sant'andrea", "andrea, apostolo"],
+      "prefaceIds": ["degli_apostoli_i_gli_aposto", "degli_apostoli_ii_la_chiesa"],
+      "kind": "comune"
+    },
+    {
+      "monthDay": "12-08",
+      "titlePatterns": ["immacolata concezione", "immacolata"],
+      "prefaceIds": ["il_mistero_di_maria_e_della_chiesa"],
+      "kind": "proprio"
+    },
+    {
+      "monthDay": "12-25",
+      "titlePatterns": ["natale del signore", "natale"],
+      "prefaceIds": ["di_natale_i_cristo_luc", "di_natale_ii_nell_incar", "di_natale_iii_il_sublime"],
+      "kind": "proprio"
+    },
+    {
+      "monthDay": "12-26",
+      "titlePatterns": ["stefano", "primo martire"],
+      "prefaceIds": ["dei_santi_martiri_i_il_segno_e", "dei_santi_martiri_ii_le_meravig"],
+      "kind": "comune"
+    },
+    {
+      "monthDay": "12-27",
+      "titlePatterns": ["san giovanni, apostolo", "giovanni, apostolo ed evangelista"],
+      "excludePatterns": ["battista", "de la salle"],
+      "prefaceIds": ["degli_apostoli_i_gli_aposto", "degli_apostoli_ii_la_chiesa"],
+      "kind": "comune"
+    },
+    {
+      "monthDay": "12-28",
+      "titlePatterns": ["innocenti"],
+      "prefaceIds": ["dei_santi_martiri_i_il_segno_e", "dei_santi_martiri_ii_le_meravig"],
+      "kind": "comune"
+    }
+  ],
+  "seasonalFallback": {
+    "avvento": [
+      "dell_avvento_i_la_duplice",
+      "dell_avvento_i_a_cristo__si",
+      "dell_avvento_ii_le_due_att",
+      "dell_avvento_ii_a_maria_nuov"
+    ],
+    "natale": [
+      "di_natale_i_cristo_luc",
+      "di_natale_ii_nell_incar",
+      "di_natale_iii_il_sublime",
+      "dell_epifania_cristo_luc"
+    ],
+    "quaresima": [
+      "di_quaresima_i_il_signifi",
+      "di_quaresima_ii_la_peniten",
+      "di_quaresima_iii_i_frutti_d",
+      "di_quaresima_iv_i_frutti_d",
+      "di_quaresima_v_la_via_del"
+    ],
+    "passione": [
+      "della_passione_del_signore_i_la_potenza",
+      "della_passione_del_signore_ii_la_vittori"
+    ],
+    "pasqua": [
+      "pasquale_i_il_mistero",
+      "pasquale_ii_la_vita_nu",
+      "pasquale_iii_cristo_viv",
+      "pasquale_iv_la_restaur",
+      "pasquale_v_cristo_agn"
+    ],
+    "ordinarioSunday": ["delle_domeniche_del_tempo"],
+    "ordinarioWeekday": [
+      "comune_i_il_rinnova",
+      "comune_ii_la_salvezz",
+      "comune_iii_lode_a_dio",
+      "comune_iv_la_lode__d",
+      "comune_v_proclamazi",
+      "comune_vi_cristo_sal",
+      "comune_vii_cristo_osp",
+      "comune_viii_ges__buon",
+      "comune_ix_la_gloria"
+    ]
+  }
+}

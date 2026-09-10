@@ -1,8 +1,7 @@
 name: Build Android APK (Native Gradle)
 
-# Costruisce l'APK Android del Messale CEI usando Gradle direttamente
-# (NO EAS - evita la quota mensile gratuita).
-# L'APK viene caricato come artifact scaricabile dalla pagina Actions.
+# APK di Celebra e prega facile (package it.messaparroco.prega).
+# Gradle diretto, senza EAS. Artifact scaricabile dalla pagina Actions.
 
 on:
   push:
@@ -104,6 +103,6 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4.6.1
         with:
-          name: messa-cei-v${{ github.run_number }}-apk
+          name: celebra-prega-facile-v${{ github.run_number }}-apk
           path: ${{ steps.locate.outputs.apk_path }}
           retention-days: 30

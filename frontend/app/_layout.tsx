@@ -14,12 +14,13 @@ import {
   PlaypenSans_700Bold,
 } from "@expo-google-fonts/playpen-sans";
 import {
-  SourGummy_400Regular,
-  SourGummy_700Bold,
-} from "@expo-google-fonts/sour-gummy";
+  LibreBaskerville_400Regular,
+  LibreBaskerville_400Regular_Italic,
+} from "@expo-google-fonts/libre-baskerville";
 
 export default function RootLayout() {
   // Carica i font selezionabili in Impostazioni → Carattere (Regular + Bold).
+  // I file sono nel bundle APK (expo-font + @expo-google-fonts): funzionano offline.
   const [loaded] = useFonts({
     AtkinsonHyperlegible_400Regular,
     AtkinsonHyperlegible_700Bold,
@@ -27,8 +28,8 @@ export default function RootLayout() {
     Lora_700Bold,
     PlaypenSans_400Regular,
     PlaypenSans_700Bold,
-    SourGummy_400Regular,
-    SourGummy_700Bold,
+    LibreBaskerville_400Regular,
+    LibreBaskerville_400Regular_Italic,
   });
 
   if (!loaded) {
@@ -53,8 +54,12 @@ export default function RootLayout() {
         <Stack.Screen name="index" />
         <Stack.Screen name="messa" />
         <Stack.Screen name="celebra" />
+        <Stack.Screen name="celebra-indice" />
         <Stack.Screen name="calendario" />
+        <Stack.Screen name="anteprima" />
         <Stack.Screen name="impostazioni" />
+        <Stack.Screen name="ore" />
+        <Stack.Screen name="ore-leggi" />
       </Stack>
     </SettingsProvider>
   );

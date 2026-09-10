@@ -1,53 +1,39 @@
 import React, { useMemo, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Pressable, useWindowDimensions } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Pressable,
+  useWindowDimensions,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSettings } from "../src/SettingsContext";
+import { SectionScreenTopBar } from "../src/components/SectionScreenTopBar";
+import { BrandScreenTitle } from "../src/components/BrandScreenTitle";
 import { getOrazionaleSections, OrazionalePrayer } from "../src/orazionale";
 import { FontFamilyId, resolveBodyFont, resolveHeadingFont } from "../src/fontFamily";
+import { renderOrazionaleOrFedeliText } from "../src/responsorialRendering";
+import { useKindleScrollPaging } from "../src/useKindleScrollPaging";
+import { triggerAppHaptic } from "../src/appHaptics";
 
 type ViewMode = "list" | "section" | "prayer";
 
-// Renderer condiviso per il testo della Preghiera dei Fedeli.
-// Regola globale: ogni occorrenza di "R/." (anche multipla, anche a metà
-// riga) viene mostrata in rosso bold; ogni riga che la contiene è seguita
-// da UNA SOLA riga vuota di separazione. Stessa logica usata in
-// /messa (prepara la liturgia) e /celebra (celebrazione).
-function renderRespText(text: string, styles: any) {
-  if (!text) return null;
-  const normalized = text.replace(/\n{3,}/g, "\n\n");
-  const rawLines = normalized.split("\n");
-  // Evita doppio gap: se una riga contiene R/. e la successiva è vuota,
-  // saltiamo la riga vuota perché il tail "\n\n" la genererà comunque.
-  const lines: string[] = [];
-  for (let i = 0; i < rawLines.length; i++) {
-    const ln = rawLines[i];
-    lines.push(ln);
-    if (/R\/\.?/.test(ln) && rawLines[i + 1] === "") i++;
-  }
-  const RESP_RE = /R\/\.?/g;
-  return (
-    <Text style={styles.prayerText} selectable>
-      {lines.map((ln, i) => {
-        const parts = ln.split(/(R\/\.?)/g);
-        const hasResp = RESP_RE.test(ln);
-        RESP_RE.lastIndex = 0;
-        const isLast = i === lines.length - 1;
-        const tail = isLast ? "" : (hasResp ? "\n\n" : "\n");
-        return (
-          <Text key={i}>
-            {parts.map((p, j) => {
-              if (/^R\/\.?$/.test(p)) {
-                return <Text key={j} style={styles.respMarker}>{p}</Text>;
-              }
-              return <Text key={j}>{p}</Text>;
-            })}
-            {tail}
-          </Text>
-        );
-      })}
-    </Text>
+function renderRespText(
+  text: string,
+  styles: any,
+  textProps?: { onTextLayout?: any },
+) {
+  return renderOrazionaleOrFedeliText(
+    text,
+    {
+      body: styles.prayerText,
+      marker: styles.respMarker,
+    },
+    textProps,
   );
 }
 
@@ -60,8 +46,7 @@ export default function OrazionaleScreen() {
   const [mode, setMode] = useState<ViewMode>("list");
   const [activeSectionKey, setActiveSectionKey] = useState<string | null>(null);
   const [activePrayerId, setActivePrayerId] = useState<string | null>(null);
-  // indice della "pagina" del corpo preghiera per Tap-to-Advance
-  const [page, setPage] = useState(0);
+  const [titleH, setTitleH] = useState(0);
 
   const styles = makeStyles(colors, fontSize, fontFamilyId, isBold);
 
@@ -70,11 +55,20 @@ export default function OrazionaleScreen() {
     ? activeSection.prayers.find((p) => p.id === activePrayerId) || null
     : null;
 
+  const isTap = readingMode === "tap";
+  const kindleEnabled = mode === "prayer" && isTap && !!activePrayer;
+  const kindle = useKindleScrollPaging({
+    enabled: kindleEnabled,
+    resetKey: `${activePrayerId || ""}:${fontSize}:${fontFamilyId}:${isBold ? 1 : 0}`,
+    fontSize,
+    tapAreaTestId: "orazionale-kindle-area",
+  });
+
   const goBack = () => {
     if (mode === "prayer") {
       setMode("section");
       setActivePrayerId(null);
-      setPage(0);
+      setTitleH(0);
     } else if (mode === "section") {
       setMode("list");
       setActiveSectionKey(null);
@@ -90,42 +84,42 @@ export default function OrazionaleScreen() {
 
   const openPrayer = (id: string) => {
     setActivePrayerId(id);
-    setPage(0);
+    setTitleH(0);
     setMode("prayer");
   };
 
-  // Suddividi corpo preghiera in chunk per modalità tap-to-advance
-  const prayerChunks = useMemo(() => {
-    if (!activePrayer) return [];
-    if (readingMode !== "tap") return [activePrayer.body];
-    // Stima: ~14 righe per pagina (più conservativo per font grandi)
-    const lines = activePrayer.body.split("\n");
-    const linesPerPage = fontSize >= 40 ? 8 : fontSize >= 30 ? 11 : 14;
-    const out: string[] = [];
-    for (let i = 0; i < lines.length; i += linesPerPage) {
-      out.push(lines.slice(i, i + linesPerPage).join("\n"));
-    }
-    return out.length > 0 ? out : [activePrayer.body];
-  }, [activePrayer, fontSize, readingMode]);
-
-  const total = prayerChunks.length;
-  const safePage = Math.max(0, Math.min(page, total - 1));
-  const advance = () => setPage((p) => Math.min(p + 1, total - 1));
-  const back = () => setPage((p) => Math.max(p - 1, 0));
-
   // ===== HEADER =====
   const renderHeader = (subtitle?: string) => (
-    <View style={styles.topBar}>
-      <TouchableOpacity style={styles.backBtn} onPress={goBack} testID="btn-back">
-        <Ionicons name="chevron-back" size={scaledFont(36)} color={colors.textPrimary} />
-        <Text style={styles.backBtnText}>Indietro</Text>
-      </TouchableOpacity>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.title} numberOfLines={1}>Orazionale</Text>
-        {subtitle ? <Text style={styles.subtitleHeader} numberOfLines={1}>{subtitle}</Text> : null}
+    <SectionScreenTopBar
+      title="Orazionale"
+      onHome={goBack}
+      colors={colors}
+      fontSize={fontSize}
+      textStyle={styles.title}
+      homeTestID="btn-back"
+      leading={
+        mode === "list" ? undefined : (
+          <TouchableOpacity style={styles.backBtn} onPress={goBack} testID="btn-back">
+            <Ionicons name="chevron-back" size={scaledFont(36)} color={colors.textPrimary} />
+            <Text style={styles.backBtnText}>Indietro</Text>
+          </TouchableOpacity>
+        )
+      }
+    >
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <BrandScreenTitle
+          title="Orazionale"
+          textStyle={styles.title}
+          numberOfLines={1}
+          markSize={Math.max(28, Math.round(fontSize * 0.85))}
+        />
+        {subtitle ? (
+          <Text style={styles.subtitleHeader} numberOfLines={1}>
+            {subtitle}
+          </Text>
+        ) : null}
       </View>
-      <View style={{ width: 100 }} />
-    </View>
+    </SectionScreenTopBar>
   );
 
   // ===== LISTA SEZIONI =====
@@ -192,48 +186,92 @@ export default function OrazionaleScreen() {
 
   // ===== DETTAGLIO PREGHIERA =====
   if (mode === "prayer" && activePrayer) {
-    const isTap = readingMode === "tap";
     const TAP_LEFT_RATIO = 0.35;
     const tapLeftWidth = Math.round(width * TAP_LEFT_RATIO);
+    const { index: microI, total: microTotal } = kindle.microPageUi;
 
     const handlePagePress = (e: any) => {
+      void triggerAppHaptic("selection");
       const x = e?.nativeEvent?.pageX ?? e?.nativeEvent?.locationX ?? 0;
-      if (x < tapLeftWidth) back();
-      else advance();
+      if (x < tapLeftWidth) kindle.tapPrev();
+      else kindle.tapNext();
     };
 
+    const bodyOffset = titleH + 16; // gap in prayerBody
     const Body = (
-      <View style={styles.prayerBody}>
-        <Text style={styles.prayerHeader}>{activePrayer.title}</Text>
-        {isTap
-          ? renderRespText(prayerChunks[safePage], styles)
-          : renderRespText(activePrayer.body, styles)}
+      <View
+        key={`prayer-body-${fontSize}-${fontFamilyId}-${isBold ? 1 : 0}`}
+        style={styles.prayerBody}
+      >
+        <Text
+          style={styles.prayerHeader}
+          onLayout={(e) => setTitleH(e.nativeEvent.layout.height)}
+        >
+          {activePrayer.title}
+        </Text>
+        {renderRespText(
+          activePrayer.body,
+          styles,
+          isTap
+            ? { onTextLayout: kindle.onBodyTextLayoutWithOffset(bodyOffset) }
+            : undefined,
+        )}
       </View>
     );
 
     return (
       <SafeAreaView style={styles.container} testID="orazionale-prayer">
         {renderHeader(activeSection?.label)}
-        {/* Stato pagina (per modalità tap) */}
-        {isTap && total > 1 ? (
+        {isTap ? (
           <View style={styles.pageStatusBar}>
-            <Text style={styles.pageStatusText}>{safePage + 1} / {total}</Text>
+            <Text style={styles.pageStatusText}>
+              {microI + 1} / {Math.max(1, microTotal)}
+            </Text>
           </View>
         ) : null}
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.prayerScroll}>
-          {isTap ? (
-            <Pressable
-              onPress={handlePagePress}
-              testID="prayer-tap-area"
-              android_disableSound
-              style={{ minHeight: 600, flexGrow: 1 }}
-            >
-              {Body}
-            </Pressable>
-          ) : (
-            Body
-          )}
-        </ScrollView>
+        <View style={{ flex: 1 }} testID="orazionale-kindle-area">
+          <ScrollView
+            ref={kindle.scrollRef}
+            style={{ flex: 1 }}
+            contentContainerStyle={[
+              styles.prayerScroll,
+              isTap ? { paddingBottom: kindle.pageBottomPad } : null,
+            ]}
+            showsVerticalScrollIndicator={!isTap}
+            scrollEnabled={!isTap}
+            onLayout={isTap ? kindle.onLayout : undefined}
+            onContentSizeChange={isTap ? kindle.onContentSizeChange : undefined}
+          >
+            {isTap ? (
+              <Pressable
+                onPress={handlePagePress}
+                testID="prayer-tap-area"
+                android_disableSound
+                style={{ minHeight: 600, flexGrow: 1 }}
+              >
+                {Body}
+              </Pressable>
+            ) : (
+              Body
+            )}
+          </ScrollView>
+          {isTap && kindle.maskH > 2 ? (
+            <View
+              pointerEvents="none"
+              style={{
+                position: "absolute",
+                left: 0,
+                right: 0,
+                bottom: 0,
+                height: kindle.maskH,
+                backgroundColor: colors.background,
+                zIndex: 5,
+                elevation: 5,
+              }}
+              testID="orazionale-kindle-mask"
+            />
+          ) : null}
+        </View>
       </SafeAreaView>
     );
   }
@@ -247,15 +285,6 @@ const makeStyles = (colors: any, fontSize: number, fontFamilyId: FontFamilyId, i
 
   return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  topBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: 2,
-    borderBottomColor: colors.border,
-    gap: 12,
-  },
   backBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -266,7 +295,7 @@ const makeStyles = (colors: any, fontSize: number, fontFamilyId: FontFamilyId, i
     gap: 4,
   },
   backBtnText: { fontSize: Math.round(fontSize * 0.7), fontWeight: "600", color: colors.textPrimary },
-  title: { fontSize: Math.round(fontSize * 0.85), fontWeight: "700", color: colors.textPrimary },
+  title: { fontSize: Math.round(fontSize * 0.9), fontWeight: "700", color: colors.textPrimary, textAlign: "left" },
   subtitleHeader: { fontSize: Math.round(fontSize * 0.6), color: colors.textSecondary, marginTop: 2 },
   content: { padding: 20, gap: 14 },
   introCard: {
@@ -333,35 +362,10 @@ const makeStyles = (colors: any, fontSize: number, fontFamilyId: FontFamilyId, i
     fontFamily: bodyFont.fontFamily,
     fontWeight: bodyFont.fontWeight,
   },
-  // Marker R/. in rosso bold (regola globale Preghiera dei Fedeli)
   respMarker: {
     color: colors.rubrics,
     fontFamily: headingFont.fontFamily,
     fontWeight: headingFont.fontWeight,
-  },
-  tapZone: {
-    position: "absolute",
-    top: 0,
-    bottom: 0,
-    backgroundColor: "transparent",
-  },
-  pageIndicator: {
-    position: "absolute",
-    bottom: 12,
-    alignSelf: "center",
-    left: 0, right: 0,
-    alignItems: "center",
-    pointerEvents: "none",
-  },
-  pageIndicatorText: {
-    fontSize: Math.round(fontSize * 0.5),
-    color: colors.textSecondary,
-    backgroundColor: colors.surface,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 18,
-    overflow: "hidden",
-    fontWeight: "600",
   },
   pageStatusBar: {
     paddingHorizontal: 20,

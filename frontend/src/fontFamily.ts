@@ -1,12 +1,11 @@
 /**
  * Font family management.
  *
- * 5 opzioni offerte all'utente:
+ * 4 opzioni offerte all'utente:
  *  - "system"      → font di sistema (default)
  *  - "atkinson"    → Atkinson Hyperlegible (ipovisione)
  *  - "lora"        → Lora (serif per lettura)
  *  - "playpen"     → Playpen Sans (manoscritto leggibile)
- *  - "sourgummy"   → Sour Gummy (sans morbido e arrotondato)
  *
  * Per i font personalizzati carichiamo Regular + Bold (700) così, con
  * «Grassetto» attivo, il testo resta nello stesso carattere.
@@ -15,8 +14,7 @@ export type FontFamilyId =
   | "system"
   | "atkinson"
   | "lora"
-  | "playpen"
-  | "sourgummy";
+  | "playpen";
 
 export type AppFontWeight = "400" | "600" | "700" | "800";
 
@@ -40,10 +38,6 @@ const FONT_FACES: Record<
   playpen: {
     regular: "PlaypenSans_400Regular",
     bold: "PlaypenSans_700Bold",
-  },
-  sourgummy: {
-    regular: "SourGummy_400Regular",
-    bold: "SourGummy_700Bold",
   },
 };
 
@@ -84,14 +78,6 @@ export const FONT_OPTIONS: {
     label: "Playpen Sans",
     description: "Scrittura a mano naturale, ottima per testi lunghi",
     family: "PlaypenSans_400Regular",
-    supportsNativeBold: true,
-    sample: "Padre nostro, che sei nei cieli",
-  },
-  {
-    id: "sourgummy",
-    label: "Sour Gummy",
-    description: "Sans morbido e arrotondato, tono amichevole",
-    family: "SourGummy_400Regular",
     supportsNativeBold: true,
     sample: "Padre nostro, che sei nei cieli",
   },

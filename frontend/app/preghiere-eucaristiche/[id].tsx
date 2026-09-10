@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter, Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSettings } from "../../src/SettingsContext";
 import data from "../../src/data/eucharisticPrayersFull.json";
+import { renderPeLineWithRedCross } from "../../src/liturgy/peLineRendering";
 
 type Block = {
   type: "r" | "t" | "title" | "c" | "acc" | "var" | "rubric_section";
@@ -133,7 +134,11 @@ export default function PreghieraEucaristicaDetail() {
     if (b.type === "rubric_section") return <Text key={key} style={styles.rubricSection}>{b.text}</Text>;
     if (b.type === "c") return <Text key={key} style={styles.consacrazione}>{b.text}</Text>;
     if (b.type === "acc") return <Text key={key} style={styles.acclamazione}>{b.text}</Text>;
-    return <Text key={key} style={styles.text}>{b.text}</Text>;
+    return (
+      <Text key={key} style={styles.text}>
+        {renderPeLineWithRedCross(b.text || "", styles.text, colors.rubrics)}
+      </Text>
+    );
   };
 
   return (
@@ -328,8 +333,8 @@ const makeStyles = (c: any, fs: number) => StyleSheet.create({
   footerHint: { color: c.textSecondary, fontSize: 13 },
 
   // Tipi blocco
-  rubric: { color: c.rubrics, fontSize: Math.max(14, fs * 0.42), fontStyle: "italic", marginVertical: 4, lineHeight: Math.max(20, fs * 0.6) },
-  rubricSection: { color: c.rubrics, fontSize: Math.max(14, fs * 0.42), fontStyle: "italic", marginVertical: 6, fontWeight: "600" },
+  rubric: { color: c.rubrics, fontSize: Math.round(fs * 0.85), fontStyle: "italic", marginVertical: 6, lineHeight: Math.round(fs * 1.2), letterSpacing: 0.8 },
+  rubricSection: { color: c.rubrics, fontSize: Math.round(fs * 0.85), fontStyle: "italic", marginVertical: 6, fontWeight: "600", lineHeight: Math.round(fs * 1.2), letterSpacing: 0.8 },
   text: { color: c.textPrimary, fontSize: fs, lineHeight: fs * 1.4, marginVertical: 8 },
   consacrazione: { color: c.accentPeConsecration, fontSize: fs, lineHeight: fs * 1.4, fontWeight: "700", marginVertical: 12 },
   acclamazione: { color: c.primary, fontSize: fs, lineHeight: fs * 1.4, fontStyle: "italic", marginVertical: 10 },

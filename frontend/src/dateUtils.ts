@@ -41,3 +41,35 @@ export function italianDateLabel(d: Date): string {
   const wd = (d.getDay() + 6) % 7; // 0=Lun
   return `${GIORNI[wd]} ${d.getDate()} ${MESI[d.getMonth()]} ${d.getFullYear()}`;
 }
+
+/** Da YYYY-MM-DD (es. cache liturgia) → «Domenica 23 agosto 2026», come in Home. */
+export function italianDateLabelFromISO(dateISO: string | undefined | null): string | null {
+  if (!dateISO || !/^\d{4}-\d{2}-\d{2}$/.test(dateISO)) return null;
+  try {
+    return italianDateLabel(parseLocalDate(dateISO));
+  } catch {
+    return null;
+  }
+}
+
+/** Nome mese in italiano (es. «Giugno») per i tasti giorno in home. */
+export function italianMonthName(d: Date): string {
+  const m = MESI[d.getMonth()];
+  return m.charAt(0).toUpperCase() + m.slice(1);
+}
+
+/** Nome giorno in italiano (es. «Giovedì»). */
+export function italianWeekdayName(d: Date): string {
+  const wd = (d.getDay() + 6) % 7;
+  return GIORNI[wd];
+}
+
+/** Giorni da oggi (0–7) per la striscia rapida in home; null se fuori finestra. */
+export function dayOffsetFromToday(dateStr: string): number | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return null;
+  const today = parseLocalDate(localDateStr(new Date()));
+  const target = parseLocalDate(dateStr);
+  const diff = Math.round((target.getTime() - today.getTime()) / 86_400_000);
+  if (diff < 0 || diff > 7) return null;
+  return diff;
+}

@@ -3,6 +3,7 @@
  * I dati sono bundlati nell'APK come JSON statico.
  */
 import orazionaleData from "./data/orazionale.json";
+import { resolveOrazionalePrayerId } from "./orazionaleFeastMap";
 
 export type OrazionalePrayer = {
   id: string;
@@ -79,48 +80,21 @@ export function getPrayerById(id: string): OrazionalePrayer | undefined {
  */
 export function suggestPrayerForLiturgy(liturgy: {
   title?: string;
+  date?: string;
+  saints?: { title: string; rank: string }[];
   season?: { season?: string };
 } | null | undefined): string | undefined {
   if (!liturgy) return undefined;
 
   const data = orazionaleData as Record<string, OrazionalePrayer[]>;
   const proprio = data.proprio_tempo || [];
-  const santi = data.santi || [];
+
+  // 1) Mappa festa → preghiera Orazionale (santi, solennità a data fissa, feste mobili)
+  const fromMap = resolveOrazionalePrayerId(liturgy);
+  if (fromMap && getPrayerById(fromMap)) return fromMap;
 
   const title = (liturgy.title || "").toLowerCase();
   const seasonName = (liturgy.season?.season || "").toLowerCase();
-
-  // 1) Match esatto di solennità / feste mariane / santi rilevanti
-  // Cerca per parole chiave in santi
-  const santiKeywords: { keys: string[]; titleSubstr: string }[] = [
-    { keys: ["santissima trinit"], titleSubstr: "santissima trinità" },
-    { keys: ["corpus", "corpo e sangue"], titleSubstr: "santissimo corpo e sangue" },
-    { keys: ["sacro cuore", "sacratissimo cuore"], titleSubstr: "sacratissimo cuore" },
-    { keys: ["cristo re", "re dell'universo"], titleSubstr: "re dell'universo" },
-    { keys: ["pentecoste"], titleSubstr: "pentecoste" },
-    { keys: ["ascensione"], titleSubstr: "ascensione del signore" },
-    { keys: ["battesimo del signore"], titleSubstr: "battesimo del signore" },
-    { keys: ["epifania"], titleSubstr: "epifania del signore" },
-    { keys: ["santa famiglia"], titleSubstr: "santa famiglia" },
-    { keys: ["assunzione"], titleSubstr: "assunzione" },
-    { keys: ["immacolata"], titleSubstr: "immacolata" },
-    { keys: ["tutti i santi"], titleSubstr: "tutti i santi" },
-    { keys: ["mercoledì delle ceneri", "ceneri"], titleSubstr: "mercoledì delle ceneri" },
-    { keys: ["palme", "passione del signore"], titleSubstr: "palme" },
-    { keys: ["giovedì santo"], titleSubstr: "giovedì santo" },
-    { keys: ["pasqua", "risurrezione"], titleSubstr: "domenica di pasqua" },
-    { keys: ["divina misericordia"], titleSubstr: "divina misericordia" },
-  ];
-
-  for (const k of santiKeywords) {
-    if (k.keys.some((kw) => title.includes(kw))) {
-      // Cerca prima nel proprio_tempo, poi nei santi
-      const found =
-        proprio.find((p) => p.title.toLowerCase().includes(k.titleSubstr)) ||
-        santi.find((p) => p.title.toLowerCase().includes(k.titleSubstr));
-      if (found) return found.id;
-    }
-  }
 
   // 2) Domenica numerata del tempo ordinario / quaresima / pasqua / avvento / natale
   const romanMatch = title.match(

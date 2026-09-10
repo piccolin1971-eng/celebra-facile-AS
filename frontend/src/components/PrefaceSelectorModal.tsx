@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput, SafeAreaView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Preface } from "../api";
-import { getSuggestedPrefaces } from "../prefaceUtils";
+import { getSuggestedPrefacesForLiturgy, LiturgyLike } from "../prefaceUtils";
 import { FontFamilyId, resolveBodyFont, ResolvedAppFont } from "../fontFamily";
 
 interface Props {
@@ -12,6 +12,7 @@ interface Props {
   selectedId: string;
   onSelect: (id: string) => void;
   currentSeasonKey: string;
+  liturgy: LiturgyLike | null;
   colors: any;
   scaledFont: (base: number) => number;
   fontFamilyId: FontFamilyId;
@@ -27,6 +28,7 @@ export const PrefaceSelectorModal: React.FC<Props> = ({
   selectedId,
   onSelect,
   currentSeasonKey,
+  liturgy,
   colors,
   scaledFont,
   fontFamilyId,
@@ -42,20 +44,20 @@ export const PrefaceSelectorModal: React.FC<Props> = ({
   const isSearching = query.length >= 2;
 
   const categories = [
-    { key: 'suggeriti', label: '⭐ Suggeriti per oggi' },
-    { key: 'avvento', label: '🕒 Tempo di Avvento' },
-    { key: 'natale', label: '🕒 Tempo di Natale ed Epifania' },
-    { key: 'quaresima', label: '🕒 Tempo di Quaresima' },
-    { key: 'passione', label: '🕒 Passione e Settimana Santa' },
-    { key: 'pasqua', label: '🕒 Pasqua, Ascensione e Pentecoste' },
-    { key: 'ordinario', label: '🕒 Tempo Ordinario (I–X)' },
-    { key: 'comune', label: '⛪ Prefazi comuni (I–IX)' },
-    { key: 'misteri', label: '✝️ Misteri del Signore e pericopi' },
-    { key: 'eucaristia', label: '🍞 Santissima Eucaristia' },
-    { key: 'sacramenti', label: '⛪ Sacramenti e riti' },
-    { key: 'bvm', label: '😇 Beata Vergine Maria e San Giuseppe' },
-    { key: 'santi', label: '😇 Santi e Angeli' },
-    { key: 'defunti', label: '✟ Per i Defunti' },
+    { key: "suggeriti", label: "Suggeriti per oggi" },
+    { key: "avvento", label: "Tempo di Avvento" },
+    { key: "natale", label: "Tempo di Natale ed Epifania" },
+    { key: "quaresima", label: "Tempo di Quaresima" },
+    { key: "passione", label: "Passione e Settimana Santa" },
+    { key: "pasqua", label: "Pasqua, Ascensione e Pentecoste" },
+    { key: "ordinario", label: "Tempo Ordinario (I–X)" },
+    { key: "comune", label: "Prefazi comuni (I–IX)" },
+    { key: "misteri", label: "Misteri del Signore e pericopi" },
+    { key: "eucaristia", label: "Santissima Eucaristia" },
+    { key: "sacramenti", label: "Sacramenti e riti" },
+    { key: "bvm", label: "Beata Vergine Maria e San Giuseppe" },
+    { key: "santi", label: "Santi e Angeli" },
+    { key: "defunti", label: "Per i Defunti" },
   ];
 
   const sortPrefaces = (items: Preface[], categoryKey: string) => {
@@ -132,7 +134,7 @@ export const PrefaceSelectorModal: React.FC<Props> = ({
             categories.map(cat => {
               let filtered = [];
               if (cat.key === 'suggeriti') {
-                filtered = getSuggestedPrefaces(prefaces, currentSeasonKey);
+                filtered = getSuggestedPrefacesForLiturgy(prefaces, liturgy);
                 if (filtered.length === 0) return null;
               } else {
                 filtered = prefaces.filter(p => (p.season === cat.key || p.category === cat.key));
@@ -149,11 +151,14 @@ export const PrefaceSelectorModal: React.FC<Props> = ({
                     style={[styles.sectionHeader, isExpanded && styles.sectionHeaderExpanded]}
                     onPress={() => setExpandedSeason(isExpanded ? null : cat.key)}
                   >
-                    <Text style={styles.sectionTitle}>{cat.label}</Text>
+                    <View style={styles.sectionTitleWrap}>
+                      <Text style={styles.sectionTitle}>{cat.label}</Text>
+                    </View>
                     <Ionicons
                       name={isExpanded ? "chevron-up" : "chevron-down"}
                       size={24}
                       color={colors.textPrimary}
+                      style={styles.sectionChevron}
                     />
                   </TouchableOpacity>
 
@@ -225,10 +230,12 @@ const makeStyles = (colors: any, scaledFont: any, bodyFont: ResolvedAppFont) => 
     borderRadius: 12,
   },
   sectionHeaderExpanded: { borderBottomWidth: 0, borderBottomLeftRadius: 0, borderBottomRightRadius: 0 },
-  sectionTitle: { fontSize: scaledFont(22), fontWeight: "700", color: colors.textPrimary },
+  sectionTitleWrap: { flex: 1, flexShrink: 1, marginRight: 12 },
+  sectionTitle: { fontSize: scaledFont(24), fontWeight: "700", color: colors.textPrimary },
+  sectionChevron: { flexShrink: 0 },
   expandedList: { backgroundColor: colors.bgSecondary, borderBottomLeftRadius: 12, borderBottomRightRadius: 12, overflow: 'hidden' },
   listItem: { padding: 18, borderBottomWidth: 1, borderBottomColor: colors.border },
   listItemActive: { backgroundColor: colors.primary + "20", borderLeftWidth: 4, borderLeftColor: colors.accentPe },
-  listItemText: { fontSize: scaledFont(20), color: colors.textPrimary },
+  listItemText: { fontSize: scaledFont(26), color: colors.textPrimary, lineHeight: scaledFont(34) },
   listItemTextActive: { color: colors.accentPe, fontWeight: "700" },
 });

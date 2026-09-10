@@ -1,6 +1,13 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { FontFamilyId, getFontFamilyString } from "./fontFamily";
+import {
+  LINE_SPACING_DEFAULT,
+  LINE_SPACING_MAX,
+  LINE_SPACING_MIN,
+  clampLineSpacing,
+} from "./liturgyTypography";
+import { setAppHapticEnabled, triggerAppHaptic } from "./appHaptics";
 
 type ThemeMode = "light" | "dark" | "parchment";
 type ReadingMode = "scroll" | "tap";
@@ -17,24 +24,27 @@ interface SettingsState {
   readingMode: ReadingMode;
   /** Tono sfondo pergamena (solo con theme === "parchment"). */
   parchmentTone: number;
-  // Tempo (in secondi) prima che parta l'auto-scroll dopo il cambio pagina (3..10)
-  autoScrollDelaySec: number;
-  // Velocità auto-scroll nelle Preghiere Eucaristiche, in pixel al secondo (2..15)
-  autoScrollPxPerSec: number;
   // Famiglia di carattere scelta dall'utente per il testo della celebrazione
   fontFamilyId: FontFamilyId;
   // Stringa fontFamily da passare ai componenti Text (undefined per il sistema)
   fontFamily: string | undefined;
   isBold: boolean;
+  /** Tasto «Celebra subito» in Home + selettori prefazio/PE in Celebra. Default off. */
+  celebraSubitoEnabled: boolean;
+  /** Feedback tattile (vibrazione) ai tap principali. Default off. */
+  hapticFeedbackEnabled: boolean;
+  /** Fattore interlinea testo liturgico (0.85 compatto … 1.25 ampio). */
+  lineSpacing: number;
   setTheme: (t: ThemeMode) => void;
   setFontSize: (n: number) => void;
   setHighContrast: (v: boolean) => void;
   setIsBold: (v: boolean) => void;
   setReadingMode: (m: ReadingMode) => void;
-  setAutoScrollDelaySec: (n: number) => void;
-  setAutoScrollPxPerSec: (n: number) => void;
   setFontFamilyId: (id: FontFamilyId) => void;
   setParchmentTone: (n: number) => void;
+  setCelebraSubitoEnabled: (v: boolean) => void;
+  setHapticFeedbackEnabled: (v: boolean) => void;
+  setLineSpacing: (n: number) => void;
   colors: ReturnType<typeof getColors>;
   scaledFont: (base: number) => number;
 }
@@ -115,8 +125,8 @@ const ACCENT_DARK = {
   accentPeModalBorder: "#FFA000",
   accentPeModalActiveBg: "#FFF3CD",
   accentPeModalActiveText: "#7B3F00",
-  accentAutoScrollBorder: "#FFA000",
-  accentAutoScrollText: "#FFB74D",
+  markerCelebrant: "#FFB74D",
+  markerAssembly: "#81D4FA",
   onPrimary: "#FFFFFF",
 };
 
@@ -135,8 +145,8 @@ const ACCENT_PARCHMENT = {
   accentPeModalBorder: "#8B6914",
   accentPeModalActiveBg: "#C8B89C",
   accentPeModalActiveText: "#1A1A1A",
-  accentAutoScrollBorder: "#8B6914",
-  accentAutoScrollText: "#8B4513",
+  markerCelebrant: "#B45309",
+  markerAssembly: "#1565C0",
   onPrimary: "#FFFFFF",
 };
 
@@ -183,6 +193,9 @@ const getColors = (theme: ThemeMode, highContrast: boolean, parchmentTone = PARC
       liturgicalWhite: "#FFE082",
       liturgicalRose: "#F48FB1",
       ...ACCENT_DARK,
+      ...(highContrast
+        ? { markerCelebrant: "#FFD54F", markerAssembly: "#90CAF9" }
+        : {}),
     };
   }
   if (theme === "parchment") {
@@ -214,64 +227,49 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   const [fontSize, setFontSizeState] = useState(32);
   const [highContrast, setHighContrastState] = useState(false);
   const [readingMode, setReadingModeState] = useState<ReadingMode>("tap");
-  const [autoScrollDelaySec, setAutoScrollDelaySecState] = useState<number>(7);
-  const [autoScrollPxPerSec, setAutoScrollPxPerSecState] = useState<number>(6);
   const [fontFamilyId, setFontFamilyIdState] = useState<FontFamilyId>("system");
   const [isBold, setIsBoldState] = useState(false);
   const [parchmentTone, setParchmentToneState] = useState(PARCHMENT_TONE_DEFAULT);
+  const [celebraSubitoEnabled, setCelebraSubitoEnabledState] = useState(false);
+  const [hapticFeedbackEnabled, setHapticFeedbackEnabledState] = useState(false);
+  const [lineSpacing, setLineSpacingState] = useState(LINE_SPACING_DEFAULT);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     (async () => {
       try {
         const saved = await AsyncStorage.getItem("messale_settings");
-        let migrationDoneV3 = false;
-        let migrationDoneV4 = false;
+        let migrationDoneV6 = false;
         try {
-          const flagV3 = await AsyncStorage.getItem("messale_settings_migrated_v3");
-          migrationDoneV3 = flagV3 === "1";
-          const flagV4 = await AsyncStorage.getItem("messale_settings_migrated_v4");
-          migrationDoneV4 = flagV4 === "1";
+          const flagV6 = await AsyncStorage.getItem("messale_settings_migrated_v6");
+          migrationDoneV6 = flagV6 === "1";
         } catch {}
         if (saved) {
           const s = JSON.parse(saved);
-          if (s.theme === "light" || s.theme === "dark" || s.theme === "parchment") setThemeState(s.theme);
+          if (s.theme === "dark" || s.theme === "parchment") {
+            setThemeState(s.theme);
+          } else if (s.theme === "light") {
+            // Tema chiaro rimosso dalle Impostazioni: migra a scuro.
+            setThemeState("dark");
+            try {
+              const next = { ...s, theme: "dark" };
+              await AsyncStorage.setItem("messale_settings", JSON.stringify(next));
+            } catch {}
+          }
           if (s.fontSize) setFontSizeState(s.fontSize);
           if (typeof s.highContrast === "boolean") setHighContrastState(s.highContrast);
           if (typeof s.isBold === "boolean") setIsBoldState(s.isBold);
           if (s.readingMode === "tap" || s.readingMode === "scroll") setReadingModeState(s.readingMode);
-          // Migrazione v3: chi aveva i vecchi default (5s o 6s) viene aggiornato a 7s una sola volta.
-          if (typeof s.autoScrollDelaySec === "number" && s.autoScrollDelaySec >= 3 && s.autoScrollDelaySec <= 10) {
-            if (!migrationDoneV3 && (s.autoScrollDelaySec === 5 || s.autoScrollDelaySec === 6)) {
-              setAutoScrollDelaySecState(7);
-              const next = { ...s, autoScrollDelaySec: 7 };
-              await AsyncStorage.setItem("messale_settings", JSON.stringify(next));
-              s.autoScrollDelaySec = 7;
-            } else {
-              setAutoScrollDelaySecState(s.autoScrollDelaySec);
-            }
-          }
-          // Migrazione v4: chi aveva il vecchio default 5 px/s viene aggiornato a 6 px/s una sola volta.
-          if (typeof s.autoScrollPxPerSec === "number" && s.autoScrollPxPerSec >= 2 && s.autoScrollPxPerSec <= 15) {
-            if (!migrationDoneV4 && s.autoScrollPxPerSec === 5) {
-              setAutoScrollPxPerSecState(6);
-              const next = { ...s, autoScrollPxPerSec: 6 };
-              await AsyncStorage.setItem("messale_settings", JSON.stringify(next));
-            } else {
-              setAutoScrollPxPerSecState(s.autoScrollPxPerSec);
-            }
-          }
           // Carattere (font family) — migrazione da ID rimossi.
           let fontId = s.fontFamilyId;
-          if (fontId === "varela") fontId = "sourgummy";
+          if (fontId === "varela" || fontId === "sourgummy") fontId = "atkinson";
           else if (fontId === "patrick") fontId = "playpen";
           else if (fontId === "garamond" || fontId === "cormorant") fontId = "system";
           if (
             fontId === "system" ||
             fontId === "atkinson" ||
             fontId === "lora" ||
-            fontId === "playpen" ||
-            fontId === "sourgummy"
+            fontId === "playpen"
           ) {
             setFontFamilyIdState(fontId);
           }
@@ -285,12 +283,32 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
             }
             setParchmentToneState(t);
           }
+          if (typeof s.celebraSubitoEnabled === "boolean") {
+            setCelebraSubitoEnabledState(s.celebraSubitoEnabled);
+          }
+          if (typeof s.hapticFeedbackEnabled === "boolean") {
+            setHapticFeedbackEnabledState(s.hapticFeedbackEnabled);
+            setAppHapticEnabled(s.hapticFeedbackEnabled);
+          }
+          if (typeof s.lineSpacing === "number") {
+            setLineSpacingState(clampLineSpacing(s.lineSpacing));
+          }
         }
-        if (!migrationDoneV3) {
-          await AsyncStorage.setItem("messale_settings_migrated_v3", "1");
-        }
-        if (!migrationDoneV4) {
-          await AsyncStorage.setItem("messale_settings_migrated_v4", "1");
+        if (!migrationDoneV6) {
+          try {
+            const raw = await AsyncStorage.getItem("messale_settings");
+            if (raw) {
+              const cur = JSON.parse(raw);
+              delete cur.autoScrollEnabled;
+              delete cur.autoScrollDelaySec;
+              delete cur.autoScrollPxPerSec;
+              delete cur.voiceScrollEnabled;
+              delete cur.voiceScrollSilenceSec;
+              delete cur.voiceScrollPxPerSec;
+              await AsyncStorage.setItem("messale_settings", JSON.stringify(cur));
+            }
+          } catch {}
+          await AsyncStorage.setItem("messale_settings_migrated_v6", "1");
         }
       } catch (e) {
         console.log("Impossibile caricare settings:", e);
@@ -300,26 +318,20 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     })();
   }, []);
 
-  const persist = async (patch: Partial<{ theme: ThemeMode; fontSize: number; highContrast: boolean; isBold: boolean; readingMode: ReadingMode; autoScrollDelaySec: number; autoScrollPxPerSec: number; fontFamilyId: FontFamilyId; parchmentTone: number }>) => {
-    const next = { theme, fontSize, highContrast, isBold, readingMode, autoScrollDelaySec, autoScrollPxPerSec, fontFamilyId, parchmentTone, ...patch };
+  const persist = async (patch: Partial<{ theme: ThemeMode; fontSize: number; highContrast: boolean; isBold: boolean; readingMode: ReadingMode; fontFamilyId: FontFamilyId; parchmentTone: number; celebraSubitoEnabled: boolean; hapticFeedbackEnabled: boolean; lineSpacing: number }>) => {
+    const next = { theme, fontSize, highContrast, isBold, readingMode, fontFamilyId, parchmentTone, celebraSubitoEnabled, hapticFeedbackEnabled, lineSpacing, ...patch };
     await AsyncStorage.setItem("messale_settings", JSON.stringify(next));
   };
 
-  const setTheme = (t: ThemeMode) => { setThemeState(t); persist({ theme: t }); };
+  const setTheme = (t: ThemeMode) => {
+    const next = t === "light" ? "dark" : t;
+    setThemeState(next);
+    persist({ theme: next });
+  };
   const setFontSize = (n: number) => { setFontSizeState(n); persist({ fontSize: n }); };
   const setHighContrast = (v: boolean) => { setHighContrastState(v); persist({ highContrast: v }); };
   const setIsBold = (v: boolean) => { setIsBoldState(v); persist({ isBold: v }); };
   const setReadingMode = (m: ReadingMode) => { setReadingModeState(m); persist({ readingMode: m }); };
-  const setAutoScrollDelaySec = (n: number) => {
-    const clamped = Math.max(3, Math.min(10, Math.round(n)));
-    setAutoScrollDelaySecState(clamped);
-    persist({ autoScrollDelaySec: clamped });
-  };
-  const setAutoScrollPxPerSec = (n: number) => {
-    const clamped = Math.max(2, Math.min(15, Math.round(n)));
-    setAutoScrollPxPerSecState(clamped);
-    persist({ autoScrollPxPerSec: clamped });
-  };
   const setFontFamilyId = (id: FontFamilyId) => {
     setFontFamilyIdState(id);
     persist({ fontFamilyId: id });
@@ -328,6 +340,21 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     const clamped = clamp(Math.round(n), PARCHMENT_TONE_MIN, PARCHMENT_TONE_MAX);
     setParchmentToneState(clamped);
     persist({ parchmentTone: clamped });
+  };
+  const setCelebraSubitoEnabled = (v: boolean) => {
+    setCelebraSubitoEnabledState(v);
+    persist({ celebraSubitoEnabled: v });
+  };
+  const setHapticFeedbackEnabled = (v: boolean) => {
+    setHapticFeedbackEnabledState(v);
+    setAppHapticEnabled(v);
+    persist({ hapticFeedbackEnabled: v });
+    if (v) void triggerAppHaptic("medium");
+  };
+  const setLineSpacing = (n: number) => {
+    const clamped = clampLineSpacing(n);
+    setLineSpacingState(clamped);
+    persist({ lineSpacing: clamped });
   };
 
   const colors = getColors(theme, highContrast, parchmentTone);
@@ -341,7 +368,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   if (!loaded) return null;
 
   return (
-    <SettingsContext.Provider value={{ theme, fontSize, highContrast, isBold, readingMode, autoScrollDelaySec, autoScrollPxPerSec, fontFamilyId, fontFamily, parchmentTone, setTheme, setFontSize, setHighContrast, setIsBold, setReadingMode, setAutoScrollDelaySec, setAutoScrollPxPerSec, setFontFamilyId, setParchmentTone, colors, scaledFont }}>
+    <SettingsContext.Provider value={{ theme, fontSize, highContrast, isBold, readingMode, fontFamilyId, fontFamily, parchmentTone, celebraSubitoEnabled, hapticFeedbackEnabled, lineSpacing, setTheme, setFontSize, setHighContrast, setIsBold, setReadingMode, setFontFamilyId, setParchmentTone, setCelebraSubitoEnabled, setHapticFeedbackEnabled, setLineSpacing, colors, scaledFont }}>
       {children}
     </SettingsContext.Provider>
   );

@@ -1,0 +1,284 @@
+{
+  "ss_trinita": [
+    {
+      "type": "prima_lettura",
+      "title": "Prima Lettura",
+      "reference": "Dal libro dell'Èsodo",
+      "text": "Es 34,4b-6.8-9\n\nIn quei giorni, Mosè si alzò di buon mattino e salì sul monte Sinai, come il Signore gli aveva comandato, con le due tavole di pietra in mano.\nAllora il Signore scese nella nube, si fermò là presso di lui e proclamò il nome del Signore. Il Signore passò davanti a lui, proclamando: «Il Signore, il Signore, Dio misericordioso e pietoso, lento all'ira e ricco di amore e di fedeltà».\nMosè si curvò in fretta fino a terra e si prostrò. Disse: «Se ho trovato grazia ai tuoi occhi, Signore, che il Signore cammini in mezzo a noi. Sì, è un popolo di dura cervíce, ma tu perdona la nostra colpa e il nostro peccato: fa' di noi la tua eredità».\n\nParola di Dio."
+    },
+    {
+      "type": "salmo",
+      "title": "Salmo Responsoriale",
+      "reference": "",
+      "text": "R. A te la lode e la gloria nei secoli.\n\nBenedetto sei tu, Signore, Dio dei padri nostri. R.\n\nBenedetto il tuo nome glorioso e santo. R.\n\nBenedetto sei tu nel tuo tempio santo, glorioso. R.\n\nBenedetto sei tu sul trono del tuo regno. R.\n\nBenedetto sei tu che penetri con lo sguardo gli abissi\ne siedi sui cherubini. R.\n\nBenedetto sei tu nel firmamento del cielo. R."
+    },
+    {
+      "type": "seconda_lettura",
+      "title": "Seconda Lettura",
+      "reference": "Dalla seconda lettera di san Paolo apostolo ai Corìnzi (2Cor 13,11-13)",
+      "text": "Fratelli, siate gioiosi, tendete alla perfezione, fatevi coraggio a vicenda, abbiate gli stessi sentimenti, vivete in pace e il Dio dell'amore e della pace sarà con voi.\nSalutatevi a vicenda con il bacio santo. Tutti i santi vi salutano.\nLa grazia del Signore Gesù Cristo, l'amore di Dio e la comunione dello Spirito Santo siano con tutti voi.\n\nParola di Dio."
+    },
+    {
+      "type": "acclamazione",
+      "title": "Acclamazione al Vangelo",
+      "reference": "",
+      "text": "Alleluia, alleluia.\n\nGloria al Padre e al Figlio e allo Spirito Santo,\na Dio, che è, che era e che viene. (Cf. Ap 1,8)\n\nAlleluia."
+    },
+    {
+      "type": "vangelo",
+      "title": "Vangelo",
+      "reference": "Dal Vangelo secondo Giovanni (Gv 3,16-18)",
+      "text": "In quel tempo, disse Gesù a Nicodèmo:\n«Dio ha tanto amato il mondo da dare il Figlio, unigenito, perché chiunque crede in lui non vada perduto, ma abbia la vita eterna.\nDio, infatti, non ha mandato il Figlio nel mondo per condannare il mondo, ma perché il mondo sia salvato per mezzo di lui.\nChi crede in lui non è condannato; ma chi non crede è già stato condannato, perché non ha creduto nel nome dell'unigenito Figlio di Dio».\n\nParola del Signore."
+    }
+  ],
+  "spirito_santo": [
+    {
+      "type": "prima_lettura",
+      "title": "Prima Lettura",
+      "reference": "Dagli Atti degli Apostoli (At 2,1-11)",
+      "text": "Mentre stava compiendosi il giorno della Pentecoste, si trovavano tutti insieme nello stesso luogo. Venne all'improvviso dal cielo un fragore, quasi un vento che si abbatte impetuoso, e riempì tutta la casa dove stavano. Apparvero loro lingue come di fuoco, che si dividevano, e si posarono su ciascuno di loro, e tutti furono colmati di Spirito Santo e cominciarono a parlare in altre lingue, nel modo in cui lo Spirito dava loro il potere di esprimersi.\nAbitavano allora a Gerusalemme Giudei osservanti, di ogni nazione che è sotto il cielo. A quel rumore, la folla si radunò e rimase turbata, perché ciascuno li udiva parlare nella propria lingua. Erano stupiti e, fuori di sé per la meraviglia, dicevano: «Tutti costoro che parlano non sono forse Galilei? E come mai ciascuno di noi sente parlare nella propria lingua nativa? Siamo Parti, Medi, Elamìti; abitanti della Mesopotàmia, della Giudea e della Cappadòcia, del Ponto e dell'Asia, della Frìgia e della Panfìlia, dell'Egitto e delle parti della Libia vicino a Cirène, Romani qui residenti, Giudei e prosèliti, Cretesi e Arabi, e li udiamo parlare nelle nostre lingue delle grandi opere di Dio».\n\nParola di Dio."
+    },
+    {
+      "type": "salmo",
+      "title": "Salmo Responsoriale",
+      "reference": "",
+      "text": "R. Manda il tuo Spirito, Signore, a rinnovare la terra.\nOppure:\nR. Alleluia, alleluia, alleluia.\n\nBenedici il Signore, anima mia!\nSei tanto grande, Signore, mio Dio!\nQuante sono le tue opere, Signore!\nLe hai fatte tutte con saggezza;\nla terra è piena delle tue creature. R.\n\nTogli loro il respiro: muoiono,\ne ritornano nella loro polvere.\nMandi il tuo spirito, sono creati,\ne rinnovi la faccia della terra. R.\n\nSia per sempre la gloria del Signore;\ngioisca il Signore delle sue opere.\nA lui sia gradito il mio canto,\nio gioirò nel Signore. R."
+    },
+    {
+      "type": "seconda_lettura",
+      "title": "Seconda Lettura",
+      "reference": "Dalla prima lettera di san Paolo apostolo ai Corìnzi",
+      "text": "1Cor 12,3b-7.12-13\n\nFratelli, nessuno può dire: «Gesù è Signore!», se non sotto l'azione dello Spirito Santo.\nVi sono diversi carismi, ma uno solo è lo Spirito; vi sono diversi ministeri, ma uno solo è il Signore; vi sono diverse attività, ma uno solo è Dio, che opera tutto in tutti. A ciascuno è data una manifestazione particolare dello Spirito per il bene comune.\nCome infatti il ​​corpo è uno solo e ha molte membra, e tutte le membra del corpo, pur essendo molte, sono un corpo solo, così anche il Cristo. Infatti noi tutti siamo stati battezzati mediante un solo Spirito in un solo corpo, Giudei o Greci, schiavi o liberi; e tutti siamo stati dissetati da un solo Spirito.\n\nParola di Dio."
+    },
+    {
+      "type": "acclamazione",
+      "title": "Acclamazione al Vangelo",
+      "reference": "",
+      "text": "Alleluia, alleluia.\n\nVieni, Santo Spirito,\nriempi i cuori dei tuoi fedeli\ne accendi in essi il fuoco del tuo amore.\n\nAlleluia."
+    },
+    {
+      "type": "vangelo",
+      "title": "Vangelo",
+      "reference": "Dal Vangelo secondo Giovanni (Gv 20,19-23)",
+      "text": "La sera di quel giorno, il primo della settimana, mentre erano chiuse le porte del luogo dove si trovavano i discepoli per timore dei Giudei, venne Gesù, stette in mezzo e disse loro: «Pace a voi!». Detto questo, mostrò loro le mani e il fianco. E i discepoli gioirono al vedere il Signore.\nGesù disse loro di nuovo: «Pace a voi! Come il Padre ha mandato me, anche io mando voi». Detto questo, soffiò e disse loro: «Ricevete lo Spirito Santo. A coloro a cui perdonerete i peccati, saranno perdonati; a coloro a cui non perdonerete, non saranno perdonati».\n\nParola del Signore."
+    }
+  ],
+  "ss_sacramento": [
+    {
+      "type": "prima_lettura",
+      "title": "Prima Lettura",
+      "reference": "Dal libro del Deuteronòmio",
+      "text": "Dt 8,2-3.14b-16a\n\nMosè parlò al popolo dicendo:\n«Ricòrdati di tutto il cammino che il Signore, tuo Dio, ti ha fatto percorrere in questi quarant'anni nel deserto, per umiliarti e metterti alla prova, per sapere quello che avevi nel cuore, se tu avresti osservato o no i suoi comandi.\nEgli dunque ti ha umiliato, ti ha fatto provare la fame, poi ti ha nutrito di manna, che tu non conoscevi e che i tuoi padri non avevano mai conosciuto, per farti capire che l'uomo non vive soltanto di pane, ma che l'uomo vive di quanto esce dalla bocca del Signore.\nNon dimenticare il Signore, tuo Dio, che ti ha fatto uscire dalla terra d'Egitto, dalla condizione servile; che ti ha condotto per questo deserto grande e spaventoso, luogo di serpenti velenosi e di scorpioni, terra assetata, senz'acqua; che ha fatto sgorgare per te l'acqua dalla roccia durissima; che nel deserto ti ha nutrito di manna sconosciuta ai tuoi padri».\n\nParola di Dio."
+    },
+    {
+      "type": "salmo",
+      "title": "Salmo Responsoriale",
+      "reference": "",
+      "text": "R. Loda il Signore, Gerusalemme.\n\nCelebra il Signore, Gerusalemme,\nloda il tuo Dio, Sion,\nperché ha rinforzato le sbarre delle tue porte,\nin mezzo a te ha benedetto i tuoi figli. R.\n\nEgli mette pace nei tuoi confini\ne ti sazia con fiore di frumento.\nManda sulla terra il suo messaggio:\nla sua parola corre veloce. R.\n\nAnnuncia a Giacobbe la sua parola,\ni suoi decreti e i suoi giudizi a Israele.\nCosì non ha fatto con nessun’altra nazione,\nnon ha fatto conoscere loro i suoi giudizi. R."
+    },
+    {
+      "type": "seconda_lettura",
+      "title": "Seconda Lettura",
+      "reference": "Dalla prima lettera di san Paolo apostolo ai Corìnzi (1Cor 10,16-17)",
+      "text": "Fratelli, il calice della benedizione che noi benediciamo, non è forse comunione con il sangue di Cristo? E il pane che noi spezziamo, non è forse comunione con il corpo di Cristo?\nPoiché vi è un solo pane, noi siamo, benché molti, un solo corpo: tutti infatti partecipiamo all'unico pane.\n\nParola di Dio."
+    },
+    {
+      "type": "acclamazione",
+      "title": "Acclamazione al Vangelo",
+      "reference": "",
+      "text": "Alleluia, alleluia.\n\nIo sono il pane vivo, disceso dal cielo, dice il Signore,\nse uno mangia di questo pane vivrà in eterno. (Gv 6,51)\n\nAlleluia."
+    },
+    {
+      "type": "vangelo",
+      "title": "Vangelo",
+      "reference": "Dal Vangelo secondo Giovanni (Gv 6,51-58)",
+      "text": "In quel tempo, Gesù disse alla folla:\n«Io sono il pane vivo, disceso dal cielo. Se uno mangia di questo pane vivrà in eterno e il pane che io darò è la mia carne per la vita del mondo».\nAllora i Giudei si misero a discutere aspramente fra loro: «Come può costui darci la sua carne da mangiare?».\nGesù disse loro: «In verità, in verità io vi dico: se non mangiate la carne del Figlio dell’uomo e non bevete il suo sangue, non avete in voi la vita. Chi mangia la mia carne e beve il mio sangue ha la vita eterna e io lo risusciterò nell’ultimo giorno. Perché la mia carne è vero cibo e il mio sangue vera bevanda.\nChi mangia la mia carne e beve il mio sangue rimane in me e io in lui. Come il Padre, che ha la vita, ha mandato me e io vivo per il Padre, così anche colui che mangia me vivrà per me. Questo è il pane disceso dal cielo; non è come quello che mangiarono i padri e morirono. Chi mangia questo pane vivrà in eterno».\n\nParola del Signore."
+    }
+  ],
+  "sacro_cuore": [
+    {
+      "type": "prima_lettura",
+      "title": "Prima Lettura",
+      "reference": "Dal libro del Deuteronòmio (Dt 7,6-11)",
+      "text": "Mosè parlò al popolo dicendo:\n«Tu sei un popolo consacrato al Signore, tuo Dio: il Signore, tuo Dio, ti ha scelto per essere il suo popolo particolare fra tutti i popoli che sono sulla terra.\nIl Signore si è legato a voi e vi ha scelti, non perché siete più numerosi di tutti gli altri popoli – siete infatti il ​​più piccolo di tutti i popoli –, ma perché il Signore vi ama e perché ha voluto mantenere il giuramento fatto ai vostri padri: il Signore vi ha fatti uscire con mano potente e vi ha riscattati liberandovi dalla condizione servile, dalla mano del faraone, re d'Egitto. Riconosci dunque il Signore, tuo Dio: egli è Dio, il Dio fedele, che mantiene l'alleanza e la bontà per mille generazioni, con coloro che lo amano e osservano i suoi comandamenti; ma ripaga direttamente coloro che lo odiano, facendoli perire; non concede una dilazione a chi lo odia, ma lo ripaga direttamente.\nOsserverai, dunque, mettendoli in pratica, i comandi, le leggi e le norme che oggi ti prescrivo».\n\nParola di Dio."
+    },
+    {
+      "type": "salmo",
+      "title": "Salmo Responsoriale",
+      "reference": "",
+      "text": "R. L’amore del Signore è per sempre.\n\nBenedici il Signore, anima mia,\nquanto è in me benedica il suo santo nome.\nBenedici il Signore, anima mia,\nnon dimenticare tutti i suoi benefici. R.\n\nEgli perdona tutte le tue colpe,\nguarisce tutte le tue infermità,\nsalva dalla fossa la tua vita,\nti circonda di bontà e misericordia. R.\n\nIl Signore compie cose giuste,\ndifende i diritti di tutti gli oppressi.\nHa fatto conoscere a Mosè le sue vie,\nle sue opere ai figli d’Israele. R.\n\nMisericordioso e pietoso è il Signore,\nlento all’ira e grande nell’amore.\nNon ci tratta secondo i nostri peccati\ne non ci ripaga secondo le nostre colpe. R."
+    },
+    {
+      "type": "seconda_lettura",
+      "title": "Seconda Lettura",
+      "reference": "Dalla prima lettera di san Giovanni apostolo (1Gv 4,7-16)",
+      "text": "Carissimi, amiamoci gli uni gli altri, perché l'amore è da Dio: chiunque ama è stato generato da Dio e conosce Dio. Chi non ama non ha conosciuto Dio, perché Dio è amore.\nIn questo si è manifestato l'amore di Dio in noi: Dio ha mandato nel mondo il suo Figlio unigenito, perché noi avessimo la vita per mezzo di lui.\nIn questo sta l'amore: non siamo stati noi ad amare Dio, ma è lui che ha amato noi e ha mandato il suo Figlio come vittima di espiazione per i nostri peccati.\nCarissimi, se Dio ci ha amati così, anche noi dobbiamo amarci gli uni gli altri. Nessuno mai ha visto Dio; se ci amiamo gli uni gli altri, Dio rimane in noi e l'amore di lui è perfetto in noi. In questo si conosce che noi rimaniamo in lui ed egli in noi: egli ci ha donato il suo Spirito.\nE noi stessi abbiamo veduto e attestiamo che il Padre ha mandato il suo Figlio come salvatore del mondo. Chiunque confessa che Gesù è il Figlio di Dio, Dio rimane in lui ed egli in Dio. E noi abbiamo conosciuto e creduto l'amore che Dio ha in noi.\nDio è amore; chi rimane nell'amore rimane in Dio e Dio rimane in lui.\n\nParola di Dio."
+    },
+    {
+      "type": "acclamazione",
+      "title": "Acclamazione al Vangelo",
+      "reference": "",
+      "text": "Alleluia, alleluia.\n\nPrendete il mio giogo sopra di voi, dice il Signore,\ne imparate da me, che sono mite e umile di cuore. (Mt 11,29ab)\n\nAlleluia."
+    },
+    {
+      "type": "vangelo",
+      "title": "Vangelo",
+      "reference": "Dal Vangelo secondo Matteo (Mt 11,25-30)",
+      "text": "In quel tempo Gesù disse:\n«Ti rendo lode, Padre, Signore del cielo e della terra, perché hai nascosto queste cose ai sapienti e ai dotti e le hai rivelate ai piccoli. Sì, o Padre, perché così hai deciso nella tua benevolenza. Tutto è stato dato a me dal Padre mio; nessuno conosce il Figlio se non il Padre, e nessuno conosce il Padre se non il Figlio e colui al quale il Figlio vorrà rivelarlo.\nVenite a me, voi tutti che siete stanchi e oppressi, e io vi darò ristoro. Prendete il mio giogo sopra di voi e imparate da me, che sono mite e umile di cuore, e troverete ristoro per la vostra vita. Il mio giogo infatti è dolce e il mio peso leggero».\n\nParola del Signore."
+    }
+  ],
+  "bvm": [
+    {
+      "type": "prima_lettura",
+      "title": "Prima Lettura",
+      "reference": "Dal libro della Gènesi (Gen 3,9-15.20)",
+      "text": "[Dopo che l'uomo ebbe mangiato del frutto dell'albero,] il Signore Dio lo chiamò e gli disse: «Dove sei?». Rispose: «Ho udito la tua voce nel giardino: ho avuto paura, perché sono nudo, e mi sono nascosto». Riprese: «Chi ti ha fatto sapere che sei nudo? Hai forse mangiato dell'albero di cui ti avevo comandato di non mangiare?». Risponde l'uomo: «La donna che tu mi hai posta accanto mi ha dato dell'albero e io ne ho mangiato». Il Signore Dio disse alla donna: «Che hai fatto?». Risponde la donna: «Il serpente mi ha ingannata e io ho mangiato».\nAllora il Signore Dio disse al serpente:\n«Poiché hai fatto questo,\nmaledetto tu fra tutto il bestiame\ne fra tutti gli animali selvatici!\nSul tuo ventre camminerai\ne polvere mangerai\nper tutti i giorni della tua vita.\nIo porrò inimicizia fra te e la donna,\nfra la tua stirpe e la sua stirpe:\nquesta ti schiaccerà la testa\ne tu le insidierai il calcagno».\nL'uomo chiamò sua moglie Eva, perché ella fu la madre di tutti i viventi.\n\nParola di Dio.\n\nOppure:\n\nErano perseveranti e concordi nella preghiera, insieme a Maria, la madre di Gesù.\n\nDagli Atti degli Apostoli\nAt 1,12-14\n\n[Dopo che Gesù fu assunto in cielo, gli apostoli] ritornarono a Gerusalemme dal monte detto degli Ulivi, che è vicino a Gerusalemme quanto il cammino permesso in giorno di sabato.\nEntrati in città, salirono nella stanza al piano superiore, dove erano soliti riunirsi: vi erano Pietro e Giovanni, Giacomo e Andrea, Filippo e Tommaso, Bartolomeo e Matteo, Giacomo figlio di Alfeo, Simone lo Zelota e Giuda figlio di Giacomo.\nTutti questi erano perseveranti e concordi nella preghiera, insieme ad alcune donne e a Maria, la madre di Gesù, e ai fratelli di lui.\n\nParola di Dio."
+    },
+    {
+      "type": "salmo",
+      "title": "Salmo Responsoriale",
+      "reference": "",
+      "text": "R. Di te si dicono cose gloriose, città di Dio!\n\nSui monti santi egli l’ha fondata;\nil Signore ama le porte di Sion\npiù di tutte le dimore di Giacobbe. R.\n\nDi te si dicono cose gloriose, città di Dio!\nSi dirà di Sion: «L'uno e l'altro in essa sono nati\ne lui,  l'Altissimo, la mantiene salda». R.\n\nIl Signore registrerà nel libro dei popoli:\n«Là costui è nato».\nE danzando canteranno:\n«Sono in te tutte le mie sorgenti». R."
+    },
+    {
+      "type": "acclamazione",
+      "title": "Acclamazione al Vangelo",
+      "reference": "",
+      "text": "Alleluia, alleluia.\n\nVergine felice,\nche hai generato il Signore;\nbeata Madre della Chiesa\nche fai ardere in noi lo Spirito del tuo Figlio Gesù Cristo.\n\nAlleluia."
+    },
+    {
+      "type": "vangelo",
+      "title": "Vangelo",
+      "reference": "Dal Vangelo secondo Giovanni (Gv 19,25-34)",
+      "text": "In quel tempo, stavano presso la croce di Gesù sua madre, la sorella di sua madre, Maria madre di Clèopa e Maria di Màgdala.\nGesù allora, vedendo la madre e accanto a lei il discepolo che egli amava, disse alla madre: «Donna, ecco tuo figlio!». Poi disse al discepolo: «Ecco tua madre!». E da quell’ora il discepolo l’accolse con sé.\nDopo questo, Gesù, sapendo che ormai tutto era compiuto, affinché si compisse la Scrittura, disse: «Ho sete». Vi era lì un vaso pieno di aceto; posero perciò una spugna, imbevuta di aceto, in cima a una canna e gliela accostarono alla bocca. Dopo aver preso l’aceto, Gesù disse: «È compiuto!». E, chinato il capo, consegnò lo spirito.\nEra il giorno della Parascève e i Giudei, perché i corpi non rimanessero sulla croce durante il sabato – era infatti un giorno solenne quel sabato –, chiesero a Pilato che fossero spezzate loro le gambe e fossero portati via. Vennero dunque i soldati e spezzarono le gambe all’uno e all’altro che erano stati crocifissi insieme con lui. Venuti però da Gesù, vedendo che era già morto, non gli spezzarono le gambe, ma uno dei soldati con una lancia gli colpì il fianco, e subito ne uscì sangue e acqua.\n\nParola del Signore."
+    }
+  ],
+  "preziosissimo_sangue": [
+    {
+      "type": "prima_lettura",
+      "title": "Prima Lettura",
+      "reference": "Dal libro del Deuteronòmio",
+      "text": "Dt 8,2-3.14b-16a\n\nMosè parlò al popolo dicendo:\n«Ricòrdati di tutto il cammino che il Signore, tuo Dio, ti ha fatto percorrere in questi quarant'anni nel deserto, per umiliarti e metterti alla prova, per sapere quello che avevi nel cuore, se tu avresti osservato o no i suoi comandi.\nEgli dunque ti ha umiliato, ti ha fatto provare la fame, poi ti ha nutrito di manna, che tu non conoscevi e che i tuoi padri non avevano mai conosciuto, per farti capire che l'uomo non vive soltanto di pane, ma che l'uomo vive di quanto esce dalla bocca del Signore.\nNon dimenticare il Signore, tuo Dio, che ti ha fatto uscire dalla terra d'Egitto, dalla condizione servile; che ti ha condotto per questo deserto grande e spaventoso, luogo di serpenti velenosi e di scorpioni, terra assetata, senz'acqua; che ha fatto sgorgare per te l'acqua dalla roccia durissima; che nel deserto ti ha nutrito di manna sconosciuta ai tuoi padri».\n\nParola di Dio."
+    },
+    {
+      "type": "salmo",
+      "title": "Salmo Responsoriale",
+      "reference": "",
+      "text": "R. Loda il Signore, Gerusalemme.\n\nCelebra il Signore, Gerusalemme,\nloda il tuo Dio, Sion,\nperché ha rinforzato le sbarre delle tue porte,\nin mezzo a te ha benedetto i tuoi figli. R.\n\nEgli mette pace nei tuoi confini\ne ti sazia con fiore di frumento.\nManda sulla terra il suo messaggio:\nla sua parola corre veloce. R.\n\nAnnuncia a Giacobbe la sua parola,\ni suoi decreti e i suoi giudizi a Israele.\nCosì non ha fatto con nessun’altra nazione,\nnon ha fatto conoscere loro i suoi giudizi. R."
+    },
+    {
+      "type": "seconda_lettura",
+      "title": "Seconda Lettura",
+      "reference": "Dalla prima lettera di san Paolo apostolo ai Corìnzi (1Cor 10,16-17)",
+      "text": "Fratelli, il calice della benedizione che noi benediciamo, non è forse comunione con il sangue di Cristo? E il pane che noi spezziamo, non è forse comunione con il corpo di Cristo?\nPoiché vi è un solo pane, noi siamo, benché molti, un solo corpo: tutti infatti partecipiamo all'unico pane.\n\nParola di Dio."
+    },
+    {
+      "type": "acclamazione",
+      "title": "Acclamazione al Vangelo",
+      "reference": "",
+      "text": "Alleluia, alleluia.\n\nIo sono il pane vivo, disceso dal cielo, dice il Signore,\nse uno mangia di questo pane vivrà in eterno. (Gv 6,51)\n\nAlleluia."
+    },
+    {
+      "type": "vangelo",
+      "title": "Vangelo",
+      "reference": "Dal Vangelo secondo Giovanni (Gv 6,51-58)",
+      "text": "In quel tempo, Gesù disse alla folla:\n«Io sono il pane vivo, disceso dal cielo. Se uno mangia di questo pane vivrà in eterno e il pane che io darò è la mia carne per la vita del mondo».\nAllora i Giudei si misero a discutere aspramente fra loro: «Come può costui darci la sua carne da mangiare?».\nGesù disse loro: «In verità, in verità io vi dico: se non mangiate la carne del Figlio dell’uomo e non bevete il suo sangue, non avete in voi la vita. Chi mangia la mia carne e beve il mio sangue ha la vita eterna e io lo risusciterò nell’ultimo giorno. Perché la mia carne è vero cibo e il mio sangue vera bevanda.\nChi mangia la mia carne e beve il mio sangue rimane in me e io in lui. Come il Padre, che ha la vita, ha mandato me e io vivo per il Padre, così anche colui che mangia me vivrà per me. Questo è il pane disceso dal cielo; non è come quello che mangiarono i padri e morirono. Chi mangia questo pane vivrà in eterno».\n\nParola del Signore."
+    }
+  ],
+  "sposi": [
+    {
+      "type": "prima_lettura",
+      "title": "Prima Lettura",
+      "reference": "Dal libro della Gènesi (Gen 1, 26-28.31a)",
+      "text": "Dio disse: «Facciamo l'uomo a nostra immagine, secondo la nostra somiglianza: domini sui pesci del mare e sugli uccelli del cielo, sul bestiame, su tutti gli animali selvatici e su tutti i rettili che strisciano sulla terra».\nE Dio creò l'uomo a sua immagine; a immagine di Dio lo creò: maschio e femmina li creò.\nDio li benedisse e Dio disse loro: «Siate fecondi e moltiplicatevi, riempite la terra e soggiogatela, dominate sui pesci del mare e sugli uccelli del cielo e su ogni essere vivente che striscia sulla terra».\nDio vide quanto aveva fatto, ed ecco, era cosa molto buona.\n\nParola di Dio."
+    },
+    {
+      "type": "salmo",
+      "title": "Salmo Responsoriale",
+      "reference": "Dal Salmo 127 (128)",
+      "text": "R. Sarà benedetto chi teme il Signore.\n\nBeato chi teme il Signore e cammina nelle sue vie.\nDella fatica delle tue mani ti nutrirai, sarai felice e avrai ogni bene. R.\n\nLa tua sposa come vite feconda nell'intimità della tua casa; i tuoi figli come virgulti d'ulivo intorno alla tua mensa. R.\n\nEcco com'è benedetto l'uomo che teme il Signore.\nTi benedica il Signore da Sion. Possa tu vedere il bene di Gerusalemme tutti i giorni della tua vita! R."
+    },
+    {
+      "type": "seconda_lettura",
+      "title": "Seconda Lettura",
+      "reference": "Dalla lettera di san Paolo apostolo agli Efesìni (Ef 5, 2a.25-32)",
+      "text": "Fratelli, camminate nella carità, nel modo in cui anche Cristo ci ha amato e ha dato se stesso per noi.\nE voi, mariti, amate le vostre mogli, come anche Cristo ha amato la Chiesa e ha dato se stesso per lei, per renderla santa, purificandola con il lavacro dell'acqua mediante la parola, e per presentare a se stesso la Chiesa tutta gloriosa, senza macchia né ruga o alcunché di simile, ma santa e immacolata.\nQuesto mistero è grande: io lo dico in riferimento a Cristo e alla Chiesa!\n\nParola di Dio."
+    },
+    {
+      "type": "acclamazione",
+      "title": "Acclamazione al Vangelo",
+      "reference": "Cf. Ef 5, 25.32",
+      "text": "Alleluia, alleluia.\nCristo ha amato la Chiesa e ha dato se stesso per lei: grande è questo mistero.\nAlleluia."
+    },
+    {
+      "type": "vangelo",
+      "title": "Vangelo",
+      "reference": "Dal Vangelo secondo Matteo (Mt 19, 3-6)",
+      "text": "In quel tempo, si avvicinarono a Gesù alcuni farisei per metterlo alla prova e gli chiesero: «È lecito a un uomo ripudiare la propria moglie per qualsiasi motivo?».\nEgli rispose: «Non avete letto che il Creatore da principio li fece maschio e femmina e disse: “Per questo l'uomo lascerà il padre e la madre e si unirà a sua moglie e i due diventeranno una sola carne”? Così non sono più due, ma una sola carne. Dunque l'uomo non divida quello che Dio ha congiunto».\n\nParola del Signore."
+    }
+  ],
+  "malati": [
+    {
+      "type": "prima_lettura",
+      "title": "Prima Lettura",
+      "reference": "Dal libro del profeta Isaìa (Is 35, 1-6a.10)",
+      "text": "Si rallegrino il deserto e la terra arida, esulti e fiorisca la steppa.\nEssi vedranno la gloria del Signore, la magnificenza del nostro Dio.\nIrrobustite le mani fiacche, rendete salde le ginocchia vacillanti.\nDite agli smarriti di cuore: «Coraggio, non temete! Ecco il vostro Dio, giunge la vendetta, la ricompensa divina. Egli viene a salvarvi».\nAllora si apriranno gli occhi dei ciechi e si schiuderanno gli orecchi dei sordi.\nAllora lo zoppo salterà come un cervo, griderà di gioia la lingua del muto.\nSu di essa ritorneranno i riscattati dal Signore e verranno in Sion con giubilo; felicità perenne splenderà sul loro capo; gioia e felicità li seguiranno e fuggiranno tristezza e pianto.\n\nParola di Dio."
+    },
+    {
+      "type": "salmo",
+      "title": "Salmo Responsoriale",
+      "reference": "Dal Salmo 102 (103)",
+      "text": "R. Benedici il Signore, anima mia.\n\nBenedici il Signore, anima mia, quanto è in me benedica il suo santo nome.\nBenedici il Signore, anima mia, non dimenticare tutti i suoi benefici. R.\n\nEgli perdona tutte le tue colpe, guarisce tutte le tue infermità, salva dalla fossa la tua vita, ti circonda di bontà e misericordia. R.\n\nMisericordioso e pietoso è il Signore, lento all'ira e grande nell'amore. R."
+    },
+    {
+      "type": "seconda_lettura",
+      "title": "Seconda Lettura",
+      "reference": "Dalla lettera di san Giacomo apostolo (Giac 5, 13-16)",
+      "text": "Fratelli miei, chi tra voi è nel dolore, preghi; chi è nella gioia, canti inni di lode.\nChi è malato, chiami presso di sé i presbìteri della Chiesa ed essi preghino su di lui, ungendolo con olio nel nome del Signore. E la preghiera fatta con fede salverà il malato: il Signore lo solleverà e, se ha commesso peccati, gli saranno perdonati.\nConfessate perciò i vostri peccati gli uni agli altri e pregate gli uni per gli altri per essere guariti. Molto potente è la preghiera fervorosa del giusto.\n\nParola di Dio."
+    },
+    {
+      "type": "acclamazione",
+      "title": "Acclamazione al Vangelo",
+      "reference": "Mt 8, 17",
+      "text": "Alleluia, alleluia.\nCristo ha preso le nostre infermità e si è caricato delle nostre malattie.\nAlleluia."
+    },
+    {
+      "type": "vangelo",
+      "title": "Vangelo",
+      "reference": "Dal Vangelo secondo Matteo (Mt 8, 1-4.14-17)",
+      "text": "In quel tempo, quando Gesù scese dal monte, molta folla lo seguì. Ed ecco, si avvicinò un lebbroso, si prostrò davanti a lui e disse: «Signore, se vuoi, puoi purificarmi». Tese la mano e lo toccò dicendo: «Lo voglio: sii purificato!». E subito la sua lebbra fu guarita.\nEntrato nella casa di Pietro, Gesù vide la suocera di lui che era a letto con la febbre. Le toccò la mano e la febbre la lasciò; poi ella si alzò e lo serviva.\nVenuta la sera, gli portarono molti indemoniati ed egli scacciò gli spiriti con la parola e guarì tutti i malati, perché si compisse ciò che era stato detto per mezzo del profeta Isaìa: «Egli ha preso le nostre infermità e si è caricato delle malattie».\n\nParola del Signore."
+    }
+  ],
+  "pace": [
+    {
+      "type": "prima_lettura",
+      "title": "Prima Lettura",
+      "reference": "Dal libro del profeta Isaìa (Is 32, 15-18)",
+      "text": "Ma infine in noi sarà infuso uno spirito dall'alto; allora il deserto diventerà un giardino e il giardino sarà considerato una selva.\nNel deserto prenderà dimora il diritto e la giustizia regnerà nel giardino.\nPraticare la giustizia darà pace, onorare la giustizia darà tranquillità e sicurezza per sempre.\nIl mio popolo abiterà in una dimora di pace, in abitazioni tranquille, in luoghi sicuri.\n\nParola di Dio."
+    },
+    {
+      "type": "salmo",
+      "title": "Salmo Responsoriale",
+      "reference": "Dal Salmo 84 (85)",
+      "text": "R. Il Signore ci darà la sua grazia e la sua pace.\n\nIl Signore annuncia la pace al suo popolo, ai suoi fedeli, a coloro che ritornano a lui con cuore sincero. R.\n\nAmore e verità si incontreranno, giustizia e pace si baceranno.\nVerità germoglierà dalla terra e giustizia si affaccerà dal cielo. R.\n\nIl Signore darà il suo bene e la nostra terra darà il suo frutto.\nGiustizia camminerà davanti a lui e i suoi passi tracceranno la via. R."
+    },
+    {
+      "type": "seconda_lettura",
+      "title": "Seconda Lettura",
+      "reference": "Dalla lettera di san Paolo apostolo agli Efesìni (Ef 2, 13-18)",
+      "text": "Fratelli, ora in Cristo Gesù voi che un tempo eravate lontani, siete diventati vicini, grazie al sangue di Cristo.\nEgli infatti è la nostra pace, colui che di due ha fatto una cosa sola, abbattendo il muro di separazione che li divideva, cioè l'inimicizia, per mezzo della sua carne.\nEgli è venuto ad annunciare pace a voi che eravate lontani, e pace a coloro che erano vicini.\nPer mezzo di lui infatti possiamo presentarci, gli uni e gli altri, al Padre in un solo Spirito.\n\nParola di Dio."
+    },
+    {
+      "type": "acclamazione",
+      "title": "Acclamazione al Vangelo",
+      "reference": "Mt 5, 9",
+      "text": "Alleluia, alleluia.\nBeati gli operatori di pace, perché saranno chiamati figli di Dio.\nAlleluia."
+    },
+    {
+      "type": "vangelo",
+      "title": "Vangelo",
+      "reference": "Dal Vangelo secondo Matteo (Mt 5, 1-12a)",
+      "text": "In quel tempo, vedendo le folle, Gesù salì sul monte: si pose a sedere e si avvicinarono a lui i suoi discepoli. Si mise a parlare e insegnava loro dicendo:\n«Beati i poveri in spirito, perché di essi è il regno dei cieli.\nBeati quelli che sono nel pianto, perché saranno consolati.\nBeati i miti, perché avranno in eredità la terra.\nBeati quelli che hanno fame e sete della giustizia, perché saranno saziati.\nBeati i misericordiosi, perché troveranno misericordia.\nBeati i puri di cuore, perché vedranno Dio.\nBeati gli operatori di pace, perché saranno chiamati figli di Dio.\nBeati i perseguitati per la giustizia, perché di essi è il regno dei cieli.\nBeati voi quando vi insulteranno, vi perseguiteranno e, mentendo, diranno ogni sorta di male contro di voi per causa mia.\nRallegratevi ed esultate, perché grande è la vostra ricompensa nei cieli».\n\nParola del Signore."
+    }
+  ]
+}

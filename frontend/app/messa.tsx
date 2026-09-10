@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useMemo } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Modal, Switch, Pressable, Platform, useWindowDimensions, TextInput } from "react-native";
+import React, { useCallback, useEffect, useState, useMemo } from "react";
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Modal, Switch, Pressable, Platform, useWindowDimensions, TextInput, type GestureResponderEvent } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -8,51 +8,61 @@ import { useSettings } from "../src/SettingsContext";
 import { api, Liturgy, Preface, EucharisticPrayer, MysteryAcclamation, SolemnBlessing } from "../src/api";
 import { PrefaceSelectorModal } from "../src/components/PrefaceSelectorModal";
 import { getOrazionaleSections, getPrayerById, suggestPrayerForLiturgy, OrazionalePrayer } from "../src/orazionale";
-import { loadSession, loadSessionOrLatest, saveSession, cleanupOldSessions, MassSession } from "../src/massSession";
-import { getLiturgicalSeasonKey, getSuggestedPrefaces } from "../src/prefaceUtils";
-import { FontFamilyId, resolveAppFont, resolveBodyFont, resolveHeadingFont } from "../src/fontFamily";
+import { splitFedeliTextIntoChunks } from "../src/orazionaleChunking";
+import { loadSession, saveSession, loadVotiveSession, saveVotiveSession, saveSessionForTarget, loadSessionForTarget, cleanupOldSessions, MassSession, parseCelebrationMode, messaRouteDateParam, messaRouteModeParam, messaRouteVotiveParam, type CelebrationMode, type SessionTarget, DEFAULT_CONGEDO_ID } from "../src/massSession";
+import { todayStr, parseLocalDate, italianDateLabel } from "../src/dateUtils";
+import { LiturgyDayBanner } from "../src/components/LiturgyDayBanner";
+import { BrandScreenTitle } from "../src/components/BrandScreenTitle";
+import { HomeCircleButton } from "../src/components/HomeCircleButton";
+import { FontSizeButtons } from "../src/components/FontSizeButtons";
+import { MessaVigilIntroSection } from "../src/components/MessaVigilIntroSection";
+import { getVigilEveContextForISO } from "../src/vigilCatalog";
+import {
+  availableCelebrationModes,
+  coerceCelebrationMode,
+  liturgyTitleForMode,
+  celebrationKindLabel,
+} from "../src/celebrationModeLabels";
+import {
+  favoriteFromTarget,
+  isLiturgyFavorite,
+  toggleLiturgyFavorite,
+  MAX_LITURGY_FAVORITES,
+} from "../src/liturgyFavorites";
+import { reconcileLiturgyColors } from "../src/localLiturgy";
+import { getLiturgicalSeasonKey, getSuggestedPrefacesForLiturgy } from "../src/prefaceUtils";
+import { getMassToggleDefaults } from "../src/massToggleDefaults";
+import {
+  mergeSaintReadingsIntoLiturgy,
+  shouldOfferSaintProperToggle,
+} from "../src/saintLectionary";
+import {
+  applyVotiveMassToLiturgy,
+  getVotiveMassDefaultChoices,
+  resolveVotivePrefaceId,
+  votiveSessionNeedsDefaultRepair,
+  type VotiveMassFull,
+} from "../src/votiveLiturgy";
+import {
+  BODY_LINE_HEIGHT,
+  liturgyLineHeight,
+} from "../src/liturgyTypography";
 import peFullData from "../src/data/eucharisticPrayersFull.json";
+import {
+  renderSalmoResponsorialText,
+  renderOrazionaleOrFedeliText,
+} from "../src/responsorialRendering";
+import { DialogueLine } from "../src/components/DialogueLine";
+import { PREFACE_DIALOGUES } from "../src/liturgy/prefaceIntro";
+import { isPeConsecrationLine, isPe1RubricLine, PE1_RUBRIC_PREFIX, renderPeLineWithRedCross, unwrapPe1RubricLine } from "../src/liturgy/peLineRendering";
 
-// === Helper: suggerisce l'opzione "communicantes" (Tempo Liturgico) per la PE
-// in base alla data e alla stagione liturgica del giorno.
-// Mappa la liturgia corrente alle opzioni del JSON eucharisticPrayersFull:
-//   "ordinario" | "domenica" | "natale" | "epifania" | "pasqua" | "ascensione" | "pentecoste"
-function suggestCommunicantesId(
-  liturgy: Liturgy | null | undefined,
-  options: { id: string; label: string }[],
-): string {
-  const ids = new Set(options.map((o) => o.id));
-  const title = ((liturgy?.title || "") + " " + (liturgy?.season?.season || "")).toLowerCase();
-  const dateStr = liturgy?.date || "";
-  // Giorno della settimana (0=domenica, 6=sabato) usando la data ISO YYYY-MM-DD
-  let weekday = -1;
-  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-    const [y, m, d] = dateStr.split("-").map((s) => parseInt(s, 10));
-    // Costruzione locale per evitare offset timezone
-    weekday = new Date(y, m - 1, d).getDay();
-  }
-  // Ordine di priorità: feste specifiche → tempo → giorno settimana
-  if (ids.has("pentecoste") && /pentecoste/.test(title)) return "pentecoste";
-  if (ids.has("ascensione") && /ascension/.test(title)) return "ascensione";
-  if (ids.has("epifania") && /epifania/.test(title)) return "epifania";
-  // "Pasqua" Communicantes: solo per Veglia Pasquale, Pasqua di Risurrezione,
-  // I e II Domenica di Pasqua (Ottava in Albis). Per III-VII Domenica usiamo
-  // il Communicantes domenicale ordinario.
-  const isEasterOctave =
-    /^veglia\s+pasquale/.test(title) ||
-    /^pasqua\s+di\s+risurr/.test(title) ||
-    /^domenica\s+di\s+pasqua/.test(title) ||      // I Domenica (= Pasqua), senza ordinale
-    /^i\s+domenica\s+di\s+pasqua/.test(title) ||
-    /^ii\s+domenica\s+di\s+pasqua/.test(title) || // Ottava in Albis
-    /^ottava\s+di\s+pasqua/.test(title) ||
-    /lunedi.*ottava|martedi.*ottava|mercoledi.*ottava|giovedi.*ottava|venerdi.*ottava|sabato.*ottava/.test(title);
-  if (ids.has("pasqua") && isEasterOctave) return "pasqua";
-  // Tempo di Natale (compreso ottava): titolo o stagione
-  if (ids.has("natale") && /natale|santa\s+famiglia|maria.*madre.*dio/.test(title)) return "natale";
-  // Domenica generica (qualsiasi tempo, eccetto i casi sopra)
-  if (ids.has("domenica") && weekday === 0) return "domenica";
-  return "ordinario";
-}
+import {
+  isWebInteractiveTarget,
+  massPageSection,
+  resolveMassPageIndex,
+} from "../src/massPrep/messaPaging";
+import { suggestCommunicantesId } from "../src/massPrep/suggestCommunicantes";
+import { makeStyles } from "../src/massPrep/messaStyles";
 
 type ReadingType =
   | "antifona_ingresso" | "colletta"
@@ -81,24 +91,15 @@ export default function MessaScreen() {
   }, []);
 
   const router = useRouter();
-  const params = useLocalSearchParams<{ date?: string; preface?: string; votive?: string }>();
-  const { colors, fontSize: settingsFontSize, scaledFont, readingMode, autoScrollDelaySec, autoScrollPxPerSec, fontFamilyId, isBold } = useSettings();
-
-  // Stato locale fontSize (override delle impostazioni globali, valido solo
-  // per questa sessione di preparazione). Inizializzato da settings, può
-  // essere modificato con i bottoni A- / A+ in alto, esattamente come in /celebra.
-  const [fontSize, setFontSize] = useState(settingsFontSize);
-  // Sincronizza quando l'utente cambia il font dalle Impostazioni.
-  useEffect(() => {
-    setFontSize(settingsFontSize);
-  }, [settingsFontSize]);
-  const FONT_MIN = 14;
-  const FONT_MAX = 60;
-  const FONT_STEP = 2;
-  const decreaseFont = () =>
-    setFontSize((f) => Math.max(FONT_MIN, f - FONT_STEP));
-  const increaseFont = () =>
-    setFontSize((f) => Math.min(FONT_MAX, f + FONT_STEP));
+  const params = useLocalSearchParams<{ date?: string; preface?: string; votive?: string; mode?: string }>();
+  const {
+    colors,
+    fontSize,
+    scaledFont,
+    fontFamilyId,
+    isBold,
+    lineSpacing,
+  } = useSettings();
   const [liturgy, setLiturgy] = useState<Liturgy | null>(null);
   const [fixedParts, setFixedParts] = useState<Record<string, any> | null>(null);
   const [prefaces, setPrefaces] = useState<Preface[]>([]);
@@ -108,6 +109,7 @@ export default function MessaScreen() {
   const [pasquaDismissal, setPasquaDismissal] = useState<any>(null);
   const [currentSeasonKey, setCurrentSeasonKey] = useState<string>("ordinario");
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // selezioni utente
   const [penitentialForm, setPenitentialForm] = useState<"A" | "B" | "C">("A");
@@ -131,7 +133,8 @@ export default function MessaScreen() {
   const [prayersOverPeople, setPrayersOverPeople] = useState<{ id: string; num: number; text: string }[]>([]);
   const [showGloria, setShowGloria] = useState<boolean>(false);
   const [showCredo, setShowCredo] = useState<boolean>(false);
-  const [congedoId, setCongedoId] = useState("A");
+  const [showAntifone, setShowAntifone] = useState<boolean>(false);
+  const [congedoId, setCongedoId] = useState(DEFAULT_CONGEDO_ID);
   const [benedizioneId, setBenedizioneId] = useState("A");
 
   const [showPrefaces, setShowPrefaces] = useState(false);
@@ -143,49 +146,364 @@ export default function MessaScreen() {
   // Preghiera dei fedeli (Orazionale)
   const [selectedOrazionaleId, setSelectedOrazionaleId] = useState<string>("");
   const [showOrazionalePray, setShowOrazionalePray] = useState<boolean>(false);
+  const [useSaintProperReadings, setUseSaintProperReadings] = useState<boolean>(false);
   const [orazionaleSection, setOrazionaleSection] = useState<string | null>(null);
 
-  // Paginazione: tap-to-advance per facilitare la celebrazione
-  const [currentPage, setCurrentPage] = useState(0);
+  // Paginazione: identità per chiave, non per indice (l'elenco pagine cambia con font/PE/letture).
+  const [pageKey, setPageKey] = useState("intro");
   const scrollRef = React.useRef<ScrollView | null>(null);
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
-
-  // Auto-scroll PE: toggle ON/OFF.
-  // Default: ON ("Auto"). Tap → "Off". La velocità è impostata in Impostazioni.
-  // Si attiva solo nelle pagine della Preghiera Eucaristica.
-  const [peAutoScrollEnabled, setPeAutoScrollEnabled] = useState<boolean>(true);
-  // Ref aggiornato durante il render con la chiave della pagina corrente.
-  // Usato per attivare l'auto-scroll SOLO sulle pagine della Preghiera Eucaristica
-  // (chiavi `pe-cons-*`, `pe-after-*`, `pe-acclamazione`).
-  const currentPageKeyRef = React.useRef<string>("");
-  const scrollYRef = React.useRef(0);
-  const contentHeightRef = React.useRef(0);
-  const containerHeightRef = React.useRef(0);
-  const autoScrollTimerRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
+  const advancePageRef = React.useRef<(() => void) | null>(null);
+  const suppressSessionSaveRef = React.useRef(false);
 
   // Date corrente per session storage (key: data ISO)
   const [sessionDate, setSessionDate] = useState<string>("");
+  const [activeVotiveId, setActiveVotiveId] = useState<string | null>(null);
+  const [activeVotiveMeta, setActiveVotiveMeta] = useState<{ title: string; color: string } | null>(
+    null,
+  );
+  const [celebrationMode, setCelebrationMode] = useState<CelebrationMode>("calendar_day");
+
+  useEffect(() => {
+    setPageKey("intro");
+  }, [sessionDate, activeVotiveId, celebrationMode]);
+
+  useEffect(() => {
+    setPageKey((k) => (massPageSection(k) === "pe" ? "pe-cons-0" : k));
+  }, [selectedPrayerId]);
+
+  const goHomeWithDate = useCallback(() => {
+    const date = sessionDate || messaRouteDateParam(params);
+    router.replace(date ? { pathname: "/", params: { date } } : "/");
+  }, [sessionDate, params, router]);
+  /** Liturgia del giorno di calendario (fissa in vigilia: banner in alto + etichette pannello). */
+  const [calendarDayLiturgy, setCalendarDayLiturgy] = useState<Liturgy | null>(null);
+  /** Liturgia della modalità vespertina/solennità (separata dal giorno di calendario). */
+  const [vigilModeLiturgy, setVigilModeLiturgy] = useState<Liturgy | null>(null);
+  const calendarDayLiturgyRef = React.useRef(calendarDayLiturgy);
+  calendarDayLiturgyRef.current = calendarDayLiturgy;
+  const vigilModeLiturgyRef = React.useRef(vigilModeLiturgy);
+  vigilModeLiturgyRef.current = vigilModeLiturgy;
+  const liturgyLoadGenRef = React.useRef(0);
+  const userPickedCelebrationModeRef = React.useRef(false);
+  const prefacesRef = React.useRef<Preface[]>([]);
+  const celebrationModeRef = React.useRef(celebrationMode);
+  celebrationModeRef.current = celebrationMode;
+  const applySessionFromStorageRef = React.useRef(
+    (_saved: MassSession) => {},
+  );
+  const resetMassSessionChoicesRef = React.useRef(() => {});
+
+  const vigilEve = useMemo(
+    () => (sessionDate ? getVigilEveContextForISO(sessionDate) : null),
+    [sessionDate],
+  );
+
   // True quando le scelte iniziali sono state caricate (default + sessione salvata).
   // Solo dopo questo flag, il save automatico è attivo.
   const [sessionLoaded, setSessionLoaded] = useState(false);
+  const [isStarred, setIsStarred] = useState(false);
+  const [favoriteHint, setFavoriteHint] = useState<string | null>(null);
 
-  const styles = makeStyles(colors, fontSize, fontFamilyId, isBold);
+  const currentSessionTarget = useMemo((): SessionTarget | null => {
+    if (activeVotiveId) return { kind: "votive", votiveId: activeVotiveId };
+    if (sessionDate) return { kind: "calendar", dateISO: sessionDate, mode: celebrationMode };
+    return null;
+  }, [activeVotiveId, sessionDate, celebrationMode]);
+
+  const styles = makeStyles(colors, fontSize, fontFamilyId, isBold, lineSpacing);
+
+  const resetMassSessionChoices = useCallback(() => {
+    setPenitentialForm("A");
+    setPenitentialSeason("ordinario");
+    setSelectedPrefaceId("");
+    setSelectedPrayerId("pe2");
+    setPeSelections({});
+    setPePickerKey(null);
+    setSelectedCredoId("niceno");
+    setOrateFratresId("A");
+    setPadreNostroIntroId("I");
+    setAcclamationId("A");
+    setUseSolemnBlessing(false);
+    setSolemnBlessingId("");
+    setUseOrazionePopolo(false);
+    setOrazionePopoloId("");
+    setShowGloria(false);
+    setShowCredo(false);
+    setShowAntifone(false);
+    setCongedoId(DEFAULT_CONGEDO_ID);
+    setBenedizioneId("A");
+    setSelectedOrazionaleId("");
+    setShowOrazionalePray(false);
+    setUseSaintProperReadings(false);
+  }, []);
+
+  const applySessionFromStorage = useCallback(
+    (saved: MassSession) => {
+      if (typeof saved.showGloria === "boolean") setShowGloria(saved.showGloria);
+      if (typeof saved.showCredo === "boolean") setShowCredo(saved.showCredo);
+      if (typeof saved.showAntifone === "boolean") setShowAntifone(saved.showAntifone);
+      if (typeof saved.showOrazionalePray === "boolean") setShowOrazionalePray(saved.showOrazionalePray);
+      if (typeof saved.useSaintProperReadings === "boolean") {
+        setUseSaintProperReadings(saved.useSaintProperReadings);
+      }
+      if (saved.selectedOrazionaleId) setSelectedOrazionaleId(saved.selectedOrazionaleId);
+      if (saved.selectedPrefaceId) setSelectedPrefaceId(saved.selectedPrefaceId);
+      if (saved.selectedPrayerId) setSelectedPrayerId(saved.selectedPrayerId);
+      if (saved.peSelections && typeof saved.peSelections === "object") setPeSelections(saved.peSelections);
+      if (typeof saved.useOrazionePopolo === "boolean") setUseOrazionePopolo(saved.useOrazionePopolo);
+      if (saved.orazionePopoloId) setOrazionePopoloId(saved.orazionePopoloId);
+      if (saved.benedizioneId) setBenedizioneId(saved.benedizioneId);
+      if (saved.congedoId) setCongedoId(saved.congedoId);
+      if (saved.acclamationId) setAcclamationId(saved.acclamationId);
+      if (saved.padreNostroIntroId) setPadreNostroIntroId(saved.padreNostroIntroId);
+      if (typeof saved.useSolemnBlessing === "boolean") setUseSolemnBlessing(saved.useSolemnBlessing);
+      if (saved.solemnBlessingId) setSolemnBlessingId(saved.solemnBlessingId);
+      if (saved.penitentialForm) setPenitentialForm(saved.penitentialForm);
+      if (saved.penitentialSeason) setPenitentialSeason(saved.penitentialSeason);
+      if (saved.selectedCredoId) setSelectedCredoId(saved.selectedCredoId);
+      if (saved.orateFratresId) setOrateFratresId(saved.orateFratresId);
+    },
+    [],
+  );
+  applySessionFromStorageRef.current = applySessionFromStorage;
+  resetMassSessionChoicesRef.current = resetMassSessionChoices;
+
+  const applyLiturgyChoicesFor = useCallback((lit: Liturgy) => {
+    const seasonKey = getLiturgicalSeasonKey(lit?.season?.season || "");
+    setCurrentSeasonKey(seasonKey);
+    const suggested = getSuggestedPrefacesForLiturgy(prefacesRef.current, lit);
+    const match = suggested[0] || prefacesRef.current[0];
+    if (match) setSelectedPrefaceId(match.id);
+    setPenitentialSeason(seasonKey === "passione" ? "quaresima" : seasonKey);
+    const toggleDefaults = getMassToggleDefaults(lit);
+    setShowGloria(toggleDefaults.showGloria);
+    setShowCredo(toggleDefaults.showCredo);
+    setShowOrazionalePray(toggleDefaults.showOrazionalePray);
+    const suggestedOrId = suggestPrayerForLiturgy(lit);
+    if (suggestedOrId) setSelectedOrazionaleId(suggestedOrId);
+  }, []);
+
+  const applyVotiveChoicesFor = useCallback((mass: VotiveMassFull, seasonName: string) => {
+    const seasonKey = getLiturgicalSeasonKey(seasonName);
+    setCurrentSeasonKey(seasonKey);
+    const choices = getVotiveMassDefaultChoices(mass, seasonName);
+    setPenitentialSeason(choices.penitentialSeason);
+    setShowGloria(choices.showGloria);
+    setShowCredo(choices.showCredo);
+    setShowOrazionalePray(choices.showOrazionalePray);
+    if (choices.prefaceId) {
+      const forced = prefacesRef.current.find((p) => p.id === choices.prefaceId);
+      if (forced) setSelectedPrefaceId(forced.id);
+    }
+    if (choices.orazionaleId) setSelectedOrazionaleId(choices.orazionaleId);
+  }, []);
+
+  const applyLiturgyDefaultsFor = useCallback(
+    (lit: Liturgy) => {
+      resetMassSessionChoices();
+      const seasonKey = getLiturgicalSeasonKey(lit?.season?.season || "");
+      setCurrentSeasonKey(seasonKey);
+      const suggested = getSuggestedPrefacesForLiturgy(prefaces, lit);
+      const match = suggested[0] || prefaces[0];
+      if (match) setSelectedPrefaceId(match.id);
+      setPenitentialSeason(seasonKey === "passione" ? "quaresima" : seasonKey);
+      const toggleDefaults = getMassToggleDefaults(lit);
+      setShowGloria(toggleDefaults.showGloria);
+      setShowCredo(toggleDefaults.showCredo);
+      setShowOrazionalePray(toggleDefaults.showOrazionalePray);
+      const seasBless =
+        solemnBlessings.find((b) => b.id === seasonKey) ||
+        solemnBlessings.find((b) => b.season === seasonKey);
+      if (seasBless) setSolemnBlessingId(seasBless.id);
+      if (seasonKey === "pasqua") setCongedoId("pasqua_alleluia");
+      const suggestedOrId = suggestPrayerForLiturgy(lit);
+      if (suggestedOrId) setSelectedOrazionaleId(suggestedOrId);
+    },
+    [prefaces, solemnBlessings, resetMassSessionChoices],
+  );
+
+  const applyLiturgyDefaults = useCallback(() => {
+    if (liturgy) applyLiturgyDefaultsFor(liturgy);
+  }, [liturgy, applyLiturgyDefaultsFor]);
+
+  const switchCelebrationMode = useCallback(
+    async (newMode: CelebrationMode) => {
+      if (!sessionDate) return;
+      suppressSessionSaveRef.current = true;
+      setCelebrationMode(newMode);
+      if (newMode === "calendar_day" && calendarDayLiturgyRef.current) {
+        setLiturgy(calendarDayLiturgyRef.current);
+      } else if (
+        newMode !== "calendar_day" &&
+        vigilModeLiturgyRef.current?.celebrationMode === newMode
+      ) {
+        setLiturgy(vigilModeLiturgyRef.current);
+      }
+      try {
+        const [saved, lit] = await Promise.all([
+          loadSession(sessionDate, newMode),
+          api.liturgyForDate(sessionDate, newMode),
+        ]);
+        const reconciled = reconcileLiturgyColors({ ...lit, celebrationMode: newMode });
+        if (newMode === "calendar_day") {
+          setVigilModeLiturgy(null);
+          setLiturgy(calendarDayLiturgy ?? reconciled);
+        } else {
+          setVigilModeLiturgy(reconciled);
+          setLiturgy(reconciled);
+        }
+        if (saved) {
+          applySessionFromStorageRef.current(saved);
+        }
+        applyLiturgyChoicesFor(reconciled);
+      } catch (e) {
+        if (__DEV__) console.log("switchCelebrationMode err:", e);
+      } finally {
+        setTimeout(() => {
+          suppressSessionSaveRef.current = false;
+        }, 0);
+      }
+    },
+    [sessionDate, applyLiturgyChoicesFor],
+  );
+
+  const handleSelectCelebrationMode = useCallback(
+    (newMode: CelebrationMode) => {
+      if (!sessionDate || newMode === celebrationModeRef.current) return;
+      userPickedCelebrationModeRef.current = true;
+      setCelebrationMode(newMode);
+      void switchCelebrationMode(newMode);
+    },
+    [sessionDate, switchCelebrationMode],
+  );
+
+  const routeDateParam = messaRouteDateParam(params);
+  const routeModeParam = messaRouteModeParam(params);
+  const routeVotiveParam = messaRouteVotiveParam(params);
+  const routePrefaceParam = typeof params.preface === "string" ? params.preface : "";
 
   useEffect(() => {
+    userPickedCelebrationModeRef.current = false;
+  }, [routeDateParam]);
+
+  useEffect(() => {
+    const gen = ++liturgyLoadGenRef.current;
+    let cancelled = false;
+
     (async () => {
+      setSessionLoaded(false);
+      setLoadError(null);
       try {
-        const dateParam = typeof params.date === "string" ? params.date : undefined;
+        if (routeVotiveParam) {
+          const [lit, parts, pr, pe, acc, bless, vm] = await Promise.all([
+            api.liturgyToday("calendar_day"),
+            api.fixedParts(),
+            api.prefaces(),
+            api.eucharisticPrayers(),
+            api.mysteryAcclamations(),
+            api.solemnBlessings(),
+            api.votiveMasses(),
+          ]);
+          if (!parts?.parts) {
+            setLoadError("Impossibile caricare i testi fissi della Messa. Verifica lo spazio libero e riprova.");
+            setFixedParts(null);
+            return;
+          }
+          const mass = (vm.masses as VotiveMassFull[]).find((m) => m.id === routeVotiveParam);
+          if (!mass) {
+            setLoadError("Messa votiva non trovata.");
+            setFixedParts(null);
+            return;
+          }
+          if (cancelled || gen !== liturgyLoadGenRef.current) return;
+          setActiveVotiveId(routeVotiveParam);
+          setActiveVotiveMeta({ title: mass.title, color: mass.color });
+          setCalendarDayLiturgy(null);
+          setVigilModeLiturgy(null);
+          const reconciled = applyVotiveMassToLiturgy(
+            reconcileLiturgyColors({
+              ...lit,
+              celebrationMode: "calendar_day",
+            }),
+            mass,
+          );
+          setLiturgy(reconciled);
+          setFixedParts(parts.parts);
+          setPrefaces(pr.prefaces);
+          prefacesRef.current = pr.prefaces;
+          setPrayers(pe.prayers);
+          setAcclamations(acc.acclamations);
+          setSolemnBlessings(bless.blessings);
+          setPasquaDismissal(bless.pasqua_dismissal);
+          if (Array.isArray((bless as any).prayersOverPeople)) {
+            setPrayersOverPeople((bless as any).prayersOverPeople);
+          }
+          resetMassSessionChoicesRef.current();
+          const seasBlessSeason = getLiturgicalSeasonKey(reconciled?.season?.season || "");
+          const seasBless =
+            bless.blessings.find((b) => b.id === seasBlessSeason) ||
+            bless.blessings.find((b) => b.season === seasBlessSeason);
+          if (seasBless) setSolemnBlessingId(seasBless.id);
+          if (seasBlessSeason === "pasqua") setCongedoId("pasqua_alleluia");
+          setSessionDate(lit?.date || todayStr());
+          setCelebrationMode("calendar_day");
+          const saved = await loadVotiveSession(routeVotiveParam);
+          if (cancelled || gen !== liturgyLoadGenRef.current) return;
+          if (saved) {
+            applySessionFromStorageRef.current(saved);
+            if (votiveSessionNeedsDefaultRepair(mass, saved.selectedPrefaceId)) {
+              applyVotiveChoicesFor(mass, lit?.season?.season || "");
+            }
+          } else {
+            applyVotiveChoicesFor(mass, lit?.season?.season || "");
+            const routePreface = resolveVotivePrefaceId(routePrefaceParam);
+            if (routePreface) {
+              const forced = pr.prefaces.find((p) => p.id === routePreface);
+              if (forced) setSelectedPrefaceId(forced.id);
+            }
+          }
+          cleanupOldSessions();
+          setSessionLoaded(true);
+          return;
+        }
+
+        setActiveVotiveId(null);
+        setActiveVotiveMeta(null);
+        const dateParam = routeDateParam;
+        const dateKey = dateParam || todayStr();
+        const initialMode = coerceCelebrationMode(
+          parseCelebrationMode(routeModeParam),
+          getVigilEveContextForISO(dateKey),
+        );
         const [lit, parts, pr, pe, acc, bless] = await Promise.all([
-          dateParam ? api.liturgyForDate(dateParam) : api.liturgyToday(),
+          dateParam
+            ? api.liturgyForDate(dateParam, initialMode)
+            : api.liturgyToday(initialMode),
           api.fixedParts(),
           api.prefaces(),
           api.eucharisticPrayers(),
           api.mysteryAcclamations(),
           api.solemnBlessings(),
         ]);
-        setLiturgy(lit);
+        if (!parts?.parts) {
+          setLoadError("Impossibile caricare i testi fissi della Messa. Verifica lo spazio libero e riprova.");
+          setFixedParts(null);
+          return;
+        }
+        const reconciledInitial = reconcileLiturgyColors({
+          ...lit,
+          celebrationMode: initialMode,
+        });
+        setLiturgy(reconciledInitial);
+        if (initialMode !== "calendar_day") {
+          setVigilModeLiturgy(reconciledInitial);
+        } else {
+          setVigilModeLiturgy(null);
+        }
         setFixedParts(parts.parts);
         setPrefaces(pr.prefaces);
+        prefacesRef.current = pr.prefaces;
         setPrayers(pe.prayers);
         setAcclamations(acc.acclamations);
         setSolemnBlessings(bless.blessings);
@@ -194,147 +512,193 @@ export default function MessaScreen() {
         if (Array.isArray((bless as any).prayersOverPeople)) {
           setPrayersOverPeople((bless as any).prayersOverPeople);
         }
-        const seasonKey = getLiturgicalSeasonKey(lit?.season?.season || "");
-        setCurrentSeasonKey(seasonKey);
-        const suggested = getSuggestedPrefaces(pr.prefaces, seasonKey);
-        const match = suggested[0] || pr.prefaces[0];
-        if (match) setSelectedPrefaceId(match.id);
-        // Override prefazio se passato esplicitamente (es. messa votiva)
-        const prefaceParam = typeof params.preface === "string" ? params.preface : "";
-        if (prefaceParam) {
-          const forced = pr.prefaces.find(p => p.id === prefaceParam);
-          if (forced) setSelectedPrefaceId(forced.id);
-        }
-        setPenitentialSeason(seasonKey === "passione" ? "quaresima" : seasonKey);
-        if (seasonKey === "avvento" || seasonKey === "quaresima") setShowGloria(false);
-        // Benedizione solenne: preseleziona quella della stagione se disponibile
-        const seasBless = bless.blessings.find(b => b.id === seasonKey) || bless.blessings.find(b => b.season === seasonKey);
+        resetMassSessionChoicesRef.current();
+        const seasBlessSeason = getLiturgicalSeasonKey(lit?.season?.season || "");
+        const seasBless =
+          bless.blessings.find((b) => b.id === seasBlessSeason) ||
+          bless.blessings.find((b) => b.season === seasBlessSeason);
         if (seasBless) setSolemnBlessingId(seasBless.id);
-        // Congedo di Pasqua automatico
-        if (seasonKey === "pasqua") setCongedoId("pasqua_alleluia");
-
-        // Suggerisci la Preghiera dei fedeli (Orazionale CEI)
-        const suggestedOrId = suggestPrayerForLiturgy(lit);
-        if (suggestedOrId) setSelectedOrazionaleId(suggestedOrId);
+        if (seasBlessSeason === "pasqua") setCongedoId("pasqua_alleluia");
 
         // === SESSION RESTORE ===
-        // Carica le scelte salvate per la giornata corrente (se esistono),
-        // sovrascrivendo i default suggeriti. Se l'utente apre l'app il
-        // mattino e imposta tutto, ritrova le stesse scelte la sera.
-        const dateKey = lit?.date || dateParam || new Date().toISOString().slice(0, 10);
-        setSessionDate(dateKey);
-        const saved = await loadSessionOrLatest(dateKey);
-        if (saved) {
-          if (typeof saved.showGloria === "boolean") setShowGloria(saved.showGloria);
-          if (typeof saved.showCredo === "boolean") setShowCredo(saved.showCredo);
-          if (typeof saved.showOrazionalePray === "boolean") setShowOrazionalePray(saved.showOrazionalePray);
-          if (saved.selectedOrazionaleId) setSelectedOrazionaleId(saved.selectedOrazionaleId);
-          if (saved.selectedPrefaceId) setSelectedPrefaceId(saved.selectedPrefaceId);
-          if (saved.selectedPrayerId) setSelectedPrayerId(saved.selectedPrayerId);
-          if (saved.peSelections && typeof saved.peSelections === "object") setPeSelections(saved.peSelections);
-          if (typeof (saved as any).useOrazionePopolo === "boolean") setUseOrazionePopolo((saved as any).useOrazionePopolo);
-          if ((saved as any).orazionePopoloId) setOrazionePopoloId((saved as any).orazionePopoloId);
-          if (saved.benedizioneId) setBenedizioneId(saved.benedizioneId);
-          if (saved.congedoId) setCongedoId(saved.congedoId);
-          if (saved.acclamationId) setAcclamationId(saved.acclamationId);
-          if (saved.padreNostroIntroId) setPadreNostroIntroId(saved.padreNostroIntroId);
-          if (typeof saved.useSolemnBlessing === "boolean") setUseSolemnBlessing(saved.useSolemnBlessing);
-          if (saved.solemnBlessingId) setSolemnBlessingId(saved.solemnBlessingId);
-          if (saved.penitentialForm) setPenitentialForm(saved.penitentialForm);
-          if (saved.penitentialSeason) setPenitentialSeason(saved.penitentialSeason);
-          if (saved.selectedCredoId) setSelectedCredoId(saved.selectedCredoId);
-          if (saved.orateFratresId) setOrateFratresId(saved.orateFratresId);
-          // Migrazione del nuovo toggle dal vecchio cycleIdx (0=Lento ON, 2=Medio ON, 1/3=Off).
-          if (typeof (saved as any).peAutoScrollEnabled === "boolean") {
-            setPeAutoScrollEnabled((saved as any).peAutoScrollEnabled);
-          } else if (typeof saved.autoScrollCycleIdx === "number") {
-            setPeAutoScrollEnabled(saved.autoScrollCycleIdx === 0 || saved.autoScrollCycleIdx === 2);
+        const resolvedDateKey = lit?.date || dateKey;
+        const vigilCtxForMode = getVigilEveContextForISO(resolvedDateKey);
+        const resolvedMode = coerceCelebrationMode(
+          parseCelebrationMode(routeModeParam),
+          vigilCtxForMode,
+        );
+        const modeToApply = userPickedCelebrationModeRef.current
+          ? celebrationModeRef.current
+          : resolvedMode;
+
+        if (cancelled || gen !== liturgyLoadGenRef.current) return;
+
+        let activeReconciled = reconcileLiturgyColors({
+          ...reconciledInitial,
+          celebrationMode: modeToApply,
+        });
+
+        setSessionDate(resolvedDateKey);
+        if (!userPickedCelebrationModeRef.current) {
+          setCelebrationMode(modeToApply);
+        }
+        const saved = await loadSession(resolvedDateKey, modeToApply);
+        if (cancelled || gen !== liturgyLoadGenRef.current) return;
+        const vigilCtx = vigilCtxForMode;
+        if (vigilCtx) {
+          const calLit =
+            modeToApply === "calendar_day"
+              ? reconciledInitial
+              : await api.liturgyForDate(resolvedDateKey, "calendar_day");
+          if (cancelled || gen !== liturgyLoadGenRef.current) return;
+          setCalendarDayLiturgy(
+            reconcileLiturgyColors({ ...calLit, celebrationMode: "calendar_day" }),
+          );
+          const otherModes = availableCelebrationModes(vigilCtx).filter((m) => m !== modeToApply);
+          void api.warmLiturgyModes(resolvedDateKey, otherModes);
+          if (modeToApply === "calendar_day") {
+            const altMode = vigilCtx.hasVigilProper ? "vigil_proper" : "solemnity_day";
+            void api.liturgyForDate(resolvedDateKey, altMode).then((altLit) => {
+              if (gen !== liturgyLoadGenRef.current) return;
+              setVigilModeLiturgy(
+                reconcileLiturgyColors({ ...altLit, celebrationMode: altMode }),
+              );
+            });
           }
+        } else {
+          setCalendarDayLiturgy(null);
+        }
+        if (modeToApply !== initialMode) {
+          const modeLit = await api.liturgyForDate(resolvedDateKey, modeToApply);
+          if (cancelled || gen !== liturgyLoadGenRef.current) return;
+          activeReconciled = reconcileLiturgyColors({
+            ...modeLit,
+            celebrationMode: modeToApply,
+          });
+          if (modeToApply === "calendar_day") {
+            setVigilModeLiturgy(null);
+          } else {
+            setVigilModeLiturgy(activeReconciled);
+          }
+          setLiturgy(activeReconciled);
+        } else if (modeToApply !== "calendar_day") {
+          activeReconciled = reconciledInitial;
+          setVigilModeLiturgy(activeReconciled);
+          setLiturgy(activeReconciled);
+        } else {
+          activeReconciled = reconciledInitial;
+        }
+        const prefaceParam = routePrefaceParam;
+        if (saved) {
+          applySessionFromStorageRef.current(saved);
+        }
+        applyLiturgyChoicesFor(activeReconciled);
+        if (prefaceParam) {
+          const forced = pr.prefaces.find((p) => p.id === prefaceParam);
+          if (forced) setSelectedPrefaceId(forced.id);
         }
         // Pulisce sessioni vecchie in background
         cleanupOldSessions();
+        if (cancelled || gen !== liturgyLoadGenRef.current) return;
         setSessionLoaded(true);
       } catch (e) {
         if (__DEV__) console.log("Errore:", e);
+        if (cancelled || gen !== liturgyLoadGenRef.current) return;
+        setLoadError("Errore nel caricamento della liturgia. Controlla la connessione o riprova.");
+        setFixedParts(null);
       } finally {
+        if (cancelled || gen !== liturgyLoadGenRef.current) return;
         setLoading(false);
       }
     })();
-  }, [params.date, params.preface]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [routeDateParam, routeModeParam, routePrefaceParam, routeVotiveParam, applyLiturgyChoicesFor]);
+
+  useEffect(() => {
+    if (!sessionLoaded || !currentSessionTarget) {
+      setIsStarred(false);
+      return;
+    }
+    void isLiturgyFavorite(currentSessionTarget).then(setIsStarred);
+  }, [sessionLoaded, currentSessionTarget]);
+
+  const handleToggleFavorite = useCallback(async () => {
+    if (!currentSessionTarget || !sessionLoaded) return;
+    if (isStarred) {
+      const fav = favoriteFromTarget(currentSessionTarget, {
+        title: activeVotiveMeta?.title || liturgy?.title || "Liturgia",
+        subtitle: "",
+      });
+      const res = await toggleLiturgyFavorite(fav);
+      setIsStarred(res.starred);
+      setFavoriteHint(res.starred ? null : "Rimossa da accesso rapido");
+      return;
+    }
+    const title =
+      activeVotiveMeta?.title ||
+      liturgyTitleForMode(celebrationMode, liturgy?.title || "", vigilEve);
+    const subtitle = activeVotiveId
+      ? "Messa votiva"
+      : `${italianDateLabel(parseLocalDate(sessionDate))} · ${celebrationKindLabel(
+          celebrationMode,
+          vigilEve,
+        )}`;
+    const liturgicalColor =
+      activeVotiveMeta?.color || liturgy?.liturgical_color || liturgy?.season?.color;
+    const fav = favoriteFromTarget(currentSessionTarget, { title, subtitle, liturgicalColor });
+    const res = await toggleLiturgyFavorite(fav);
+    if (res.error === "full") {
+      setFavoriteHint(`Puoi salvare al massimo ${MAX_LITURGY_FAVORITES} liturgie in accesso rapido`);
+      return;
+    }
+    setIsStarred(res.starred);
+    setFavoriteHint(res.starred ? "Aggiunta ad accesso rapido" : null);
+  }, [
+    currentSessionTarget,
+    sessionLoaded,
+    isStarred,
+    activeVotiveMeta,
+    activeVotiveId,
+    liturgy,
+    celebrationMode,
+    vigilEve,
+    sessionDate,
+  ]);
 
   // === SESSION AUTO-SAVE ===
   // Salva automaticamente le scelte del prete su AsyncStorage ogni volta
   // che cambiano. La chiave è la data della liturgia in corso.
   useEffect(() => {
-    if (!sessionLoaded || !sessionDate) return;
+    if (!sessionLoaded || !currentSessionTarget || suppressSessionSaveRef.current) return;
+    const liturgyTitle =
+      activeVotiveMeta?.title ||
+      liturgyTitleForMode(celebrationMode, liturgy?.title || "", vigilEve);
     const session: MassSession = {
-      showGloria, showCredo, showOrazionalePray,
+      celebrationMode,
+      liturgyKind: activeVotiveId ? "votive" : "calendar",
+      votiveId: activeVotiveId ?? undefined,
+      liturgyTitle,
+      showGloria, showCredo, showAntifone, showOrazionalePray,
+      useSaintProperReadings,
       selectedOrazionaleId, selectedPrefaceId, selectedPrayerId,
       benedizioneId, congedoId, acclamationId, padreNostroIntroId,
       useSolemnBlessing, solemnBlessingId,
       penitentialForm, penitentialSeason, selectedCredoId, orateFratresId,
       peSelections,
       useOrazionePopolo, orazionePopoloId,
-      peAutoScrollEnabled,
-    } as any;
-    saveSession(sessionDate, session);
-  }, [sessionLoaded, sessionDate, showGloria, showCredo, showOrazionalePray,
-      selectedOrazionaleId, selectedPrefaceId, selectedPrayerId,
-      benedizioneId, congedoId, acclamationId, padreNostroIntroId,
-      useSolemnBlessing, solemnBlessingId,
-      penitentialForm, penitentialSeason, selectedCredoId, orateFratresId,
-      peSelections,
-      useOrazionePopolo, orazionePopoloId,
-      peAutoScrollEnabled]);
-
-  // === AUTO-SCROLL PE ===
-  // Se attivo (peAutoScrollEnabled), scorre la ScrollView verso il basso a velocità
-  // costante (autoScrollPxPerSec px/s, dalle Impostazioni utente).
-  // Si ferma da solo a fine pagina o al cambio pagina/spegnimento.
-  // ATTIVO SOLO sulle pagine della Preghiera Eucaristica
-  // (chiavi `pe-cons-*`, `pe-after-*`, `pe-acclamazione`).
-  useEffect(() => {
-    // Reset scroll a inizio pagina ad ogni cambio
-    scrollYRef.current = 0;
-    scrollRef.current?.scrollTo({ y: 0, animated: false });
-    // Pulisci timer precedente
-    if (autoScrollTimerRef.current) {
-      clearInterval(autoScrollTimerRef.current);
-      autoScrollTimerRef.current = null;
-    }
-    if (!peAutoScrollEnabled) return;
-    // Verifica che siamo davvero su una pagina della Preghiera Eucaristica
-    const k = currentPageKeyRef.current || "";
-    const isPePage = k.startsWith("pe-cons-") || k.startsWith("pe-after-") || k === "pe-acclamazione";
-    if (!isPePage) return;
-    const pps = Math.max(1, autoScrollPxPerSec);
-    const intervalMs = 50;
-    const stepPx = pps * (intervalMs / 1000);
-    // Delay iniziale: attesa configurabile dall'utente (3..10 sec) per dare
-    // il tempo di leggere con calma l'inizio della pagina prima dello scroll auto.
-    const startDelay = setTimeout(() => {
-      autoScrollTimerRef.current = setInterval(() => {
-        const maxY = Math.max(0, contentHeightRef.current - containerHeightRef.current);
-        const next = Math.min(maxY, scrollYRef.current + stepPx);
-        if (next >= maxY) {
-          if (autoScrollTimerRef.current) {
-            clearInterval(autoScrollTimerRef.current);
-            autoScrollTimerRef.current = null;
-          }
-          return;
-        }
-        scrollYRef.current = next;
-        scrollRef.current?.scrollTo({ y: next, animated: false });
-      }, intervalMs);
-    }, autoScrollDelaySec * 1000);
-    return () => {
-      clearTimeout(startDelay);
-      if (autoScrollTimerRef.current) {
-        clearInterval(autoScrollTimerRef.current);
-        autoScrollTimerRef.current = null;
-      }
     };
-  }, [currentPage, peAutoScrollEnabled, autoScrollDelaySec, autoScrollPxPerSec]);
+    void saveSessionForTarget(currentSessionTarget, session);
+  }, [sessionLoaded, currentSessionTarget, celebrationMode, activeVotiveId, activeVotiveMeta, liturgy?.title, vigilEve, showGloria, showCredo, showAntifone, showOrazionalePray,
+      useSaintProperReadings,
+      selectedOrazionaleId, selectedPrefaceId, selectedPrayerId,
+      benedizioneId, congedoId, acclamationId, padreNostroIntroId,
+      useSolemnBlessing, solemnBlessingId,
+      penitentialForm, penitentialSeason, selectedCredoId, orateFratresId,
+      peSelections,
+      useOrazionePopolo, orazionePopoloId]);
 
   // === PE FULL: espansione dei blocchi `var` in base a peSelections ===
   // IMPORTANTE: questi hook devono stare PRIMA di qualunque early-return
@@ -385,13 +749,9 @@ export default function MessaScreen() {
   }, [peFull?.id, liturgy?.date, liturgy?.title]);
 
   // Espande i blocchi `var` con la variante selezionata e converte tutto in
-  // un singolo testo piatto. Mantiene i marker `[rubric]` solo per pe1.
-  // Introduzione dialogica al Prefazio (parte fissa che precede il "È veramente cosa buona...")
-  // Viene mostrata sia prima del prefazio scelto, sia all'inizio delle 7 PE con prefazio incorporato.
-  const PREFACE_INTRO = "Il Signore sia con voi.\nE con il tuo spirito.\n\nIn alto i nostri cuori.\nSono rivolti al Signore.\n\nRendiamo grazie al Signore, nostro Dio.\nÈ cosa buona e giusta.";
-
+  // un singolo testo piatto. Per pe1 le rubriche di gesto restano con marker interno.
   // Le 7 PE con prefazio incorporato (Messale Romano 2020).
-  // In queste PE l'introduzione + il Santo sono parte integrante della preghiera.
+  // In queste PE l'introduzione dialogica + il Santo sono parte integrante della preghiera.
   const PE_WITH_PROPER_PREFACE = ["pe4", "per_r1", "per_r2", "pvn_1", "pvn_2", "pvn_3", "pvn_4"];
 
   const expandedPrayerText = useMemo(() => {
@@ -428,9 +788,6 @@ export default function MessaScreen() {
     const santoOverrideRe = PE_SANTO_OVERRIDE[peFull.id];
     const SANTO_TEXT = "Santo, Santo, Santo il Signore Dio dell'universo.\nI cieli e la terra sono pieni della tua gloria.\nOsanna nell'alto dei cieli.\nBenedetto colui che viene nel nome del Signore.\nOsanna nell'alto dei cieli.";
     const parts: string[] = [];
-    if (hasProperPreface) {
-      parts.push(PREFACE_INTRO);
-    }
     let dossologiaSeen = false;
     let santoInserted = false;
     for (const b of out) {
@@ -478,7 +835,7 @@ export default function MessaScreen() {
       const t = (b.text || "").trim();
       if (!t) continue;
       if (b.type === "r" || b.type === "rubric_section") {
-        if (isPe1) parts.push(`[${t}]`);
+        if (isPe1) parts.push(`${PE1_RUBRIC_PREFIX}${t}`);
         continue;
       }
       parts.push(t);
@@ -533,7 +890,7 @@ export default function MessaScreen() {
     return result;
   }, [peFull, peSelections, prayers, selectedPrayerId]);
 
-  if (loading || !fixedParts) {
+  if (loading) {
     return (
       <SafeAreaView style={styles.container}>
         <ActivityIndicator size="large" color={colors.primary} style={{ flex: 1 }} />
@@ -541,10 +898,46 @@ export default function MessaScreen() {
     );
   }
 
+  if (loadError || !fixedParts) {
+    return (
+      <SafeAreaView style={styles.container} testID="messa-load-error">
+        <View style={styles.topBar}>
+          <HomeCircleButton onPress={goHomeWithDate} testID="btn-back-home" />
+          <BrandScreenTitle
+            title="Scegli la liturgia"
+            textStyle={styles.title}
+            numberOfLines={1}
+            markSize={Math.max(28, Math.round(fontSize * 0.85))}
+          />
+          <View style={{ width: 88 }} />
+        </View>
+        <View style={styles.loadErrorBox}>
+          <Ionicons name="cloud-offline-outline" size={scaledFont(56)} color={colors.liturgicalRed} />
+          <Text style={styles.loadErrorTitle}>Liturgia non disponibile</Text>
+          <Text style={styles.loadErrorText}>
+            {loadError || "I dati della Messa non sono stati caricati."}
+          </Text>
+          <TouchableOpacity
+            style={styles.loadErrorBtn}
+            onPress={goHomeWithDate}
+            testID="btn-messa-error-home"
+          >
+            <Ionicons name="home" size={scaledFont(28)} color={colors.onPrimary} />
+            <Text style={styles.loadErrorBtnText}>Torna alla Home</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   const selectedPreface = prefaces.find(p => p.id === selectedPrefaceId);
   const selectedPrayer = prayers.find(p => p.id === selectedPrayerId);
   const selectedOrazionale = selectedOrazionaleId ? getPrayerById(selectedOrazionaleId) : undefined;
-  const getReading = (type: ReadingType) => liturgy?.readings?.find(r => r.type === type);
+  const offerSaintProperToggle = shouldOfferSaintProperToggle(liturgy);
+  const effectiveLiturgy = liturgy
+    ? mergeSaintReadingsIntoLiturgy(liturgy, useSaintProperReadings)
+    : null;
+  const getReading = (type: ReadingType) => effectiveLiturgy?.readings?.find(r => r.type === type);
 
   // Basic text renderers
   const R = ({ children, kind = "normal" }: { children: React.ReactNode; kind?: "normal" | "rubric" | "celebrante" | "assemblea" | "title" | "subtitle" | "antifonaTitle" | "readingTitle" | "orazioneTitle" | "ritoTitle" | "umili" | "peTitle" | "prefaceTitle" | "troparioTitle" }) => {
@@ -565,22 +958,66 @@ export default function MessaScreen() {
     return <Text style={s} selectable>{children}</Text>;
   };
 
+  const D = ({ role, text }: { role: "celebrant" | "assembly"; text: string }) => (
+    <DialogueLine
+      role={role}
+      text={text}
+      baseStyle={role === "celebrant" ? styles.celebrante : styles.assemblea}
+      markerColor={role === "celebrant" ? colors.markerCelebrant : colors.markerAssembly}
+    />
+  );
+
+  const renderPrefaceDialogues = () => (
+    <View style={styles.block}>
+      {PREFACE_DIALOGUES.map((d, i) => (
+        <View key={`pref-dlg-${i}`} style={styles.dialogBlock}>
+          <D role="celebrant" text={d.c} />
+          <D role="assembly" text={d.a} />
+        </View>
+      ))}
+    </View>
+  );
+
   // Renderer dedicato per il testo delle Preghiere Eucaristiche.
-  // Le righe COMPLETAMENTE in maiuscolo (parole della consacrazione, es.
-  // "PRENDETE, E MANGIATENE TUTTI...", "QUESTO È IL MIO CORPO...") vengono
-  // colorate in azzurro brillante saturo (#29B6F6), per essere ben distinte
-  // dalle altre parole. Le righe normali restano bianche.
-  // Inoltre viene aggiunto un piccolo spazio (riga vuota) PRIMA del blocco
-  // di consacrazione, per dare il giusto risalto al momento più sacro.
-  const isUpperLitLine = (ln: string): boolean => {
-    const alphaChars = ln.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ]/g, "");
-    return alphaChars.length >= 5 && alphaChars === alphaChars.toUpperCase();
+  // Le righe COMPLETAMENTE in maiuscolo (parole della consacrazione) sono in
+  // azzurro (#29B6F6), peso normale (non grassetto). La croce ✠ è sempre rossa.
+  const renderPeTextNormal = (text: string, keyPrefix = "pe") => {
+    if (!text?.trim()) return null;
+    const lines = text.split("\n");
+    return (
+      <View key={keyPrefix} collapsable={false} testID={`pe-text-${keyPrefix}`}>
+        {lines.map((ln, i) => {
+          const isRubric = isPe1RubricLine(ln);
+          const display = unwrapPe1RubricLine(ln);
+          const isCon = !isRubric && isPeConsecrationLine(display);
+          const prevWasCon = i > 0 && isPeConsecrationLine(unwrapPe1RubricLine(lines[i - 1]));
+          const needSpaceBefore = isCon && !prevWasCon && i > 0;
+          if (!display) {
+            return <View key={i} style={{ height: Math.round(fontSize * 0.45) }} />;
+          }
+          const lineStyle = isRubric
+            ? styles.peRubric
+            : isCon
+              ? [styles.text, styles.peConsecration]
+              : styles.text;
+          return (
+            <Text
+              key={i}
+              style={[lineStyle, needSpaceBefore ? { marginTop: Math.round(fontSize * 0.55) } : null]}
+              selectable
+            >
+              {renderPeLineWithRedCross(
+                display,
+                isCon ? styles.peConsecration : styles.text,
+                colors.rubrics,
+              )}
+            </Text>
+          );
+        })}
+      </View>
+    );
   };
-  // Renderer del testo PE che riconosce in più il marker <<DOSSOLOGIA>>:
-  // splitta il testo in PRIMA-DOSSOLOGIA / TITOLO / DOPO-DOSSOLOGIA, e renderizza:
-  //  - PRIMA: testo normale (con righe maiuscole = parole consacrazione blu)
-  //  - TITOLO: "Dossologia" in azzurro (sectionTitle)
-  //  - DOPO: testo BIANCO MAIUSCOLO BOLD (peDossologia), uniforme per tutte le PE
+
   const renderPeText = (text: string, keyPrefix = "pe") => {
     if (!text) return null;
     const dosMarker = "<<DOSSOLOGIA>>";
@@ -588,50 +1025,36 @@ export default function MessaScreen() {
     if (dosIdx >= 0) {
       const before = text.slice(0, dosIdx).replace(/\n+$/, "");
       const after = text.slice(dosIdx + dosMarker.length).replace(/^\n+/, "");
-      // Nota: il titolo "Dossologia" è già renderizzato dal `pageTitle` del page,
-      // quindi qui NON aggiungiamo un secondo titolo per evitare duplicati.
+      const afterLines = after ? after.split("\n") : [];
       return (
         <View key={keyPrefix}>
           {before ? renderPeTextNormal(before, `${keyPrefix}-pre`) : null}
-          {after ? <Text style={styles.peDossologia} selectable>{after}</Text> : null}
+          {afterLines.length > 0 ? (
+            <Text style={styles.peDossologia} selectable>
+              {afterLines.map((ln, i) => {
+                const isLast = i === afterLines.length - 1;
+                const tail = isLast ? "" : "\n";
+                if (isPe1RubricLine(ln)) {
+                  return (
+                    <Text key={i} style={styles.peRubric}>
+                      {unwrapPe1RubricLine(ln)}
+                      {tail}
+                    </Text>
+                  );
+                }
+                return (
+                  <Text key={i}>
+                    {ln}
+                    {tail}
+                  </Text>
+                );
+              })}
+            </Text>
+          ) : null}
         </View>
       );
     }
     return renderPeTextNormal(text, keyPrefix);
-  };
-  // Renderer base: gestisce le righe maiuscole come parole della Consacrazione
-  // (azzurro brillante #29B6F6) con piccolo spazio prima/dopo.
-  const renderPeTextNormal = (text: string, keyPrefix = "pe") => {
-    if (!text) return null;
-    const lines = text.split("\n");
-    return (
-      <Text style={styles.text} selectable key={keyPrefix}>
-        {lines.map((ln, i) => {
-          const isCon = isUpperLitLine(ln);
-          const prevWasCon = i > 0 && isUpperLitLine(lines[i - 1]);
-          const nextIsCon = i < lines.length - 1 && isUpperLitLine(lines[i + 1]);
-          const isLast = i === lines.length - 1;
-          const needSpaceBefore = isCon && !prevWasCon && i > 0;
-          const needSpaceAfter = isCon && !nextIsCon && !isLast;
-          const tail = isLast ? "" : (needSpaceAfter ? "\n\n" : "\n");
-          if (isCon) {
-            return (
-              <Text key={i}>
-                {needSpaceBefore ? "\n" : ""}
-                <Text style={styles.peConsecration}>{ln}</Text>
-                {tail}
-              </Text>
-            );
-          }
-          return (
-            <Text key={i}>
-              {ln}
-              {tail}
-            </Text>
-          );
-        })}
-      </Text>
-    );
   };
 
   // Determina il kind del titolo in base al type della reading
@@ -648,31 +1071,52 @@ export default function MessaScreen() {
     if (section.type === "dialogue") {
       return (
         <View key={idx} style={styles.block}>
-          <R kind="celebrante">C. {section.celebrante}</R>
-          <R kind="assemblea">A. {section.assemblea}</R>
+          <D role="celebrant" text={section.celebrante} />
+          <D role="assembly" text={section.assemblea} />
         </View>
       );
     }
-    if (section.type === "monologue") return <R key={idx} kind="celebrante">{section.celebrante}</R>;
+    if (section.type === "monologue") {
+      return (
+        <View key={idx} style={styles.block}>
+          <D role="celebrant" text={section.celebrante} />
+        </View>
+      );
+    }
     if (section.type === "invitation_alternatives") {
       return (
         <View key={idx}>
           {(section.options || []).map((text: string, i: number) => (
             <View key={i}>
               {i > 0 && <R kind="rubric">oppure</R>}
-              <R kind="celebrante">{text}</R>
+              <D role="celebrant" text={text} />
             </View>
           ))}
         </View>
       );
     }
     if (section.type === "prayer") {
+      const isSilent =
+        !!section.rubric && /sottovoce|inchinato/i.test(section.rubric);
       return (
         <View key={idx} style={styles.block}>
           {section.rubric && <R kind="rubric">{section.rubric}</R>}
-          {section.celebrante && <R kind="celebrante">{section.celebrante}</R>}
           {section.text && <R>{section.text}</R>}
-          {section.assemblea && <R kind="assemblea">A. {section.assemblea}</R>}
+          {section.celebrante && section.assemblea ? (
+            <View style={styles.dialogBlock}>
+              <D role="celebrant" text={section.celebrante} />
+              <D role="assembly" text={section.assemblea} />
+            </View>
+          ) : section.celebrante ? (
+            isSilent ? (
+              <R kind="umili">{section.celebrante}</R>
+            ) : (
+              <D role="celebrant" text={section.celebrante} />
+            )
+          ) : null}
+          {section.assemblea && !section.celebrante ? (
+            <D role="assembly" text={section.assemblea} />
+          ) : null}
         </View>
       );
     }
@@ -682,8 +1126,8 @@ export default function MessaScreen() {
           {section.rubric && <R kind="rubric">{section.rubric}</R>}
           {section.dialogue.map((d: any, i: number) => (
             <View key={i} style={styles.dialogBlock}>
-              <R kind="celebrante">C. {d.c}</R>
-              <R kind="assemblea">A. {d.a}</R>
+              <D role="celebrant" text={d.c} />
+              <D role="assembly" text={d.a} />
             </View>
           ))}
         </View>
@@ -705,9 +1149,10 @@ export default function MessaScreen() {
   };
 
   // === Helpers Preghiera Eucaristica: gestione rubriche e marker [Santo] ===
-  // Per la PE I (Canone Romano) le rubriche tra parentesi quadre vengono mostrate
-  // come piccolo testo rosso. Per tutte le altre PE i marker [xxx] (es. [Santo])
-  // vengono completamente rimossi dal testo visualizzato.
+  // Per la PE I (Canone Romano) le rubriche di gesto restano nel testo
+  // (marker interno <<RUBRIC>>) e si mostrano in corsivo rosso, stessa misura.
+  // Le parentesi [ ] del testo facoltativo (santi, N. e N.) restano visibili,
+  // colorate in rosso, con il testo interno del colore normale.
   const processPrayerText = (text: string, prayerId: string): string => {
     if (!text) return "";
     if (prayerId === "pe1") return text;
@@ -716,22 +1161,6 @@ export default function MessaScreen() {
       .replace(/\[[^\]]*\]\s*\n?/g, "")
       .replace(/\n{3,}/g, "\n\n")
       .trim();
-  };
-
-  // Renderizza un chunk di testo della Preghiera Eucaristica, splittando su [xxx]
-  // marker per emetterli come rubriche piccole rosse. Usato solo per la PE I.
-  const renderPe1Chunk = (chunk: string, keyPrefix: string) => {
-    const parts = chunk.split(/(\[[^\]]+\])/g);
-    return parts.map((part, i) => {
-      const m = part.match(/^\[([^\]]+)\]$/);
-      if (m) {
-        return <R key={`${keyPrefix}-r-${i}`} kind="rubric">{m[1]}</R>;
-      }
-      const trimmed = part.replace(/^\n+|\n+$/g, "");
-      if (!trimmed) return null;
-      // Usa renderPeText per ottenere parole della consacrazione in azzurro + spazio prima.
-      return <View key={`${keyPrefix}-t-${i}`}>{renderPeText(trimmed, `${keyPrefix}-pt-${i}`)}</View>;
-    });
   };
 
   // === Helpers paginazione automatica testo ===
@@ -750,7 +1179,7 @@ export default function MessaScreen() {
   // larghezza media di un carattere = fontSize * 0.52 (sans-serif italiano)
   const HEADER_FOOTER_OVERHEAD = 130; // top header (~36) + tap nav footer (~60) + page title (~24) + padding
   const TEXT_HORIZONTAL_PADDING = 32;  // 16 outer (content padding ridotto)
-  const lineHeightPx = Math.max(20, Math.round(fontSize * 1.6));
+  const lineHeightPx = Math.max(20, liturgyLineHeight(fontSize, BODY_LINE_HEIGHT, lineSpacing));
   const usableHeightPx = Math.max(300, screenHeight - HEADER_FOOTER_OVERHEAD);
   const usableWidthPx = Math.max(280, screenWidth - TEXT_HORIZONTAL_PADDING);
   const linesPerPage = Math.max(4, Math.floor(usableHeightPx / lineHeightPx));
@@ -889,91 +1318,11 @@ export default function MessaScreen() {
     return chunks;
   };
 
-  // === Renderer Preghiera dei Fedeli ===
-  // Regola globale: ogni occorrenza di "R/." (anche multipla, anche a metà
-  // riga) viene mostrata in rosso bold; ogni riga che la contiene è seguita
-  // da una sola riga vuota (effetto "padding inferiore"). Vale per tutte le
-  // intenzioni dell'Orazionale CEI, presenti e future.
-  const renderPreghieraFedeliText = (text: string) => {
-    if (!text) return null;
-    const normalized = text.replace(/\n{3,}/g, "\n\n");
-    const rawLines = normalized.split("\n");
-    // Per evitare doppio gap, se una riga contiene R/. e la successiva
-    // è vuota (perché la fonte usa \n\n), saltiamo la riga vuota.
-    const lines: string[] = [];
-    for (let i = 0; i < rawLines.length; i++) {
-      const ln = rawLines[i];
-      lines.push(ln);
-      if (/R\/\.?/.test(ln) && rawLines[i + 1] === "") {
-        // Salta la riga vuota: il tail "\n\n" che applicheremo dopo
-        // produrrà già la riga vuota richiesta.
-        i++;
-      }
-    }
-    const RESP_RE = /R\/\.?/g;
-    return (
-      <Text style={styles.text} selectable>
-        {lines.map((ln, i) => {
-          const parts = ln.split(/(R\/\.?)/g);
-          const hasResp = RESP_RE.test(ln);
-          RESP_RE.lastIndex = 0;
-          const isLast = i === lines.length - 1;
-          // Se la riga contiene R/. → riga vuota dopo (\n\n), altrimenti \n
-          const tail = isLast ? "" : (hasResp ? "\n\n" : "\n");
-          return (
-            <Text key={i}>
-              {parts.map((p, j) => {
-                if (/^R\/\.?$/.test(p)) {
-                  return (
-                    <Text key={j} style={styles.salmoRit}>{p}</Text>
-                  );
-                }
-                return <Text key={j}>{p}</Text>;
-              })}
-              {tail}
-            </Text>
-          );
-        })}
-      </Text>
-    );
-  };
+  const renderPreghieraFedeliText = (text: string) =>
+    renderOrazionaleOrFedeliText(text, { body: styles.text, marker: styles.salmoRit });
 
-  // === Reading renderer (daily) ===
-  // Per il Salmo Responsoriale, evidenzia "R." (o "R/.") in rosso come ritornello.
-  // Renderizziamo l'intero salmo in UN singolo <Text> usando \n: in questo modo
-  // le righe usano la `lineHeight` dello stile (compatta) e non il `marginVertical`
-  // di ogni riga separata, che creava un doppio spazio tra le strofe.
-  const renderSalmoText = (text: string) => {
-    if (!text) return null;
-    // Normalizza: collassa eventuali run di righe vuote a una sola riga vuota
-    // così le strofe restano separate, ma senza buchi giganti.
-    const normalized = text.replace(/\n{3,}/g, "\n\n");
-    const lines = normalized.split("\n");
-    return (
-      <Text style={styles.salmoText} selectable>
-        {lines.map((ln, i) => {
-          const m = ln.match(/^(\s*)(R\/?\.)(.*)$/);
-          const isLast = i === lines.length - 1;
-          if (m) {
-            return (
-              <Text key={i}>
-                {m[1]}
-                <Text style={styles.salmoRit}>{m[2]}</Text>
-                <Text>{m[3]}</Text>
-                {!isLast ? "\n" : ""}
-              </Text>
-            );
-          }
-          return (
-            <Text key={i}>
-              {ln}
-              {!isLast ? "\n" : ""}
-            </Text>
-          );
-        })}
-      </Text>
-    );
-  };
+  const renderSalmoText = (text: string) =>
+    renderSalmoResponsorialText(text, { body: styles.salmoText, marker: styles.salmoRit });
 
   const renderReading = (type: ReadingType, titleOverride?: string) => {
     const r = getReading(type);
@@ -1019,7 +1368,7 @@ export default function MessaScreen() {
         {atto.sections.filter((s: any) => s.type !== "choice" && s.type !== "kyrie").map(renderSection)}
 
         <R kind="subtitle">Scegli formula</R>
-        <View style={styles.choiceRow}>
+        <View style={styles.choiceRow} data-tap-stop="true">
           {(["A", "B", "C"] as const).map(id => (
             <TouchableOpacity
               key={id}
@@ -1036,7 +1385,7 @@ export default function MessaScreen() {
         {selectedOpt?.season_variants && (
           <View>
             <R kind="subtitle">Tempo liturgico (tropari)</R>
-            <View style={styles.choiceRow}>
+            <View style={styles.choiceRow} data-tap-stop="true">
               {Object.entries(selectedOpt.season_variants).map(([key, v]: [string, any]) => (
                 <TouchableOpacity
                   key={key}
@@ -1054,11 +1403,11 @@ export default function MessaScreen() {
         {selectedOpt && (
           <View style={styles.block}>
             <R kind="subtitle">{selectedOpt.label}</R>
-            {selectedOpt.assemblea && <R kind="assemblea">A. {selectedOpt.assemblea}</R>}
+            {selectedOpt.assemblea && <D role="assembly" text={selectedOpt.assemblea} />}
             {selectedOpt.dialogue && selectedOpt.dialogue.map((d: any, i: number) => (
               <View key={i} style={styles.dialogBlock}>
-                <R kind="celebrante">C. {d.c}</R>
-                <R kind="assemblea">A. {d.a}</R>
+                <D role="celebrant" text={d.c} />
+                <D role="assembly" text={d.a} />
               </View>
             ))}
             {/* Formula C: tutte le formule del tempo liturgico selezionato, una sotto l'altra */}
@@ -1069,8 +1418,8 @@ export default function MessaScreen() {
                     {formula.label && <R kind="troparioTitle">{formula.label}</R>}
                     {formula.dialogue?.map((d: any, i: number) => (
                       <View key={`f${fi}-${i}`} style={styles.dialogBlock}>
-                        <R kind="celebrante">C. {d.c}</R>
-                        <R kind="assemblea">A. {d.a}</R>
+                        <D role="celebrant" text={d.c} />
+                        <D role="assembly" text={d.a} />
                       </View>
                     ))}
                   </View>
@@ -1080,12 +1429,12 @@ export default function MessaScreen() {
             {/* Compatibilità retro: vecchio schema con singola dialogue per stagione */}
             {seasonVariant?.dialogue && seasonVariant.dialogue.map((d: any, i: number) => (
               <View key={`sv-${i}`} style={styles.dialogBlock}>
-                <R kind="celebrante">C. {d.c}</R>
-                <R kind="assemblea">A. {d.a}</R>
+                <D role="celebrant" text={d.c} />
+                <D role="assembly" text={d.a} />
               </View>
             ))}
-            {selectedOpt.celebrante && <R kind="celebrante">C. {selectedOpt.celebrante}</R>}
-            {selectedOpt.risposta && <R kind="assemblea">A. {selectedOpt.risposta}</R>}
+            {selectedOpt.celebrante && <D role="celebrant" text={selectedOpt.celebrante} />}
+            {selectedOpt.risposta && <D role="assembly" text={selectedOpt.risposta} />}
           </View>
         )}
 
@@ -1103,7 +1452,7 @@ export default function MessaScreen() {
     return (
       <View testID="section-credo">
         <R kind="title">Professione di Fede (Credo)</R>
-        <View style={styles.choiceRow}>
+        <View style={styles.choiceRow} data-tap-stop="true">
           {choice.options.map((o: any) => (
             <TouchableOpacity
               key={o.id}
@@ -1122,73 +1471,77 @@ export default function MessaScreen() {
     );
   };
 
+  const renderOrateFratresAll = (orateChoice: any) => {
+    const opts = orateChoice?.options || [];
+    if (!opts.length) return null;
+    return (
+      <View style={styles.block} testID="orate-fratres-all">
+        <R kind="subtitle">Invito e risposta</R>
+        {opts.map((o: any, i: number) => (
+          <View key={o.id}>
+            {i > 0 && <R kind="rubric">oppure</R>}
+            <D role="celebrant" text={o.celebrante} />
+          </View>
+        ))}
+        {opts[0].assemblea ? <D role="assembly" text={opts[0].assemblea} /> : null}
+      </View>
+    );
+  };
+
+  const renderMysteryAcclamationsAll = () => {
+    if (!acclamations.length) return null;
+    return (
+      <View style={styles.block} testID="mystery-acclamations-all">
+        <D role="celebrant" text={acclamations[0].celebrante} />
+        {acclamations.map((a, i) => (
+          <View key={a.id}>
+            {i > 0 && <R kind="rubric">oppure</R>}
+            <D role="assembly" text={a.assemblea} />
+          </View>
+        ))}
+      </View>
+    );
+  };
+
+  const renderPadreNostroIntrosAll = (introChoice: any) => {
+    const opts = introChoice?.options || [];
+    if (!opts.length) return null;
+    return (
+      <View style={styles.block} testID="pn-intros-all">
+        <R kind="subtitle">Monizione d&apos;introduzione</R>
+        {opts.map((o: any, i: number) => (
+          <View key={o.id}>
+            {i > 0 && <R kind="rubric">oppure</R>}
+            <D role="celebrant" text={o.text} />
+          </View>
+        ))}
+      </View>
+    );
+  };
+
   // === Offertorio ===
   const renderOffertorio = () => {
     const off = fixedParts["offertorio"];
     const orateChoice = off.sections.find((s: any) => s.type === "choice_orate");
-    const selectedOrate = orateChoice?.options.find((o: any) => o.id === orateFratresId);
     return (
       <View testID="part-offertorio">
         <R kind="title">Liturgia Eucaristica – Presentazione dei doni</R>
         {off.sections
           .filter((s: any) => s.type !== "choice_orate" && s.type !== "rubric")
           .map(renderSection)}
-
-        {orateChoice && (
-          <View style={styles.block}>
-            <R kind="subtitle">Invito e risposta</R>
-            <View style={styles.choiceRow}>
-              {orateChoice.options.map((o: any) => (
-                <TouchableOpacity
-                  key={o.id}
-                  style={[styles.choiceBtn, orateFratresId === o.id && styles.choiceBtnActive]}
-                  onPress={() => setOrateFratresId(o.id)}
-                  testID={`btn-orate-${o.id}`}
-                >
-                  <Text style={[styles.choiceBtnText, orateFratresId === o.id && { color: colors.onPrimary }]}>{o.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            {selectedOrate && (
-              <View style={styles.block}>
-                <R kind="celebrante">C. {selectedOrate.celebrante}</R>
-                <R kind="assemblea">A. {selectedOrate.assemblea}</R>
-              </View>
-            )}
-          </View>
-        )}
+        {renderOrateFratresAll(orateChoice)}
       </View>
     );
   };
 
-  // === Padre Nostro (con 4 introduzioni) ===
+  // === Padre Nostro (tutte le monizioni, come sul messale) ===
   const renderPadreNostro = () => {
     const pn = fixedParts["padre_nostro"];
     const introChoice = pn.sections.find((s: any) => s.type === "choice_intro");
-    const selectedIntro = introChoice?.options.find((o: any) => o.id === padreNostroIntroId);
     return (
       <View testID="part-padre-nostro">
         <R kind="title">Riti di Comunione</R>
-
-        {introChoice && (
-          <View style={styles.block}>
-            <R kind="subtitle">Monizione d'introduzione</R>
-            <View style={styles.choiceRow}>
-              {introChoice.options.map((o: any) => (
-                <TouchableOpacity
-                  key={o.id}
-                  style={[styles.choiceBtn, padreNostroIntroId === o.id && styles.choiceBtnActive]}
-                  onPress={() => setPadreNostroIntroId(o.id)}
-                  testID={`btn-pn-intro-${o.id}`}
-                >
-                  <Text style={[styles.choiceBtnText, padreNostroIntroId === o.id && { color: colors.onPrimary }]}>Forma {o.id}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            {selectedIntro && <R kind="celebrante">C. {selectedIntro.text}</R>}
-          </View>
-        )}
-
+        {renderPadreNostroIntrosAll(introChoice)}
         {pn.sections.filter((s: any) => s.type !== "choice_intro").map(renderSection)}
       </View>
     );
@@ -1213,6 +1566,65 @@ export default function MessaScreen() {
     return opts;
   };
 
+  const renderLiturgyChoicesSummary = () => {
+    const preface = prefaces.find((p) => p.id === selectedPrefaceId);
+    const prayer = prayers.find((p) => p.id === selectedPrayerId);
+    const orazionale = selectedOrazionaleId ? getPrayerById(selectedOrazionaleId) : undefined;
+    const congedoOpts = getCongedoOptions();
+    const congedo = congedoOpts.find((o: any) => o.id === congedoId);
+    const solemn = solemnBlessings.find((b) => b.id === solemnBlessingId);
+    const orazionePopolo = prayersOverPeople.find((p) => p.id === orazionePopoloId);
+
+    const rows: { label: string; value: string }[] = [
+      { label: "Gloria", value: showGloria ? "Sì" : "No" },
+      {
+        label: "Credo",
+        value: showCredo
+          ? selectedCredoId === "niceno"
+            ? "Niceno-Constantinopolitano"
+            : "Apostolico"
+          : "No",
+      },
+      {
+        label: "Preghiera dei fedeli",
+        value: showOrazionalePray ? orazionale?.title ?? "Sì (da scegliere)" : "No",
+      },
+      { label: "Antifone", value: showAntifone ? "Sì" : "No" },
+      { label: "Atto penitenziale", value: `Formula ${penitentialForm}` },
+      ...(preface ? [{ label: "Prefazio", value: preface.title }] : []),
+      ...(prayer ? [{ label: "Preghiera eucaristica", value: prayer.title }] : []),
+      ...peSelectorEntries.map((sel) => {
+        const opt = sel.options.find((o: { id: string; label: string }) => o.id === sel.current);
+        return { label: sel.label, value: opt?.label ?? "—" };
+      }),
+      ...(useOrazionePopolo && orazionePopolo
+        ? [{ label: "Orazione sul popolo", value: `N. ${orazionePopolo.num}` }]
+        : []),
+      {
+        label: "Benedizione",
+        value:
+          useSolemnBlessing && solemn
+            ? `${solemn.num ? `${solemn.num}. ` : ""}${solemn.title}`
+            : `Semplice (forma ${benedizioneId})`,
+      },
+      { label: "Congedo", value: congedo?.label ?? congedoId },
+    ];
+
+    return (
+      <View style={styles.choicesSummary} testID="liturgy-choices-summary" data-tap-stop="true">
+        <R kind="subtitle">Riepilogo scelte — verifica prima di celebrare</R>
+        {rows.map((row) => (
+          <View key={row.label} style={styles.choicesSummaryRow}>
+            <Text style={styles.choicesSummaryLabel}>{row.label}</Text>
+            <Text style={styles.choicesSummaryValue} numberOfLines={4}>
+              {row.value}
+            </Text>
+          </View>
+        ))}
+      </View>
+    );
+  };
+
   // Sotto-blocco riutilizzabile: Toggle "Usa benedizione solenne" + scelta semplice/solenne
   // Viene mostrato:
   //   - nella pagina "Benedizione" se l'orazione sul popolo NON è attiva
@@ -1227,7 +1639,7 @@ export default function MessaScreen() {
       <>
         {/* Toggle Benedizione Solenne */}
         {solemnBlessings.length > 0 && (
-          <View style={[styles.block, styles.solemnToggle]} testID="solemn-toggle">
+          <View style={[styles.block, styles.solemnToggle]} data-tap-stop="true" testID="solemn-toggle">
             <View style={styles.toggleRow}>
               <Text style={styles.toggleLabel}>Usa benedizione solenne</Text>
               <Switch
@@ -1245,7 +1657,7 @@ export default function MessaScreen() {
         {useSolemnBlessing ? (
           <View testID="section-solemn-blessing">
             <R kind="subtitle">Scegli Benedizione Solenne (Messale 2020)</R>
-            <View style={[styles.choiceRow, { flexWrap: "wrap" }]}>
+            <View style={[styles.choiceRow, { flexWrap: "wrap" }]} data-tap-stop="true">
               {solemnBlessings.map((b: any) => (
                 <TouchableOpacity
                   key={b.id}
@@ -1270,7 +1682,7 @@ export default function MessaScreen() {
         ) : (
           <View>
             <R kind="subtitle">Benedizione</R>
-            <View style={styles.choiceRow}>
+            <View style={styles.choiceRow} data-tap-stop="true">
               {benedChoice.options.map((o: any) => (
                 <TouchableOpacity
                   key={o.id}
@@ -1284,8 +1696,8 @@ export default function MessaScreen() {
             </View>
             {bened && (
               <View style={styles.block}>
-                <R kind="celebrante">C. {bened.celebrante}</R>
-                <R kind="assemblea">A. {bened.assemblea}</R>
+                <D role="celebrant" text={bened.celebrante} />
+                <D role="assembly" text={bened.assemblea} />
               </View>
             )}
           </View>
@@ -1306,7 +1718,7 @@ export default function MessaScreen() {
 
         {/* Toggle Orazione sul popolo */}
         {prayersOverPeople.length > 0 && (
-          <View style={[styles.block, styles.solemnToggle]} testID="orazione-popolo-toggle">
+          <View style={[styles.block, styles.solemnToggle]} data-tap-stop="true" testID="orazione-popolo-toggle">
             <View style={styles.toggleRow}>
               <Text style={styles.toggleLabel}>Aggiungi orazione sul popolo</Text>
               <Switch
@@ -1326,7 +1738,7 @@ export default function MessaScreen() {
             {useOrazionePopolo && (
               <View style={{ marginTop: 14 }}>
                 <R kind="subtitle">Scegli orazione sul popolo (1-{prayersOverPeople.length})</R>
-                <View style={[styles.choiceRow, { flexWrap: "wrap" }]}>
+                <View style={[styles.choiceRow, { flexWrap: "wrap" }]} data-tap-stop="true">
                   {prayersOverPeople.map(p => (
                     <TouchableOpacity
                       key={p.id}
@@ -1341,10 +1753,16 @@ export default function MessaScreen() {
                   ))}
                 </View>
                 {selectedOrazPopolo && (
-                  <Text style={styles.solemnHint}>
-                    Selezionata n. {selectedOrazPopolo.num}. Il testo apparirà nella prossima pagina,
-                    dove potrai anche scegliere la benedizione.
-                  </Text>
+                  <View
+                    style={[styles.block, styles.orazionePopoloPreview]}
+                    testID="orazione-popolo-preview"
+                  >
+                    <R kind="subtitle">Anteprima — orazione n. {selectedOrazPopolo.num}</R>
+                    <R>{selectedOrazPopolo.text}</R>
+                    <View style={styles.dialogBlock}>
+                      <D role="assembly" text="Amen." />
+                    </View>
+                  </View>
                 )}
               </View>
             )}
@@ -1367,7 +1785,7 @@ export default function MessaScreen() {
     return (
       <View testID="section-congedo">
         <R kind="title">Congedo</R>
-        <View style={styles.choiceRow}>
+        <View style={styles.choiceRow} data-tap-stop="true">
           {congedoOptions.map((o: any) => (
             <TouchableOpacity
               key={o.id}
@@ -1383,24 +1801,48 @@ export default function MessaScreen() {
         </View>
         {selectedCongedo && (
           <View style={styles.block}>
-            <R kind="celebrante">C. {selectedCongedo.celebrante}</R>
-            <R kind="assemblea">A. {selectedCongedo.assemblea}</R>
+            <D role="celebrant" text={selectedCongedo.celebrante} />
+            <D role="assembly" text={selectedCongedo.assemblea} />
           </View>
         )}
 
-        {/* Pulsante per passare in modalità "Celebra la Messa" (lettura pulita) */}
-        <TouchableOpacity
-          style={styles.celebrateNowBtn}
-          onPress={() => router.replace(sessionDate ? { pathname: "/celebra" as any, params: { date: sessionDate } } : "/celebra" as any)}
-          testID="btn-go-celebrate"
-          accessibilityRole="button"
-          accessibilityLabel="Scelte per la liturgia odierna completate, passa alla modalità lettura"
-        >
-          <Ionicons name="checkmark-circle" size={scaledFont(36)} color={colors.onPrimary} />
-          <Text style={styles.celebrateNowBtnText}>
-            Scelte per la liturgia odierna completate
+        {renderLiturgyChoicesSummary()}
+
+        {favoriteHint ? (
+          <Text style={styles.favoriteHint} testID="favorite-hint">
+            {favoriteHint}
           </Text>
-        </TouchableOpacity>
+        ) : null}
+
+        <View style={styles.completeRow}>
+          <TouchableOpacity
+            style={[styles.celebrateNowBtn, styles.celebrateNowBtnMain]}
+            onPress={goHomeWithDate}
+            testID="btn-go-celebrate"
+            accessibilityRole="button"
+            accessibilityLabel="Preparazione completata, torna alla home"
+          >
+            <Ionicons name="checkmark-circle" size={scaledFont(36)} color={colors.onPrimary} />
+            <Text style={styles.celebrateNowBtnText}>
+              Preparazione completata — torna alla home
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.favoriteBtn, isStarred && styles.favoriteBtnActive]}
+            onPress={() => void handleToggleFavorite()}
+            testID="btn-toggle-favorite"
+            accessibilityRole="button"
+            accessibilityLabel={
+              isStarred ? "Rimuovi da accesso rapido" : "Aggiungi ad accesso rapido"
+            }
+          >
+            <Ionicons
+              name={isStarred ? "star" : "star-outline"}
+              size={scaledFont(34)}
+              color={isStarred ? colors.onPrimary : colors.primary}
+            />
+          </TouchableOpacity>
+        </View>
       </View>
     );
   };
@@ -1416,39 +1858,17 @@ export default function MessaScreen() {
   return (
     <SafeAreaView style={styles.container} testID="mass-screen">
       <View style={styles.topBar}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} testID="btn-back">
-          <Ionicons name="arrow-back" size={scaledFont(36)} color={colors.textPrimary} />
-          <Text style={styles.backBtnText}>Home</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Santa Messa</Text>
-        {/* Bottoni A-/A+ per dimensione font (uguali a quelli di /celebra).
-            Permettono al sacerdote di ingrandire/ridurre il testo durante la
-            preparazione, senza dover entrare nelle Impostazioni. */}
+        <HomeCircleButton onPress={() => router.back()} testID="btn-back" />
+        <BrandScreenTitle
+          title="Scegli la liturgia"
+          textStyle={styles.title}
+          markSize={Math.max(28, Math.round(fontSize * 0.85))}
+        />
         <View style={styles.fontBtns}>
-          <TouchableOpacity
-            style={[
-              styles.fontBtn,
-              fontSize <= FONT_MIN && styles.fontBtnDisabled,
-            ]}
-            onPress={decreaseFont}
-            disabled={fontSize <= FONT_MIN}
-            testID="btn-font-decrease-messa"
-            accessibilityLabel="Riduci dimensione testo"
-          >
-            <Text style={styles.fontBtnText}>A-</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.fontBtn,
-              fontSize >= FONT_MAX && styles.fontBtnDisabled,
-            ]}
-            onPress={increaseFont}
-            disabled={fontSize >= FONT_MAX}
-            testID="btn-font-increase-messa"
-            accessibilityLabel="Aumenta dimensione testo"
-          >
-            <Text style={styles.fontBtnText}>A+</Text>
-          </TouchableOpacity>
+          <FontSizeButtons
+            decreaseTestID="btn-font-decrease-messa"
+            increaseTestID="btn-font-increase-messa"
+          />
         </View>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.push("/impostazioni")} testID="btn-settings-mass">
           <Ionicons name="settings-outline" size={scaledFont(36)} color={colors.textPrimary} />
@@ -1460,6 +1880,9 @@ export default function MessaScreen() {
         // Costruisce dinamicamente le pagine in base ai toggle
         const pages: { key: string; title: string; render: () => React.ReactNode; disableTapAdvance?: boolean }[] = [];
 
+        const SANTO_TEXT =
+          "Santo, Santo, Santo il Signore Dio dell'universo.\nI cieli e la terra sono pieni della tua gloria.\nOsanna nell'alto dei cieli.\nBenedetto colui che viene nel nome del Signore.\nOsanna nell'alto dei cieli.";
+
         // PAGINA 0: Frontespizio
         pages.push({
           key: "intro",
@@ -1467,34 +1890,76 @@ export default function MessaScreen() {
           disableTapAdvance: true, // Evita avanzamento accidentale mentre si toccano i toggle Gloria/Credo
           render: () => (
             <View style={styles.partBox}>
-              <View style={[styles.dayHeader, { borderColor: liturgy?.season?.color_hex || colors.border }]}>
-                <Text style={styles.dayDate} testID="mass-date">{liturgy?.date_label}</Text>
-                {liturgy?.title ? <Text style={styles.dayTitle}>{liturgy.title}</Text> : null}
-                <Text style={styles.daySeason}>{liturgy?.season?.season} · Colore liturgico: {liturgy?.liturgical_color || liturgy?.season?.color}</Text>
-              </View>
-              <View style={styles.togglesBox}>
+              {vigilEve ? (
+                <MessaVigilIntroSection
+                  key={celebrationMode}
+                  vigilCtx={vigilEve}
+                  celebrationMode={celebrationMode}
+                  calendarDayLiturgy={calendarDayLiturgy}
+                  vigilLiturgy={vigilModeLiturgy}
+                  selectedLiturgy={liturgy}
+                  onSelectMode={handleSelectCelebrationMode}
+                  colors={colors}
+                  fontSize={fontSize}
+                />
+              ) : (
+                <View style={styles.dayBannerWrap}>
+                  <LiturgyDayBanner
+                    dateLabel={liturgy?.date_label || ""}
+                    seasonName={liturgy?.season?.season || ""}
+                    ceiTitle={liturgy?.title}
+                    liturgicalColor={liturgy?.liturgical_color || liturgy?.season?.color || "verde"}
+                    celebrationDate={
+                      liturgy?.date ? parseLocalDate(liturgy.date) : new Date()
+                    }
+                    colors={colors}
+                    fontSize={fontSize}
+                    testID="mass-day-banner"
+                    dateTestID="mass-date"
+                    titleTestID="mass-celebration-title"
+                  />
+                </View>
+              )}
+              <View
+                style={vigilEve ? styles.partsPanel : styles.togglesBox}
+                data-tap-stop="true"
+              >
+                {vigilEve ? (
+                  <Text style={styles.partsPanelTitle}>Parti della Messa</Text>
+                ) : null}
                 <View style={styles.toggleRow}>
-                  <Text style={styles.toggleLabel}>Mostra Gloria</Text>
+                  <Text style={styles.toggleLabel}>Gloria</Text>
                   <Switch value={showGloria} onValueChange={setShowGloria} trackColor={{ false: colors.border, true: colors.primary }} thumbColor="#FFFFFF" style={{ transform: [{ scaleX: 1.4 }, { scaleY: 1.4 }], marginLeft: 16 }} />
                 </View>
                 <View style={styles.toggleRow}>
-                  <Text style={styles.toggleLabel}>Mostra Credo</Text>
+                  <Text style={styles.toggleLabel}>Credo</Text>
                   <Switch value={showCredo} onValueChange={setShowCredo} trackColor={{ false: colors.border, true: colors.primary }} thumbColor="#FFFFFF" style={{ transform: [{ scaleX: 1.4 }, { scaleY: 1.4 }], marginLeft: 16 }} />
                 </View>
                 <View style={styles.toggleRow}>
-                  <Text style={styles.toggleLabel}>Preghiera dei fedeli</Text>
+                  <View style={styles.toggleLabelCol}>
+                    <Text style={styles.toggleLabel}>Preghiera dei fedeli</Text>
+                    {vigilEve && celebrationMode !== "calendar_day" ? (
+                      <Text style={styles.toggleSubLabel} numberOfLines={2}>
+                        {vigilEve.solemnityTitle}
+                      </Text>
+                    ) : null}
+                  </View>
                   <Switch value={showOrazionalePray} onValueChange={setShowOrazionalePray} trackColor={{ false: colors.border, true: colors.primary }} thumbColor="#FFFFFF" style={{ transform: [{ scaleX: 1.4 }, { scaleY: 1.4 }], marginLeft: 16 }} />
+                </View>
+                <View style={styles.toggleRow}>
+                  <Text style={styles.toggleLabel}>Antifone</Text>
+                  <Switch value={showAntifone} onValueChange={setShowAntifone} trackColor={{ false: colors.border, true: colors.primary }} thumbColor="#FFFFFF" style={{ transform: [{ scaleX: 1.4 }, { scaleY: 1.4 }], marginLeft: 16 }} />
                 </View>
               </View>
               <TouchableOpacity
                 style={styles.startCelebrationBtn}
-                onPress={advance}
+                onPress={() => advancePageRef.current?.()}
                 testID="btn-start-celebration"
                 accessibilityRole="button"
-                accessibilityLabel="Inizia la celebrazione"
+                accessibilityLabel="Inizia la preparazione della liturgia"
               >
                 <Ionicons name="play-circle" size={scaledFont(40)} color={colors.onPrimary} />
-                <Text style={styles.startCelebrationBtnText}>Inizia la celebrazione</Text>
+                <Text style={styles.startCelebrationBtnText}>Inizia la preparazione</Text>
               </TouchableOpacity>
               <Text style={[styles.toggleLabel, { textAlign: "center", marginTop: 12, fontStyle: "italic", fontSize: Math.round(fontSize * 0.55) }]}>
                 Durante la messa: tocca a destra per avanzare, a sinistra per tornare indietro
@@ -1536,14 +2001,14 @@ export default function MessaScreen() {
           title: "Riti di Introduzione",
           render: () => (
             <View style={styles.partBox}>
-              {renderReading("antifona_ingresso", "Antifona d'ingresso")}
+              {showAntifone && renderReading("antifona_ingresso", "Antifona d'ingresso")}
               <R kind="title">Riti di Introduzione</R>
               {fixedParts["riti_iniziali"].sections.map(renderSectionNoRubric)}
               {/* 5 formule di saluto: il celebrante sceglie a vista. */}
               {SALUTI_INIZIALI.map((s, i) => (
                 <View key={`saluto-${i}`} style={styles.salutoBlock}>
-                  <R kind="celebrante">C. {s.c}</R>
-                  <R kind="assemblea">A. {s.a}</R>
+                  <D role="celebrant" text={s.c} />
+                  <D role="assembly" text={s.a} />
                 </View>
               ))}
             </View>
@@ -1577,7 +2042,10 @@ export default function MessaScreen() {
           title: "Colletta",
           render: () => (
             <View style={styles.partBox}>
-              {renderReading("colletta", "Colletta (Orazione del giorno)") || (
+              {renderReading(
+                "colletta",
+                activeVotiveId ? "Colletta" : "Colletta (Orazione del giorno)",
+              ) || (
                 <R kind="rubric">Colletta non disponibile per oggi.</R>
               )}
             </View>
@@ -1585,7 +2053,7 @@ export default function MessaScreen() {
         });
 
         // PAGINE: Liturgia della Parola (suddivisa in più schermate, con auto-pagination per testi lunghi)
-        const readings = liturgy?.readings || [];
+        const readings = effectiveLiturgy?.readings || [];
         const hasReading = (type: string) => readings.some(r => r.type === type);
 
         // ===== LETTURE & SALMO =====
@@ -1605,7 +2073,48 @@ export default function MessaScreen() {
           });
         };
 
-        addReadingPage("prima_lettura", "Prima Lettura");
+        const plReading = readings.find((rr) => rr.type === "prima_lettura");
+        if (plReading?.text) {
+          pages.push({
+            key: "read-prima_lettura",
+            title: "Prima Lettura",
+            render: () => (
+              <View style={styles.partBox}>
+                {offerSaintProperToggle ? (
+                  <View style={styles.togglesBox} data-tap-stop="true">
+                    <View style={styles.toggleRow} testID="saint-proper-toggle">
+                      <Text style={styles.toggleLabel}>Letture proprie del santo</Text>
+                      <Switch
+                        value={useSaintProperReadings}
+                        onValueChange={setUseSaintProperReadings}
+                        trackColor={{ false: colors.border, true: colors.primary }}
+                        thumbColor="#FFFFFF"
+                        style={{ transform: [{ scaleX: 1.4 }, { scaleY: 1.4 }], marginLeft: 16 }}
+                        testID="switch-saint-proper-readings"
+                      />
+                    </View>
+                    <Text
+                      style={[
+                        styles.toggleLabel,
+                        {
+                          fontStyle: "italic",
+                          fontSize: Math.round(fontSize * 0.55),
+                          marginTop: 4,
+                        },
+                      ]}
+                    >
+                      {useSaintProperReadings
+                        ? "Lezionario del santo (colletta e orazioni restano del giorno CEI)"
+                        : "Letture feriale del giorno (CEI)"}
+                    </Text>
+                  </View>
+                ) : null}
+                {renderReading("prima_lettura", "Prima Lettura")}
+              </View>
+            ),
+          });
+        }
+
         addReadingPage("salmo", "Salmo Responsoriale");
         addReadingPage("seconda_lettura", "Seconda Lettura");
         addReadingPage("sequenza", "Sequenza");
@@ -1652,7 +2161,7 @@ export default function MessaScreen() {
 
         // PAGINE: Preghiera dei fedeli (Orazionale CEI)
         if (showOrazionalePray && selectedOrazionale) {
-          const orChunks = splitTextIntoChunks(selectedOrazionale.body);
+          const orChunks = splitFedeliTextIntoChunks(selectedOrazionale.body, charsPerPage);
           orChunks.forEach((_, i) => {
             pages.push({
               key: `orazionale-${i}`,
@@ -1666,10 +2175,10 @@ export default function MessaScreen() {
                         <Ionicons name="swap-horizontal" size={scaledFont(28)} color={colors.primary} />
                         <Text style={styles.selectorBtnText}>Scegli Preghiera</Text>
                       </TouchableOpacity>
-                      <R kind="subtitle">{selectedOrazionale.title}</R>
+                      <R kind="peTitle">{selectedOrazionale.title}</R>
                     </>
                   ) : (
-                    <R kind="subtitle">{selectedOrazionale.title} (continua)</R>
+                    <R kind="peTitle">{selectedOrazionale.title} (continua)</R>
                   )}
                   {renderPreghieraFedeliText(orChunks[i])}
                 </View>
@@ -1699,7 +2208,6 @@ export default function MessaScreen() {
         // P3: Sulle offerte (orazione)
         const off = fixedParts["offertorio"];
         const orateChoice = off.sections.find((s: any) => s.type === "choice_orate");
-        const selectedOrate = orateChoice?.options.find((o: any) => o.id === orateFratresId);
         // Sezioni iniziali (rubriche + Benedetti) fino all'indice della "Umili e pentiti"
         // La sezione 4 (in JSON) è "Umili e pentiti" col rubric "Inchinato..."
         // Le sezioni precedenti (0-3) sono le offerte di pane e vino.
@@ -1736,33 +2244,10 @@ export default function MessaScreen() {
               {/* "Umili e pentiti" — testo della preghiera silenziosa, in rosso (rubrica) */}
               {inchinatoSection && (
                 <View style={styles.block}>
-                  <R kind="umili">{inchinatoSection.text}</R>
+                  <R kind="umili">{inchinatoSection.celebrante}</R>
                 </View>
               )}
-              {orateChoice && (
-                <View style={styles.block}>
-                  {/* Niente più rubrica rossa qui — solo i bottoni di scelta + dialogo */}
-                  <R kind="subtitle">Invito e risposta</R>
-                  <View style={styles.choiceRow}>
-                    {orateChoice.options.map((o: any) => (
-                      <TouchableOpacity
-                        key={o.id}
-                        style={[styles.choiceBtn, orateFratresId === o.id && styles.choiceBtnActive]}
-                        onPress={() => setOrateFratresId(o.id)}
-                        testID={`btn-orate-${o.id}`}
-                      >
-                        <Text style={[styles.choiceBtnText, orateFratresId === o.id && { color: colors.onPrimary }]}>{o.label}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                  {selectedOrate && (
-                    <View style={styles.block}>
-                      <R kind="celebrante">C. {selectedOrate.celebrante}</R>
-                      <R kind="assemblea">A. {selectedOrate.assemblea}</R>
-                    </View>
-                  )}
-                </View>
-              )}
+              {renderOrateFratresAll(orateChoice)}
             </View>
           ),
         });
@@ -1783,256 +2268,274 @@ export default function MessaScreen() {
           ),
         });
 
-        // PAGINA: Prefazio + Santo (uniti, si chunkano insieme: il Santo finisce
-        // sull'ultima pagina del prefazio o appena dopo se non entra)
-        if (selectedPreface) {
-          const SANTO_TEXT = "Santo, Santo, Santo il Signore Dio dell'universo.\nI cieli e la terra sono pieni della tua gloria.\nOsanna nell'alto dei cieli.\nBenedetto colui che viene nel nome del Signore.\nOsanna nell'alto dei cieli.";
-          // L'introduzione dialogica (Il Signore sia con voi…) precede ogni prefazio.
-          const fullText = PREFACE_INTRO + "\n\n" + selectedPreface.text.trimEnd() + "\n\n" + SANTO_TEXT;
-          const prefChunks = splitTextIntoChunks(fullText);
-          prefChunks.forEach((_, i) => {
-            pages.push({
-              key: `prefazio-${i}`,
-              title: prefChunks.length > 1 ? `Prefazio (${i + 1}/${prefChunks.length})` : "Prefazio",
-              render: () => (
-                <View style={styles.partBox}>
-                  {i === 0 ? (
-                    <>
-                      <R kind="title">Prefazio</R>
-                      <TouchableOpacity style={styles.selectorBtn} onPress={() => { setShowPrefaces(true); setExpandedPrefaceSeason('suggeriti'); }} testID="btn-select-preface">
-                        <Ionicons name="swap-horizontal" size={scaledFont(28)} color={colors.primary} />
-                        <Text style={styles.selectorBtnText}>Scegli Prefazio</Text>
-                      </TouchableOpacity>
-                      <R kind="prefaceTitle">{selectedPreface.title}</R>
-                    </>
-                  ) : (
-                    <R kind="prefaceTitle">{selectedPreface.title} (continua)</R>
-                  )}
-                  <R>{prefChunks[i]}</R>
-                </View>
-              ),
-            });
-          });
-        } else {
-          pages.push({
-            key: "prefazio",
-            title: "Prefazio",
-            render: () => (
-              <View style={styles.partBox}>
-                <R kind="title">Prefazio</R>
-                <TouchableOpacity style={styles.selectorBtn} onPress={() => { setShowPrefaces(true); setExpandedPrefaceSeason('suggeriti'); }} testID="btn-select-preface">
-                  <Ionicons name="swap-horizontal" size={scaledFont(28)} color={colors.primary} />
-                  <Text style={styles.selectorBtnText}>Scegli Prefazio</Text>
-                </TouchableOpacity>
-              </View>
-            ),
-          });
-        }
+        // === Prefazio + Preghiera Eucaristica (paginato o continuo con microfono) ===
+        const prefBodyText = selectedPreface
+          ? selectedPreface.text.trimEnd() + "\n\n" + SANTO_TEXT
+          : "";
+        const peHasIncorporatedPreface =
+          !!selectedPrayer && PE_WITH_PROPER_PREFACE.includes(selectedPrayer.id);
 
-        // PAGINE: Preghiera Eucaristica (suddivisa: Consacrazione | Mistero della Fede + Dossologia)
+        let peBeforePart = "";
+        let peAfterPart = "";
+        let peBeforeChunks: string[] = [];
+        let peAfterChunks: string[] = [];
+
         if (selectedPrayer) {
-          const isPe1 = selectedPrayer.id === "pe1";
-          const marker = "Mistero della fede.";
-          const text = expandedPrayerText || processPrayerText(selectedPrayer.text, selectedPrayer.id);
-          const idx = text.indexOf(marker);
-          let beforePart = text;
-          let afterPart = "";
-          if (idx >= 0) {
-            beforePart = text.substring(0, idx).trimEnd();
-            const rest = text.substring(idx + marker.length);
+          const peMarker = "Mistero della fede.";
+          const peText = expandedPrayerText || processPrayerText(selectedPrayer.text, selectedPrayer.id);
+          const peIdx = peText.indexOf(peMarker);
+          peBeforePart = peText;
+          peAfterPart = "";
+          if (peIdx >= 0) {
+            peBeforePart = peText.substring(0, peIdx).trimEnd();
+            const rest = peText.substring(peIdx + peMarker.length);
             const nextBreak = rest.indexOf("\n\n");
-            afterPart = nextBreak > 0 ? rest.substring(nextBreak + 2).trimStart() : rest.trimStart();
+            peAfterPart = nextBreak > 0 ? rest.substring(nextBreak + 2).trimStart() : rest.trimStart();
           }
-          const selAcc = acclamations.find(x => x.id === acclamationId);
-
-          // Split intelligente della PE basato su MARKER LITURGICI per produrre
-          // pagine compatte (poco spazio vuoto) e ben tagliate.
-          // Inoltre, se un chunk dovesse superare la capacità della pagina
-          // (calcolata dinamicamente in base allo schermo + font scelto),
-          // viene sub-splittato automaticamente per evitare scroll.
-          //
-          // CONSACRAZIONE:
-          //   marker: "Allo stesso modo, dopo aver cenato" (consacrazione CALICE)
-          // ANAMNESI/DOSSOLOGIA:
-          //   marker: "Per Cristo, con Cristo" (dossologia finale)
-          const splitAtMarker = (txt: string, marker: string): [string, string] => {
-            const idx = txt.indexOf(marker);
-            if (idx < 0) return [txt, ""];
-            return [txt.substring(0, idx).trim(), txt.substring(idx).trim()];
+          const splitAtMarker = (txt: string, m: string): [string, string] => {
+            const i = txt.indexOf(m);
+            if (i < 0) return [txt, ""];
+            return [txt.substring(0, i).trim(), txt.substring(i).trim()];
           };
-          // Ricava chunk macro dai marker, poi sub-divide se troppo grandi
           const expandIfTooBig = (chunks: string[]): string[] => {
             const out: string[] = [];
             const HARD = Math.round(charsPerPage * 1.15);
             for (const c of chunks) {
               if (!c) continue;
-              if (c.length <= HARD) { out.push(c); continue; }
+              if (c.length <= HARD) {
+                out.push(c);
+                continue;
+              }
               out.push(...splitTextIntoChunks(c, charsPerPage));
             }
             return out;
           };
-          // Marker calice: "Allo stesso modo, dopo aver cenato"
-          const [beforeBread, beforeCalice] = splitAtMarker(beforePart, "Allo stesso modo, dopo aver cenato");
-          const beforeRaw = beforeCalice ? [beforeBread, beforeCalice] : [beforePart];
-          const beforeChunks = expandIfTooBig(beforeRaw);
-          beforeChunks.forEach((_, i) => {
+          const [beforeBread, beforeCalice] = splitAtMarker(peBeforePart, "Allo stesso modo, dopo aver cenato");
+          const beforeRaw = beforeCalice ? [beforeBread, beforeCalice] : [peBeforePart];
+          peBeforeChunks = expandIfTooBig(beforeRaw).map((c) => c.trim()).filter(Boolean);
+          if (peBeforeChunks.length === 0) {
+            const fallback = (peText || selectedPrayer.text || "").trim();
+            if (fallback) peBeforeChunks = [fallback];
+          }
+
+          if (peAfterPart || acclamations.length > 0) {
+            const dossMarkerLit = "<<DOSSOLOGIA>>";
+            const dossIdx = peAfterPart.indexOf(dossMarkerLit);
+            let afterRaw: string[];
+            if (dossIdx > 0) {
+              afterRaw = [peAfterPart.substring(0, dossIdx).trim(), peAfterPart.substring(dossIdx).trim()];
+            } else {
+              const fallbackRe = /PER CRISTO, CON CRISTO|Per Cristo, con Cristo/;
+              const m = peAfterPart.match(fallbackRe);
+              const fallbackIdx = m ? peAfterPart.indexOf(m[0]) : -1;
+              afterRaw =
+                fallbackIdx > 0
+                  ? [peAfterPart.substring(0, fallbackIdx).trim(), peAfterPart.substring(fallbackIdx).trim()]
+                  : [peAfterPart];
+            }
+            peAfterChunks = expandIfTooBig(afterRaw).map((c) => c.trim()).filter(Boolean);
+          }
+        }
+
+        const renderPeAcclamationBlock = () =>
+          acclamations.length > 0 ? renderMysteryAcclamationsAll() : null;
+
+        const renderPeSelectorRow = () =>
+          peSelectorEntries.length > 0 ? (
+            <View style={styles.peSelectorsRow} data-tap-stop="true">
+              {peSelectorEntries.map((sel) => {
+                const opt = sel.options.find((o: { id: string; label: string }) => o.id === sel.current);
+                return (
+                  <TouchableOpacity
+                    key={sel.key}
+                    style={styles.peSelectorBtn}
+                    onPress={() => setPePickerKey(sel.key)}
+                    testID={`btn-pe-selector-${sel.key}`}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.peSelectorLabel}>{sel.label}</Text>
+                    <View style={styles.peSelectorValueRow}>
+                      <Text style={styles.peSelectorValue} numberOfLines={2}>
+                        {opt?.label || "—"}
+                      </Text>
+                      <Ionicons name="chevron-down" size={scaledFont(14)} color={colors.accentPeSelectorLabel} />
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          ) : null;
+
+        if (selectedPreface) {
+          const prefChunks = splitTextIntoChunks(prefBodyText);
+          prefChunks.forEach((_, i) => {
             pages.push({
-              key: `pe-cons-${i}`,
-              title: beforeChunks.length > 1
-                ? `Preghiera Eucaristica – Consacrazione (${i + 1}/${beforeChunks.length})`
-                : "Preghiera Eucaristica – Consacrazione",
+                key: `prefazio-${i}`,
+                title: prefChunks.length > 1 ? `Prefazio (${i + 1}/${prefChunks.length})` : "Prefazio",
+                render: () => (
+                  <View style={styles.partBox}>
+                    {i === 0 ? (
+                      <>
+                        <View style={styles.titleRow}>
+                          <R kind="title">Prefazio</R>
+                        </View>
+                        <TouchableOpacity
+                          style={styles.selectorBtn}
+                          onPress={() => {
+                            setShowPrefaces(true);
+                            setExpandedPrefaceSeason("suggeriti");
+                          }}
+                          testID="btn-select-preface"
+                        >
+                          <Ionicons name="swap-horizontal" size={scaledFont(28)} color={colors.primary} />
+                          <Text style={styles.selectorBtnText}>Scegli Prefazio</Text>
+                        </TouchableOpacity>
+                        <R kind="prefaceTitle">{selectedPreface.title}</R>
+                        {renderPrefaceDialogues()}
+                      </>
+                    ) : (
+                      <R kind="prefaceTitle">{selectedPreface.title} (continua)</R>
+                    )}
+                    <R>{prefChunks[i]}</R>
+                  </View>
+                ),
+              });
+          });
+        } else {
+          pages.push({
+            key: "prefazio",
+              title: "Prefazio",
               render: () => (
                 <View style={styles.partBox}>
-                  {i === 0 ? (
-                    <>
-                      <View style={styles.titleRow}>
-                        <R kind="title">Preghiera Eucaristica</R>
-                        <TouchableOpacity style={styles.selectorBtnInline} onPress={() => setShowPrayers(true)} testID="btn-select-prayer">
-                          <Ionicons name="swap-horizontal" size={scaledFont(18)} color={colors.primary} />
-                          <Text style={styles.selectorBtnInlineText}>Scegli</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          style={[
-                            styles.autoScrollBtn,
-                            peAutoScrollEnabled && styles.autoScrollBtnActive,
-                          ]}
-                          onPress={() => setPeAutoScrollEnabled(!peAutoScrollEnabled)}
-                          testID="btn-autoscroll"
-                          accessibilityLabel={peAutoScrollEnabled ? "Disattiva scorrimento automatico" : "Attiva scorrimento automatico"}
-                        >
-                          <Ionicons
-                            name={peAutoScrollEnabled ? "play" : "pause"}
-                            size={scaledFont(16)}
-                            color={peAutoScrollEnabled ? colors.onPrimary : colors.textPrimary}
-                          />
-                          <Text
-                            style={[
-                              styles.autoScrollBtnText,
-                              peAutoScrollEnabled && { color: colors.onPrimary },
-                            ]}
-                          >
-                            {peAutoScrollEnabled ? "Auto" : "Off"}
-                          </Text>
-                        </TouchableOpacity>
-                      </View>
-                      {/* Selettori per i propri della PE (Tempo Liturgico / Rito Particolare) */}
-                      {peSelectorEntries.length > 0 && (
-                        <View style={styles.peSelectorsRow}>
-                          {peSelectorEntries.map((sel) => {
-                            const opt = sel.options.find((o: { id: string; label: string }) => o.id === sel.current);
-                            return (
-                              <TouchableOpacity
-                                key={sel.key}
-                                style={styles.peSelectorBtn}
-                                onPress={() => setPePickerKey(sel.key)}
-                                testID={`btn-pe-selector-${sel.key}`}
-                                activeOpacity={0.7}
-                              >
-                                <Text style={styles.peSelectorLabel}>{sel.label}</Text>
-                                <View style={styles.peSelectorValueRow}>
-                                  <Text style={styles.peSelectorValue} numberOfLines={2}>{opt?.label || "—"}</Text>
-                                  <Ionicons name="chevron-down" size={scaledFont(14)} color={colors.accentPeSelectorLabel} />
-                                </View>
-                              </TouchableOpacity>
-                            );
-                          })}
-                        </View>
-                      )}
-                      <R kind="peTitle">{selectedPrayer.title}</R>
-                    </>
-                  ) : (
-                    <R kind="peTitle">{selectedPrayer.title} (continua)</R>
-                  )}
-                  {isPe1 ? renderPe1Chunk(beforeChunks[i], `pe1-b${i}`) : renderPeText(beforeChunks[i], `pe-b${i}`)}
+                  <View style={styles.titleRow}>
+                    <R kind="title">Prefazio</R>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.selectorBtn}
+                    onPress={() => {
+                      setShowPrefaces(true);
+                      setExpandedPrefaceSeason("suggeriti");
+                    }}
+                    testID="btn-select-preface"
+                  >
+                    <Ionicons name="swap-horizontal" size={scaledFont(28)} color={colors.primary} />
+                    <Text style={styles.selectorBtnText}>Scegli Prefazio</Text>
+                  </TouchableOpacity>
                 </View>
               ),
             });
-          });
+        }
 
-          // Pagina Acclamazione + Mistero della Fede + Anamnesi/Dossologia (chunked se lungo)
-          if (afterPart || acclamations.length > 0) {
-            // Anamnesi/Dossologia: split sul marker `<<DOSSOLOGIA>>` (inserito da
-            // expandedPrayerText prima del blocco "c"). Se non presente, ricade
-            // sul testo "PER CRISTO, CON CRISTO" (PE1 e fallback).
-            const dossMarkerLit = "<<DOSSOLOGIA>>";
-            let dossIdx = afterPart.indexOf(dossMarkerLit);
-            let afterRaw: string[];
-            if (dossIdx > 0) {
-              afterRaw = [
-                afterPart.substring(0, dossIdx).trim(),
-                afterPart.substring(dossIdx).trim(), // mantieni il marker nel chunk Dossologia
-              ];
-            } else {
-              const fallbackRe = /PER CRISTO, CON CRISTO|Per Cristo, con Cristo/;
-              const m = afterPart.match(fallbackRe);
-              const fallbackIdx = m ? afterPart.indexOf(m[0]) : -1;
-              afterRaw = fallbackIdx > 0
-                ? [afterPart.substring(0, fallbackIdx).trim(), afterPart.substring(fallbackIdx).trim()]
-                : [afterPart];
-            }
-            const afterChunks = expandIfTooBig(afterRaw);
-            // Prima pagina: acclamazione (selettore + dialogo)
-            if (acclamations.length > 0) {
-              pages.push({
-                key: "pe-acclamazione",
-                title: "Mistero della Fede",
-                render: () => (
-                  <View style={styles.partBox}>
-                    <R kind="title">Mistero della Fede</R>
-                    <View style={styles.acclamationBox}>
-                      <R kind="subtitle">Forma dell'acclamazione</R>
-                      <View style={styles.choiceRow}>
-                        {acclamations.map(a => (
-                          <TouchableOpacity key={a.id} style={[styles.choiceBtn, acclamationId === a.id && styles.choiceBtnActive]} onPress={() => setAcclamationId(a.id)} testID={`btn-acclamation-${a.id}`}>
-                            <Text style={[styles.choiceBtnText, acclamationId === a.id && { color: colors.onPrimary }]}>Forma {a.id}</Text>
-                          </TouchableOpacity>
-                        ))}
-                      </View>
-                      {selAcc && (
-                        <View style={styles.block}>
-                          <R kind="celebrante">C. {selAcc.celebrante}</R>
-                          <R kind="assemblea">A. {selAcc.assemblea}</R>
-                        </View>
-                      )}
-                    </View>
+        if (selectedPrayer) {
+          if (peBeforeChunks.length === 0) {
+            pages.push({
+              key: "pe-cons-0",
+              title: "Preghiera Eucaristica",
+              render: () => (
+                <View style={styles.partBox} testID="mass-page-pe-fallback">
+                  <View style={styles.titleRow}>
+                    <R kind="title">Preghiera Eucaristica</R>
+                    <TouchableOpacity
+                      style={styles.selectorBtnInline}
+                      onPress={() => setShowPrayers(true)}
+                      testID="btn-select-prayer"
+                    >
+                      <Ionicons name="swap-horizontal" size={scaledFont(18)} color={colors.primary} />
+                      <Text style={styles.selectorBtnInlineText}>Scegli</Text>
+                    </TouchableOpacity>
                   </View>
-                ),
-              });
-            }
-            // Pagine seguenti: split su "Per Cristo, con Cristo" (dossologia)
-            // - se 2 pagine: Anamnesi (pag1) + Dossologia (pag2)
-            // - se 1 pagina: Anamnesi e Dossologia insieme
-            afterChunks.forEach((_, i) => {
-              const isLastDossology = afterChunks.length > 1 && i === afterChunks.length - 1;
-              const pageTitle = afterChunks.length > 1
-                ? (isLastDossology ? "Dossologia" : "Anamnesi e Intercessioni")
-                : "Anamnesi e Dossologia";
+                  {renderPeSelectorRow()}
+                  <R kind="peTitle">{selectedPrayer.title}</R>
+                  {peHasIncorporatedPreface ? renderPrefaceDialogues() : null}
+                  <R kind="rubric">Testo della preghiera non disponibile. Prova a cambiare PE o a tornare indietro e riaprire.</R>
+                </View>
+              ),
+            });
+          }
+          peBeforeChunks.forEach((_, i) => {
               pages.push({
-                key: `pe-after-${i}`,
-                title: pageTitle,
+                key: `pe-cons-${i}`,
+                title:
+                  peBeforeChunks.length > 1
+                    ? `Preghiera Eucaristica – Consacrazione (${i + 1}/${peBeforeChunks.length})`
+                    : "Preghiera Eucaristica – Consacrazione",
                 render: () => (
                   <View style={styles.partBox}>
-                    <R kind="title">{pageTitle}</R>
-                    {isPe1 ? renderPe1Chunk(afterChunks[i], `pe1-a${i}`) : renderPeText(afterChunks[i], `pe-a${i}`)}
+                    {i === 0 ? (
+                      <>
+                        <View style={styles.titleRow}>
+                          <R kind="title">Preghiera Eucaristica</R>
+                          <TouchableOpacity
+                            style={styles.selectorBtnInline}
+                            onPress={() => setShowPrayers(true)}
+                            testID="btn-select-prayer"
+                          >
+                            <Ionicons name="swap-horizontal" size={scaledFont(18)} color={colors.primary} />
+                            <Text style={styles.selectorBtnInlineText}>Scegli</Text>
+                          </TouchableOpacity>
+                        </View>
+                        {renderPeSelectorRow()}
+                        <R kind="peTitle">{selectedPrayer.title}</R>
+                        {peHasIncorporatedPreface ? renderPrefaceDialogues() : null}
+                      </>
+                    ) : (
+                      <R kind="peTitle">{selectedPrayer.title} (continua)</R>
+                    )}
+                    {renderPeText(peBeforeChunks[i], `pe-b${i}`)}
                   </View>
                 ),
               });
             });
-          }
-        } else {
-          pages.push({
-            key: "pe",
-            title: "Preghiera Eucaristica",
-            render: () => (
-              <View style={styles.partBox}>
-                <R kind="title">Preghiera Eucaristica</R>
-                <TouchableOpacity style={styles.selectorBtn} onPress={() => setShowPrayers(true)} testID="btn-select-prayer">
-                  <Ionicons name="swap-horizontal" size={scaledFont(28)} color={colors.primary} />
-                  <Text style={styles.selectorBtnText}>Scegli Preghiera Eucaristica</Text>
-                </TouchableOpacity>
-              </View>
-            ),
-          });
+
+            if (peAfterPart || acclamations.length > 0) {
+              if (acclamations.length > 0) {
+                pages.push({
+                  key: "pe-acclamazione",
+                  title: "Mistero della Fede",
+                  render: () => (
+                    <View style={styles.partBox}>
+                      <R kind="title">Mistero della Fede</R>
+                      {renderPeAcclamationBlock()}
+                    </View>
+                  ),
+                });
+              }
+              peAfterChunks.forEach((_, i) => {
+                const isLastDossology = peAfterChunks.length > 1 && i === peAfterChunks.length - 1;
+                const pageTitle =
+                  peAfterChunks.length > 1
+                    ? isLastDossology
+                      ? "Dossologia"
+                      : "Anamnesi e Intercessioni"
+                    : "Anamnesi e Dossologia";
+                pages.push({
+                  key: `pe-after-${i}`,
+                  title: pageTitle,
+                  render: () => (
+                    <View style={styles.partBox}>
+                      <R kind="title">{pageTitle}</R>
+                      {renderPeText(peAfterChunks[i], `pe-a${i}`)}
+                    </View>
+                  ),
+                });
+              });
+            }
+          } else {
+            pages.push({
+              key: "pe",
+              title: "Preghiera Eucaristica",
+              render: () => (
+                <View style={styles.partBox}>
+                  <View style={styles.titleRow}>
+                    <R kind="title">Preghiera Eucaristica</R>
+                  </View>
+                  <TouchableOpacity style={styles.selectorBtn} onPress={() => setShowPrayers(true)} testID="btn-select-prayer">
+                    <Ionicons name="swap-horizontal" size={scaledFont(28)} color={colors.primary} />
+                    <Text style={styles.selectorBtnText}>Scegli Preghiera Eucaristica</Text>
+                  </TouchableOpacity>
+                </View>
+              ),
+            });
         }
 
         // PAGINA: Padre Nostro (solo Pater + monizione + embolismo)
@@ -2042,30 +2545,12 @@ export default function MessaScreen() {
           render: () => {
             const pn = fixedParts["padre_nostro"];
             const introChoice = pn.sections.find((s: any) => s.type === "choice_intro");
-            const selectedIntro = introChoice?.options.find((o: any) => o.id === padreNostroIntroId);
             // Le prime 3 sezioni: monizione, Pater, embolismo. Saltiamo la rubrica iniziale "Il sacerdote..."
             const padreSections = pn.sections.filter((s: any) => s.type !== "choice_intro").slice(0, 2); // Pater + embolismo
             return (
               <View testID="part-padre-nostro">
                 <R kind="title">Padre Nostro</R>
-                {introChoice && (
-                  <View style={styles.block}>
-                    <R kind="subtitle">Monizione d'introduzione</R>
-                    <View style={styles.choiceRow}>
-                      {introChoice.options.map((o: any) => (
-                        <TouchableOpacity
-                          key={o.id}
-                          style={[styles.choiceBtn, padreNostroIntroId === o.id && styles.choiceBtnActive]}
-                          onPress={() => setPadreNostroIntroId(o.id)}
-                          testID={`btn-pn-intro-${o.id}`}
-                        >
-                          <Text style={[styles.choiceBtnText, padreNostroIntroId === o.id && { color: colors.onPrimary }]}>Forma {o.id}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                    {selectedIntro && <R kind="celebrante">C. {selectedIntro.text}</R>}
-                  </View>
-                )}
+                {renderPadreNostroIntrosAll(introChoice)}
                 {/* Padre nostro (abbreviato) + Embolismo */}
                 <View style={styles.block}>
                   <R>Padre nostro...</R>
@@ -2119,7 +2604,7 @@ export default function MessaScreen() {
               <View testID="part-comunione">
                 <R kind="title">Comunione</R>
                 {com.sections.slice(2).map((s: any, i: number) => renderSectionNoRubric(s, i + 2))}
-                {renderReading("antifona_comunione", "Antifona alla Comunione")}
+                {showAntifone && renderReading("antifona_comunione", "Antifona alla Comunione")}
               </View>
             );
           },
@@ -2159,7 +2644,7 @@ export default function MessaScreen() {
                     <R kind="subtitle">{sel.num}.</R>
                     <R>{sel.text}</R>
                     <View style={styles.dialogBlock}>
-                      <R kind="assemblea">A. Amen.</R>
+                      <D role="assembly" text="Amen." />
                     </View>
                   </View>
                   {/* Sotto al testo dell'orazione: scelta della benedizione */}
@@ -2183,13 +2668,13 @@ export default function MessaScreen() {
                   {(sel as any).rubric ? <R kind="rubric">{(sel as any).rubric}</R> : null}
                   {sel.invocations.map((inv: any, i: number) => (
                     <View key={i} style={styles.dialogBlock}>
-                      <R kind="celebrante">C. {inv.c}</R>
-                      <R kind="assemblea">A. {inv.a}</R>
+                      <D role="celebrant" text={inv.c} />
+                      <D role="assembly" text={inv.a} />
                     </View>
                   ))}
                   <View style={styles.dialogBlock}>
-                    <R kind="celebrante">C. {sel.final.c}</R>
-                    <R kind="assemblea">A. {sel.final.a}</R>
+                    <D role="celebrant" text={sel.final.c} />
+                    <D role="assembly" text={sel.final.a} />
                   </View>
                 </View>
               ),
@@ -2205,109 +2690,62 @@ export default function MessaScreen() {
         });
 
         const total = pages.length;
-        const safeIdx = Math.max(0, Math.min(currentPage, total - 1));
-        const cur = pages[safeIdx];
-        // Aggiorna il ref della chiave pagina corrente: serve all'useEffect
-        // dell'auto-scroll per attivarsi solo sulle pagine della Preghiera Eucaristica.
-        currentPageKeyRef.current = cur?.key || "";
-        const prev = () => {
-          const next = Math.max(0, safeIdx - 1);
-          setCurrentPage(next);
+        const safeIdx = resolveMassPageIndex(pages, pageKey);
+        const cur = pages[safeIdx] ?? pages[0];
+        if (!cur) return null;
+        const goTo = (idx: number) => {
+          const next = Math.max(0, Math.min(total - 1, idx));
+          const nextKey = pages[next]?.key;
+          if (nextKey) setPageKey(nextKey);
           scrollRef.current?.scrollTo({ y: 0, animated: false });
         };
-        const advance = () => {
-          const next = Math.min(total - 1, safeIdx + 1);
-          setCurrentPage(next);
-          scrollRef.current?.scrollTo({ y: 0, animated: false });
-        };
+        const prev = () => goTo(safeIdx - 1);
+        const advance = () => goTo(safeIdx + 1);
+        advancePageRef.current = advance;
 
-        // ===== MODALITÀ "scroll": tutta la messa in scorrimento continuo =====
-        if (readingMode === "scroll") {
-          return (
-            <ScrollView contentContainerStyle={styles.content} testID="mass-scroll-continuous">
-              {pages.map((p) => (
-                <View key={p.key}>{p.render()}</View>
-              ))}
-              <View style={{ height: 80 }} />
-            </ScrollView>
-          );
-        }
-
-        // ===== MODALITÀ "tap": una pagina alla volta + tap Kindle (sx/dx) =====
-        // Strategia anti-conflitti:
-        //  - ScrollView esterna permette lo scroll verticale (drag)
-        //  - Pressable interno cattura il tap singolo (senza movimento)
-        //  - I bottoni TouchableOpacity interni (Scegli Prefazio, ecc.) hanno
-        //    sempre priorità (deeper touchable wins in React Native)
-        //  - In base a locationX/pageX decidiamo se è sinistra (indietro) o
-        //    destra (avanti). Rapporto: 35% sinistra, 65% destra.
+        // Tap pagina: Pressable dentro ScrollView — tap e bottoni convivono su native;
+        // su web isWebInteractiveTarget evita avanzamento su formula/switch/Scegli.
         const TAP_LEFT_RATIO = 0.35;
         const tapLeftWidth = Math.round(screenWidth * TAP_LEFT_RATIO);
 
-        const handlePagePress = (e: any) => {
-          // Su web (browser/preview Expo), il Pressable parent riceve il click
-          // anche dopo che un controllo interattivo (Switch, Button, TouchableOpacity)
-          // è stato toccato, causando avanzamento di pagina indesiderato.
-          // Filtra: se il target del tap è un controllo interattivo (o discendente),
-          // NON avanzare/indietreggiare.
-          // Su React Native nativo, il deeper touchable wins di default e questo
-          // controllo è no-op.
-          const target: any = e?.nativeEvent?.target ?? (e as any)?.target;
-          if (target && typeof target === "object") {
-            try {
-              // DOM check (web)
-              const closest = (target as any).closest;
-              if (typeof closest === "function") {
-                const interactive = closest.call(
-                  target,
-                  'input, button, a, select, textarea, [role="switch"], [role="button"], [role="checkbox"], [role="radio"], [data-tap-stop="true"]',
-                );
-                if (interactive) return;
-              }
-              // Fallback per check su tagName/role
-              const tag = ((target as any).tagName || "").toLowerCase();
-              if (tag === "input" || tag === "button" || tag === "a" || tag === "select" || tag === "textarea") return;
-              const role = (target as any).getAttribute?.("role");
-              if (role === "switch" || role === "button" || role === "checkbox" || role === "radio") return;
-            } catch (_e) {
-              // non-web environment: continua con il tap-advance
-            }
-          }
-          const x = e?.nativeEvent?.pageX ?? e?.nativeEvent?.locationX ?? 0;
+        const handlePagePress = (e: GestureResponderEvent) => {
+          const target = (e.nativeEvent as unknown as { target?: EventTarget }).target;
+          if (isWebInteractiveTarget(target)) return;
+          const x = e.nativeEvent.pageX ?? e.nativeEvent.locationX ?? 0;
           if (x < tapLeftWidth) prev();
           else advance();
         };
 
         return (
           <>
-            {/* Contenuto scrollabile: ScrollView esterna + Pressable interno per tap */}
-            <ScrollView
-              ref={scrollRef}
-              style={{ flex: 1 }}
-              contentContainerStyle={[styles.content, { paddingBottom: 60 }]}
-              testID="mass-scroll"
-              showsVerticalScrollIndicator
-              keyboardShouldPersistTaps="handled"
-              scrollEventThrottle={16}
-              onScroll={(e) => { scrollYRef.current = e.nativeEvent.contentOffset.y; }}
-              onContentSizeChange={(_, h) => { contentHeightRef.current = h; }}
-              onLayout={(e) => { containerHeightRef.current = e.nativeEvent.layout.height; }}
-            >
-              {cur.disableTapAdvance ? (
-                <View testID="page-no-tap">
-                  {cur.render()}
-                </View>
-              ) : (
-                <Pressable
-                  onPress={handlePagePress}
-                  testID="page-tap-area"
-                  android_disableSound
-                  style={{ minHeight: screenHeight - 200, flexGrow: 1 }}
-                >
-                  {cur.render()}
-                </Pressable>
-              )}
-            </ScrollView>
+            <View style={{ flex: 1 }}>
+              <ScrollView
+                ref={scrollRef}
+                style={{ flex: 1 }}
+                contentContainerStyle={[styles.content, { paddingBottom: 60 }]}
+                testID="mass-scroll"
+                showsVerticalScrollIndicator
+                keyboardShouldPersistTaps="handled"
+              >
+                {cur.disableTapAdvance ? (
+                  <View testID="page-no-tap" key={`intro-${celebrationMode}`}>
+                    {cur.render()}
+                  </View>
+                ) : (
+                  <Pressable
+                    key={cur.key}
+                    onPress={handlePagePress}
+                    testID="page-tap-area"
+                    android_disableSound
+                    style={{ minHeight: screenHeight - 200 }}
+                  >
+                    <View collapsable={false} testID={`mass-page-${cur.key}`}>
+                      {cur.render()}
+                    </View>
+                  </Pressable>
+                )}
+              </ScrollView>
+            </View>
 
             {/* Suggerimento navigazione (solo prima pagina) */}
             {safeIdx === 1 ? (
@@ -2327,6 +2765,7 @@ export default function MessaScreen() {
         selectedId={selectedPrefaceId}
         onSelect={setSelectedPrefaceId}
         currentSeasonKey={currentSeasonKey}
+        liturgy={liturgy}
         colors={colors}
         scaledFont={scaledFont}
         fontFamilyId={fontFamilyId}
@@ -2474,623 +2913,3 @@ export default function MessaScreen() {
   );
 }
 
-const makeStyles = (colors: any, fontSize: number, fontFamilyId: FontFamilyId, isBold?: boolean) => {
-  const bodyFont = resolveBodyFont(fontFamilyId, !!isBold);
-  const headingFont = resolveHeadingFont(fontFamilyId);
-  const subtitleFont = resolveAppFont(fontFamilyId, "bold");
-
-  return StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  topBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 4,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  backBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    minHeight: 44,
-    minWidth: 88,
-  },
-  backBtnText: { fontSize: Math.round(fontSize * 0.6), color: colors.textPrimary, fontWeight: "600" },
-  title: { fontSize: Math.round(fontSize * 0.78), fontWeight: "700", color: colors.textPrimary },
-  // Bottoni A- / A+ per dimensione font (uguali a quelli di /celebra).
-  fontBtns: {
-    flexDirection: "row",
-    gap: 14,
-    marginRight: 8,
-    marginLeft: 6,
-  },
-  fontBtn: {
-    minWidth: 64,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
-    backgroundColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  fontBtnDisabled: {
-    opacity: 0.35,
-  },
-  fontBtnText: {
-    fontSize: Math.round(fontSize * 0.75),
-    fontWeight: "800",
-    color: colors.onPrimary,
-  },
-  // Blocco saluto iniziale: dopo "A. E con il tuo spirito" lasciamo una
-  // riga vuota di separazione tra le formule alternative.
-  salutoBlock: {
-    marginBottom: Math.round(fontSize * 1.0),
-  },
-  content: { padding: 16, paddingTop: 8, paddingBottom: 32 },
-  dayHeader: {
-    padding: 20,
-    borderWidth: 3,
-    borderRadius: 12,
-    backgroundColor: colors.surface,
-    marginBottom: 16,
-  },
-  dayDate: { fontSize: Math.round(fontSize * 0.85), fontWeight: "700", color: colors.textPrimary },
-  dayTitle: { fontSize: Math.round(fontSize * 0.8), color: colors.textPrimary, fontStyle: "italic", marginTop: 8 },
-  daySeason: { fontSize: Math.round(fontSize * 0.65), color: colors.textSecondary, marginTop: 6 },
-  togglesBox: {
-    padding: 20,
-    borderWidth: 2,
-    borderColor: colors.border,
-    borderRadius: 12,
-    backgroundColor: colors.surface,
-    marginBottom: 24,
-    gap: 14,
-  },
-  toggleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  toggleLabel: { fontSize: Math.round(fontSize * 0.75), color: colors.textPrimary, fontWeight: "600" },
-  partBox: {
-    marginBottom: 2,
-    paddingBottom: 0,
-    borderBottomWidth: 0,
-  },
-  // === Tutti i titoli condividono la stessa "regola di spazio" ===
-  // marginBottom: 6 fissa la distanza titolo→testo.
-  // lineHeight = fontSize del titolo (no extra leading) per un gap visivo uniforme.
-  // marginTop: 0 (lo spazio sopra è gestito dal partBox).
-  sectionTitle: {
-    fontSize: Math.round(fontSize * 1.05),
-    fontFamily: headingFont.fontFamily,
-    fontWeight: headingFont.fontWeight,
-    color: colors.accentSection,
-    marginTop: 0,
-    marginBottom: 6,
-    lineHeight: Math.round(fontSize * 1.05),
-  },
-  // Titolo per sezioni rituali macro (Riti Introduzione, Liturgia Parola, ecc.)
-  ritoTitle: {
-    fontSize: Math.round(fontSize * 0.95),
-    fontFamily: headingFont.fontFamily,
-    fontWeight: headingFont.fontWeight,
-    color: colors.accentRito,
-    marginTop: 0,
-    marginBottom: 6,
-    lineHeight: Math.round(fontSize * 0.95),
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  // Titolo per antifone d'ingresso/comunione, sequenza, acclamazione al Vangelo
-  antifonaTitle: {
-    fontSize: Math.round(fontSize * 0.85),
-    fontFamily: headingFont.fontFamily,
-    fontWeight: headingFont.fontWeight,
-    color: colors.accentAntifona,
-    marginTop: 0,
-    marginBottom: 6,
-    lineHeight: Math.round(fontSize * 0.85),
-  },
-  // Titolo per le letture (Prima, Salmo, Seconda, Vangelo)
-  readingTitle: {
-    fontSize: Math.round(fontSize * 0.85),
-    fontFamily: headingFont.fontFamily,
-    fontWeight: headingFont.fontWeight,
-    color: colors.accentReading,
-    marginTop: 0,
-    marginBottom: 6,
-    lineHeight: Math.round(fontSize * 0.85),
-  },
-  // Titolo per orazioni proprie (Colletta, Sulle offerte, Dopo la comunione)
-  orazioneTitle: {
-    fontSize: Math.round(fontSize * 0.85),
-    fontFamily: headingFont.fontFamily,
-    fontWeight: headingFont.fontWeight,
-    color: colors.accentOrazione,
-    marginTop: 0,
-    marginBottom: 6,
-    lineHeight: Math.round(fontSize * 0.85),
-  },
-  subtitle: {
-    fontSize: Math.round(fontSize * 0.85),
-    fontFamily: subtitleFont.fontFamily,
-    fontWeight: subtitleFont.fontWeight,
-    color: colors.textPrimary,
-    marginTop: 0,
-    marginBottom: 6,
-    lineHeight: Math.round(fontSize * 0.85),
-  },
-  // Titolo dei tropari della Formula C dell'Atto Penitenziale.
-  // Arancio brillante per distinguere visivamente le serie di invocazioni
-  // (es. "1. Via, Verità, Vita", "Formula introduttiva") dalle invocazioni
-  // C./A. che le seguono. Coerente con la palette esistente.
-  troparioTitle: {
-    fontSize: Math.round(fontSize * 0.85),
-    fontFamily: headingFont.fontFamily,
-    fontWeight: headingFont.fontWeight,
-    color: colors.accentTropario,
-    marginTop: 8,
-    marginBottom: 6,
-    lineHeight: Math.round(fontSize * 1.0),
-  },
-  peTitle: {
-    fontSize: Math.round(fontSize * 0.78),
-    fontFamily: headingFont.fontFamily,
-    fontWeight: headingFont.fontWeight,
-    color: colors.accentPe,
-    marginTop: 0,
-    marginBottom: 8,
-    lineHeight: Math.round(fontSize * 0.95),
-  },
-  prefaceTitle: {
-    fontSize: Math.round(fontSize * 0.78),
-    fontFamily: headingFont.fontFamily,
-    fontWeight: headingFont.fontWeight,
-    color: colors.accentPe,
-    marginTop: 0,
-    marginBottom: 8,
-    lineHeight: Math.round(fontSize * 0.95),
-  },
-  peConsecration: {
-    color: colors.accentPeConsecration,
-    fontFamily: headingFont.fontFamily,
-    fontWeight: headingFont.fontWeight,
-  },
-  // Dossologia conclusiva ("PER CRISTO, CON CRISTO E IN CRISTO..."): stile
-  // uniforme per tutte le PE — bianco, maiuscolo, peso REGULAR (alleggerito
-  // su richiesta utente: il bold rendeva il testo troppo pesante a video).
-  peDossologia: {
-    fontSize: fontSize,
-    lineHeight: fontSize * 1.6,
-    color: colors.textPrimary,
-    fontFamily: bodyFont.fontFamily,
-    fontWeight: bodyFont.fontWeight,
-    marginTop: 4,
-    marginBottom: 8,
-  },
-  // Stile per "Umili e pentiti" - testo della preghiera in rosso (rubrica)
-  umili: {
-    fontSize: Math.round(fontSize * 0.85),
-    fontStyle: "italic",
-    color: colors.rubrics,
-    fontFamily: bodyFont.fontFamily,
-    fontWeight: bodyFont.fontWeight,
-    marginVertical: 6,
-    lineHeight: fontSize * 1.35,
-  },
-  text: {
-    fontSize: fontSize,
-    lineHeight: fontSize * 1.6,
-    color: colors.textPrimary,
-    fontFamily: bodyFont.fontFamily,
-    fontWeight: bodyFont.fontWeight,
-    marginTop: 0,
-    marginBottom: 8,
-  },
-  rubric: {
-    fontSize: Math.round(fontSize * 0.7),
-    fontStyle: "italic",
-    color: colors.rubrics,
-    marginVertical: 4,
-    lineHeight: fontSize * 1.2,
-    fontFamily: bodyFont.fontFamily,
-    fontWeight: bodyFont.fontWeight,
-  },
-  // Inline "R." rosso per il ritornello del Salmo Responsoriale
-  salmoRit: {
-    color: colors.rubrics,
-    fontFamily: headingFont.fontFamily,
-    fontWeight: headingFont.fontWeight,
-  },
-  // Stile per il salmo responsoriale: usa un singolo <Text> multilinea
-  // così le strofe non hanno doppio spazio fra una riga e l'altra.
-  salmoText: {
-    fontSize: fontSize,
-    lineHeight: fontSize * 1.3,
-    color: colors.textPrimary,
-    fontFamily: bodyFont.fontFamily,
-    fontWeight: bodyFont.fontWeight,
-    marginVertical: 4,
-  },
-  celebrante: {
-    fontSize: fontSize,
-    color: colors.textPrimary,
-    fontFamily: bodyFont.fontFamily,
-    fontWeight: bodyFont.fontWeight,
-    marginVertical: 6,
-    lineHeight: fontSize * 1.6,
-  },
-  // Risposte dell'assemblea (A. ...): corsivo, -1pt rispetto al base, NON bold.
-  // Pensato per dare meno "peso" visivo alle risposte rispetto alle parti del
-  // celebrante (che restano fontSize regular), mantenendo comunque la
-  // distinzione tipografica (italico).
-  assemblea: {
-    fontSize: Math.max(12, fontSize - 1),
-    fontStyle: "italic",
-    color: colors.textPrimary,
-    fontFamily: bodyFont.fontFamily,
-    fontWeight: bodyFont.fontWeight,
-    marginVertical: 6,
-    lineHeight: fontSize * 1.6,
-  },
-  block: { marginVertical: 10 },
-  // Pulsante grande sulla pagina del Congedo: passa alla modalità "Celebra la
-  // Messa" (lettura pulita per l'altare). Pensato per essere ben visibile e
-  // facile da centrare con il dito anche per chi ha la vista debole.
-  celebrateNowBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-    marginTop: 28,
-    marginBottom: 12,
-    paddingVertical: 18,
-    paddingHorizontal: 20,
-    borderRadius: 14,
-    backgroundColor: colors.liturgicalGreen,
-    minHeight: 72,
-  },
-  celebrateNowBtnText: {
-    fontSize: Math.round(fontSize * 0.7),
-    fontWeight: "800",
-    color: colors.onPrimary,
-    textAlign: "center",
-    flexShrink: 1,
-  },
-  // Bottoni per scegliere fra 26 benedizioni solenni: layout flex-wrap
-  solemnChoiceBtn: {
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderWidth: 2,
-    borderColor: colors.border,
-    borderRadius: 10,
-    minHeight: 56,
-    flexBasis: "48%",
-    flexGrow: 1,
-  },
-  solemnChoiceText: {
-    color: colors.textPrimary,
-    fontSize: Math.round(fontSize * 0.55),
-    fontWeight: "700",
-  },
-  // Bottoni numerati (per orazioni sul popolo 1-28): griglia compatta
-  numChoiceBtn: {
-    minWidth: 56,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderWidth: 2,
-    borderColor: colors.border,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 56,
-  },
-  numChoiceText: {
-    color: colors.textPrimary,
-    fontSize: Math.round(fontSize * 0.7),
-    fontWeight: "800",
-  },
-  // Suggerimento sulla prossima pagina
-  solemnHint: {
-    marginTop: 14,
-    color: colors.primary,
-    fontSize: Math.round(fontSize * 0.55),
-    fontStyle: "italic",
-    fontWeight: "600",
-  },
-  // Box per ogni formula dell'atto penitenziale C (separazione visiva)
-  penitentialFormulaBox: {
-    marginTop: 18,
-    paddingTop: 14,
-    paddingBottom: 6,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  dialogBlock: { marginVertical: 6 },
-  readingBlock: { marginVertical: 6 },
-  pageStatusBar: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    backgroundColor: colors.surface,
-    borderBottomWidth: 2,
-    borderBottomColor: colors.border,
-  },
-  pageStatusText: {
-    fontSize: Math.round(fontSize * 0.7),
-    fontWeight: "700",
-    color: colors.textPrimary,
-    textAlign: "center",
-  },
-  navBar: {
-    flexDirection: "row",
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: colors.surface,
-    borderTopWidth: 2,
-    borderTopColor: colors.border,
-  },
-  navBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    minHeight: 72,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    borderRadius: 14,
-    borderWidth: 2,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-  navBtnPrimary: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  navBtnDisabled: {
-    opacity: 0.4,
-  },
-  navBtnText: {
-    fontSize: Math.round(fontSize * 0.8),
-    fontWeight: "700",
-    color: colors.textPrimary,
-  },
-  tapZone: {
-    position: "absolute",
-    top: 0,
-    bottom: 0,
-    backgroundColor: "transparent",
-  },
-  tapHint: {
-    position: "absolute",
-    bottom: 16,
-    left: 16,
-    right: 16,
-    alignItems: "center",
-  },
-  tapHintText: {
-    fontSize: Math.round(fontSize * 0.45),
-    color: colors.textSecondary,
-    backgroundColor: colors.surface,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 16,
-    overflow: "hidden",
-    fontStyle: "italic",
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  startCelebrationBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-    backgroundColor: colors.primary,
-    paddingVertical: 18,
-    paddingHorizontal: 24,
-    borderRadius: 14,
-    marginTop: 24,
-    minHeight: 88,
-  },
-  startCelebrationBtnText: {
-    fontSize: Math.round(fontSize * 0.8),
-    fontWeight: "700",
-    color: colors.onPrimary,
-  },
-  choiceRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginVertical: 14 },
-  choiceBtn: {
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-    minHeight: 64,
-    borderWidth: 2,
-    borderColor: colors.border,
-    borderRadius: 10,
-    backgroundColor: colors.surface,
-    justifyContent: "center",
-  },
-  choiceBtnActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  choiceBtnText: { fontSize: Math.round(fontSize * 0.7), color: colors.textPrimary, fontWeight: "700" },
-  selectorBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-    borderWidth: 2,
-    borderColor: colors.primary,
-    borderRadius: 10,
-    marginVertical: 8,
-    minHeight: 56,
-  },
-  selectorBtnText: { fontSize: Math.round(fontSize * 0.9), color: colors.primary, fontWeight: "700" },
-  // Variante compatta inline (es. accanto al titolo "Preghiera Eucaristica")
-  selectorBtnInline: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderWidth: 2,
-    borderColor: colors.primary,
-    borderRadius: 8,
-    marginLeft: 16,
-    minHeight: 50,
-  },
-  selectorBtnInlineText: { fontSize: Math.round(fontSize * 0.8), color: colors.primary, fontWeight: "700" },
-  // Bottone auto-scroll (Off → Lento → Medio → Off). Ciclico al tap.
-  autoScrollBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderWidth: 2,
-    borderColor: colors.accentAutoScrollBorder,
-    borderRadius: 8,
-    marginLeft: 12,
-    backgroundColor: "transparent",
-    minHeight: 50,
-  },
-  autoScrollBtnActive: {
-    backgroundColor: colors.accentAutoScrollBorder,
-    borderColor: colors.accentAutoScrollBorder,
-  },
-  autoScrollBtnText: {
-    fontSize: Math.round(fontSize * 0.78),
-    color: colors.accentAutoScrollText,
-    fontWeight: "700",
-  },
-  // Riga flex per affiancare titolo + bottone "Scegli ..."
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
-    marginBottom: 10,
-    gap: 6,
-  },
-  // === Selettori Tempo Liturgico / Rito Particolare (PE) ===
-  peSelectorsRow: {
-    flexDirection: "row",
-    gap: 14,
-    marginTop: 6,
-    marginBottom: 14,
-    flexWrap: "wrap",
-  },
-  peSelectorBtn: {
-    flex: 1,
-    minWidth: 200,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    backgroundColor: "transparent",
-    borderWidth: 1.5,
-    borderColor: colors.accentPeSelectorBorder,
-    minHeight: 70,
-  },
-  peSelectorLabel: {
-    fontSize: Math.round(fontSize * 0.65),
-    color: colors.accentPeSelectorLabel,
-    fontWeight: "700",
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-    marginBottom: 6,
-  },
-  peSelectorValueRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 6,
-  },
-  peSelectorValue: {
-    color: colors.accentPeSelectorValue,
-    fontSize: Math.round(fontSize * 0.85),
-    fontWeight: "600",
-    flex: 1,
-  },
-  // Modale picker per i selettori PE
-  peModalBackdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.75)",
-    justifyContent: "center",
-    padding: 24,
-  },
-  peModalCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 24,
-    borderWidth: 3,
-    borderColor: colors.accentPeModalBorder,
-  },
-  peModalTitle: {
-    color: colors.textPrimary,
-    fontSize: Math.round(fontSize * 0.85),
-    fontWeight: "800",
-    marginBottom: 18,
-  },
-  peModalOption: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 18,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-    minHeight: 64,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  peModalOptionActive: { backgroundColor: colors.accentPeModalActiveBg },
-  peModalOptionText: { color: colors.textPrimary, fontSize: Math.round(fontSize * 0.75), flex: 1, fontWeight: "600" },
-  peModalClose: {
-    alignItems: "center",
-    paddingVertical: 16,
-    marginTop: 10,
-    backgroundColor: colors.accentPeModalBorder,
-    borderRadius: 10,
-    minHeight: 60,
-    justifyContent: "center",
-  },
-  peModalCloseText: { color: colors.onPrimary, fontWeight: "800", fontSize: Math.round(fontSize * 0.75) },
-  listItem: {
-    padding: 22,
-    borderWidth: 2,
-    borderColor: colors.border,
-    borderRadius: 10,
-    backgroundColor: colors.surface,
-    marginBottom: 12,
-    minHeight: 90,
-  },
-  listItemActive: { borderColor: colors.primary, borderWidth: 4 },
-  listItemText: { fontSize: Math.round(fontSize * 0.8), color: colors.textPrimary, fontWeight: "700" },
-  listItemSub: { fontSize: Math.round(fontSize * 0.6), color: colors.textSecondary, marginTop: 6 },
-  badgeSeasonal: { fontSize: Math.round(fontSize * 0.5), color: colors.primary, fontWeight: "800", marginBottom: 6, letterSpacing: 1 },
-  solemnToggle: { borderWidth: 2, borderColor: colors.border, borderRadius: 10, padding: 16, backgroundColor: colors.surface },
-  acclamationBox: {
-    marginVertical: 18,
-    padding: 18,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.primary,
-    backgroundColor: colors.surface,
-    borderRadius: 8,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: 20,
-    backgroundColor: colors.surface,
-    borderWidth: 2,
-    borderColor: colors.border,
-    borderRadius: 12,
-  },
-  peCatalogTitle: {
-    fontSize: Math.round(fontSize * 0.75),
-    fontFamily: headingFont.fontFamily,
-    fontWeight: headingFont.fontWeight,
-    color: colors.textPrimary,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  });
-};

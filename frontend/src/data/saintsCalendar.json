@@ -176,11 +176,6 @@
         "title": "San Biagio, vescovo e martire",
         "rank": "memoria_facoltativa",
         "color": "rosso"
-      },
-      {
-        "title": "Sant'Oscar, vescovo",
-        "rank": "memoria_facoltativa",
-        "color": "bianco"
       }
     ]
   },
@@ -209,11 +204,6 @@
     "celebrations": [
       {
         "title": "San Girolamo Emiliani",
-        "rank": "memoria_facoltativa",
-        "color": "bianco"
-      },
-      {
-        "title": "Santa Giuseppina Bakhita, vergine",
         "rank": "memoria_facoltativa",
         "color": "bianco"
       }
@@ -433,7 +423,7 @@
     "date": "04-11",
     "celebrations": [
       {
-        "title": "Sant'Stanislao, vescovo e martire",
+        "title": "San Stanislao, vescovo e martire",
         "rank": "memoria_obbligatoria",
         "color": "rosso"
       }
@@ -464,11 +454,6 @@
     "celebrations": [
       {
         "title": "San Giorgio, martire",
-        "rank": "memoria_facoltativa",
-        "color": "rosso"
-      },
-      {
-        "title": "Sant'Adalberto, vescovo e martire",
         "rank": "memoria_facoltativa",
         "color": "rosso"
       }
@@ -638,17 +623,7 @@
     "date": "05-25",
     "celebrations": [
       {
-        "title": "San Beda Venerabile, presbitero e dottore della Chiesa",
-        "rank": "memoria_facoltativa",
-        "color": "bianco"
-      },
-      {
         "title": "San Gregorio VII, papa",
-        "rank": "memoria_facoltativa",
-        "color": "bianco"
-      },
-      {
-        "title": "Santa Maria Maddalena de' Pazzi, vergine",
         "rank": "memoria_facoltativa",
         "color": "bianco"
       }
@@ -791,11 +766,6 @@
         "title": "San Paolino di Nola, vescovo",
         "rank": "memoria_facoltativa",
         "color": "bianco"
-      },
-      {
-        "title": "Santi Giovanni Fisher, vescovo, e Tommaso More, martiri",
-        "rank": "memoria_facoltativa",
-        "color": "rosso"
       }
     ]
   },
@@ -1066,11 +1036,6 @@
         "title": "Sant'Eusebio di Vercelli, vescovo",
         "rank": "memoria_facoltativa",
         "color": "bianco"
-      },
-      {
-        "title": "San Pier Giuliano Eymard, presbitero",
-        "rank": "memoria_facoltativa",
-        "color": "bianco"
       }
     ]
   },
@@ -1107,11 +1072,6 @@
   {
     "date": "08-07",
     "celebrations": [
-      {
-        "title": "Santi Sisto II, papa, e compagni, martiri",
-        "rank": "memoria_facoltativa",
-        "color": "rosso"
-      },
       {
         "title": "San Gaetano, presbitero",
         "rank": "memoria_facoltativa",
@@ -1274,11 +1234,6 @@
     "celebrations": [
       {
         "title": "San Luigi IX, re di Francia",
-        "rank": "memoria_facoltativa",
-        "color": "bianco"
-      },
-      {
-        "title": "San Giuseppe Calasanzio, presbitero",
         "rank": "memoria_facoltativa",
         "color": "bianco"
       }
@@ -1470,21 +1425,6 @@
     ]
   },
   {
-    "date": "09-28",
-    "celebrations": [
-      {
-        "title": "San Venceslao, martire",
-        "rank": "memoria_facoltativa",
-        "color": "rosso"
-      },
-      {
-        "title": "Santi Lorenzo Ruiz e compagni, martiri",
-        "rank": "memoria_facoltativa",
-        "color": "rosso"
-      }
-    ]
-  },
-  {
     "date": "09-29",
     "celebrations": [
       {
@@ -1613,11 +1553,6 @@
     "date": "10-16",
     "celebrations": [
       {
-        "title": "Santa Edvige, religiosa",
-        "rank": "memoria_facoltativa",
-        "color": "bianco"
-      },
-      {
         "title": "Santa Margherita Maria Alacoque, vergine",
         "rank": "memoria_facoltativa",
         "color": "bianco"
@@ -1647,11 +1582,6 @@
   {
     "date": "10-19",
     "celebrations": [
-      {
-        "title": "Santi Giovanni de Brébeuf e Isacco Jogues, presbiteri, e compagni, martiri",
-        "rank": "memoria_facoltativa",
-        "color": "rosso"
-      },
       {
         "title": "San Paolo della Croce, presbitero",
         "rank": "memoria_facoltativa",
@@ -1796,11 +1726,6 @@
         "title": "Santa Margherita di Scozia",
         "rank": "memoria_facoltativa",
         "color": "bianco"
-      },
-      {
-        "title": "Santa Gertrude, vergine",
-        "rank": "memoria_facoltativa",
-        "color": "bianco"
       }
     ]
   },
@@ -1851,11 +1776,6 @@
         "title": "San Clemente I, papa e martire",
         "rank": "memoria_facoltativa",
         "color": "rosso"
-      },
-      {
-        "title": "San Colombano, abate",
-        "rank": "memoria_facoltativa",
-        "color": "bianco"
       }
     ]
   },
@@ -1935,16 +1855,6 @@
       {
         "title": "Immacolata Concezione della Beata Vergine Maria",
         "rank": "solennita",
-        "color": "bianco"
-      }
-    ]
-  },
-  {
-    "date": "12-09",
-    "celebrations": [
-      {
-        "title": "San Juan Diego Cuauhtlatoatzin",
-        "rank": "memoria_facoltativa",
         "color": "bianco"
       }
     ]

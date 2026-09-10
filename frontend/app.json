@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Messa CEI",
-    "slug": "frontend",
-    "version": "2.7.4",
-    "orientation": "portrait",
+    "name": "Celebra e prega facile",
+    "slug": "celebra-prega-facile",
+    "version": "1.0.0",
+    "orientation": "default",
     "icon": "./assets/images/icon.png",
-    "scheme": "frontend",
+    "scheme": "celebraprega",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -16,13 +16,14 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#000000"
       },
-      "package": "it.messaparroco.app",
-      "versionCode": 279,
+      "package": "it.messaparroco.prega",
+      "versionCode": 1,
       "edgeToEdgeEnabled": true,
       "permissions": [
         "android.permission.INTERNET",
         "android.permission.ACCESS_NETWORK_STATE",
-        "android.permission.WAKE_LOCK"
+        "android.permission.WAKE_LOCK",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -41,17 +42,21 @@
           "backgroundColor": "#000000"
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Consenti a $(PRODUCT_NAME) di usare il microfono per lo scroll guidato dalla voce durante la celebrazione.",
+          "speechRecognitionPermission": "Consenti a $(PRODUCT_NAME) di riconoscere la voce per lo scroll automatico durante la celebrazione."
+        }
+      ],
+      "./plugins/withLargeScreenSupport.js"
     ],
     "experiments": {
       "typedRoutes": true
     },
     "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "2f4ef96c-7894-40f1-a528-586ea410a5b4"
-      }
-    },
-    "owner": "agedon"
+      "router": {}
+    }
   }
 }

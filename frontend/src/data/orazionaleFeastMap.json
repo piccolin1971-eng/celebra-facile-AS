@@ -1,0 +1,637 @@
+{
+  "version": 1,
+  "source": "Orazionale CEI 2020 — mappa celebrazione → preghiera universale",
+  "moveableFeasts": [
+    {
+      "titlePatterns": [
+        "corpus",
+        "corpo e sangue",
+        "santissimo corpo"
+      ],
+      "prayerId": "pt_91",
+      "kind": "proprio"
+    },
+    {
+      "titlePatterns": [
+        "santissima trinit"
+      ],
+      "prayerId": "pt_90",
+      "kind": "proprio"
+    },
+    {
+      "titlePatterns": [
+        "sacro cuore",
+        "sacratissimo cuore"
+      ],
+      "prayerId": "pt_92",
+      "kind": "proprio"
+    },
+    {
+      "titlePatterns": [
+        "cristo re",
+        "re dell'universo"
+      ],
+      "prayerId": "pt_89",
+      "kind": "proprio"
+    },
+    {
+      "titlePatterns": [
+        "pentecoste"
+      ],
+      "prayerId": "pt_55",
+      "kind": "proprio"
+    },
+    {
+      "titlePatterns": [
+        "ascensione del signore",
+        "ascensione"
+      ],
+      "prayerId": "pt_47",
+      "excludePatterns": [
+        "dopo l'ascensione"
+      ],
+      "kind": "proprio"
+    },
+    {
+      "titlePatterns": [
+        "battesimo del signore"
+      ],
+      "prayerId": "pt_20",
+      "kind": "proprio"
+    },
+    {
+      "titlePatterns": [
+        "epifania del signore",
+        "epifania"
+      ],
+      "prayerId": "pt_17",
+      "kind": "proprio"
+    },
+    {
+      "titlePatterns": [
+        "santa famiglia"
+      ],
+      "prayerId": "pt_11",
+      "kind": "proprio"
+    },
+    {
+      "titlePatterns": [
+        "mercoledì delle ceneri",
+        "ceneri"
+      ],
+      "prayerId": "pt_21",
+      "kind": "proprio"
+    },
+    {
+      "titlePatterns": [
+        "palme",
+        "passione del signore"
+      ],
+      "prayerId": "pt_33",
+      "kind": "proprio"
+    },
+    {
+      "titlePatterns": [
+        "giovedì santo",
+        "cena del signore"
+      ],
+      "prayerId": "pt_37",
+      "kind": "proprio"
+    },
+    {
+      "titlePatterns": [
+        "domenica di pasqua",
+        "risurrezione del signore"
+      ],
+      "prayerId": "pt_38",
+      "excludePatterns": [
+        "vegilia",
+        "ottava"
+      ],
+      "kind": "proprio"
+    },
+    {
+      "titlePatterns": [
+        "divina misericordia"
+      ],
+      "prayerId": "pt_40",
+      "kind": "proprio"
+    }
+  ],
+  "celebrations": [
+    {
+      "prayerId": "st_1",
+      "titlePatterns": [
+        "conversione di san paolo apostolo",
+        "conversione di san paolo",
+        "san paolo apostolo"
+      ],
+      "kind": "proprio",
+      "monthDay": "01-25"
+    },
+    {
+      "prayerId": "st_2",
+      "titlePatterns": [
+        "presentazione del signore",
+        "candelora"
+      ],
+      "kind": "proprio",
+      "monthDay": "02-02"
+    },
+    {
+      "prayerId": "st_3",
+      "titlePatterns": [
+        "santi cirillo, monaco, e metodio, vescovo, patroni deuropa",
+        "cirillo",
+        "metodio"
+      ],
+      "kind": "proprio",
+      "monthDay": "02-14"
+    },
+    {
+      "prayerId": "st_4",
+      "titlePatterns": [
+        "cattedra di san pietro apostolo",
+        "cattedra di san pietro",
+        "cattedra"
+      ],
+      "kind": "proprio",
+      "monthDay": "02-22"
+    },
+    {
+      "prayerId": "st_5",
+      "titlePatterns": [
+        "san giuseppe, sposo della beata vergine maria",
+        "vergine maria",
+        "san giuseppe",
+        "giuseppe"
+      ],
+      "kind": "proprio",
+      "monthDay": "03-19"
+    },
+    {
+      "prayerId": "st_6",
+      "titlePatterns": [
+        "annunciazione del signore",
+        "annunciazione"
+      ],
+      "kind": "proprio",
+      "monthDay": "03-25"
+    },
+    {
+      "prayerId": "st_7",
+      "titlePatterns": [
+        "s. caterina da siena, vergine e dottore della chiesa, patrona ditalia e deuropa",
+        "caterina da siena",
+        "caterina"
+      ],
+      "kind": "proprio",
+      "monthDay": "04-29"
+    },
+    {
+      "prayerId": "st_8",
+      "titlePatterns": [
+        "visitazione della beata vergine maria",
+        "vergine maria",
+        "visitazione"
+      ],
+      "kind": "proprio",
+      "monthDay": "05-31"
+    },
+    {
+      "prayerId": "st_9",
+      "titlePatterns": [
+        "san giovanni battista",
+        "giovanni battista",
+        "nativita di san giovanni battista",
+        "martirio di san giovanni battista"
+      ],
+      "kind": "proprio",
+      "excludePatterns": [
+        "de la salle",
+        "vianney",
+        "leonardi",
+        "crisostomo",
+        "damasceno",
+        "della croce",
+        "eudes",
+        "bosco"
+      ],
+      "monthDay": "06-24"
+    },
+    {
+      "prayerId": "st_9",
+      "titlePatterns": [
+        "san giovanni battista",
+        "giovanni battista",
+        "nativita di san giovanni battista",
+        "martirio di san giovanni battista"
+      ],
+      "kind": "proprio",
+      "excludePatterns": [
+        "de la salle",
+        "vianney",
+        "leonardi",
+        "crisostomo",
+        "damasceno",
+        "della croce",
+        "eudes",
+        "bosco"
+      ],
+      "monthDay": "08-29"
+    },
+    {
+      "prayerId": "st_10",
+      "titlePatterns": [
+        "santi pietro e paolo, apostoli",
+        "pietro e paolo",
+        "santi pietro e paolo"
+      ],
+      "kind": "proprio",
+      "monthDay": "06-29"
+    },
+    {
+      "prayerId": "st_11",
+      "titlePatterns": [
+        "san benedetto, abate, patrono deuropa",
+        "san benedetto",
+        "benedetto"
+      ],
+      "kind": "proprio",
+      "monthDay": "07-11"
+    },
+    {
+      "prayerId": "st_12",
+      "titlePatterns": [
+        "santa maria maddalena",
+        "maddalena"
+      ],
+      "kind": "proprio",
+      "monthDay": "07-22"
+    },
+    {
+      "prayerId": "st_13",
+      "titlePatterns": [
+        "santa brigida, religiosa, patrona deuropa",
+        "brigida"
+      ],
+      "kind": "proprio",
+      "monthDay": "07-23"
+    },
+    {
+      "prayerId": "st_14",
+      "titlePatterns": [
+        "trasfigurazione del signore",
+        "trasfigurazione"
+      ],
+      "kind": "proprio",
+      "monthDay": "08-06"
+    },
+    {
+      "prayerId": "st_15",
+      "titlePatterns": [
+        "santa teresa benedetta della croce, vergine e martire, patrona deuropa",
+        "teresa benedetta"
+      ],
+      "kind": "proprio",
+      "monthDay": "08-09"
+    },
+    {
+      "prayerId": "st_16",
+      "titlePatterns": [
+        "san lorenzo, diacono e martire",
+        "san lorenzo",
+        "lorenzo"
+      ],
+      "kind": "proprio",
+      "monthDay": "08-10"
+    },
+    {
+      "prayerId": "st_17",
+      "titlePatterns": [
+        "assunzione della beata vergine maria",
+        "vergine maria",
+        "assunzione"
+      ],
+      "kind": "proprio",
+      "monthDay": "08-15"
+    },
+    {
+      "prayerId": "st_18",
+      "titlePatterns": [
+        "nativita della beata vergine maria",
+        "vergine maria"
+      ],
+      "kind": "proprio",
+      "monthDay": "09-08"
+    },
+    {
+      "prayerId": "st_19",
+      "titlePatterns": [
+        "esaltazione della santa croce",
+        "esaltazione",
+        "santa croce"
+      ],
+      "kind": "proprio",
+      "monthDay": "09-14"
+    },
+    {
+      "prayerId": "st_20",
+      "titlePatterns": [
+        "santi angeli e arcangeli",
+        "angeli",
+        "arcangeli"
+      ],
+      "kind": "proprio",
+      "monthDay": "09-29"
+    },
+    {
+      "prayerId": "st_20",
+      "titlePatterns": [
+        "santi angeli e arcangeli",
+        "angeli",
+        "arcangeli"
+      ],
+      "kind": "proprio",
+      "monthDay": "10-02"
+    },
+    {
+      "prayerId": "st_21",
+      "titlePatterns": [
+        "san francesco dassisi, patrono ditalia",
+        "san francesco",
+        "francesco d'assisi"
+      ],
+      "kind": "proprio",
+      "monthDay": "10-04"
+    },
+    {
+      "prayerId": "st_22",
+      "titlePatterns": [
+        "tutti i santi"
+      ],
+      "kind": "proprio",
+      "monthDay": "11-01"
+    },
+    {
+      "prayerId": "st_23",
+      "titlePatterns": [
+        "commemorazione di tutti i fedeli defunti i",
+        "fedeli defunti",
+        "commemorazione dei defunti"
+      ],
+      "kind": "proprio",
+      "monthDay": "11-02"
+    },
+    {
+      "prayerId": "st_24",
+      "titlePatterns": [
+        "commemorazione di tutti i fedeli defunti ii",
+        "fedeli defunti",
+        "commemorazione dei defunti"
+      ],
+      "kind": "proprio",
+      "monthDay": "11-02"
+    },
+    {
+      "prayerId": "st_25",
+      "titlePatterns": [
+        "dedicazione della basilica lateranense",
+        "dedicazione",
+        "lateranense"
+      ],
+      "kind": "proprio",
+      "monthDay": "11-09"
+    },
+    {
+      "prayerId": "st_26",
+      "titlePatterns": [
+        "immacolata concezione della beata vergine maria",
+        "vergine maria",
+        "immacolata"
+      ],
+      "kind": "proprio",
+      "monthDay": "12-08"
+    },
+    {
+      "prayerId": "st_27",
+      "titlePatterns": [
+        "santo stefano, primo martire",
+        "santo stefano",
+        "stefano"
+      ],
+      "kind": "proprio",
+      "monthDay": "12-26"
+    },
+    {
+      "prayerId": "st_28",
+      "titlePatterns": [
+        "san giovanni, apostolo ed evangelista",
+        "san giovanni, apostolo",
+        "giovanni apostolo",
+        "angeli",
+        "arcangeli"
+      ],
+      "kind": "proprio",
+      "monthDay": "12-27"
+    },
+    {
+      "prayerId": "st_29",
+      "titlePatterns": [
+        "santi innocenti, martiri",
+        "innocenti"
+      ],
+      "kind": "proprio",
+      "monthDay": "12-28"
+    },
+    {
+      "prayerId": "st_30",
+      "titlePatterns": [
+        "dedicazione",
+        "anniversario della dedicazione"
+      ],
+      "kind": "comune"
+    },
+    {
+      "prayerId": "st_31",
+      "titlePatterns": [
+        "dedicazione",
+        "anniversario della dedicazione"
+      ],
+      "kind": "comune"
+    },
+    {
+      "prayerId": "st_32",
+      "titlePatterns": [
+        "comune della beata vergine maria i",
+        "vergine maria"
+      ],
+      "kind": "comune"
+    },
+    {
+      "prayerId": "st_33",
+      "titlePatterns": [
+        "comune della beata vergine maria ii",
+        "vergine maria"
+      ],
+      "kind": "comune"
+    },
+    {
+      "prayerId": "st_34",
+      "titlePatterns": [
+        "comune della beata vergine maria iii",
+        "vergine maria"
+      ],
+      "kind": "comune"
+    },
+    {
+      "prayerId": "st_35",
+      "titlePatterns": [
+        "comune degli apostoli i",
+        "apostolo",
+        "apostoli"
+      ],
+      "kind": "comune"
+    },
+    {
+      "prayerId": "st_36",
+      "titlePatterns": [
+        "comune degli apostoli ii",
+        "apostolo",
+        "apostoli"
+      ],
+      "kind": "comune"
+    },
+    {
+      "prayerId": "st_37",
+      "titlePatterns": [
+        "comune dei martiri i",
+        "martire",
+        "martiri"
+      ],
+      "kind": "comune"
+    },
+    {
+      "prayerId": "st_38",
+      "titlePatterns": [
+        "comune dei martiri ii",
+        "martire",
+        "martiri"
+      ],
+      "kind": "comune"
+    },
+    {
+      "prayerId": "st_39",
+      "titlePatterns": [
+        "comune dei pastori e dottori i",
+        "vescovo",
+        "pastore",
+        "dottore"
+      ],
+      "kind": "comune"
+    },
+    {
+      "prayerId": "st_40",
+      "titlePatterns": [
+        "comune dei pastori e dottori ii",
+        "vescovo",
+        "pastore",
+        "dottore"
+      ],
+      "kind": "comune"
+    },
+    {
+      "prayerId": "st_41",
+      "titlePatterns": [
+        "comune dei pastori e dottori iii",
+        "vescovo",
+        "pastore",
+        "dottore"
+      ],
+      "kind": "comune"
+    },
+    {
+      "prayerId": "st_42",
+      "titlePatterns": [
+        "comune delle vergini i"
+      ],
+      "kind": "comune"
+    },
+    {
+      "prayerId": "st_43",
+      "titlePatterns": [
+        "comune delle vergini ii"
+      ],
+      "kind": "comune"
+    },
+    {
+      "prayerId": "st_44",
+      "titlePatterns": [
+        "comune dei santi i"
+      ],
+      "kind": "comune"
+    },
+    {
+      "prayerId": "st_45",
+      "titlePatterns": [
+        "comune dei santi ii"
+      ],
+      "kind": "comune"
+    },
+    {
+      "prayerId": "st_46",
+      "titlePatterns": [
+        "comune dei santi iii"
+      ],
+      "kind": "comune"
+    },
+    {
+      "prayerId": "st_47",
+      "titlePatterns": [
+        "per i monaci e le monache"
+      ],
+      "kind": "comune"
+    },
+    {
+      "prayerId": "st_48",
+      "titlePatterns": [
+        "per i monaci e le monache"
+      ],
+      "kind": "comune"
+    },
+    {
+      "prayerId": "st_49",
+      "titlePatterns": [
+        "per i consacrati e le consacrate"
+      ],
+      "kind": "comune"
+    },
+    {
+      "prayerId": "st_50",
+      "titlePatterns": [
+        "comune delle sante i",
+        "santa ",
+        "beata "
+      ],
+      "kind": "comune"
+    },
+    {
+      "prayerId": "st_51",
+      "titlePatterns": [
+        "comune delle sante ii",
+        "santa ",
+        "beata "
+      ],
+      "kind": "comune"
+    },
+    {
+      "prayerId": "st_52",
+      "titlePatterns": [
+        "comune delle sante iii",
+        "santa ",
+        "beata "
+      ],
+      "kind": "comune"
+    }
+  ]
+}

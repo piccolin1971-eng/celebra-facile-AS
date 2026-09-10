@@ -1,33 +1,26 @@
 /**
  * /celebra — Modalità "Celebra la Messa" (lettura pulita per l'altare)
  *
- * Pensata per sacerdoti anziani ipovedenti: NESSUN toggle, NESSUN selettore,
- * NESSUNA scelta. Solo testo continuo distribuito in pagine orizzontali
- * stile "lettore Kindle".
+ * Pensata per sacerdoti anziani ipovedenti: di default NESSUN toggle, NESSUN
+ * selettore, NESSUNA scelta. Solo testo in macro-pagine orizzontali con tap
+ * sx/dx per micro-pagine discrete (Engine C).
  *
- * Architettura del rendering:
- *  - L'array di Segment costruito da buildSegments() viene serializzato in
- *    HTML completo da segmentsToHtml() (titoli colorati, rubriche italico,
- *    consacrazione azzurra, dossologia, salmo R. rosso, ecc.).
- *  - L'HTML è iniettato in una WebView (su Android nativo) o in un <iframe
- *    srcDoc> (su web preview): codice HTML/CSS/JS identico in entrambi i casi.
- *  - Il browser interno usa CSS columns (`column-width: 100vw, column-gap: 0,
- *    column-fill: auto, height: 100vh`) per impaginare il testo in colonne
- *    larghe esattamente quanto lo schermo. Niente chunking manuale.
- *  - `scroll-snap-type: x mandatory` garantisce snap netto tra pagine.
+ * Con l'opzione «Celebra subito» (Impostazioni) la Home apre /celebra con
+ * indice overlay (parti a tasti pastello). A fine sezione si torna all'indice;
+ * Prefazio/PE si cambiano dall'indice (Cambia prefazio / Cambia PE).
  *
- * Comportamento utente:
- *  - Tap metà sinistra → pagina precedente; tap metà destra → successiva.
- *  - Effetto fade 200ms (100ms out + 100ms in) al cambio pagina.
- *  - Bottoni A- / A+ in alto modificano dinamicamente body.fontSize: i figli
- *    in 'em' si scalano e le CSS columns si ricalcolano automaticamente.
- *  - Wakelock attivo (useKeepAwake): lo schermo non si spegne durante la Messa.
- *  - Barra di progresso oro in fondo, sincronizzata via postMessage.
+ * Architettura del rendering (Engine C):
+ *  - Segmenti nativi (<Text />) raggruppati in macro-pagine su sectionTitleBreak.
+ *  - PagerView nativo per swipe orizzontale tra macro-pagine.
+ *  - LiturgyPagedReader impacchetta i segmenti in micro-pagine misurate
+ *    (packSegmentIndicesIntoPages; kindleBreak = salto pagina forzato).
+ *  - Tap sx/dx: micro-pagina prec./succ. o macro-pagina / indice.
+ *  - Font da expo-font in _layout (offline, nessun CDN).
  *
  * Le scelte (PE, prefazio, congedo, ecc.) vengono lette dalla sessione
  * giornaliera salvata da /messa (AsyncStorage).
  */
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -35,12 +28,11 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Platform,
-  useWindowDimensions,
   Pressable,
-  ScrollView,
+  Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useRouter, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 // react-native-pager-view: componente NATIVO stabile per swipe orizzontale
 // tra pagine. Sostituisce la WebView (che crashava su Android+newArch) e
@@ -49,6 +41,9 @@ import { Ionicons } from "@expo/vector-icons";
 // platform-specifico (pagerView.native.ts vs pagerView.web.ts) così Metro
 // su web bundla solo lo stub null.
 import PagerView from "../src/pagerView";
+import { LiturgyPagedReader } from "../src/components/LiturgyPagedReader";
+import { SettingsTopBarButton } from "../src/components/SettingsTopBarButton";
+import { PE_FIRST_PREAMBLE_ANCHORS } from "../src/peEngineSegments";
 // expo-keep-awake: import LAZY tramite require() in useEffect.
 // Motivo: in Expo SDK 54 + New Architecture, expo-keep-awake 15.x può
 // fallire la registrazione del TurboModule all'avvio dello schermo,
@@ -109,170 +104,33 @@ import {
   MysteryAcclamation,
   SolemnBlessing,
 } from "../src/api";
-import { getPrayerById } from "../src/orazionale";
-import { loadSession, loadSessionOrLatest } from "../src/massSession";
-import { FontFamilyId, resolveAppFont, resolveBodyFont, resolveHeadingFont } from "../src/fontFamily";
-import peFullData from "../src/data/eucharisticPrayersFull.json";
-
-// ===========================================================================
-// Tipi: segmenti rendering + helpers
-// ===========================================================================
-
-type SegKind =
-  | "sectionTitle"
-  | "sectionTitleBreak" // identico a sectionTitle ma forza salto pagina (CSS column-break)
-  | "antifonaTitle"
-  | "readingTitle"
-  | "orazioneTitle"
-  | "subtitle"
-  | "troparioTitle" // titolo dei tropari Formula C atto penitenziale (arancio brillante)
-  | "normal"
-  | "rubric"
-  | "readingRef" // riferimento biblico sotto Lettura/Vangelo (rosso, ma più grande della rubric)
-  | "celebrante"
-  | "assemblea"
-  | "umili"
-  | "peTitle"
-  | "peText"
-  | "peDossologia"
-  | "salmo"
-  | "preghieraFedeli" // R/. in rosso + riga vuota dopo ogni R/.
-  | "spacer";
-
-type Segment = {
-  kind: SegKind;
-  text: string;
-};
-
-// ===========================================================================
-// Block type per JSON eucharisticPrayersFull
-// ===========================================================================
-type Block = {
-  type: "title" | "t" | "c" | "r" | "rubric_section" | "var" | "acc";
-  text?: string;
-  selector?: string;
-};
-
-// PE con prefazio incorporato (Messale Romano 2020)
-const PE_WITH_PROPER_PREFACE = ["pe4", "per_r1", "per_r2", "pvn_1", "pvn_2", "pvn_3", "pvn_4"];
-
-const PREFACE_INTRO =
-  "Il Signore sia con voi.\nE con il tuo spirito.\n\nIn alto i nostri cuori.\nSono rivolti al Signore.\n\nRendiamo grazie al Signore, nostro Dio.\nÈ cosa buona e giusta.";
-
-const SANTO_TEXT =
-  "Santo, Santo, Santo il Signore Dio dell'universo.\nI cieli e la terra sono pieni della tua gloria.\nOsanna nell'alto dei cieli.\nBenedetto colui che viene nel nome del Signore.\nOsanna nell'alto dei cieli.";
-
-// Override per ID-specifici: dopo quale frase deve apparire il Santo nelle PE
-// con prefazio incorporato (allineato a /messa).
-const PE_SANTO_OVERRIDE: Record<string, RegExp> = {
-  per_r2: /l'inno di benedizione e di lode/i,
-  pvn_3: /cantando con gioia/i,
-};
-
-// ===========================================================================
-// Espande il testo della PE (replica della logica in messa.tsx)
-// ===========================================================================
-function expandPrayerText(
-  peFull: any,
-  peSelections: Record<string, string>,
-): string {
-  if (!peFull) return "";
-  const out: Block[] = [];
-  for (const b of peFull.blocks as Block[]) {
-    if (b.type === "var" && b.selector && peFull.selectors?.[b.selector]) {
-      const def = peFull.selectors[b.selector];
-      const optId = peSelections[b.selector] || def.options?.[0]?.id;
-      const variantBlocks: Block[] =
-        def.variants?.[optId] || def.variants?.[def.options?.[0]?.id] || [];
-      out.push(...variantBlocks);
-    } else {
-      out.push(b);
-    }
-  }
-  const isPe1 = peFull.id === "pe1";
-  const hasProperPreface = PE_WITH_PROPER_PREFACE.includes(peFull.id);
-  const santoOverrideRe = PE_SANTO_OVERRIDE[peFull.id];
-
-  const parts: string[] = [];
-  if (hasProperPreface) parts.push(PREFACE_INTRO);
-  let dossologiaSeen = false;
-  let santoInserted = false;
-
-  for (const b of out) {
-    if (b.type === "title") {
-      const tt = (b.text || "").trim().toLowerCase();
-      if (tt.includes("dossologia") && !dossologiaSeen) {
-        parts.push("<<DOSSOLOGIA>>");
-        dossologiaSeen = true;
-      }
-      continue;
-    }
-    if (b.type === "acc") continue;
-    if (b.type === "c") {
-      const t = (b.text || "").trim();
-      if (!t) continue;
-      const isDossology = /^per cristo, con cristo/i.test(t);
-      if (isDossology) {
-        if (!dossologiaSeen) {
-          parts.push("<<DOSSOLOGIA>>");
-          dossologiaSeen = true;
-        }
-        parts.push(t.toUpperCase());
-      } else {
-        if (hasProperPreface && !santoInserted && !santoOverrideRe) {
-          parts.push("<<SANTO_BLANK>>" + SANTO_TEXT);
-          santoInserted = true;
-        }
-        parts.push(t);
-      }
-      continue;
-    }
-    const t = (b.text || "").trim();
-    if (!t) continue;
-    if (b.type === "r" || b.type === "rubric_section") {
-      if (isPe1) parts.push(`[${t}]`);
-      continue;
-    }
-    parts.push(t);
-    if (
-      hasProperPreface &&
-      !santoInserted &&
-      santoOverrideRe &&
-      santoOverrideRe.test(t)
-    ) {
-      parts.push("<<SANTO_BLANK>>" + SANTO_TEXT);
-      santoInserted = true;
-      continue;
-    }
-    if (hasProperPreface && !santoInserted && !santoOverrideRe) {
-      if (/cantiamo\b[^.]{0,80}[:\.\,]?\s*$/i.test(t)) {
-        parts.push("<<SANTO_BLANK>>" + SANTO_TEXT);
-        santoInserted = true;
-      }
-    }
-  }
-
-  const sentenceEnders = /[\.\!\?]$/;
-  let result = "";
-  for (let i = 0; i < parts.length; i++) {
-    const cur = parts[i];
-    if (i === 0) {
-      result = cur;
-      continue;
-    }
-    const prev = parts[i - 1];
-    const prevLast = prev.replace(/\s+$/, "").slice(-1);
-    const sep = sentenceEnders.test(prevLast) ? "\n\n" : "\n";
-    result += sep + cur;
-  }
-  result = result.replace(/<<SANTO_BLANK>>/g, "\n\n");
-  return result;
-}
+import { findCelebraSectionPageIndex, parseCelebraSectionId, type CelebraSectionId } from "../src/celebraIndex";
+import { CelebraIndicePanel } from "../src/components/CelebraIndicePanel";
+import { BrandScreenTitle } from "../src/components/BrandScreenTitle";
+import { HomeCircleButton } from "../src/components/HomeCircleButton";
+import { FontSizeButtons } from "../src/components/FontSizeButtons";
+import { triggerAppHaptic } from "../src/appHaptics";
+import { loadSession, saveSession, loadVotiveSession, saveVotiveSession, loadSessionForTarget, saveSessionForTarget, type MassSession, parseCelebrationMode, messaRouteDateParam, messaRouteModeParam, messaRouteVotiveParam, routeParamStr, type CelebrationMode, type SessionTarget } from "../src/massSession";
+import { coerceCelebrationMode } from "../src/celebrationModeLabels";
+import { getVigilEveContextForISO } from "../src/vigilCatalog";
+import { reconcileLiturgyColors } from "../src/localLiturgy";
+import { mergeSaintReadingsIntoLiturgy } from "../src/saintLectionary";
+import { applyVotiveMassToLiturgy, type VotiveMassFull } from "../src/votiveLiturgy";
+import { getLiturgicalSeasonKey } from "../src/prefaceUtils";
+import { todayStr } from "../src/dateUtils";
+import { buildSegments, preSplitSegments, type Segment } from "../src/liturgy/celebraSegments";
+import { renderSegment, type LiturgyRenderColors } from "../src/liturgy/celebraRender";
+import { makeStyles } from "../src/liturgy/celebraStyles";
 
 // ===========================================================================
 // Componente principale (wrapped in ErrorBoundary nell'export default)
 // ===========================================================================
 function CelebraScreenInner() {
+  const fontSizeInitRef = useRef(true);
+  const typographyDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [enginePaginating, setEnginePaginating] = useState(false);
+  const [typographyEpoch, setTypographyEpoch] = useState(0);
+
   // Wakelock: tiene lo schermo acceso mentre la pagina è aperta. SOLO su
   // native (Android/iOS): su web il browser nega il permesso e crashava
   // l'app, quindi skippiamo. LAZY require per evitare che eventuali errori
@@ -310,28 +168,18 @@ function CelebraScreenInner() {
   }, []);
 
   const router = useRouter();
-  const params = useLocalSearchParams<{ date?: string }>();
-  const { colors, fontSize: settingsFontSize, scaledFont, fontFamilyId, isBold } = useSettings();
-  const { width: screenWidth } = useWindowDimensions();
-
-  // Stato locale fontSize (override delle impostazioni globali, valido solo
-  // per questa sessione di celebrazione). Inizializzato da settings, può
-  // essere modificato con i bottoni A- / A+ in alto.
-  const [fontSize, setFontSize] = useState(settingsFontSize);
-  // Sincronizza quando l'utente cambia il font dalle Impostazioni mentre
-  // la celebrazione NON è ancora aperta (solo se non è stato customizzato qui).
-  useEffect(() => {
-    setFontSize(settingsFontSize);
-  }, [settingsFontSize]);
-  const FONT_MIN = 14;
-  const FONT_MAX = 60;
-  const FONT_STEP = 2;
-  const decreaseFont = () =>
-    setFontSize((f) => Math.max(FONT_MIN, f - FONT_STEP));
-  const increaseFont = () =>
-    setFontSize((f) => Math.min(FONT_MAX, f + FONT_STEP));
+  const params = useLocalSearchParams<{
+    date?: string;
+    mode?: string;
+    votive?: string;
+    section?: string;
+    from?: string;
+    index?: string;
+  }>();
+  const { colors, fontSize, scaledFont, fontFamilyId, isBold, lineSpacing, celebraSubitoEnabled } = useSettings();
 
   const [liturgy, setLiturgy] = useState<Liturgy | null>(null);
+  const baseLiturgyRef = useRef<Liturgy | null>(null);
   const [fixedParts, setFixedParts] = useState<Record<string, any> | null>(null);
   const [prefaces, setPrefaces] = useState<Preface[]>([]);
   const [prayers, setPrayers] = useState<EucharisticPrayer[]>([]);
@@ -342,35 +190,250 @@ function CelebraScreenInner() {
   const [currentSeasonKey, setCurrentSeasonKey] = useState<string>("ordinario");
 
   // Scelte caricate da AsyncStorage
-  const [session, setSession] = useState<any>(null);
+  const [session, setSession] = useState<MassSession | null>(null);
+  const [sessionDate, setSessionDate] = useState<string | null>(null);
+  const [celebrationMode, setCelebrationMode] = useState<CelebrationMode>("calendar_day");
+  const [activeVotiveId, setActiveVotiveId] = useState<string | null>(null);
   const [hasSession, setHasSession] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Paginazione "Kindle": tap dx 50% = avanza, sx 50% = indietro.
-  // Le pagine sono renderizzate come slide orizzontali in una FlatList con
-  // pagingEnabled (snap netto, niente scroll verticale, niente scrollbar).
   const [currentPage, setCurrentPage] = useState(0);
-  const [containerH, setContainerH] = useState(0);
+  const currentPageRef = useRef(0);
+  currentPageRef.current = currentPage;
+  const keepPageOnRebuildRef = useRef(false);
+  const pendingSectionRef = useRef<CelebraSectionId | null>(null);
+
+  const routeDateParam = messaRouteDateParam(params);
+  const routeModeParam = messaRouteModeParam(params);
+  const routeVotiveParam = messaRouteVotiveParam(params);
+  const routeSectionId = parseCelebraSectionId(params.section);
+  /** Flusso Celebra subito: indice overlay, a fine sezione si torna all'indice. */
+  const fromIndice = routeParamStr(params.from) === "indice";
+  const openIndexFirst =
+    fromIndice && (routeParamStr(params.index) === "1" || !routeSectionId);
+  const [showIndiceModal, setShowIndiceModal] = useState(openIndexFirst);
+  const [lastOpenedSection, setLastOpenedSection] = useState<CelebraSectionId | null>(
+    routeSectionId,
+  );
+
+  // Sezione iniziale da URL (una sola volta); poi l'indice gestisce i salti in-page.
+  useEffect(() => {
+    if (routeSectionId) pendingSectionRef.current = routeSectionId;
+  }, [routeSectionId]);
+
+  // Sessione subito (AsyncStorage) così l'indice compare senza aspettare le API.
+  useEffect(() => {
+    if (!fromIndice || routeVotiveParam) return;
+    let cancelled = false;
+    (async () => {
+      const dateKey = routeDateParam || todayStr();
+      const mode = coerceCelebrationMode(
+        parseCelebrationMode(routeModeParam),
+        getVigilEveContextForISO(dateKey),
+      );
+      const saved = await loadSession(dateKey, mode);
+      if (cancelled || !saved) return;
+      setSession((prev) => prev ?? saved);
+      setSessionDate((prev) => prev ?? dateKey);
+      setCelebrationMode(mode);
+      setHasSession(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [fromIndice, routeDateParam, routeModeParam, routeVotiveParam]);
+
+  const currentSessionTarget = useMemo((): SessionTarget | null => {
+    if (activeVotiveId) return { kind: "votive", votiveId: activeVotiveId };
+    if (sessionDate) return { kind: "calendar", dateISO: sessionDate, mode: celebrationMode };
+    return null;
+  }, [activeVotiveId, sessionDate, celebrationMode]);
+
+  const applyLiturgyForSession = useCallback(
+    (base: Liturgy | null, saved: MassSession | null, mode: CelebrationMode) => {
+      if (!base) {
+        setLiturgy(null);
+        return;
+      }
+      const reconciled = reconcileLiturgyColors({ ...base, celebrationMode: mode });
+      setLiturgy(
+        saved?.useSaintProperReadings === true
+          ? mergeSaintReadingsIntoLiturgy(reconciled, true)
+          : reconciled,
+      );
+    },
+    [],
+  );
+
+  const reloadCelebrationData = useCallback(async () => {
+    if (!currentSessionTarget) return;
+    if (currentSessionTarget.kind === "votive") {
+      const [lit, vm] = await Promise.all([api.liturgyToday("calendar_day"), api.votiveMasses()]);
+      const mass = (vm.masses as VotiveMassFull[]).find(
+        (m) => m.id === currentSessionTarget.votiveId,
+      );
+      const reconciled = mass
+        ? applyVotiveMassToLiturgy(
+            reconcileLiturgyColors({ ...lit, celebrationMode: "calendar_day" }),
+            mass,
+          )
+        : reconcileLiturgyColors({ ...lit, celebrationMode: "calendar_day" });
+      baseLiturgyRef.current = reconciled;
+      const saved = await loadVotiveSession(currentSessionTarget.votiveId);
+      if (saved) {
+        setSession(saved);
+        setHasSession(true);
+      } else {
+        setSession(null);
+        setHasSession(false);
+      }
+      applyLiturgyForSession(reconciled, saved, "calendar_day");
+      return;
+    }
+    const lit = await api.liturgyForDate(currentSessionTarget.dateISO, currentSessionTarget.mode);
+    const reconciled = reconcileLiturgyColors({
+      ...lit,
+      celebrationMode: currentSessionTarget.mode,
+    });
+    baseLiturgyRef.current = reconciled;
+    const saved = await loadSession(
+      currentSessionTarget.dateISO,
+      currentSessionTarget.mode,
+    );
+    if (saved) {
+      setSession(saved);
+      setHasSession(true);
+    } else {
+      setSession(null);
+      setHasSession(false);
+    }
+    applyLiturgyForSession(reconciled, saved, currentSessionTarget.mode);
+  }, [currentSessionTarget, applyLiturgyForSession]);
+
+  const reloadSessionFromStorage = useCallback(async () => {
+    await reloadCelebrationData();
+  }, [reloadCelebrationData]);
+
+  const patchSessionChoices = useCallback(
+    (patch: Partial<MassSession>) => {
+      if (!session || !currentSessionTarget) return;
+      keepPageOnRebuildRef.current = true;
+      const next: MassSession = { ...session, ...patch };
+      setSession(next);
+      void saveSessionForTarget(currentSessionTarget, next);
+      if (
+        typeof patch.useSaintProperReadings === "boolean" &&
+        baseLiturgyRef.current
+      ) {
+        applyLiturgyForSession(
+          baseLiturgyRef.current,
+          next,
+          currentSessionTarget.kind === "votive"
+            ? "calendar_day"
+            : currentSessionTarget.mode,
+        );
+      }
+    },
+    [session, currentSessionTarget, applyLiturgyForSession],
+  );
 
   // Ref al PagerView nativo (per setPage in tap-to-advance).
   const pagerRef = useRef<PagerView | null>(null);
 
-  const styles = makeStyles(colors, fontSize, fontFamilyId, isBold);
+  const styles = makeStyles(colors, fontSize, fontFamilyId, isBold, lineSpacing);
+  const liturgyColors = useMemo<LiturgyRenderColors>(
+    () => ({
+      markerCelebrant: colors.markerCelebrant,
+      markerAssembly: colors.markerAssembly,
+      cross: colors.rubrics,
+      pePreambleNeedle:
+        PE_FIRST_PREAMBLE_ANCHORS[session?.selectedPrayerId || ""] || undefined,
+    }),
+    [
+      colors.markerCelebrant,
+      colors.markerAssembly,
+      colors.rubrics,
+      session?.selectedPrayerId,
+    ],
+  );
 
   // ----- Caricamento dati -----
   useEffect(() => {
+    let cancelled = false;
     (async () => {
+      setLoading(true);
       try {
-        const dateParam = typeof params.date === "string" ? params.date : undefined;
+        if (routeVotiveParam) {
+          const [lit, parts, pr, pe, acc, bless, vm] = await Promise.all([
+            api.liturgyToday("calendar_day"),
+            api.fixedParts(),
+            api.prefaces(),
+            api.eucharisticPrayers(),
+            api.mysteryAcclamations(),
+            api.solemnBlessings(),
+            api.votiveMasses(),
+          ]);
+          if (cancelled) return;
+          const mass = (vm.masses as VotiveMassFull[]).find((m) => m.id === routeVotiveParam);
+          if (!mass) {
+            setHasSession(false);
+            return;
+          }
+          setActiveVotiveId(routeVotiveParam);
+          const reconciled = applyVotiveMassToLiturgy(
+            reconcileLiturgyColors({ ...lit, celebrationMode: "calendar_day" }),
+            mass,
+          );
+          setSessionDate(lit?.date || todayStr());
+          setCelebrationMode("calendar_day");
+          const saved = await loadVotiveSession(routeVotiveParam);
+          if (cancelled) return;
+          baseLiturgyRef.current = reconciled;
+          applyLiturgyForSession(reconciled, saved, "calendar_day");
+          setFixedParts(parts.parts);
+          setPrefaces(pr.prefaces);
+          setPrayers(pe.prayers);
+          setAcclamations(acc.acclamations);
+          setSolemnBlessings(bless.blessings);
+          setPasquaDismissal((bless as any).pasqua_dismissal);
+          if (Array.isArray((bless as any).prayersOverPeople)) {
+            setPrayersOverPeople((bless as any).prayersOverPeople);
+          }
+          const seasonKey = getLiturgicalSeasonKey(reconciled?.season?.season || "");
+          setCurrentSeasonKey(seasonKey);
+          if (saved) {
+            setSession(saved);
+            setHasSession(true);
+          } else {
+            setHasSession(false);
+          }
+          return;
+        }
+
+        setActiveVotiveId(null);
+        const dateParam = routeDateParam;
+        const provisionalKey = dateParam || todayStr();
+        const mode = coerceCelebrationMode(
+          parseCelebrationMode(routeModeParam),
+          getVigilEveContextForISO(provisionalKey),
+        );
         const [lit, parts, pr, pe, acc, bless] = await Promise.all([
-          dateParam ? api.liturgyForDate(dateParam) : api.liturgyToday(),
+          dateParam ? api.liturgyForDate(dateParam, mode) : api.liturgyToday(mode),
           api.fixedParts(),
           api.prefaces(),
           api.eucharisticPrayers(),
           api.mysteryAcclamations(),
           api.solemnBlessings(),
         ]);
-        setLiturgy(lit);
+        if (cancelled) return;
+        const dateKey = lit?.date || provisionalKey;
+        const reconciled = reconcileLiturgyColors({ ...lit, celebrationMode: mode });
+        setSessionDate(dateKey);
+        setCelebrationMode(mode);
+        const saved = await loadSession(dateKey, mode);
+        if (cancelled) return;
+        baseLiturgyRef.current = reconciled;
+        applyLiturgyForSession(reconciled, saved, mode);
         setFixedParts(parts.parts);
         setPrefaces(pr.prefaces);
         setPrayers(pe.prayers);
@@ -380,21 +443,8 @@ function CelebraScreenInner() {
         if (Array.isArray((bless as any).prayersOverPeople)) {
           setPrayersOverPeople((bless as any).prayersOverPeople);
         }
-        const seasonName = (lit?.season?.season || "").toLowerCase();
-        const seasonKey = seasonName.includes("avvento")
-          ? "avvento"
-          : seasonName.includes("natale")
-          ? "natale"
-          : seasonName.includes("quaresima")
-          ? "quaresima"
-          : seasonName.includes("pasqua")
-          ? "pasqua"
-          : "ordinario";
+        const seasonKey = getLiturgicalSeasonKey(reconciled?.season?.season || "");
         setCurrentSeasonKey(seasonKey);
-
-        const dateKey =
-          lit?.date || dateParam || new Date().toISOString().slice(0, 10);
-        const saved = await loadSessionOrLatest(dateKey);
         if (saved) {
           setSession(saved);
           setHasSession(true);
@@ -403,12 +453,22 @@ function CelebraScreenInner() {
         }
       } catch (e) {
         if (__DEV__) console.log("Errore caricamento celebrazione:", e);
-        setHasSession(false);
+        if (!cancelled) setHasSession(false);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     })();
-  }, [params.date]);
+    return () => {
+      cancelled = true;
+    };
+  }, [routeDateParam, routeModeParam, routeVotiveParam, applyLiturgyForSession]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!currentSessionTarget || loading) return;
+      void reloadSessionFromStorage();
+    }, [currentSessionTarget, loading, reloadSessionFromStorage]),
+  );
 
   // ----- Costruisce i segmenti dell'intera celebrazione -----
   const segments: Segment[] = useMemo(() => {
@@ -425,8 +485,6 @@ function CelebraScreenInner() {
       currentSeasonKey,
       session,
     });
-    // Pre-split: spezza i testi lunghi in pezzi più piccoli per permettere
-    // al chunker di impaginare senza titoli orfani o pagine quasi vuote.
     return preSplitSegments(raw);
   }, [
     liturgy,
@@ -441,19 +499,7 @@ function CelebraScreenInner() {
     session,
   ]);
 
-  // ----- HTML completo per la WebView (CSS columns) -----
-  // Il browser interno alla WebView impagina il testo in colonne larghe 100vw,
-  // riempiendo perfettamente ogni pagina. Tap a sinistra/destra → scroll
-  // === Chunking semplice in 4 macro-pagine (Smart Tap) ===
-  // Strategia richiesta dall'utente: una pagina per macro-blocco. Il
-  // confine è dato ESCLUSIVAMENTE dai segmenti `sectionTitleBreak` (=
-  // Liturgia della Parola, post-Vangelo, Prefazio, ecc). Ogni macro-pagina
-  // è wrappata in ScrollView con scroll verticale interno. La navigazione
-  // tap (Smart Tap) gestisce: tap destra → smooth scroll giù (con overlap
-  // di 40px), o macro-pagina successiva se siamo a fondo; tap sinistra →
-  // smooth scroll su, o macro-pagina precedente se siamo in cima.
-  const dims = useWindowDimensions();
-  const pages = useMemo<Segment[][]>(() => {
+  const macroPages = useMemo<Segment[][]>(() => {
     if (!segments.length) return [];
     const result: Segment[][] = [[]];
     for (const seg of segments) {
@@ -468,184 +514,266 @@ function CelebraScreenInner() {
     return result;
   }, [segments]);
 
-  // === Smart Tap state ===
-  // Su native PagerView le N ScrollView coesistono tutte montate insieme,
-  // quindi non possiamo affidarci a UN solo ref / a stati globali (sarebbero
-  // sempre quelli della pagina iniziale). Manteniamo invece dictionary
-  // INDICIZZATI per pagina (refs); leggiamo i valori della currentPage
-  // direttamente da lì negli handler dei tap.
-  const scrollRefsRef = useRef<Record<number, ScrollView | null>>({});
-  const scrollYByPageRef = useRef<Record<number, number>>({});
-  const contentHByPageRef = useRef<Record<number, number>>({});
-  const viewportHByPageRef = useRef<Record<number, number>>({});
-  // Stato React solo per UI (es. ScrollIndicator); aggiornato dagli onScroll
-  // della pagina corrente.
-  const [scrollY, setScrollY] = useState(0);
-  const [contentH, setContentH] = useState(0);
-  const [viewportH, setViewportH] = useState(0);
-  // Mappa: pagina → { segKey → topY }. Popolata via onLayout dei wrapper
-  // attorno a ogni renderSegment. Permette allo Smart Tap di fare SNAP al
-  // top di un segmento (= confine "naturale" tra paragrafi/sezioni) invece
-  // di scrollare di una quantità fissa che taglia righe a metà.
-  const segLayoutsRef = useRef<Record<number, Record<string, number>>>({});
+  const pages = macroPages;
 
-  // Reset stato quando cambia la macro-pagina: sincronizziamo lo stato UI
-  // ai valori già misurati per la nuova pagina (se disponibili) e rifacciamo
-  // scrollTo(0) sulla ScrollView della pagina corrente.
+  const engineMicroRef = useRef<Record<number, number>>({});
+  const engineTotalRef = useRef<Record<number, number>>({});
+  const engineMeasuringRef = useRef<Record<number, boolean>>({});
+  const [microPageUi, setMicroPageUi] = useState({ index: 0, total: 1 });
+  const enginePageBottomPad = 48;
+
+  const triggerEngineRemeasure = (pageIdx: number, savedMicro = 0) => {
+    engineMicroRef.current[pageIdx] = savedMicro;
+    engineMeasuringRef.current[pageIdx] = true;
+    if (pageIdx === currentPageRef.current) {
+      setEnginePaginating(true);
+      setMicroPageUi({
+        index: savedMicro,
+        total: engineTotalRef.current[pageIdx] ?? 1,
+      });
+    }
+    setTypographyEpoch((n) => n + 1);
+  };
+
+  // Firma stabile del contenuto: evita reset pagina quando cambiano solo preferenze
+  // di sessione che non alterano i segmenti.
+  const segmentSignature = useMemo(
+    () => segments.map((s) => `${s.kind}\0${s.text.length}\0${s.text.slice(0, 64)}`).join("\x1e"),
+    [segments],
+  );
+
   useEffect(() => {
-    const ch = contentHByPageRef.current[currentPage] ?? 0;
-    const vh = viewportHByPageRef.current[currentPage] ?? 0;
-    scrollYByPageRef.current[currentPage] = 0;
-    setScrollY(0);
-    setContentH(ch);
-    setViewportH(vh);
-    segLayoutsRef.current[currentPage] = segLayoutsRef.current[currentPage] || {};
-    requestAnimationFrame(() => {
-      scrollRefsRef.current[currentPage]?.scrollTo?.({ y: 0, animated: false });
-    });
+    const page = currentPage;
+    const mi = engineMicroRef.current[page] ?? 0;
+    const total = engineTotalRef.current[page] ?? 1;
+    if (page === currentPageRef.current) {
+      setMicroPageUi({ index: mi, total });
+    }
   }, [currentPage]);
 
-  // Stima lineHeight del corpo testo: usato come step ideale e tolleranza
-  // per il matching ai confini di segmento.
-  const lineH = Math.max(20, Math.round(fontSize * 1.6));
-
-  // Snap helper: dato un target ideale (in pixel), trova il top di un
-  // segmento entro ±tolerance pixel dal target. Se trovato → snap "pulito"
-  // al confine di paragrafo. Altrimenti → step ideale (multiplo di lineH).
-  // Strategia conservativa: lo snap è permesso SOLO entro 1 lineHeight,
-  // così non saltiamo lontano dal target lasciando righe duplicate o gap.
-  const findSnapNear = (target: number): number => {
-    const layouts = segLayoutsRef.current[currentPage] || {};
-    const tops = Object.values(layouts)
-      .filter((v) => typeof v === "number")
-      .sort((a, b) => a - b);
-    if (tops.length === 0) return -1;
-    const tolerance = lineH;
-    let best = -1;
-    for (const t of tops) {
-      if (t < target - tolerance) continue;
-      if (t > target + tolerance) break;
-      if (best < 0 || Math.abs(t - target) < Math.abs(best - target)) best = t;
+  const goToPage = (index: number, anchor: "start" | "restore" = "restore") => {
+    const safe = Math.max(0, Math.min(index, pages.length - 1));
+    if (safe === currentPage) return;
+    if (anchor === "start") {
+      engineMicroRef.current[safe] = 0;
     }
-    return best;
-  };
-
-  // Smart Tap NEXT: scroll giù di N righe intere, snappato al confine di
-  // segmento più vicino (entro ±1 riga). Se siamo già a fondo pagina,
-  // passa alla macro-pagina successiva.
-  // Legge i valori della pagina corrente dai ref-by-page (più affidabile
-  // dello stato React, che potrebbe essere stale dopo un cambio pagina).
-  const smartTapNext = () => {
-    const ref = scrollRefsRef.current[currentPage];
-    const sy = scrollYByPageRef.current[currentPage] ?? 0;
-    const ch = contentHByPageRef.current[currentPage] ?? 0;
-    const vh = viewportHByPageRef.current[currentPage] ?? 0;
-    if (vh > 0 && ch > vh && sy + vh < ch - 8) {
-      const lines = Math.max(1, Math.floor(vh / lineH));
-      const idealStep = lines * lineH;
-      const ideal = sy + idealStep;
-      const snap = findSnapNear(ideal);
-      let nextY = snap > 0 ? snap : ideal;
-      nextY = Math.min(ch - vh, nextY);
-      ref?.scrollTo({ y: nextY, animated: true });
+    if (PagerView && pagerRef.current?.setPage) {
+      pagerRef.current.setPage(safe);
     } else {
-      const next = Math.min(pages.length - 1, currentPage + 1);
-      if (next !== currentPage) {
-        if (PagerView && pagerRef.current?.setPage) {
-          pagerRef.current.setPage(next);
-        } else {
-          setCurrentPage(next);
-        }
-      }
+      setCurrentPage(safe);
     }
   };
 
-  // Smart Tap PREV: simmetrico al NEXT.
-  const smartTapPrev = () => {
-    const ref = scrollRefsRef.current[currentPage];
-    const sy = scrollYByPageRef.current[currentPage] ?? 0;
-    const vh = viewportHByPageRef.current[currentPage] ?? 0;
-    if (sy > 8) {
-      const lines = Math.max(1, Math.floor(vh / lineH));
-      const idealStep = lines * lineH;
-      const ideal = sy - idealStep;
-      const snap = findSnapNear(ideal);
-      let nextY = snap >= 0 ? snap : ideal;
-      nextY = Math.max(0, nextY);
-      ref?.scrollTo({ y: nextY, animated: true });
-    } else {
-      const prev = Math.max(0, currentPage - 1);
-      if (prev !== currentPage) {
-        if (PagerView && pagerRef.current?.setPage) {
-          pagerRef.current.setPage(prev);
-        } else {
-          setCurrentPage(prev);
-        }
-      }
+  /** Celebra subito: a fine macro-pagina torna all'indice, non alla sezione successiva. */
+  const goNextPageOrIndice = () => {
+    if (fromIndice) {
+      setShowIndiceModal(true);
+      return;
     }
+    goToPage(currentPage + 1, "start");
   };
 
-  // Helper per il render: wrappa ogni segment in una View con onLayout
-  // che registra il top del segment in segLayoutsRef per la pagina i.
+  const openSectionFromIndice = useCallback(
+    (sectionId: CelebraSectionId) => {
+      setLastOpenedSection(sectionId);
+      setShowIndiceModal(false);
+      pendingSectionRef.current = sectionId;
+      if (pages.length === 0) return;
+      const idx = findCelebraSectionPageIndex(pages, sectionId);
+      if (idx >= 0) {
+        pendingSectionRef.current = null;
+        const safe = Math.max(0, Math.min(idx, pages.length - 1));
+        engineMicroRef.current[safe] = 0;
+        currentPageRef.current = safe;
+        if (PagerView && pagerRef.current?.setPage) {
+          pagerRef.current.setPage(safe);
+        }
+        setCurrentPage(safe);
+        triggerEngineRemeasure(safe, 0);
+      }
+    },
+    [pages],
+  );
+
+  const tapNext = () => {
+    if (enginePaginating) return;
+    void triggerAppHaptic("light");
+    const page = currentPage;
+    const micro = engineMicroRef.current[page] ?? 0;
+    const total = engineTotalRef.current[page] ?? 1;
+    if (micro + 1 < total) {
+      engineMicroRef.current[page] = micro + 1;
+      setMicroPageUi({ index: micro + 1, total });
+      return;
+    }
+    goNextPageOrIndice();
+  };
+
+  const tapPrev = () => {
+    if (enginePaginating) return;
+    void triggerAppHaptic("light");
+    const page = currentPage;
+    const micro = engineMicroRef.current[page] ?? 0;
+    const total = engineTotalRef.current[page] ?? 1;
+    if (micro > 0) {
+      engineMicroRef.current[page] = micro - 1;
+      setMicroPageUi({ index: micro - 1, total });
+      return;
+    }
+    if (fromIndice) {
+      setShowIndiceModal(true);
+      return;
+    }
+    goToPage(currentPage - 1, "restore");
+  };
+
   const renderSegmentWithLayout = (
     seg: Segment,
     i: number,
     j: number,
   ): React.ReactNode => {
-    const key = `${i}-${j}`;
-    return (
-      <View
-        key={key}
-        onLayout={(e) => {
-          if (!segLayoutsRef.current[i]) segLayoutsRef.current[i] = {};
-          segLayoutsRef.current[i][key] = e.nativeEvent.layout.y;
-        }}
-      >
-        {renderSegment(seg, key, styles)}
-      </View>
-    );
+    const key = `${i}-${j}-e${typographyEpoch}`;
+    return renderSegment(seg, key, styles, liturgyColors);
   };
 
-  // Helpers: salvano SEMPRE nei ref-by-page (necessario su native PagerView
-  // dove tutte le pagine sono montate insieme e gli onLayout/onScroll delle
-  // pagine non-correnti devono comunque registrare i loro valori). Lo stato
-  // React UI viene aggiornato solo per la pagina attualmente visibile.
-  const onScrollCurrent = (i: number) => (e: any) => {
-    const y = e.nativeEvent.contentOffset.y;
-    scrollYByPageRef.current[i] = y;
-    if (i === currentPage) setScrollY(y);
-  };
-  const onContentSizeCurrent = (i: number) => (_w: number, h: number) => {
-    contentHByPageRef.current[i] = h;
-    if (i === currentPage) setContentH(h);
-  };
-  const onLayoutCurrent = (i: number) => (e: any) => {
-    const h = e.nativeEvent.layout.height;
-    viewportHByPageRef.current[i] = h;
-    if (i === currentPage) setViewportH(h);
-  };
-  // Ref binding: salviamo SEMPRE il ref di ogni pagina (anche non-corrente),
-  // così gli smartTap leggono il ref giusto dopo un cambio macro-pagina.
-  const setRefIfCurrent = (i: number) => (r: ScrollView | null) => {
-    scrollRefsRef.current[i] = r;
-  };
-
-  // Stato pagina/totale: tracciato direttamente da PagerView via onPageSelected.
   const totalPages = pages.length;
 
-  // Reset pagina quando i segmenti cambiano (nuovo testo da impaginare)
+  // Reset pagina solo quando cambia il contenuto liturgico (non al ridimensionamento font).
+  // Se l'utente ha appena scelto prefazio/PE, resta sulla stessa macro-pagina.
+  // Con sezione da indice salta alla macro-pagina richiesta.
   useEffect(() => {
-    setCurrentPage(0);
+    engineMicroRef.current = {};
+    engineTotalRef.current = {};
+    engineMeasuringRef.current = {};
+    setMicroPageUi({ index: 0, total: 1 });
+
+    const keep = keepPageOnRebuildRef.current;
+    keepPageOnRebuildRef.current = false;
+    let target = keep
+      ? Math.max(0, Math.min(currentPageRef.current, Math.max(0, pages.length - 1)))
+      : 0;
+    const sectionId = pendingSectionRef.current;
+    if (sectionId && pages.length > 0) {
+      const idx = findCelebraSectionPageIndex(pages, sectionId);
+      if (idx >= 0) {
+        target = idx;
+        pendingSectionRef.current = null;
+      } else if (segments.length > 0) {
+        pendingSectionRef.current = null;
+      }
+    }
+    setCurrentPage(target);
+    currentPageRef.current = target;
     if (pagerRef.current) {
       try {
-        // setPageWithoutAnimation è sincrono, niente flicker
         // @ts-ignore
-        pagerRef.current.setPageWithoutAnimation?.(0);
+        pagerRef.current.setPageWithoutAnimation?.(target);
       } catch {}
     }
-  }, [segments]);
+    triggerEngineRemeasure(target, 0);
+  }, [segmentSignature, pages.length]);
+
+  // A-/A+: aspetta che i tap si fermino, poi reimpagina una volta sola.
+  useEffect(() => {
+    if (fontSizeInitRef.current) {
+      fontSizeInitRef.current = false;
+      return;
+    }
+    const page = currentPageRef.current;
+    engineMicroRef.current[page] = 0;
+    engineMeasuringRef.current[page] = true;
+    setEnginePaginating(true);
+    if (typographyDebounceRef.current) clearTimeout(typographyDebounceRef.current);
+    typographyDebounceRef.current = setTimeout(() => {
+      typographyDebounceRef.current = null;
+      setTypographyEpoch((n) => n + 1);
+    }, 300);
+    return () => {
+      if (typographyDebounceRef.current) {
+        clearTimeout(typographyDebounceRef.current);
+        typographyDebounceRef.current = null;
+      }
+    };
+  }, [fontSize, fontFamilyId, isBold, lineSpacing]);
 
   // ----- Rendering -----
+  const renderEngineReader = (pageSegments: Segment[], pageIdx: number) => (
+    <LiturgyPagedReader
+      key={`engine-${pageIdx}`}
+      segments={pageSegments}
+      microIndex={engineMicroRef.current[pageIdx] ?? 0}
+      paddingBottom={enginePageBottomPad}
+      contentContainerStyle={styles.nativePageContent}
+      remountKey={`${typographyEpoch}`}
+      fontSize={fontSize}
+      renderSegment={(seg, j) => renderSegmentWithLayout(seg as Segment, pageIdx, j)}
+      onPagesReady={(total) => {
+        engineTotalRef.current[pageIdx] = total;
+        engineMeasuringRef.current[pageIdx] = false;
+        const mi = Math.min(
+          engineMicroRef.current[pageIdx] ?? 0,
+          Math.max(0, total - 1),
+        );
+        engineMicroRef.current[pageIdx] = mi;
+        if (pageIdx === currentPageRef.current) {
+          setMicroPageUi({ index: mi, total });
+          setEnginePaginating(false);
+        }
+      }}
+      onMeasuring={(m) => {
+        engineMeasuringRef.current[pageIdx] = m;
+        if (pageIdx === currentPageRef.current) {
+          setEnginePaginating(m);
+        }
+      }}
+    />
+  );
+
+  const indicePanel = (
+    <CelebraIndicePanel
+      colors={colors}
+      fontSize={fontSize}
+      scaledFont={scaledFont}
+      fontFamilyId={fontFamilyId}
+      isBold={isBold}
+      session={session}
+      prefaces={prefaces}
+      prayers={prayers}
+      liturgy={liturgy}
+      baseLiturgy={baseLiturgyRef.current}
+      currentSeasonKey={currentSeasonKey}
+      loading={loading}
+      lastOpenedSection={lastOpenedSection}
+      listVisible={showIndiceModal}
+      onHome={() => router.replace("/")}
+      onOpenSection={openSectionFromIndice}
+      onPatchSession={(patch) => {
+        if (!session) return;
+        if (!currentSessionTarget && sessionDate) {
+          const next = { ...session, ...patch };
+          setSession(next);
+          void saveSession(sessionDate, celebrationMode, next);
+          if (
+            typeof patch.useSaintProperReadings === "boolean" &&
+            baseLiturgyRef.current
+          ) {
+            applyLiturgyForSession(baseLiturgyRef.current, next, celebrationMode);
+          }
+          return;
+        }
+        patchSessionChoices(patch);
+      }}
+    />
+  );
+
+  if (loading && fromIndice && showIndiceModal) {
+    return (
+      <SafeAreaView style={styles.container} testID="celebra-indice-loading">
+        {indicePanel}
+      </SafeAreaView>
+    );
+  }
+
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -658,15 +786,12 @@ function CelebraScreenInner() {
     return (
       <SafeAreaView style={styles.container} testID="celebra-no-session">
         <View style={styles.topBar}>
-          <TouchableOpacity
-            style={styles.backBtn}
-            onPress={() => router.replace("/")}
-            testID="btn-back-home"
-          >
-            <Ionicons name="home" size={scaledFont(36)} color={colors.textPrimary} />
-            <Text style={styles.backBtnText}>Home</Text>
-          </TouchableOpacity>
-          <Text style={styles.title}>Celebra la Messa</Text>
+          <HomeCircleButton onPress={() => router.replace("/")} testID="btn-back-home" />
+          <BrandScreenTitle
+            title="Celebra la Messa"
+            textStyle={styles.title}
+            markSize={Math.max(28, Math.round(fontSize * 0.85))}
+          />
           <View style={{ width: 88 }} />
         </View>
         <View style={styles.emptyBox}>
@@ -674,11 +799,11 @@ function CelebraScreenInner() {
           <Text style={styles.emptyTitle}>Devi prima preparare la liturgia</Text>
           <Text style={styles.emptyText}>
             Vai su <Text style={{ fontWeight: "800" }}>"Scegli la liturgia"</Text> e fai le scelte
-            (prefazio, preghiera eucaristica, congedo…). Poi tocca{"\n"}
+            (prefazio, preghiera eucaristica, congedo…). In fondo al Congedo tocca{" "}
             <Text style={{ fontWeight: "800", color: colors.primary }}>
-              "Scelte per la liturgia odierna completate"
-            </Text>{" "}
-            in fondo alla pagina del Congedo, oppure torna qui.
+              "Preparazione completata — torna alla home"
+            </Text>
+            , poi da lì apri <Text style={{ fontWeight: "800" }}>"Celebra la Messa"</Text>.
           </Text>
           <TouchableOpacity
             style={styles.primaryBtn}
@@ -698,50 +823,47 @@ function CelebraScreenInner() {
 
   return (
     <SafeAreaView style={styles.container} testID="celebra-screen">
-      {/* Top bar: home + data + bottoni font + indicatore di pagina */}
+      {/* Top bar: home + indice + data + bottoni font + indicatore di pagina */}
       <View style={styles.topBar}>
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={() => router.replace("/")}
-          testID="btn-back-home"
-          accessibilityLabel="Torna alla home"
-        >
-          <Ionicons name="home" size={scaledFont(36)} color={colors.textPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.title} numberOfLines={1}>
-          {liturgy?.date_label || "Celebrazione"}
-        </Text>
-        {/* Bottoni A-/A+ per dimensione font (vicino alla data, prima
-            dell'indicatore di pagina). Disabilitati ai limiti. */}
+        <View style={styles.topBarLeft}>
+          <HomeCircleButton onPress={() => router.replace("/")} testID="btn-back-home" />
+          {fromIndice ? (
+            <TouchableOpacity
+              style={styles.indiceBtn}
+              onPress={() => setShowIndiceModal(true)}
+              testID="btn-celebra-indice"
+              accessibilityRole="button"
+              accessibilityLabel="Torna all'indice delle parti"
+            >
+              <Text style={styles.indiceBtnText}>Indice</Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
+        <BrandScreenTitle
+          title="Celebra la Messa"
+          textStyle={styles.title}
+          numberOfLines={1}
+          markSize={Math.max(28, Math.round(fontSize * 0.85))}
+        />
         <View style={styles.fontBtns}>
-          <TouchableOpacity
-            style={[
-              styles.fontBtn,
-              fontSize <= FONT_MIN && styles.fontBtnDisabled,
-            ]}
-            onPress={decreaseFont}
-            disabled={fontSize <= FONT_MIN}
-            testID="btn-font-decrease"
-            accessibilityLabel="Riduci dimensione testo"
-          >
-            <Text style={styles.fontBtnText}>A-</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.fontBtn,
-              fontSize >= FONT_MAX && styles.fontBtnDisabled,
-            ]}
-            onPress={increaseFont}
-            disabled={fontSize >= FONT_MAX}
-            testID="btn-font-increase"
-            accessibilityLabel="Aumenta dimensione testo"
-          >
-            <Text style={styles.fontBtnText}>A+</Text>
-          </TouchableOpacity>
+          <FontSizeButtons
+            extraDisabled={enginePaginating}
+            decreaseTestID="btn-font-decrease"
+            increaseTestID="btn-font-increase"
+          />
+          <SettingsTopBarButton
+            onPress={() => router.push("/impostazioni")}
+            color={colors.textPrimary}
+            size={scaledFont(32)}
+            testID="btn-settings-celebra"
+            style={styles.settingsBtn}
+          />
         </View>
         <View style={styles.pageIndicator}>
           <Text style={styles.pageIndicatorText}>
-            {total > 0 ? `${safeIdx + 1}/${total}` : ""}
+            {total > 0
+              ? `${safeIdx + 1}/${total} · p.${microPageUi.index + 1}/${microPageUi.total}`
+              : ""}
           </Text>
         </View>
       </View>
@@ -752,7 +874,6 @@ function CelebraScreenInner() {
           Tap a sinistra = pagina precedente, tap a destra = pagina successiva. */}
       <View
         style={styles.pageArea}
-        onLayout={(e) => setContainerH(e.nativeEvent.layout.height)}
         testID="celebra-tap-area"
       >
         {!segments.length || pages.length === 0 ? (
@@ -760,26 +881,11 @@ function CelebraScreenInner() {
         ) : (
           <>
             {Platform.OS === "web" || !PagerView ? (
-              // Su web (preview): una sola ScrollView re-renderizzata con
-              // pages[currentPage]. Il key={currentPage} forza il
-              // re-mount completo al cambio di pagina (così lo scroll
-              // riparte SEMPRE da 0 e i misuratori riscattano).
-              <View style={{ flex: 1 }}>
-                <ScrollView
-                  key={`web-page-${currentPage}`}
-                  ref={setRefIfCurrent(currentPage)}
-                  style={styles.nativePage}
-                  contentContainerStyle={{ paddingBottom: 90 }}
-                  showsVerticalScrollIndicator={true}
-                  onScroll={onScrollCurrent(currentPage)}
-                  scrollEventThrottle={16}
-                  onContentSizeChange={onContentSizeCurrent(currentPage)}
-                  onLayout={onLayoutCurrent(currentPage)}
-                >
-                  {pages[Math.min(currentPage, pages.length - 1)].map((seg, j) =>
-                    renderSegmentWithLayout(seg, currentPage, j),
-                  )}
-                </ScrollView>
+              <View style={{ flex: 1, overflow: "hidden" }}>
+                {renderEngineReader(
+                  pages[Math.min(currentPage, pages.length - 1)],
+                  currentPage,
+                )}
               </View>
             ) : (
               <PagerView
@@ -787,54 +893,61 @@ function CelebraScreenInner() {
                 style={{ flex: 1 }}
                 initialPage={0}
                 orientation="horizontal"
+                scrollEnabled={!fromIndice}
                 offscreenPageLimit={1}
                 onPageSelected={(e: any) => {
-                  setCurrentPage(e.nativeEvent.position);
+                  const pos = e.nativeEvent.position;
+                  const prev = currentPageRef.current;
+                  if (pos === prev) return;
+                  if (fromIndice && pos !== prev) {
+                    try {
+                      // @ts-ignore
+                      pagerRef.current?.setPageWithoutAnimation?.(prev);
+                    } catch {}
+                    setShowIndiceModal(true);
+                    return;
+                  }
+                  if (pos > prev) {
+                    engineMicroRef.current[pos] = 0;
+                  }
+                  setCurrentPage(pos);
                 }}
                 testID="celebra-pager"
               >
                 {pages.map((pageSegments, i) => (
-                  <ScrollView
-                    key={`page-${i}`}
-                    ref={setRefIfCurrent(i)}
-                    style={styles.nativePage}
-                    contentContainerStyle={{ paddingBottom: 90 }}
-                    showsVerticalScrollIndicator={true}
-                    onScroll={onScrollCurrent(i)}
-                    scrollEventThrottle={16}
-                    onContentSizeChange={onContentSizeCurrent(i)}
-                    onLayout={onLayoutCurrent(i)}
-                  >
-                    {pageSegments.map((seg, j) => renderSegmentWithLayout(seg, i, j))}
-                  </ScrollView>
+                  <View key={`page-${i}`} style={{ flex: 1 }} collapsable={false}>
+                    {renderEngineReader(pageSegments, i)}
+                  </View>
                 ))}
               </PagerView>
             )}
-            {/* Indicatore "↓ scorri" rimosso (richiesta utente v2.16.7):
-                copriva 1-2 righe di testo in basso a destra. Lo Smart Tap
-                gestisce già la navigazione: tap dx scrolla giù (o cambia
-                macro-pagina al fondo), tap sx scrolla su (o macro-pagina
-                precedente in cima). Il contatore N/M in alto a destra
-                indica la posizione tra le 4 macro-pagine. */}
-            {/* Tap zones SMART (30% sx + 70% dx). 
-                Tap dx → smart scroll giù o macro-pagina succ.
-                Tap sx → smart scroll su o macro-pagina prec. */}
+            {/* Tap zones (30% sx + 70% dx): micro-pagina o macro-pagina / indice. */}
             <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
               <View style={{ flex: 1, flexDirection: "row" }}>
                 <Pressable
                   style={{ width: "30%" }}
-                  onPress={smartTapPrev}
+                  onPress={tapPrev}
                   testID="celebra-tap-prev"
-                  accessibilityLabel="Indietro / scroll su"
+                  accessibilityLabel="Indietro / pagina precedente"
                 />
                 <Pressable
                   style={{ width: "70%" }}
-                  onPress={smartTapNext}
+                  onPress={tapNext}
                   testID="celebra-tap-next"
-                  accessibilityLabel="Avanti / scroll giù"
+                  accessibilityLabel="Avanti / pagina successiva"
                 />
               </View>
             </View>
+            {enginePaginating ? (
+              <View
+                style={styles.enginePaginatingOverlay}
+                pointerEvents="auto"
+                testID="celebra-engine-paginating"
+              >
+                <ActivityIndicator size="large" color={colors.primary} />
+                <Text style={styles.enginePaginatingText}>Impaginazione…</Text>
+              </View>
+            ) : null}
             {/* Barra di progresso rimossa (richiesta utente v2.16.2):
                 copriva 1-2 righe di testo in fondo che poi confondevano lo
                 scroll smart. Le pagine sono già indicate dal contatore N/M
@@ -842,6 +955,19 @@ function CelebraScreenInner() {
           </>
         )}
       </View>
+
+      {fromIndice ? (
+        <Modal
+          visible={showIndiceModal}
+          animationType="slide"
+          transparent={false}
+          onRequestClose={() => setShowIndiceModal(false)}
+        >
+          <View style={{ flex: 1, backgroundColor: colors.background }}>
+            {indicePanel}
+          </View>
+        </Modal>
+      ) : null}
     </SafeAreaView>
   );
 }
@@ -860,1731 +986,3 @@ export default function CelebraScreen() {
     </CelebraErrorBoundary>
   );
 }
-
-// ===========================================================================
-// buildSegments: costruisce l'intera Messa come array di Segment
-// ===========================================================================
-// segmentsToHtml: converte un array di Segment in stringa HTML completa
-// pronta per essere iniettata in una WebView con CSS columns.
-// ===========================================================================
-// ===========================================================================
-// renderSegment: converte un Segment in elementi React Native nativi.
-// Usato dal PagerView per renderizzare ogni pagina (sostituisce
-// segmentsToHtml che produceva HTML per la WebView ora rimossa).
-// ===========================================================================
-function renderSegment(seg: Segment, key: string, styles: any): React.ReactNode {
-  const text = seg.text || "";
-  switch (seg.kind) {
-    case "spacer":
-      return <View key={key} style={styles.segSpacer} />;
-    case "sectionTitle":
-    case "sectionTitleBreak":
-      return (
-        <Text key={key} style={styles.segSectionTitle}>
-          {text}
-        </Text>
-      );
-    case "antifonaTitle":
-      return (
-        <Text key={key} style={styles.segAntifonaTitle}>
-          {text}
-        </Text>
-      );
-    case "readingTitle":
-      return (
-        <Text key={key} style={styles.segReadingTitle}>
-          {text}
-        </Text>
-      );
-    case "orazioneTitle":
-      return (
-        <Text key={key} style={styles.segOrazioneTitle}>
-          {text}
-        </Text>
-      );
-    case "subtitle":
-      return (
-        <Text key={key} style={styles.segSubtitle}>
-          {text}
-        </Text>
-      );
-    case "troparioTitle":
-      return (
-        <Text key={key} style={styles.segTroparioTitle}>
-          {text}
-        </Text>
-      );
-    case "peTitle":
-      return (
-        <Text key={key} style={styles.segPeTitle}>
-          {text}
-        </Text>
-      );
-    case "rubric":
-      return (
-        <Text key={key} style={styles.segRubric}>
-          {text}
-        </Text>
-      );
-    case "readingRef":
-      return (
-        <Text key={key} style={styles.segReadingRef}>
-          {text}
-        </Text>
-      );
-    case "celebrante":
-      return (
-        <Text key={key} style={styles.segCelebrante}>
-          {text}
-        </Text>
-      );
-    case "assemblea":
-      return (
-        <Text key={key} style={styles.segAssemblea}>
-          {text}
-        </Text>
-      );
-    case "umili":
-      return (
-        <Text key={key} style={styles.segUmili}>
-          {text}
-        </Text>
-      );
-    case "peText":
-    case "peDossologia":
-      return renderPeTextNative(text, key, styles);
-    case "salmo":
-      return renderSalmoNative(text, key, styles);
-    case "preghieraFedeli":
-      return renderPreghieraFedeliNative(text, key, styles);
-    case "normal":
-    default:
-      return (
-        <Text key={key} style={styles.segNormal}>
-          {text}
-        </Text>
-      );
-  }
-}
-
-// ===========================================================================
-// renderPeTextNative: replica esatta della logica di /messa per il testo
-// delle Preghiere Eucaristiche.
-//  - Splitta il testo sul marker `<<DOSSOLOGIA>>` (inserito da expandPrayerText)
-//  - Parte PRE: testo normale, ma le righe interamente in MAIUSCOLO
-//    (parole della Consacrazione: "PRENDETE, E MANGIATENE TUTTI...",
-//    "QUESTO È IL MIO CORPO...", ecc.) vengono colorate in azzurro
-//    brillante #29B6F6 bold (stile peConsecration).
-//  - Parte POST: testo della Dossologia in BIANCO MAIUSCOLO REGULAR
-//    (stile peDossologia, allineato a /messa).
-// ===========================================================================
-function isUpperPeLine(ln: string): boolean {
-  const alphaChars = ln.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ]/g, "");
-  return alphaChars.length >= 5 && alphaChars === alphaChars.toUpperCase();
-}
-
-function renderPeTextLines(text: string, key: string, styles: any): React.ReactNode {
-  const lines = text.split("\n");
-  return (
-    <Text style={styles.segNormal} selectable key={key}>
-      {lines.map((ln, i) => {
-        const isCon = isUpperPeLine(ln);
-        const prevWasCon = i > 0 && isUpperPeLine(lines[i - 1]);
-        const nextIsCon = i < lines.length - 1 && isUpperPeLine(lines[i + 1]);
-        const isLast = i === lines.length - 1;
-        const needSpaceBefore = isCon && !prevWasCon && i > 0;
-        const needSpaceAfter = isCon && !nextIsCon && !isLast;
-        const tail = isLast ? "" : (needSpaceAfter ? "\n\n" : "\n");
-        if (isCon) {
-          return (
-            <Text key={i}>
-              {needSpaceBefore ? "\n" : ""}
-              <Text style={styles.segPeConsecration}>{ln}</Text>
-              {tail}
-            </Text>
-          );
-        }
-        return (
-          <Text key={i}>
-            {ln}
-            {tail}
-          </Text>
-        );
-      })}
-    </Text>
-  );
-}
-
-function renderPeTextNative(text: string, key: string, styles: any): React.ReactNode {
-  if (!text) return null;
-  const dosMarker = "<<DOSSOLOGIA>>";
-  const dosIdx = text.indexOf(dosMarker);
-  if (dosIdx >= 0) {
-    const before = text.slice(0, dosIdx).replace(/\n+$/, "");
-    const after = text.slice(dosIdx + dosMarker.length).replace(/^\n+/, "");
-    return (
-      <View key={key}>
-        {before ? renderPeTextLines(before, `${key}-pre`, styles) : null}
-        {after ? (
-          <Text style={styles.segPeDossologia} selectable>
-            {after}
-          </Text>
-        ) : null}
-      </View>
-    );
-  }
-  return renderPeTextLines(text, key, styles);
-}
-
-// Renderer salmo: evidenzia "R." (e suoi sinonimi tipo "R/.") in rosso.
-function renderSalmoNative(text: string, key: string, styles: any): React.ReactNode {
-  const cleaned = text.replace(/^\n+|\n+$/g, "").replace(/\n+/g, "\n");
-  const lines = cleaned.split("\n");
-  return (
-    <Text key={key} style={styles.segSalmo} selectable>
-      {lines.map((ln, i) => {
-        const m = ln.match(/^(\s*)(R\.|R\/\.?)(\s*)(.*)$/);
-        const isLast = i === lines.length - 1;
-        const tail = isLast ? "" : "\n";
-        if (m) {
-          return (
-            <Text key={i}>
-              {m[1]}
-              <Text style={styles.segRespMarker}>{m[2]}</Text>
-              {m[3]}
-              {m[4]}
-              {tail}
-            </Text>
-          );
-        }
-        return <Text key={i}>{ln}{tail}</Text>;
-      })}
-    </Text>
-  );
-}
-
-// Renderer Preghiera dei Fedeli: regola globale R/. rosso bold + riga
-// vuota dopo ogni riga che lo contiene. Identica logica di /messa e /orazionale.
-function renderPreghieraFedeliNative(text: string, key: string, styles: any): React.ReactNode {
-  if (!text) return null;
-  const normalized = text.replace(/\n{3,}/g, "\n\n");
-  const rawLines = normalized.split("\n");
-  const lines: string[] = [];
-  for (let i = 0; i < rawLines.length; i++) {
-    const ln = rawLines[i];
-    lines.push(ln);
-    if (/R\/\.?/.test(ln) && rawLines[i + 1] === "") i++;
-  }
-  const RESP_RE = /R\/\.?/g;
-  return (
-    <Text key={key} style={styles.segNormal} selectable>
-      {lines.map((ln, i) => {
-        const parts = ln.split(/(R\/\.?)/g);
-        const hasResp = RESP_RE.test(ln);
-        RESP_RE.lastIndex = 0;
-        const isLast = i === lines.length - 1;
-        const tail = isLast ? "" : (hasResp ? "\n\n" : "\n");
-        return (
-          <Text key={i}>
-            {parts.map((p, j) => {
-              if (/^R\/\.?$/.test(p)) {
-                return <Text key={j} style={styles.segRespMarker}>{p}</Text>;
-              }
-              return <Text key={j}>{p}</Text>;
-            })}
-            {tail}
-          </Text>
-        );
-      })}
-    </Text>
-  );
-}
-
-// Pre-split: spezza i segmenti di testo lunghi (>1 paragrafo) in pezzi più
-// piccoli mantenendo lo stesso kind. Necessario perché un body enorme
-// (es. tutta la Preghiera dei Fedeli) misurato come UN solo elemento non
-// permette al chunker di posizionarlo correttamente: finirebbe sempre da
-// solo su una pagina, e i titoli precedenti rimarrebbero orfani.
-// Spezzando per paragrafi (\n\n) o per righe se il paragrafo è ancora
-// troppo lungo, otteniamo blocchi che il chunker può impaginare bene.
-function preSplitSegments(segments: Segment[]): Segment[] {
-  const result: Segment[] = [];
-  const SPLITTABLE: SegKind[] = [
-    "normal",
-    "preghieraFedeli",
-    "salmo",
-    "celebrante",
-    "assemblea",
-    "umili",
-    "peText",
-    "peDossologia",
-  ];
-  for (const seg of segments) {
-    if (
-      SPLITTABLE.includes(seg.kind) &&
-      seg.text &&
-      seg.text.length > 300
-    ) {
-      // Split per paragrafi (doppio newline). Se non ci sono \n\n, prova
-      // a spezzare per linee singole raggruppate (4 righe per chunk).
-      const paragraphs = seg.text.split(/\n{2,}/).filter((p) => p.trim());
-      if (paragraphs.length > 1) {
-        for (const p of paragraphs) {
-          result.push({ ...seg, text: p });
-        }
-        continue;
-      }
-      // Solo \n singoli: raggruppa ogni 4 righe
-      const lines = seg.text.split("\n").filter((l) => l.length > 0);
-      if (lines.length > 4) {
-        for (let i = 0; i < lines.length; i += 4) {
-          result.push({
-            ...seg,
-            text: lines.slice(i, i + 4).join("\n"),
-          });
-        }
-        continue;
-      }
-    }
-    result.push(seg);
-  }
-  return result;
-}
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
-
-// Renderizza un segmento "salmo": evidenzia la "R." iniziale in rosso.
-// Consolida i newline multipli (es. "\n\n") in un singolo <br> per uniformità.
-function salmoToHtml(text: string): string {
-  const cleaned = text.replace(/^\n+|\n+$/g, "").replace(/\n+/g, "\n");
-  const lines = cleaned.split("\n").map((ln) => {
-    const m = ln.match(/^(\s*)(R\.)(\s*)(.*)$/);
-    if (m) {
-      return `${escapeHtml(m[1])}<span class="salmo-r">${escapeHtml(m[2])}</span>${escapeHtml(m[3])}${escapeHtml(m[4])}`;
-    }
-    return escapeHtml(ln);
-  });
-  return lines.join("<br>");
-}
-
-// Renderizza il testo della Preghiera dei Fedeli: evidenzia OGNI occorrenza
-// di "R/." in rosso bold (anche a metà riga, anche multiple sulla stessa riga)
-// e forza UNA SOLA riga vuota dopo ogni riga che contenga almeno un "R/.".
-// Regola globale richiesta dall'utente: vale per tutto il documento, comprese
-// le parti che verranno aggiunte/modificate in futuro.
-function preghieraFedeliToHtml(text: string): string {
-  const cleaned = text.replace(/^\n+|\n+$/g, "").replace(/\n{3,}/g, "\n\n");
-  const rawLines = cleaned.split("\n");
-  // Per evitare il doppio gap, se una riga contiene R/. e la successiva
-  // è vuota (perché la fonte usa già \n\n), saltiamo la riga vuota: la
-  // riga vuota verrà aggiunta dopo automaticamente dal nostro algoritmo.
-  const lines: string[] = [];
-  for (let i = 0; i < rawLines.length; i++) {
-    const ln = rawLines[i];
-    lines.push(ln);
-    if (/R\/\.?/.test(ln) && rawLines[i + 1] === "") {
-      i++;
-    }
-  }
-  const out: string[] = [];
-  const RESP_RE = /R\/\.?/g;
-  for (let i = 0; i < lines.length; i++) {
-    const ln = lines[i];
-    const escaped = escapeHtml(ln);
-    const styled = escaped.replace(RESP_RE, (m) => `<span class="resp-r">${m}</span>`);
-    out.push(styled);
-    if (RESP_RE.test(ln)) {
-      out.push("");
-    }
-    RESP_RE.lastIndex = 0;
-  }
-  return out.join("<br>");
-}
-
-
-// stile speciale alle parole della Consacrazione (in azzurro).
-function peTextToHtml(text: string): string {
-  const parts = text.split("<<DOSSOLOGIA>>");
-  // Trim newline iniziali/finali su entrambi i parts per evitare <br>
-  // fantasma all'inizio/fine (es. spazio sotto il titolo "Dossologia").
-  const main = (parts[0] || "").replace(/^\n+|\n+$/g, "");
-  const doss = (parts[1] || "").replace(/^\n+|\n+$/g, "");
-
-  const formatMain = (s: string): string => {
-    let out = escapeHtml(s);
-    const consPatterns = [
-      /(Prendete[^.]*?è il mio Corpo[^.]*?)\./gi,
-      /(Prendete[^.]*?è il calice del mio Sangue[^.]*?)\./gi,
-      /(Prendete[^.]*?dato per voi)\./gi,
-      /(Fate questo in memoria di me)\./gi,
-    ];
-    for (const p of consPatterns) {
-      out = out.replace(p, '<span class="pe-consacration">$1.</span>');
-    }
-    // Consolida newline multipli in un singolo <br> per uniformità
-    return out.replace(/\n+/g, "<br>");
-  };
-
-  let html = `<div class="pe-main">${formatMain(main)}</div>`;
-  if (doss) {
-    html += `<div class="pe-dossologia-label">Dossologia</div>`;
-    html += `<div class="pe-dossologia">${escapeHtml(doss).replace(/\n+/g, "<br>")}</div>`;
-  }
-  return html;
-}
-
-function segmentsToHtml(
-  segments: Segment[],
-  fontSize: number,
-  fontFamily: string | undefined,
-  colors: any,
-): string {
-  // Mappa il nome del font expo-font (es. "AtkinsonHyperlegible_400Regular")
-  // al nome leggibile + URL Google Fonts. Necessario perché il browser
-  // dentro l'iframe/WebView NON ha caricati i font dell'app: dobbiamo
-  // importarli esplicitamente via Google Fonts CDN.
-  const fontMap: Record<string, { name: string; gf: string }> = {
-    AtkinsonHyperlegible_400Regular: {
-      name: "Atkinson Hyperlegible",
-      gf: "Atkinson+Hyperlegible:wght@400;700",
-    },
-    Lora_400Regular: {
-      name: "Lora",
-      gf: "Lora:wght@400;700",
-    },
-    PlaypenSans_400Regular: {
-      name: "Playpen Sans",
-      gf: "Playpen+Sans:wght@400;700",
-    },
-    SourGummy_400Regular: {
-      name: "Sour Gummy",
-      gf: "Sour+Gummy:wght@400;700",
-    },
-  };
-  const fmap = fontFamily ? fontMap[fontFamily] : undefined;
-  const fontHref = fmap
-    ? `https://fonts.googleapis.com/css2?family=${fmap.gf}&display=swap`
-    : null;
-  const fontName = fmap?.name;
-  // Helper: trim newline iniziali/finali e converte ogni sequenza di
-  // newline (uno o più) in un singolo <br>. Evita "righe vuote fantasma"
-  // tra strofe e tra titolo e testo seguente.
-  const txt = (s: string) =>
-    escapeHtml(s.replace(/^\n+|\n+$/g, "")).replace(/\n+/g, "<br>");
-
-  // Post-processing: la PRIMA "rubric" che segue un readingTitle (es.
-  // "Dalla lettera...") va trattata come "readingRef" — più grande, stessa
-  // dimensione del body. Le altre rubric restano piccole.
-  let lastNonSpacerKind: SegKind | null = null;
-  const processed: Segment[] = segments.map((seg) => {
-    if (seg.kind === "rubric" && lastNonSpacerKind === "readingTitle") {
-      lastNonSpacerKind = "rubric";
-      return { kind: "readingRef", text: seg.text };
-    }
-    if (seg.kind !== "spacer") {
-      lastNonSpacerKind = seg.kind;
-    }
-    return seg;
-  });
-
-  const body = processed
-    .map((seg) => {
-      switch (seg.kind) {
-        case "spacer":
-          return ``;
-        case "sectionTitle":
-          return `<h2 class="section-title">${escapeHtml(seg.text)}</h2>`;
-        case "sectionTitleBreak":
-          // Forza un salto pagina (CSS columns) prima di questo titolo.
-          // Strategia robusta cross-browser: applichiamo `break-before: column`
-          // SIA su uno spacer con contenuto invisibile (zero-width-space) che
-          // garantisce di non essere ottimizzato via dal motore di layout,
-          // SIA direttamente sull'h2 come backup. Inoltre `break-after: column`
-          // sullo spacer assicura che il contenuto SUCCESSIVO inizi su nuova
-          // colonna anche se il browser ignora il break-before.
-          return `<div class="page-break-spacer">&#8203;</div><h2 class="section-title force-page-break">${escapeHtml(seg.text)}</h2>`;
-        case "antifonaTitle":
-          return `<h3 class="antifona-title">${escapeHtml(seg.text)}</h3>`;
-        case "readingTitle":
-          return `<h3 class="reading-title">${escapeHtml(seg.text)}</h3>`;
-        case "orazioneTitle":
-          return `<h3 class="orazione-title">${escapeHtml(seg.text)}</h3>`;
-        case "subtitle":
-          return `<h3 class="subtitle">${escapeHtml(seg.text)}</h3>`;
-        case "peTitle":
-          return `<h3 class="pe-title">${escapeHtml(seg.text)}</h3>`;
-        case "rubric":
-          return `<p class="rubric">${txt(seg.text)}</p>`;
-        case "readingRef":
-          // Riferimento biblico sotto Lettura/Vangelo: rosso ma di
-          // dimensione uguale al body (era 0.7em → ora 1em).
-          return `<p class="reading-ref">${txt(seg.text)}</p>`;
-        case "celebrante":
-          return `<p class="celebrante">${txt(seg.text)}</p>`;
-        case "assemblea":
-          return `<p class="assemblea">${txt(seg.text)}</p>`;
-        case "umili":
-          return `<p class="umili">${txt(seg.text)}</p>`;
-        case "salmo":
-          return `<p class="salmo">${salmoToHtml(seg.text.replace(/^\n+|\n+$/g, ""))}</p>`;
-        case "preghieraFedeli":
-          return `<p class="preghiera-fedeli">${preghieraFedeliToHtml(seg.text)}</p>`;
-        case "peText":
-          return `<div class="pe-text">${peTextToHtml(seg.text.replace(/^\n+|\n+$/g, ""))}</div>`;
-        case "peDossologia":
-          return `<p class="pe-dossologia">${txt(seg.text)}</p>`;
-        default:
-          return `<p>${txt(seg.text)}</p>`;
-      }
-    })
-    .join("");
-
-  const ff = fontName ? `'${fontName}', ` : "";
-  const bg = colors?.background || "#000000";
-  const textColor = colors?.textPrimary || "#FFFFFF";
-  const rubricColor = colors?.rubrics || "#E57373";
-  const fs = Math.round(fontSize);
-  const accentSection = colors?.accentSection || "#4DA8DA";
-  const accentAntifona = colors?.accentAntifona || "#FFB74D";
-  const accentReading = colors?.accentReading || "#81C784";
-  const accentOrazione = colors?.accentOrazione || "#CE93D8";
-  const accentPe = colors?.accentPe || "#66BB6A";
-  const accentPeConsecration = colors?.accentPeConsecration || "#29B6F6";
-
-  return `<!DOCTYPE html>
-<html><head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
-${fontHref ? `<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- Caricamento font async/non-bloccante: se il tablet è offline o la
-     rete è lenta, il rendering NON si blocca (il browser usa il
-     fallback system font finché il Google Font non è disponibile). -->
-<link rel="stylesheet" href="${fontHref}" media="print" onload="this.media='all'; this.onload=null;">
-<noscript><link rel="stylesheet" href="${fontHref}"></noscript>` : ""}
-<style>
-  * { box-sizing: border-box; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }
-  html, body { margin: 0; padding: 0; height: 100vh; width: 100vw; overflow: hidden; background: ${bg}; color: ${textColor}; }
-  body {
-    font-family: ${ff}-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    font-size: ${fs}px;
-    line-height: 1.7;
-    overscroll-behavior: none;
-  }
-  #book {
-    height: 100vh;
-    width: 100vw;
-    column-width: 100vw;
-    column-gap: 0;
-    column-fill: auto;
-    padding: 0;
-    margin: 0;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scroll-snap-type: x mandatory;
-    scroll-behavior: smooth;
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-    touch-action: pan-x;
-    overscroll-behavior-x: contain;
-  }
-  #book::-webkit-scrollbar { display: none; height: 0; width: 0; }
-  #book > * { scroll-snap-align: start; padding-left: 16px; padding-right: 16px; }
-  /* Top/bottom spacing applied as margin on first/last so columns are always exactly 100vw wide */
-  #book > *:first-child { margin-top: 8px; }
-  #book > *:last-child { margin-bottom: 28px; }
-
-  /* Tutti i font-size dei figli sono in 'em' (relativi al body.font-size).
-     Così basta cambiare document.body.style.fontSize per scalare TUTTO
-     dinamicamente senza dover rigenerare l'HTML. */
-  h2.section-title { font-size: 1.05em; font-weight: 800; color: ${accentSection}; margin: 16px 0 4px 0; line-height: 1.15; break-after: avoid-column; }
-  h3.antifona-title { font-size: 0.85em; font-weight: 800; color: ${accentAntifona}; margin: 24px 0 4px 0; line-height: 1.1; break-after: avoid-column; }
-  h3.reading-title { font-size: 0.85em; font-weight: 800; color: ${accentReading}; margin: 14px 0 4px 0; line-height: 1.1; break-after: avoid-column; }
-  h3.orazione-title { font-size: 0.85em; font-weight: 800; color: ${accentOrazione}; margin: 14px 0 4px 0; line-height: 1.1; break-after: avoid-column; }
-  h3.subtitle { font-size: 0.85em; font-weight: 700; color: ${textColor}; margin: 12px 0 4px 0; line-height: 1.1; break-after: avoid-column; }
-  h3.pe-title { font-size: 0.78em; font-weight: 800; color: ${accentPe}; margin: 12px 0 6px 0; line-height: 1.1; break-after: avoid-column; }
-  h2 + *, h3 + * { margin-top: 0 !important; }
-  #book > *:first-child { margin-top: 0 !important; }
-
-  p { margin: 4px 0 8px 0; }
-  p.rubric { color: ${rubricColor}; font-style: italic; font-size: 0.7em; line-height: 1.2; margin: 6px 0; }
-  /* Riferimento biblico sotto Lettura/Vangelo: rosso (italico),
-     stessa dimensione del body per migliore leggibilità. */
-  p.reading-ref { color: ${rubricColor}; font-style: italic; font-size: 1em; line-height: 1.4; margin: 4px 0 8px 0; }
-  p.celebrante { font-size: 1em; color: ${textColor}; margin: 4px 0 10px 0; }
-  p.assemblea { font-size: 0.95em; color: ${textColor}; font-style: italic; margin: 4px 0 10px 0; }
-  p.umili { font-size: 0.85em; color: ${textColor}; margin: 4px 0 10px 0; line-height: 1.55; }
-  p.salmo { font-size: 1em; color: ${textColor}; line-height: 1.55; margin: 6px 0; }
-  span.salmo-r { color: ${rubricColor}; font-weight: 700; }
-  /* Preghiera dei Fedeli: R/. in rosso, riga vuota dopo (gestita da
-     preghieraFedeliToHtml che inserisce un <br> aggiuntivo). */
-  p.preghiera-fedeli { font-size: 1em; color: ${textColor}; line-height: 1.7; margin: 6px 0; }
-  span.resp-r { color: ${rubricColor}; font-weight: 700; }
-  div.pe-text { font-size: 1em; color: ${textColor}; }
-  span.pe-consacration { color: ${accentPeConsecration}; padding: 0 4px; }
-  div.pe-dossologia-label { font-size: 0.78em; font-weight: 800; color: ${accentPeConsecration}; margin: 12px 0 0 0; line-height: 1.1; }
-  div.pe-dossologia-label + * { margin-top: 0 !important; }
-  div.pe-dossologia { font-size: 1em; color: ${textColor}; text-transform: uppercase; line-height: 1.5; margin: 0 0 12px 0; }
-  p.pe-dossologia { text-transform: uppercase; line-height: 1.5; }
-  div.spacer { height: 16px; }
-  /* Spacer per forzare un salto di pagina (column-break) prima di un titolo.
-     Il salto effettivo è gestito da JavaScript (enforcePageBreaks) che
-     calcola dinamicamente la min-height necessaria a riempire il resto
-     della colonna corrente, in modo affidabile cross-browser. Lasciamo
-     anche le proprietà CSS standard come fallback. */
-  div.page-break-spacer { break-before: column !important; -webkit-column-break-before: always !important; page-break-before: always !important; min-height: 0; margin: 0; padding: 0; display: block; }
-  .force-page-break { break-before: column !important; -webkit-column-break-before: always !important; page-break-before: always !important; }
-</style>
-</head>
-<body>
-<div id="book">${body}</div>
-<script>
-  (function() {
-    var book = document.getElementById('book');
-    function W() { return window.innerWidth; }
-    function totalPages() { return Math.max(1, Math.round(book.scrollWidth / W())); }
-    function currentPage() { return Math.round(book.scrollLeft / W()); }
-    function postState() {
-      var msg = JSON.stringify({
-        type: 'state',
-        page: currentPage(),
-        total: totalPages()
-      });
-      if (window.ReactNativeWebView) {
-        window.ReactNativeWebView.postMessage(msg);
-      } else if (window.parent && window.parent !== window) {
-        // Su web preview siamo in un iframe: postMessage al parent
-        try { window.parent.postMessage(msg, '*'); } catch (e) {}
-      }
-    }
-    // Slide animato 250ms con curva ease-out (cubic).
-    // Anima scrollLeft con requestAnimationFrame per controllare durata
-    // (scroll-behavior:smooth nativo dura ~500ms, troppo lento).
-    var isAnimating = false;
-    function animateScroll(targetX, duration) {
-      if (isAnimating) return;
-      isAnimating = true;
-      var startX = book.scrollLeft;
-      var dx = targetX - startX;
-      if (dx === 0) { isAnimating = false; return; }
-      var startT = performance.now();
-      function tick(now) {
-        var p = Math.min(1, (now - startT) / duration);
-        // ease-out cubic: veloce all'inizio, morbida alla fine
-        var eased = 1 - Math.pow(1 - p, 3);
-        book.scrollLeft = startX + dx * eased;
-        if (p < 1) {
-          requestAnimationFrame(tick);
-        } else {
-          isAnimating = false;
-          postState();
-        }
-      }
-      requestAnimationFrame(tick);
-    }
-    function navigate(direction) {
-      if (isAnimating) return;
-      var W = window.innerWidth;
-      var current = Math.round(book.scrollLeft / W);
-      var total = Math.round(book.scrollWidth / W);
-      var target = Math.max(0, Math.min(total - 1, current + direction));
-      animateScroll(target * W, 250);
-    }
-    document.addEventListener('click', function(e) {
-      var x = e.clientX;
-      var w = window.innerWidth;
-      navigate(x < w / 2 ? -1 : 1);
-    }, { passive: true });
-
-    // Swipe orizzontale: il browser nativo fa già lo scroll grazie a
-    // overflow-x:auto + touch-action:pan-x + scroll-snap-type:x mandatory.
-    // Quando l'utente solleva il dito, scroll-snap allinea automaticamente.
-    // Quindi NON serve JS aggiuntivo per lo swipe — è già fluido.
-    var scrollDebounce;
-    book.addEventListener('scroll', function() {
-      clearTimeout(scrollDebounce);
-      scrollDebounce = setTimeout(postState, 80);
-    }, { passive: true });
-    function initialPost() {
-      postState();
-      setTimeout(postState, 300);
-      setTimeout(postState, 800);
-    }
-    if (document.readyState === 'complete') initialPost();
-    else window.addEventListener('load', initialPost);
-
-    // === Forza salto pagina su .force-page-break ===
-    // I motori CSS multicol spesso ignorano break-before:column su elementi
-    // vuoti o con altezza 0. Soluzione affidabile: dopo il layout, calcoliamo
-    // la posizione visiva di ciascun elemento .force-page-break e iniettiamo
-    // una min-height sul .page-break-spacer che lo precede, sufficiente a
-    // spingerlo all'inizio della colonna successiva (= nuova schermata).
-    // Si rilancia su resize, dopo cambio fontSize, e dopo il primo load.
-    function enforcePageBreaks() {
-      var ch = window.innerHeight;
-      var spacers = document.querySelectorAll('.page-break-spacer');
-      if (!spacers.length) return;
-      // Reset dei valori precedenti
-      for (var i = 0; i < spacers.length; i++) {
-        spacers[i].style.minHeight = '0px';
-      }
-      // Forza reflow per misurare le posizioni "naturali"
-      void document.body.offsetHeight;
-      // Single pass in document order: applichiamo lo spacer necessario per
-      // ciascun .force-page-break. Dopo ogni applicazione, forziamo un reflow
-      // così che la misurazione del target successivo riflette lo shift già
-      // applicato. NON facciamo passaggi multipli: rifare il loop reimposta
-      // a 0 gli spacer già correttamente applicati (perché vede top<=4).
-      for (var i = 0; i < spacers.length; i++) {
-        var sp = spacers[i];
-        var target = sp.nextElementSibling;
-        if (!target || !target.classList.contains('force-page-break')) continue;
-        var rect = target.getBoundingClientRect();
-        var topInColumn = rect.top;
-        // Se il target è già praticamente all'inizio della colonna, non serve push.
-        if (topInColumn <= 4) {
-          continue;
-        }
-        // min-height da applicare allo spacer per spingere il target alla
-        // colonna successiva. Aggiungiamo 8px di margine per sicurezza.
-        var needed = (ch - topInColumn) + 8;
-        if (needed < 0) needed = 0;
-        sp.style.minHeight = needed + 'px';
-        // Forza reflow prima della prossima iterazione
-        void sp.offsetHeight;
-      }
-      // Secondo passaggio di RIFINITURA: per ogni target ancora non
-      // allineato (top > 4 dopo il reflow), AGGIUNGIAMO ulteriore altezza
-      // (senza resettare). Massimo 3 iterazioni di sicurezza.
-      for (var pass = 0; pass < 3; pass++) {
-        var anyAdjusted = false;
-        for (var i = 0; i < spacers.length; i++) {
-          var sp = spacers[i];
-          var target = sp.nextElementSibling;
-          if (!target || !target.classList.contains('force-page-break')) continue;
-          var rect = target.getBoundingClientRect();
-          if (rect.top <= 4) continue;
-          // Aumentiamo l'altezza dello spacer di (ch - rect.top + 8) px in più
-          var current = parseFloat(sp.style.minHeight) || 0;
-          var extra = (ch - rect.top) + 8;
-          if (extra <= 0) continue;
-          sp.style.minHeight = (current + extra) + 'px';
-          void sp.offsetHeight;
-          anyAdjusted = true;
-        }
-        if (!anyAdjusted) break;
-      }
-      // Dopo le modifiche, le pagine totali potrebbero essere cambiate:
-      // ri-pubblichiamo lo stato.
-      postState();
-    }
-    function scheduleEnforce() {
-      // Un ritardo di sicurezza per attendere il completamento del layout
-      // (font caricato, immagini, ecc.).
-      setTimeout(enforcePageBreaks, 50);
-      setTimeout(enforcePageBreaks, 300);
-      setTimeout(enforcePageBreaks, 1000);
-    }
-    if (document.readyState === 'complete') scheduleEnforce();
-    else window.addEventListener('load', scheduleEnforce);
-    // Web fonts: alcune font (es. Google Fonts) caricano dopo il primo paint;
-    // riapplichiamo i break appena le font sono pronte.
-    if (document.fonts && document.fonts.ready) {
-      document.fonts.ready.then(scheduleEnforce).catch(function() {});
-    }
-    window.addEventListener('resize', scheduleEnforce);
-
-    // Listener per messaggi da React Native (cambio dinamico fontSize).
-    // Aggiorna document.body.style.fontSize: i figli usano 'em' quindi
-    // si scalano automaticamente. Le CSS columns ricalcolano il layout
-    // e la posizione di scroll viene riallineata alla pagina corrente.
-    function applySetFontSize(size) {
-      var prevW = W();
-      var prevPage = Math.round(book.scrollLeft / prevW);
-      document.body.style.fontSize = size + 'px';
-      // Aspetta il reflow del browser (CSS columns ricalcolate)
-      setTimeout(function() {
-        var newW = window.innerWidth;
-        var totalNow = Math.max(1, Math.round(book.scrollWidth / newW));
-        var safeP = Math.min(prevPage, totalNow - 1);
-        book.scrollLeft = safeP * newW;
-        postState();
-      }, 60);
-    }
-    function handleHostMessage(raw) {
-      try {
-        var m = typeof raw === 'string' ? JSON.parse(raw) : raw;
-        if (m && m.type === 'setFontSize' && typeof m.size === 'number') {
-          applySetFontSize(m.size);
-        }
-      } catch (e) {}
-    }
-    // WebView native: react-native-webview iniezione tramite document evt
-    document.addEventListener('message', function(e) { handleHostMessage(e.data); });
-    // Iframe web: parent posta via window.postMessage
-    window.addEventListener('message', function(e) { handleHostMessage(e.data); });
-
-    document.addEventListener('gesturestart', function(e) { e.preventDefault(); });
-    document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
-  })();
-</script>
-</body></html>`;
-}
-
-
-// ===========================================================================
-type BuildArgs = {
-  liturgy: Liturgy | null;
-  fixedParts: Record<string, any>;
-  prefaces: Preface[];
-  prayers: EucharisticPrayer[];
-  acclamations: MysteryAcclamation[];
-  solemnBlessings: SolemnBlessing[];
-  prayersOverPeople: any[];
-  pasquaDismissal: any;
-  currentSeasonKey: string;
-  session: any;
-};
-
-function buildSegments(args: BuildArgs): Segment[] {
-  const {
-    liturgy,
-    fixedParts,
-    prefaces,
-    prayers,
-    acclamations,
-    solemnBlessings,
-    prayersOverPeople,
-    pasquaDismissal,
-    currentSeasonKey,
-    session,
-  } = args;
-  const out: Segment[] = [];
-  const push = (kind: SegKind, text: string) => {
-    if (text != null && text !== "") out.push({ kind, text });
-  };
-  const sp = () => out.push({ kind: "spacer", text: "" });
-
-  // Helper: aggiunge una sezione (rubrica/dialogo/orazione/kyrie) come segmenti
-  const addSection = (s: any, opts?: { skipRubric?: boolean }) => {
-    if (!s) return;
-    if (s.type === "rubric") {
-      if (opts?.skipRubric) return;
-      push("rubric", s.text);
-      return;
-    }
-    if (s.type === "dialogue") {
-      push("celebrante", `C. ${s.celebrante}`);
-      push("assemblea", `A. ${s.assemblea}`);
-      return;
-    }
-    if (s.type === "monologue") {
-      push("celebrante", s.celebrante);
-      return;
-    }
-    if (s.type === "invitation_alternatives") {
-      const options = s.options || [];
-      for (let i = 0; i < options.length; i++) {
-        if (i > 0) push("rubric", "oppure");
-        push("celebrante", options[i]);
-      }
-      return;
-    }
-    if (s.type === "prayer") {
-      if (s.rubric && !opts?.skipRubric) push("rubric", s.rubric);
-      if (s.celebrante) push("celebrante", s.celebrante);
-      if (s.text) push("normal", s.text);
-      if (s.assemblea) push("assemblea", `A. ${s.assemblea}`);
-      return;
-    }
-    if (s.type === "kyrie") {
-      if (s.rubric && !opts?.skipRubric) push("rubric", s.rubric);
-      const pairs = s.dialogue || [];
-      for (let i = 0; i < pairs.length; i++) {
-        // Spazio tra le tre coppie del Kyrie (Signore pietà / Cristo pietà /
-        // Signore pietà) per separazione visiva, come da richiesta utente.
-        if (i > 0) sp();
-        const d = pairs[i];
-        push("celebrante", `C. ${d.c}`);
-        push("assemblea", `A. ${d.a}`);
-      }
-      return;
-    }
-  };
-
-  const addReading = (
-    type: string,
-    titleKind: "antifonaTitle" | "readingTitle" | "orazioneTitle",
-    titleOverride?: string,
-  ) => {
-    const r = liturgy?.readings?.find((rr: any) => rr.type === type);
-    if (!r || !r.text) return;
-    push(titleKind, titleOverride || r.title);
-    if (r.reference) push("rubric", r.reference);
-    if (type === "salmo") push("salmo", r.text);
-    else push("normal", r.text);
-    sp();
-  };
-
-  // ===== INTESTAZIONE =====
-  if (liturgy?.date_label) push("sectionTitle", liturgy.date_label);
-  if (liturgy?.title) push("subtitle", liturgy.title);
-  if (liturgy?.season?.season) {
-    push(
-      "rubric",
-      `${liturgy.season.season}${
-        liturgy.liturgical_color ? ` · Colore: ${liturgy.liturgical_color}` : ""
-      }`,
-    );
-  }
-  sp();
-
-  // ===== ANTIFONA D'INGRESSO =====
-  addReading("antifona_ingresso", "antifonaTitle", "Antifona d'ingresso");
-
-  // ===== RITI DI INTRODUZIONE =====
-  push("sectionTitle", "Riti di Introduzione");
-  for (const s of fixedParts["riti_iniziali"]?.sections || []) {
-    addSection(s, { skipRubric: true });
-  }
-  // SALUTI INIZIALI ALTERNATIVI (Messale Romano 2020): 5 formule fra cui
-  // il celebrante può scegliere a vista. Le mostriamo tutte di seguito,
-  // ognuna seguita dalla risposta dell'assemblea e da una riga vuota di
-  // separazione (spacer).
-  const SALUTI_INIZIALI = [
-    "La grazia del Signore nostro Gesù Cristo,\nl'amore di Dio Padre\ne la comunione dello Spirito Santo siano con tutti voi.",
-    "La grazia e la pace di Dio nostro Padre\ne del Signore nostro Gesù Cristo siano con tutti voi.",
-    "Il Signore, che guida i nostri cuori all'amore\ne alla pazienza di Cristo, sia con tutti voi.",
-    "Il Dio della speranza, che ci riempie di ogni gioia\ne pace nella fede\nper la potenza dello Spirito Santo, sia con tutti voi.",
-    "La pace, la carità e la fede da parte di Dio Padre\ne del Signore Gesù Cristo siano con tutti voi.",
-  ];
-  for (const sal of SALUTI_INIZIALI) {
-    push("celebrante", `C. ${sal}`);
-    push("assemblea", "A. E con il tuo spirito.");
-    sp();
-  }
-  sp();
-
-  // ===== ATTO PENITENZIALE =====
-  push("sectionTitle", "Atto Penitenziale");
-  const atto = fixedParts["atto_penitenziale"];
-  if (atto) {
-    // Rubrica iniziale + invito
-    for (const s of atto.sections.filter(
-      (x: any) => x.type !== "choice" && x.type !== "kyrie",
-    )) {
-      addSection(s);
-    }
-    const choice = atto.sections.find((s: any) => s.type === "choice");
-    const penForm = (session.penitentialForm as "A" | "B" | "C") || "A";
-    const penSeason = session.penitentialSeason || "ordinario";
-    const selectedOpt = choice?.options.find((o: any) => o.id === penForm);
-    if (selectedOpt) {
-      push("subtitle", selectedOpt.label);
-      if (selectedOpt.assemblea) push("assemblea", `A. ${selectedOpt.assemblea}`);
-      if (selectedOpt.dialogue) {
-        for (const d of selectedOpt.dialogue) {
-          push("celebrante", `C. ${d.c}`);
-          push("assemblea", `A. ${d.a}`);
-        }
-      }
-      const seasonVariant = selectedOpt.season_variants?.[penSeason];
-      if (seasonVariant?.formulas && Array.isArray(seasonVariant.formulas)) {
-        for (let fi = 0; fi < seasonVariant.formulas.length; fi++) {
-          // Spazio tra le formule (1, 2, 3...) per separazione visiva
-          if (fi > 0) sp();
-          const formula = seasonVariant.formulas[fi];
-          if (formula.label) push("troparioTitle", formula.label);
-          for (const d of formula.dialogue || []) {
-            push("celebrante", `C. ${d.c}`);
-            push("assemblea", `A. ${d.a}`);
-          }
-        }
-      }
-      if (seasonVariant?.dialogue) {
-        for (const d of seasonVariant.dialogue) {
-          push("celebrante", `C. ${d.c}`);
-          push("assemblea", `A. ${d.a}`);
-        }
-      }
-      if (selectedOpt.celebrante) push("celebrante", `C. ${selectedOpt.celebrante}`);
-      if (selectedOpt.risposta) push("assemblea", `A. ${selectedOpt.risposta}`);
-    }
-    if (penForm !== "C") {
-      const kyrie = atto.sections.find((s: any) => s.type === "kyrie");
-      if (kyrie) addSection(kyrie, { skipRubric: true });
-    }
-  }
-  sp();
-
-  // ===== GLORIA =====
-  if (session.showGloria !== false) {
-    push("sectionTitle", "Gloria");
-    for (const s of fixedParts["gloria"]?.sections || []) {
-      addSection(s, { skipRubric: true });
-    }
-    sp();
-  }
-
-  // ===== COLLETTA =====
-  addReading("colletta", "orazioneTitle", "Colletta");
-
-  // ===== LITURGIA DELLA PAROLA =====
-  // sectionTitleBreak forza un salto pagina (CSS column-break-before)
-  // così Prima Lettura inizia sempre in una pagina nuova.
-  push("sectionTitleBreak", "Liturgia della Parola");
-  sp();
-  addReading("prima_lettura", "readingTitle", "Prima Lettura");
-  addReading("salmo", "readingTitle", "Salmo Responsoriale");
-  addReading("seconda_lettura", "readingTitle", "Seconda Lettura");
-  addReading("sequenza", "antifonaTitle", "Sequenza");
-  // Acclamazione al Vangelo: verde come Salmo Responsoriale (era arancione)
-  addReading("acclamazione", "readingTitle", "Acclamazione al Vangelo");
-  addReading("vangelo", "readingTitle", "Vangelo");
-
-  // ===== PUNTO DI ROTTURA POST-VANGELO =====
-  // Subito dopo il Vangelo deve iniziare una nuova pagina, su qualunque sia
-  // la sezione che segue (Credo, Preghiera dei fedeli, o Presentazione dei
-  // doni se entrambi i toggle sono off). Usiamo un flag che converte la
-  // PRIMA sezione post-Vangelo in `sectionTitleBreak`.
-  let postVangeloBreakUsed = false;
-  const pushSection = (text: string) => {
-    if (!postVangeloBreakUsed) {
-      push("sectionTitleBreak", text);
-      postVangeloBreakUsed = true;
-    } else {
-      push("sectionTitle", text);
-    }
-  };
-
-  // ===== CREDO =====
-  if (session.showCredo !== false) {
-    pushSection("Professione di Fede");
-    const credo = fixedParts["credo"];
-    if (credo) {
-      const credoChoice = credo.sections[0];
-      const credoId = (session.selectedCredoId as "niceno" | "apostolico") || "niceno";
-      const sel = credoChoice?.options.find((o: any) => o.id === credoId);
-      if (sel) push("normal", sel.text);
-    }
-    sp();
-  }
-
-  // ===== PREGHIERA DEI FEDELI =====
-  if (session.showOrazionalePray !== false && session.selectedOrazionaleId) {
-    pushSection("Preghiera dei Fedeli");
-    const orPrayer = getPrayerById(session.selectedOrazionaleId);
-    if (orPrayer) {
-      push("subtitle", orPrayer.title);
-      // Kind dedicato: "preghieraFedeli" applica colore rosso a R/. e
-      // garantisce una riga vuota dopo ogni R/.
-      push("preghieraFedeli", orPrayer.body);
-    }
-    sp();
-  }
-
-  // ===== PRESENTAZIONE DEI DONI =====
-  pushSection("Presentazione dei Doni");
-  const off = fixedParts["offertorio"];
-  if (off) {
-    const allSections = off.sections;
-    const idxInchinato = allSections.findIndex(
-      (s: any) => s.type === "prayer" && s.rubric && /inchinato/i.test(s.rubric),
-    );
-    const headSections =
-      idxInchinato > 0 ? allSections.slice(0, idxInchinato) : allSections.slice(0, 4);
-    const inchinatoSection = idxInchinato >= 0 ? allSections[idxInchinato] : null;
-
-    // Pane/vino: solo orazioni (no rubriche)
-    for (const s of headSections.filter((x: any) => x.type !== "rubric")) {
-      addSection(s, { skipRubric: true });
-    }
-    // "Umili e pentiti" — rosso italic
-    if (inchinatoSection?.text) {
-      push("umili", inchinatoSection.text);
-    }
-    // Orate fratres
-    const orateChoice = off.sections.find((s: any) => s.type === "choice_orate");
-    const orateId = session.orateFratresId || "A";
-    const selectedOrate = orateChoice?.options.find((o: any) => o.id === orateId);
-    if (selectedOrate) {
-      push("celebrante", `C. ${selectedOrate.celebrante}`);
-      push("assemblea", `A. ${selectedOrate.assemblea}`);
-    }
-    sp();
-  }
-
-  // ===== SULLE OFFERTE =====
-  addReading("sulle_offerte", "orazioneTitle", "Sulle offerte");
-
-  // ===== PREFAZIO + SANTO =====
-  const selectedPreface = prefaces.find((p) => p.id === session.selectedPrefaceId);
-  const selectedPrayer = prayers.find((p) => p.id === session.selectedPrayerId);
-  const isPe1 = selectedPrayer?.id === "pe1";
-  const hasProperPreface = selectedPrayer
-    ? PE_WITH_PROPER_PREFACE.includes(selectedPrayer.id)
-    : false;
-
-  // Per le 7 PE con prefazio incorporato, NON ripetiamo il prefazio del giorno:
-  // il prefazio è dentro la PE stessa (con introduzione + Santo).
-  if (selectedPreface && !hasProperPreface) {
-    // sectionTitleBreak: forza salto pagina prima del Prefazio (CSS column-break)
-    push("sectionTitleBreak", "Prefazio");
-    // Titolo del prefazio in VERDE (peTitle), coerente con /messa.
-    push("peTitle", selectedPreface.title);
-    push("normal", PREFACE_INTRO + "\n\n" + selectedPreface.text.trimEnd() + "\n\n" + SANTO_TEXT);
-    sp();
-  }
-
-  // ===== PREGHIERA EUCARISTICA =====
-  if (selectedPrayer) {
-    // Se non c'è il sectionTitle "Prefazio" (caso PE con prefazio incorporato),
-    // forziamo il salto pagina direttamente sul titolo "Preghiera Eucaristica".
-    const peKind: SegKind =
-      selectedPreface && !hasProperPreface ? "sectionTitle" : "sectionTitleBreak";
-    push(peKind, "Preghiera Eucaristica");
-    push("peTitle", selectedPrayer.title);
-
-    // Costruzione testo PE: usa expandPrayerText (per 7 PE Messale 2020)
-    // o processPrayerText per le altre.
-    const peFull = (peFullData as any[]).find((p) => p.id === selectedPrayer.id);
-    let peText: string;
-    if (peFull) {
-      peText = expandPrayerText(peFull, session.peSelections || {});
-    } else {
-      // Fallback: testo grezzo dalla preghiera, rimuovendo rubriche [xxx] tranne PE I
-      peText = isPe1
-        ? selectedPrayer.text
-        : selectedPrayer.text
-            .replace(/\[[^\]]*\]\s*\n?/g, "")
-            .replace(/\n{3,}/g, "\n\n")
-            .trim();
-    }
-
-    // Inserisce il Mistero della Fede (acclamazione scelta) nel punto giusto.
-    const marker = "Mistero della fede.";
-    const idxMarker = peText.indexOf(marker);
-    let beforePart = peText;
-    let afterPart = "";
-    if (idxMarker >= 0) {
-      beforePart = peText.substring(0, idxMarker).trimEnd();
-      const rest = peText.substring(idxMarker + marker.length);
-      const nextBreak = rest.indexOf("\n\n");
-      afterPart = nextBreak > 0 ? rest.substring(nextBreak + 2).trimStart() : rest.trimStart();
-    }
-
-    // Pre Mistero della Fede
-    push("peText", beforePart);
-
-    // Mistero della Fede
-    if (idxMarker >= 0 || acclamations.length > 0) {
-      sp();
-      push("subtitle", "Mistero della Fede");
-      const accId = session.acclamationId || "A";
-      const selAcc = acclamations.find((x) => x.id === accId);
-      if (selAcc) {
-        push("celebrante", `C. ${selAcc.celebrante}`);
-        push("assemblea", `A. ${selAcc.assemblea}`);
-      }
-      sp();
-    }
-
-    // Post Mistero della Fede (Anamnesi + Dossologia)
-    if (afterPart) {
-      push("peText", afterPart);
-    }
-    sp();
-  }
-
-  // ===== PADRE NOSTRO =====
-  push("sectionTitle", "Padre Nostro");
-  const pn = fixedParts["padre_nostro"];
-  if (pn) {
-    const introChoice = pn.sections.find((s: any) => s.type === "choice_intro");
-    const introId = session.padreNostroIntroId || "I";
-    const selectedIntro = introChoice?.options.find((o: any) => o.id === introId);
-    if (selectedIntro) {
-      push("celebrante", `C. ${selectedIntro.text}`);
-    }
-    push("normal", "Padre nostro, che sei nei cieli, sia santificato il tuo nome, venga il tuo regno, sia fatta la tua volontà, come in cielo così in terra. Dacci oggi il nostro pane quotidiano, e rimetti a noi i nostri debiti come anche noi li rimettiamo ai nostri debitori, e non abbandonarci alla tentazione, ma liberaci dal male.");
-    // Embolismo (sezioni 1: monizione+pater | 2: embolismo)
-    const pnSections = pn.sections.filter((s: any) => s.type !== "choice_intro");
-    // Embolismo è normalmente in pnSections[1] (dopo pater)
-    if (pnSections[1]) addSection(pnSections[1]);
-    sp();
-  }
-
-  // ===== RITO DELLA PACE =====
-  push("sectionTitle", "Rito della Pace");
-  if (pn) {
-    const peaceSections = pn.sections.filter((s: any) => s.type !== "choice_intro").slice(2);
-    for (const s of peaceSections) addSection(s, { skipRubric: true });
-  }
-  sp();
-
-  // ===== FRAZIONE DEL PANE (Agnello) =====
-  push("sectionTitle", "Frazione del Pane");
-  const com = fixedParts["comunione"];
-  if (com) {
-    for (const s of com.sections.slice(0, 2)) addSection(s, { skipRubric: true });
-  }
-  sp();
-
-  // ===== COMUNIONE =====
-  push("sectionTitle", "Comunione");
-  if (com) {
-    for (const s of com.sections.slice(2)) addSection(s, { skipRubric: true });
-  }
-  addReading("antifona_comunione", "antifonaTitle", "Antifona alla Comunione");
-
-  // ===== DOPO LA COMUNIONE =====
-  addReading("dopo_comunione", "orazioneTitle", "Dopo la Comunione");
-
-  // ===== RITI DI CONCLUSIONE =====
-  push("sectionTitle", "Riti di Conclusione");
-  const rc = fixedParts["riti_conclusione"];
-  if (rc) {
-    // Saluto iniziale (dialogue) — sezione 0
-    addSection(rc.sections[0]);
-
-    // Orazione sul popolo (se attiva)
-    if (session.useOrazionePopolo && session.orazionePopoloId) {
-      const sel = prayersOverPeople.find((p) => p.id === session.orazionePopoloId);
-      if (sel) {
-        push("subtitle", `Orazione sul popolo n. ${sel.num}`);
-        push("normal", sel.text);
-        push("assemblea", "A. Amen.");
-        sp();
-      }
-    }
-
-    // Benedizione: solenne o semplice
-    if (session.useSolemnBlessing && session.solemnBlessingId) {
-      const sb = solemnBlessings.find((b) => b.id === session.solemnBlessingId);
-      if (sb) {
-        push(
-          "subtitle",
-          `Benedizione Solenne — ${(sb as any).num ? `${(sb as any).num}. ` : ""}${sb.title}`,
-        );
-        if ((sb as any).rubric) push("rubric", (sb as any).rubric);
-        const invs = sb.invocations || [];
-        for (let ii = 0; ii < invs.length; ii++) {
-          if (ii > 0) sp();
-          const inv = invs[ii];
-          push("celebrante", `C. ${inv.c}`);
-          push("assemblea", `A. ${inv.a}`);
-        }
-        if (sb.final) {
-          sp();
-          push("celebrante", `C. ${sb.final.c}`);
-          push("assemblea", `A. ${sb.final.a}`);
-        }
-      }
-    } else {
-      // Benedizione semplice: sezione 1 (choice options A/B)
-      const benedChoice = rc.sections[1];
-      const benedId = session.benedizioneId || "A";
-      const bened = benedChoice?.options?.find((o: any) => o.id === benedId);
-      if (bened) {
-        push("subtitle", "Benedizione");
-        push("celebrante", `C. ${bened.celebrante}`);
-        push("assemblea", `A. ${bened.assemblea}`);
-      }
-    }
-    sp();
-
-    // Congedo
-    push("subtitle", "Congedo");
-    const congedoChoice = rc.sections[2];
-    let congedoOpts = [...(congedoChoice?.options || [])];
-    if (pasquaDismissal && currentSeasonKey === "pasqua") {
-      congedoOpts.push({
-        id: pasquaDismissal.id,
-        label: "Pasqua",
-        celebrante: pasquaDismissal.celebrante,
-        assemblea: pasquaDismissal.assemblea,
-      });
-    }
-    const congedoId = session.congedoId || "A";
-    const selectedCongedo =
-      congedoOpts.find((o: any) => o.id === congedoId) || congedoOpts[0];
-    if (selectedCongedo) {
-      push("celebrante", `C. ${selectedCongedo.celebrante}`);
-      push("assemblea", `A. ${selectedCongedo.assemblea}`);
-    }
-  }
-  sp();
-
-  return out;
-}
-
-// (Codice morto rimosso: paginate() e helper di chunking — non più necessari
-//  con il rendering CSS columns nella WebView che impagina nativamente.)
-
-// ===========================================================================
-// Stili (allineati a quelli di /messa.tsx)
-// ===========================================================================
-// fontFamily si applica SOLO ai testi del corpo della celebrazione (text,
-// celebrante, assemblea, peText, peDossologia, salmo, umili). I titoli/UI
-// restano nel font di sistema per coerenza con le altre schermate.
-const makeStyles = (
-  colors: any,
-  fontSize: number,
-  fontFamilyId: FontFamilyId,
-  isBold?: boolean,
-) => {
-  const bodyFont = resolveBodyFont(fontFamilyId, !!isBold);
-  const headingFont = resolveHeadingFont(fontFamilyId);
-  const subtitleFont = resolveAppFont(fontFamilyId, "bold");
-
-  return StyleSheet.create({
-    container: { flex: 1, backgroundColor: colors.background },
-    topBar: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      paddingHorizontal: 16,
-      paddingVertical: 10,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-    },
-    backBtn: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 6,
-      paddingHorizontal: 10,
-      paddingVertical: 8,
-      minHeight: 56,
-      minWidth: 56,
-    },
-    backBtnText: {
-      fontSize: Math.round(fontSize * 0.55),
-      color: colors.textPrimary,
-      fontWeight: "600",
-    },
-    title: {
-      fontSize: Math.round(fontSize * 0.65),
-      fontWeight: "700",
-      color: colors.textPrimary,
-      flex: 1,
-      textAlign: "center",
-      marginHorizontal: 8,
-    },
-    pageIndicator: {
-      minWidth: 88,
-      alignItems: "flex-end",
-      paddingRight: 8,
-    },
-    pageIndicatorText: {
-      fontSize: Math.round(fontSize * 0.55),
-      color: colors.textSecondary,
-      fontWeight: "600",
-    },
-    // Bottoni A- / A+ per dimensione font (vicino alla data nella topBar).
-    fontBtns: {
-      flexDirection: "row",
-      gap: 14,           // più spazio tra A- e A+
-      marginRight: 14,
-      marginLeft: 6,
-    },
-    fontBtn: {
-      minWidth: 64,           // più larghi (era 50)
-      paddingHorizontal: 16,  // più padding (era 12)
-      paddingVertical: 10,    // più alti (era 6)
-      borderRadius: 10,
-      backgroundColor: colors.primary,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    fontBtnDisabled: {
-      opacity: 0.35,
-    },
-    fontBtnText: {
-      fontSize: Math.round(fontSize * 0.75),  // testo più grande (era 0.6)
-      fontWeight: "800",
-      color: colors.onPrimary,
-    },
-    pageArea: {
-      flex: 1,
-      overflow: "hidden",
-    },
-    // Stile della WebView: occupa tutta la pageArea, sfondo trasparente per
-    // evitare il flash bianco al caricamento (il colore di sfondo viene
-    // dato dal CSS interno della WebView via colors.background).
-    webview: {
-      flex: 1,
-      backgroundColor: "transparent",
-    },
-    // ===== Stili NATIVI per il rendering dei segmenti su Android/iOS =====
-    // (sostituiscono il rendering HTML+WebView che crashava su tablet con
-    // newArch enabled). I colori e le proporzioni replicano fedelmente
-    // l'estetica dell'HTML originale.
-    nativeScroll: {
-      flex: 1,
-      backgroundColor: colors.background,
-    },
-    nativeContent: {
-      paddingHorizontal: 16,
-      paddingTop: 8,
-      paddingBottom: 60,
-    },
-    // Una pagina del PagerView: occupa tutta l'area disponibile, padding
-    // uniforme; il contenuto è renderizzato in alto.
-    nativePage: {
-      flex: 1,
-      paddingHorizontal: 16,
-      paddingTop: 12,
-      paddingBottom: 30, // spazio per la progress bar
-      backgroundColor: colors.background,
-    },
-    segSectionTitle: {
-      fontSize: Math.round(fontSize * 1.05),
-      fontFamily: headingFont.fontFamily,
-      fontWeight: headingFont.fontWeight,
-      color: colors.accentSection,
-      marginTop: 16,
-      marginBottom: 4,
-      lineHeight: Math.round(fontSize * 1.25),
-    },
-    segAntifonaTitle: {
-      fontSize: Math.round(fontSize * 0.85),
-      fontFamily: headingFont.fontFamily,
-      fontWeight: headingFont.fontWeight,
-      color: colors.accentAntifona,
-      marginTop: 24,
-      marginBottom: 4,
-    },
-    segReadingTitle: {
-      fontSize: Math.round(fontSize * 0.85),
-      fontFamily: headingFont.fontFamily,
-      fontWeight: headingFont.fontWeight,
-      color: colors.accentReading,
-      marginTop: 14,
-      marginBottom: 4,
-    },
-    segOrazioneTitle: {
-      fontSize: Math.round(fontSize * 0.85),
-      fontFamily: headingFont.fontFamily,
-      fontWeight: headingFont.fontWeight,
-      color: colors.accentOrazione,
-      marginTop: 14,
-      marginBottom: 4,
-    },
-    segSubtitle: {
-      fontSize: Math.round(fontSize * 0.85),
-      fontFamily: subtitleFont.fontFamily,
-      fontWeight: subtitleFont.fontWeight,
-      color: colors.textPrimary,
-      marginTop: 12,
-      marginBottom: 4,
-    },
-    // Titolo dei tropari della Formula C dell'Atto Penitenziale.
-    // Arancio brillante per distinguere visivamente le serie di
-    // invocazioni (es. "1. Via, Verità, Vita", "Formula introduttiva") dalle
-    // invocazioni C./A. che le seguono. Coerente con messa.tsx.
-    segTroparioTitle: {
-      fontSize: Math.round(fontSize * 0.85),
-      fontFamily: headingFont.fontFamily,
-      fontWeight: headingFont.fontWeight,
-      color: colors.accentTropario,
-      marginTop: 14,
-      marginBottom: 4,
-    },
-    segPeTitle: {
-      fontSize: Math.round(fontSize * 0.78),
-      fontFamily: headingFont.fontFamily,
-      fontWeight: headingFont.fontWeight,
-      color: colors.accentPe,
-      marginTop: 12,
-      marginBottom: 6,
-    },
-    segNormal: {
-      fontSize: fontSize,
-      color: colors.textPrimary,
-      fontFamily: bodyFont.fontFamily,
-      fontWeight: bodyFont.fontWeight,
-      lineHeight: Math.round(fontSize * 1.6),
-      marginTop: 4,
-      marginBottom: 8,
-    },
-    segRubric: {
-      fontSize: Math.round(fontSize * 0.7),
-      color: colors.rubrics,
-      fontStyle: "italic",
-      fontFamily: bodyFont.fontFamily,
-      fontWeight: bodyFont.fontWeight,
-      lineHeight: Math.round(fontSize * 1.0),
-      marginVertical: 6,
-    },
-    segReadingRef: {
-      fontSize: fontSize,
-      color: colors.rubrics,
-      fontStyle: "italic",
-      fontFamily: bodyFont.fontFamily,
-      fontWeight: bodyFont.fontWeight,
-      lineHeight: Math.round(fontSize * 1.4),
-      marginTop: 4,
-      marginBottom: 8,
-    },
-    segCelebrante: {
-      fontSize: fontSize,
-      color: colors.textPrimary,
-      fontFamily: bodyFont.fontFamily,
-      fontWeight: bodyFont.fontWeight,
-      lineHeight: Math.round(fontSize * 1.6),
-      marginTop: 4,
-      marginBottom: 10,
-    },
-    segAssemblea: {
-      fontSize: Math.round(fontSize * 0.95),
-      color: colors.textPrimary,
-      fontStyle: "italic",
-      fontFamily: bodyFont.fontFamily,
-      fontWeight: bodyFont.fontWeight,
-      lineHeight: Math.round(fontSize * 1.55),
-      marginTop: 4,
-      marginBottom: 10,
-    },
-    segUmili: {
-      fontSize: Math.round(fontSize * 0.85),
-      color: colors.textPrimary,
-      fontFamily: bodyFont.fontFamily,
-      fontWeight: bodyFont.fontWeight,
-      lineHeight: Math.round(fontSize * 1.4),
-      marginTop: 4,
-      marginBottom: 10,
-    },
-    segSalmo: {
-      fontSize: fontSize,
-      color: colors.textPrimary,
-      fontFamily: bodyFont.fontFamily,
-      fontWeight: bodyFont.fontWeight,
-      lineHeight: Math.round(fontSize * 1.55),
-      marginVertical: 6,
-    },
-    // Parole della Consacrazione (righe MAIUSCOLE dentro la PE):
-    // azzurro brillante saturo #29B6F6 bold, allineato a /messa.
-    // Usato inline da renderPeTextLines per le righe interamente in maiuscolo.
-    segPeConsecration: {
-      color: colors.accentPeConsecration,
-      fontFamily: headingFont.fontFamily,
-      fontWeight: headingFont.fontWeight,
-    },
-    // Dossologia conclusiva ("PER CRISTO, CON CRISTO E IN CRISTO..."):
-    // bianco, maiuscolo (il testo è già in maiuscolo dal JSON), peso REGULAR,
-    // identico a /messa per coerenza. Renderizzato dopo lo split sul marker
-    // <<DOSSOLOGIA>> di renderPeTextNative.
-    segPeDossologia: {
-      fontSize: fontSize,
-      lineHeight: Math.round(fontSize * 1.7),
-      color: colors.textPrimary,
-      fontFamily: bodyFont.fontFamily,
-      fontWeight: bodyFont.fontWeight,
-      marginTop: 4,
-      marginBottom: 8,
-    },
-    // R/. marker rosso bold (regola globale Preghiera dei Fedeli + salmo)
-    segRespMarker: {
-      color: colors.rubrics,
-      fontFamily: headingFont.fontFamily,
-      fontWeight: headingFont.fontWeight,
-    },
-    segSpacer: {
-      height: 16,
-    },
-    // Spacer grande prima di una sezione con page-break (Liturgia della
-    // Parola, post-Vangelo, Prefazio): non è una vera "pagina" ma una
-    // separazione visiva ben evidente.
-    segPageBreak: {
-      height: 32,
-      borderTopWidth: 2,
-      borderTopColor: colors.border,
-      marginTop: 32,
-    },
-    // Barra di progresso fissa in fondo alla pageArea. Sollevata di 10px dal
-    // bordo per non essere coperta dai tasti di sistema su Android.
-    progressTrack: {
-      position: "absolute",
-      left: 0,
-      right: 0,
-      bottom: 10,
-      height: 3,
-      backgroundColor: colors.border,
-    },
-    progressFill: {
-      height: 3,
-      backgroundColor: colors.primary,
-    },
-    // ----- Tipografia (stessi colori/taglie di /messa) -----
-    // I titoli sezione e PE hanno marginTop per respiro visivo quando seguono
-    // testo precedente (l'orphan protection garantisce che il titolo non
-    // resti mai solo in fondo a una pagina).
-    sectionTitle: {
-      fontSize: Math.round(fontSize * 1.05),
-      fontFamily: headingFont.fontFamily,
-      fontWeight: headingFont.fontWeight,
-      color: colors.accentSection,
-      marginTop: 14,
-      marginBottom: 8,
-      lineHeight: Math.round(fontSize * 1.15),
-    },
-    antifonaTitle: {
-      fontSize: Math.round(fontSize * 0.85),
-      fontFamily: headingFont.fontFamily,
-      fontWeight: headingFont.fontWeight,
-      color: colors.accentAntifona,
-      marginTop: 10,
-      marginBottom: 6,
-      lineHeight: Math.round(fontSize * 0.95),
-    },
-    readingTitle: {
-      fontSize: Math.round(fontSize * 0.85),
-      fontFamily: headingFont.fontFamily,
-      fontWeight: headingFont.fontWeight,
-      color: colors.accentReading,
-      marginTop: 10,
-      marginBottom: 6,
-      lineHeight: Math.round(fontSize * 0.95),
-    },
-    orazioneTitle: {
-      fontSize: Math.round(fontSize * 0.85),
-      fontFamily: headingFont.fontFamily,
-      fontWeight: headingFont.fontWeight,
-      color: colors.accentOrazione,
-      marginTop: 10,
-      marginBottom: 6,
-      lineHeight: Math.round(fontSize * 0.95),
-    },
-    subtitle: {
-      fontSize: Math.round(fontSize * 0.85),
-      fontFamily: subtitleFont.fontFamily,
-      fontWeight: subtitleFont.fontWeight,
-      color: colors.textPrimary,
-      marginTop: 8,
-      marginBottom: 6,
-      lineHeight: Math.round(fontSize * 0.95),
-    },
-    peTitle: {
-      fontSize: Math.round(fontSize * 0.78),
-      fontFamily: headingFont.fontFamily,
-      fontWeight: headingFont.fontWeight,
-      color: colors.accentPe,
-      marginTop: 6,
-      marginBottom: 10,
-      lineHeight: Math.round(fontSize * 0.95),
-    },
-    peConsecration: {
-      color: colors.accentPeConsecration,
-      fontFamily: headingFont.fontFamily,
-      fontWeight: headingFont.fontWeight,
-    },
-    peDossologia: {
-      fontSize: fontSize,
-      lineHeight: fontSize * 1.7,
-      color: colors.textPrimary,
-      fontFamily: bodyFont.fontFamily,
-      fontWeight: bodyFont.fontWeight,
-      marginTop: 4,
-      marginBottom: 8,
-    },
-    umili: {
-      fontSize: Math.round(fontSize * 0.85),
-      fontStyle: "italic",
-      color: colors.rubrics,
-      fontFamily: bodyFont.fontFamily,
-      fontWeight: bodyFont.fontWeight,
-      marginVertical: 6,
-      lineHeight: fontSize * 1.55,
-    },
-    text: {
-      fontSize: fontSize,
-      lineHeight: fontSize * 1.7,
-      color: colors.textPrimary,
-      fontFamily: bodyFont.fontFamily,
-      fontWeight: bodyFont.fontWeight,
-      marginTop: 0,
-      marginBottom: 8,
-    },
-    rubric: {
-      fontSize: Math.round(fontSize * 0.7),
-      fontStyle: "italic",
-      color: colors.rubrics,
-      fontFamily: bodyFont.fontFamily,
-      fontWeight: bodyFont.fontWeight,
-      marginVertical: 4,
-      lineHeight: fontSize * 1.2,
-    },
-    salmoRit: {
-      color: colors.rubrics,
-      fontFamily: headingFont.fontFamily,
-      fontWeight: headingFont.fontWeight,
-    },
-    salmoText: {
-      fontSize: fontSize,
-      lineHeight: fontSize * 1.55,
-      color: colors.textPrimary,
-      fontFamily: bodyFont.fontFamily,
-      fontWeight: bodyFont.fontWeight,
-      marginVertical: 4,
-    },
-    celebrante: {
-      fontSize: fontSize,
-      color: colors.textPrimary,
-      fontFamily: bodyFont.fontFamily,
-      fontWeight: bodyFont.fontWeight,
-      marginVertical: 6,
-      lineHeight: fontSize * 1.7,
-    },
-    assemblea: {
-      fontSize: Math.max(12, fontSize - 1),
-      fontStyle: "italic",
-      color: colors.textPrimary,
-      fontFamily: bodyFont.fontFamily,
-      fontWeight: bodyFont.fontWeight,
-      marginVertical: 6,
-      lineHeight: fontSize * 1.7,
-    },
-    // ----- Empty state -----
-    emptyBox: {
-      flex: 1,
-      alignItems: "center",
-      justifyContent: "center",
-      padding: 32,
-      gap: 20,
-    },
-    emptyTitle: {
-      fontSize: Math.round(fontSize * 0.9),
-      fontWeight: "800",
-      color: colors.textPrimary,
-      textAlign: "center",
-    },
-    emptyText: {
-      fontSize: Math.round(fontSize * 0.65),
-      color: colors.textSecondary,
-      textAlign: "center",
-      lineHeight: fontSize * 1.3,
-    },
-    primaryBtn: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 12,
-      paddingHorizontal: 24,
-      paddingVertical: 16,
-      borderRadius: 14,
-      backgroundColor: colors.primary,
-      minHeight: 64,
-    },
-    primaryBtnText: {
-      fontSize: Math.round(fontSize * 0.75),
-      fontWeight: "700",
-      color: colors.onPrimary,
-    },
-  });
-};
