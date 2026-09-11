@@ -98,19 +98,49 @@ function LitLine({
   text,
   body,
   hang,
+  responseBullet,
 }: {
   text: string;
   body: { fontFamily: string; fontSize: number; lineHeight: number; color: string };
   hang?: number;
+  responseBullet?: boolean;
 }) {
   const ant = /\s*\(Ant\.\)\.?\s*$/i.test(text);
   const core = text.replace(/\s*\(Ant\.\)\.?\s*$/i, "");
   const lab = core.match(LAB_RE);
   const rest = lab ? core.slice(lab[0].length) : core;
   const pad = hangPad(body.fontSize, hang || 0);
+  const useResponseBullet = responseBullet && lab?.[1] === "—";
+  if (useResponseBullet) {
+    return (
+      <View style={[{ flexDirection: "row", alignItems: "flex-start" }, pad]}>
+        <Text
+          style={[
+            rubricStyle(body.fontSize),
+            {
+              fontFamily: FONT,
+              fontSize: Math.round(body.fontSize * 1.24),
+              lineHeight: body.lineHeight,
+              width: Math.round(body.fontSize * 1.24),
+              textAlign: "center",
+              marginRight: Math.round(body.fontSize * 0.16),
+            },
+          ]}
+        >
+          ●
+        </Text>
+        <Text style={[body, { flex: 1 }]}>
+          {colorStars(rest, body)}
+          {ant ? <Text style={rubricStyle(body.fontSize)}> (Ant.).</Text> : null}
+        </Text>
+      </View>
+    );
+  }
   return (
     <Text style={[body, pad]}>
-      {lab ? <Text style={rubricStyle(body.fontSize)}>{lab[1].replace(/\s+$/, "")} </Text> : null}
+      {lab ? (
+        <Text style={rubricStyle(body.fontSize)}>{lab[1].replace(/\s+$/, "")} </Text>
+      ) : null}
       {colorStars(rest, body)}
       {ant ? <Text style={rubricStyle(body.fontSize)}> (Ant.).</Text> : null}
     </Text>
@@ -160,6 +190,7 @@ export function OreBlocksView({
   };
   const titleLh = Math.round(fontSize * 1.3 * 1.1);
   let antSeen = false;
+  let inPreces = false;
 
   return (
     <View>
@@ -170,7 +201,18 @@ export function OreBlocksView({
         fontWeight={headFontWeight}
       />
       {blocks.map((b, i) => {
-        const node = renderBlock(b, i, body, fontSize, lineHeight, titleLh, textColor);
+        if (inPreces && b.k === "title") inPreces = false;
+        const node = renderBlock(
+          b,
+          i,
+          body,
+          fontSize,
+          lineHeight,
+          titleLh,
+          textColor,
+          inPreces,
+        );
+        if (b.k === "tone") inPreces = true;
         if (b.k === "rubric" && /ant/i.test(b.lab) && !antSeen) {
           antSeen = true;
           return (
@@ -194,6 +236,7 @@ function renderBlock(
   lineHeight: number,
   titleLh: number,
   textColor: string,
+  inPreces: boolean,
 ) {
   const em = (n: number) => Math.round(fontSize * n);
 
@@ -313,7 +356,13 @@ function renderBlock(
     return (
       <View key={i} style={{ marginVertical: em(0.85) }}>
         {b.lines.map((line, j) => (
-          <LitLine key={j} text={line} body={body} hang={lineHang(b, j)} />
+          <LitLine
+            key={j}
+            text={line}
+            body={body}
+            hang={lineHang(b, j)}
+            responseBullet={inPreces}
+          />
         ))}
       </View>
     );

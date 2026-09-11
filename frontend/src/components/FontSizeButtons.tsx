@@ -13,6 +13,7 @@ type Props = {
   extraDisabled?: boolean;
   decreaseTestID: string;
   increaseTestID: string;
+  labelScale?: number;
 };
 
 /** A− e misura attuale (es. 20+), stesso stile carenato della Home. */
@@ -20,9 +21,10 @@ export function FontSizeButtons({
   extraDisabled = false,
   decreaseTestID,
   increaseTestID,
+  labelScale = 0.75,
 }: Props) {
   const { colors, fontSize, setFontSize } = useSettings();
-  const labelSize = Math.round(fontSize * 0.75);
+  const labelSize = Math.round(fontSize * labelScale);
   const decreaseDisabled = extraDisabled || fontSize <= FONT_MIN;
   const increaseDisabled = extraDisabled || fontSize >= FONT_MAX;
   const labelStyle = [

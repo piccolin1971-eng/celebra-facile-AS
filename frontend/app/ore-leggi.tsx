@@ -30,6 +30,8 @@ import type { InvitPsalmId, MediaId, OreBlock, OreHourId } from "../src/ore/type
 const webClickable = Platform.OS === "web" ? ({ cursor: "pointer" } as const) : undefined;
 const ORE_BLUE = "#4DA8DA";
 const GOLD = "#E0B429";
+const AUTO_ON_BG = "#173B4D";
+const AUTO_ON_TEXT = "#B8E6FA";
 const SPD_BORDER = "#c4b06a";
 const SPD_VAL_BORDER = "#b8c0bc";
 /** px/s. 1 = vecchia 2; poi scala fino a 10 per testo grande. */
@@ -301,7 +303,11 @@ export default function OreLeggi() {
             {title}
           </Text>
           <View style={styles.fonts}>
-            <FontSizeButtons decreaseTestID="btn-ore-read-a-minus" increaseTestID="btn-ore-read-a-plus" />
+            <FontSizeButtons
+              decreaseTestID="btn-ore-read-a-minus"
+              increaseTestID="btn-ore-read-a-plus"
+              labelScale={0.86}
+            />
           </View>
         </View>
         <View style={styles.scrollRow}>
@@ -312,14 +318,16 @@ export default function OreLeggi() {
             accessibilityLabel="Scorrimento automatico"
             accessibilityState={{ selected: autoOn }}
             testID="btn-ore-auto"
+            hitSlop={4}
             {...webClickable}
           >
-            <Text style={[styles.autoLab, autoOn && { color: "#000" }]}>Auto</Text>
+            <Text style={[styles.autoLab, autoOn && styles.autoLabOn]}>Auto</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => changeSpeed(speed - 1)}
             style={styles.spdBtn}
             accessibilityLabel="Rallenta"
+            hitSlop={4}
             {...webClickable}
           >
             <Text style={styles.spdLab}>−</Text>
@@ -331,6 +339,7 @@ export default function OreLeggi() {
             onPress={() => changeSpeed(speed + 1)}
             style={styles.spdBtn}
             accessibilityLabel="Accelera"
+            hitSlop={4}
             {...webClickable}
           >
             <Text style={styles.spdLab}>+</Text>
@@ -459,7 +468,7 @@ const makeStyles = (colors: any, fontSize: number) =>
       textAlign: "center",
       color: colors.textPrimary,
       fontWeight: ACTION_TITLE_WEIGHT,
-      fontSize: Math.round(fontSize * 0.82),
+      fontSize: Math.round(fontSize * 0.984),
       letterSpacing: Math.max(0.6, fontSize * 0.045),
       fontVariant: ["small-caps"],
       ...(Platform.OS === "web" ? ({ fontVariant: "small-caps" } as const) : {}),
@@ -469,17 +478,18 @@ const makeStyles = (colors: any, fontSize: number) =>
       borderColor: ORE_BLUE,
       borderRadius: 9,
       minWidth: 68,
-      minHeight: 46,
+      height: 39,
       paddingHorizontal: 14,
       marginRight: 12,
       alignItems: "center",
       justifyContent: "center",
     },
-    autoOn: { backgroundColor: GOLD, borderColor: GOLD },
+    autoOn: { backgroundColor: AUTO_ON_BG, borderColor: ORE_BLUE },
     autoLab: { color: ORE_BLUE, fontWeight: "800", fontSize: Math.round(fontSize * 0.78) },
+    autoLabOn: { color: AUTO_ON_TEXT },
     spdBtn: {
       minWidth: 46,
-      minHeight: 46,
+      height: 39,
       alignItems: "center",
       justifyContent: "center",
       borderRadius: 9,
@@ -487,10 +497,18 @@ const makeStyles = (colors: any, fontSize: number) =>
       borderColor: SPD_BORDER,
       backgroundColor: colors.background,
     },
-    spdLab: { color: colors.textPrimary, fontSize: 32, fontWeight: "700" },
+    spdLab: {
+      color: colors.textPrimary,
+      fontSize: 32,
+      lineHeight: 32,
+      fontWeight: "700",
+      includeFontPadding: false,
+      textAlignVertical: "center",
+      transform: [{ translateY: -1 }],
+    },
     spdValBox: {
       minWidth: 46,
-      minHeight: 46,
+      height: 39,
       borderRadius: 9,
       borderWidth: 2,
       borderColor: SPD_VAL_BORDER,
