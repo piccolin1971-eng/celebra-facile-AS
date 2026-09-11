@@ -490,6 +490,7 @@ export default function Home() {
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
         nestedScrollEnabled={false}
+        style={styles.homeScroll}
       >
         <View style={styles.daySelector} testID="day-selector">
           <View
@@ -1003,7 +1004,7 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      paddingHorizontal: 16,
+      paddingHorizontal: 8,
       paddingVertical: 12,
       borderBottomWidth: 2,
       borderBottomColor: colors.border,
@@ -1091,13 +1092,20 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
       color: colors.onPrimary,
     },
     fontBtns: { flexDirection: "row", gap: 6, flexShrink: 0 },
-    content: { paddingHorizontal: 24, paddingTop: 10, paddingBottom: 24, gap: 20 },
+    homeScroll: {
+      flex: 1,
+      overflow: "visible",
+    },
+    content: { paddingHorizontal: 8, paddingTop: 2, paddingBottom: 24, gap: 14 },
     daySelector: {
-      padding: 16,
+      paddingTop: 2,
+      paddingHorizontal: 0,
+      paddingBottom: 0,
       borderWidth: 0,
       borderRadius: 12,
       backgroundColor: "transparent",
-      gap: 12,
+      gap: 8,
+      overflow: "visible",
     },
     daySelectorLabel: {
       fontSize: Math.min(15, Math.max(11, Math.round(fontSize * 0.42))),
@@ -1159,13 +1167,15 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
     dayButtonsRow: {
       flexDirection: "row",
       gap: 10,
-      paddingLeft: 14,
-      paddingRight: 16,
-      paddingVertical: 16,
-      alignItems: "flex-start",
+      paddingLeft: 8,
+      paddingRight: 10,
+      paddingTop: 8,
+      paddingBottom: 12,
+      alignItems: "stretch",
     },
     dayButtonOuter: {
       position: "relative",
+      alignSelf: "stretch",
       borderRadius: ACTION_RADIUS + 6,
       padding: 5,
     },
@@ -1173,14 +1183,14 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
       web: {
         zIndex: 2,
         boxShadow:
-          "0 0 0 3px rgba(77, 168, 218, 0.95), 0 0 10px 4px rgba(77, 168, 218, 0.5), 0 0 22px 10px rgba(77, 168, 218, 0.22), 0 0 36px 16px rgba(77, 168, 218, 0.08)",
+          "0 0 0 3px rgba(77, 168, 218, 0.95), 0 0 8px 3px rgba(77, 168, 218, 0.55), 0 0 16px 6px rgba(77, 168, 218, 0.22)",
       },
       default: {
         shadowColor: ORE_BLUE,
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0.9,
-        shadowRadius: 12,
-        elevation: 10,
+        shadowRadius: 8,
+        elevation: 8,
       },
     }),
     dayHaloNear: {
@@ -1195,6 +1205,7 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
     },
     dayButton: {
       position: "relative",
+      flex: 1,
       width: Math.round(fontSize * 8.4),
       paddingVertical: 10,
       paddingHorizontal: 10,

@@ -5,11 +5,13 @@ import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSettings } from "../src/SettingsContext";
+import { resolveBodyFont } from "../src/fontFamily";
 import { HomeCircleButton } from "../src/components/HomeCircleButton";
 import { BrandScreenTitle } from "../src/components/BrandScreenTitle";
 import { italianDateLabel, parseLocalDate, localDateStr } from "../src/dateUtils";
 import { loadDayHours } from "../src/ore/cache";
 import { hourHeadMeta } from "../src/ore/dayHead";
+import { OreHourHead } from "../src/ore/OreBlocks";
 import { ensureHour } from "../src/ore/scraper";
 import { INDEX_HOURS, hourTitle } from "../src/ore/titles";
 import { ACTION_MIN_HEIGHT, ACTION_TITLE_WEIGHT } from "../src/uiActionTokens";
@@ -25,7 +27,8 @@ const LAST_KEY = "ore_last_hour";
 export default function OreIndex() {
   const router = useRouter();
   const params = useLocalSearchParams<{ date?: string }>();
-  const { colors, fontSize, scaledFont } = useSettings();
+  const { colors, fontSize, scaledFont, fontFamilyId, isBold } = useSettings();
+  const headFont = resolveBodyFont(fontFamilyId, isBold);
   const dateISO =
     typeof params.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(params.date)
       ? params.date
@@ -92,14 +95,18 @@ export default function OreIndex() {
       </View>
 
       <ScrollView contentContainerStyle={styles.body}>
-        <View style={[styles.banner, { borderColor: colorHex }]}>
-          <View style={[styles.bannerPill, { backgroundColor: colorHex }]} />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.bannerDate}>{italianDateLabel(date)}</Text>
-            {seasonLine ? <Text style={styles.bannerSub}>{seasonLine}</Text> : null}
-            {psalterLine ? <Text style={styles.bannerSub}>{psalterLine}</Text> : null}
-          </View>
-        </View>
+        <OreHourHead
+          meta={{
+            dateLabel: italianDateLabel(date),
+            seasonLine,
+            psalterLine,
+            colorHex,
+          }}
+          fontSize={fontSize}
+          fontFamily={headFont.fontFamily}
+          fontWeight={headFont.fontWeight}
+          style={{ marginBottom: 8 }}
+        />
 
         {INDEX_HOURS.map((hour, idx) => {
           const last = lastHour === hour;
@@ -150,32 +157,6 @@ const makeStyles = (colors: any, fontSize: number) =>
       flexShrink: 0,
     },
     body: { padding: 16, gap: 12, paddingBottom: 40 },
-    banner: {
-      flexDirection: "row",
-      alignItems: "stretch",
-      gap: 10,
-      backgroundColor: "#000",
-      borderRadius: 12,
-      paddingVertical: 10,
-      paddingHorizontal: 12,
-      marginBottom: 8,
-      borderWidth: 3,
-    },
-    bannerPill: {
-      width: 8,
-      borderRadius: 99,
-    },
-    bannerDate: {
-      color: "#fff",
-      fontWeight: "800",
-      fontSize: Math.round(fontSize * 0.78),
-    },
-    bannerSub: {
-      color: "#fff",
-      fontWeight: "700",
-      marginTop: 4,
-      fontSize: Math.round(fontSize * 0.62),
-    },
     item: {
       minHeight: ACTION_MIN_HEIGHT,
       borderRadius: 14,

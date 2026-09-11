@@ -1,5 +1,5 @@
 import React from "react";
-import { Text, View, StyleSheet } from "react-native";
+import { Text, View, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import type { AppFontWeight } from "../fontFamily";
 import type { OreBlock, DayHoursMeta } from "./types";
 import { formatHourHeadLine } from "./dayHead";
@@ -25,41 +25,49 @@ type Props = {
 
 const LAB_RE = /^(V\.|R\.|Ant\.|Ant\. al Ben\.|\d+\s*ant\.|—)\s*/i;
 
+/** Box giorno Ore: +20% sul vecchio indice (data 0.78, sotto 0.62, padV 10). */
+const ORE_DAY_DATE = 0.94;
+const ORE_DAY_SUB = 0.74;
+
 export function OreHourHead({
   meta,
   fontSize,
   fontFamily,
   fontWeight,
+  style,
 }: {
   meta: DayHoursMeta;
   fontSize: number;
   fontFamily?: string;
   fontWeight?: AppFontWeight;
+  style?: StyleProp<ViewStyle>;
 }) {
   const pill = meta.colorHex || "#1b5e20";
-  const dateSize = fontSize;
-  const subSize = fontSize;
-  const lh = Math.round(fontSize * 1.35);
-  const lineFont = {
+  const dateSize = Math.round(fontSize * ORE_DAY_DATE);
+  const subSize = Math.round(fontSize * ORE_DAY_SUB);
+  const boldOn = fontWeight && fontWeight !== "400";
+  const dateFont = {
     fontSize: dateSize,
-    lineHeight: lh,
+    lineHeight: Math.round(dateSize * 1.28),
     fontFamily,
-    fontWeight: fontWeight || "400",
+    fontWeight: (boldOn ? fontWeight : "800") as AppFontWeight,
+  };
+  const subFont = {
+    fontSize: subSize,
+    lineHeight: Math.round(subSize * 1.32),
+    fontFamily,
+    fontWeight: (boldOn ? fontWeight : "700") as AppFontWeight,
   };
   return (
-    <View style={[headStyles.box, { borderColor: pill }]}>
+    <View style={[headStyles.box, { borderColor: pill }, style]} testID="ore-day-banner">
       <View style={[headStyles.pill, { backgroundColor: pill }]} />
       <View style={headStyles.body}>
-        <Text style={[headStyles.line, lineFont]}>{meta.dateLabel}</Text>
+        <Text style={[headStyles.line, dateFont]}>{meta.dateLabel}</Text>
         {meta.seasonLine ? (
-          <Text style={[headStyles.line, { ...lineFont, fontSize: subSize }]}>
-            {formatHourHeadLine(meta.seasonLine)}
-          </Text>
+          <Text style={[headStyles.line, subFont]}>{formatHourHeadLine(meta.seasonLine)}</Text>
         ) : null}
         {meta.psalterLine ? (
-          <Text style={[headStyles.line, { ...lineFont, fontSize: subSize }]}>
-            {formatHourHeadLine(meta.psalterLine)}
-          </Text>
+          <Text style={[headStyles.line, subFont]}>{formatHourHeadLine(meta.psalterLine)}</Text>
         ) : null}
       </View>
     </View>
@@ -434,7 +442,7 @@ const headStyles = StyleSheet.create({
     alignItems: "stretch",
     gap: 10,
     marginBottom: 18,
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 12,
     backgroundColor: "#000",
     borderWidth: 3,
