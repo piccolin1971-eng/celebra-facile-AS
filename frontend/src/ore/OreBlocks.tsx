@@ -1,5 +1,6 @@
 import React from "react";
 import { Text, View, StyleSheet } from "react-native";
+import type { AppFontWeight } from "../fontFamily";
 import type { OreBlock, DayHoursMeta } from "./types";
 import { formatHourHeadLine } from "./dayHead";
 
@@ -17,6 +18,8 @@ type Props = {
   fontSize: number;
   lineHeight: number;
   textColor: string;
+  headFontFamily?: string;
+  headFontWeight?: AppFontWeight;
   afterFirstAnt?: React.ReactNode;
 };
 
@@ -25,28 +28,36 @@ const LAB_RE = /^(V\.|R\.|Ant\.|Ant\. al Ben\.|\d+\s*ant\.|—)\s*/i;
 export function OreHourHead({
   meta,
   fontSize,
+  fontFamily,
+  fontWeight,
 }: {
   meta: DayHoursMeta;
   fontSize: number;
+  fontFamily?: string;
+  fontWeight?: AppFontWeight;
 }) {
   const pill = meta.colorHex || "#1b5e20";
   const dateSize = fontSize;
   const subSize = fontSize;
   const lh = Math.round(fontSize * 1.35);
+  const lineFont = {
+    fontSize: dateSize,
+    lineHeight: lh,
+    fontFamily,
+    fontWeight: fontWeight || "400",
+  };
   return (
     <View style={[headStyles.box, { borderColor: pill }]}>
       <View style={[headStyles.pill, { backgroundColor: pill }]} />
       <View style={headStyles.body}>
-        <Text style={[headStyles.line, { fontSize: dateSize, lineHeight: lh }]}>
-          {meta.dateLabel}
-        </Text>
+        <Text style={[headStyles.line, lineFont]}>{meta.dateLabel}</Text>
         {meta.seasonLine ? (
-          <Text style={[headStyles.line, { fontSize: subSize, lineHeight: lh }]}>
+          <Text style={[headStyles.line, { ...lineFont, fontSize: subSize }]}>
             {formatHourHeadLine(meta.seasonLine)}
           </Text>
         ) : null}
         {meta.psalterLine ? (
-          <Text style={[headStyles.line, { fontSize: subSize, lineHeight: lh }]}>
+          <Text style={[headStyles.line, { ...lineFont, fontSize: subSize }]}>
             {formatHourHeadLine(meta.psalterLine)}
           </Text>
         ) : null}
@@ -55,12 +66,24 @@ export function OreHourHead({
   );
 }
 
-function stanzaHang(lines: string[], j: number): boolean {
+function stanzaHangLevel(lines: string[], j: number): number {
   const line = lines[j] || "";
-  if (/^—/.test(line)) return true;
-  if (j <= 0) return false;
-  if (/[*†]\s*$/.test(lines[j - 1])) return true;
-  return lines.length === 2;
+  if (/^—/.test(line)) return 1;
+  if (j <= 0) return 0;
+  if (/[*†]\s*$/.test(lines[j - 1])) return 1;
+  if (lines.length === 2 && j === 1) return 1;
+  return 0;
+}
+
+function lineHang(b: Extract<OreBlock, { k: "stanza" }>, j: number): number {
+  if (b.hang && j < b.hang.length) return b.hang[j] || 0;
+  return stanzaHangLevel(b.lines, j);
+}
+
+function hangPad(fontSize: number, hang: number) {
+  if (hang <= 0) return null;
+  const em = hang >= 2 ? 1.85 : 1.1;
+  return { paddingLeft: Math.round(fontSize * em) };
 }
 
 function LitLine({
@@ -70,13 +93,13 @@ function LitLine({
 }: {
   text: string;
   body: { fontFamily: string; fontSize: number; lineHeight: number; color: string };
-  hang?: boolean;
+  hang?: number;
 }) {
   const ant = /\s*\(Ant\.\)\.?\s*$/i.test(text);
   const core = text.replace(/\s*\(Ant\.\)\.?\s*$/i, "");
   const lab = core.match(LAB_RE);
   const rest = lab ? core.slice(lab[0].length) : core;
-  const pad = hang ? { paddingLeft: Math.round(body.fontSize * 1.1) } : null;
+  const pad = hangPad(body.fontSize, hang || 0);
   return (
     <Text style={[body, pad]}>
       {lab ? <Text style={rubricStyle(body.fontSize)}>{lab[1].replace(/\s+$/, "")} </Text> : null}
@@ -117,6 +140,8 @@ export function OreBlocksView({
   fontSize,
   lineHeight,
   textColor,
+  headFontFamily,
+  headFontWeight,
   afterFirstAnt,
 }: Props) {
   const body = {
@@ -130,7 +155,12 @@ export function OreBlocksView({
 
   return (
     <View>
-      <OreHourHead meta={meta} fontSize={fontSize} />
+      <OreHourHead
+        meta={meta}
+        fontSize={fontSize}
+        fontFamily={headFontFamily}
+        fontWeight={headFontWeight}
+      />
       {blocks.map((b, i) => {
         const node = renderBlock(b, i, body, fontSize, lineHeight, titleLh, textColor);
         if (b.k === "rubric" && /ant/i.test(b.lab) && !antSeen) {
@@ -275,7 +305,7 @@ function renderBlock(
     return (
       <View key={i} style={{ marginVertical: em(0.85) }}>
         {b.lines.map((line, j) => (
-          <LitLine key={j} text={line} body={body} hang={stanzaHang(b.lines, j)} />
+          <LitLine key={j} text={line} body={body} hang={lineHang(b, j)} />
         ))}
       </View>
     );
@@ -422,7 +452,5 @@ const headStyles = StyleSheet.create({
   },
   line: {
     color: "#fff",
-    fontFamily: FONT,
-    fontWeight: "400",
   },
 });

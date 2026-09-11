@@ -61,7 +61,14 @@ function extractRif(inner: string): { title: string; rif: string } {
   return { title, rif };
 }
 
-type VerseLine = { text: string; hang: boolean };
+type VerseLine = { text: string; hang: number };
+
+/** 0 = colonna, 1 = secondo emistichio, 2 = wrap del verso (indentazione CEI più profonda). */
+function indentHang(spaces: number): number {
+  if (spaces >= 4) return 2;
+  if (spaces >= 2) return 1;
+  return 0;
+}
 
 function coalesceCeiVerseLines(inner: string): VerseLine[] {
   const text = decodeHtmlEntities(inner.replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, "")).replace(
@@ -72,7 +79,8 @@ function coalesceCeiVerseLines(inner: string): VerseLine[] {
   const merged: VerseLine[] = [];
   for (const raw of rawLines) {
     if (!raw.trim()) continue;
-    const indent = /^\s{2,}/.test(raw);
+    const spaces = (raw.match(/^[ \t]+/) || [""])[0].length;
+    const indent = spaces >= 2;
     const t = raw.replace(/\s+/g, " ").trim();
     if (!t) continue;
     const prev = merged[merged.length - 1];
@@ -87,7 +95,9 @@ function coalesceCeiVerseLines(inner: string): VerseLine[] {
       prev.text = `${prev.text} ${t}`;
       continue;
     }
-    const hang = indent || /^—/.test(t) || !!(prev && /[*†]\s*$/.test(prev.text));
+    let hang = indentHang(spaces);
+    if (/^—/.test(t)) hang = Math.max(hang, 1);
+    if (prev && /[*†]\s*$/.test(prev.text)) hang = Math.max(hang, 1);
     merged.push({ text: t, hang });
   }
   return mergeLoneRubricLines(merged);
@@ -233,7 +243,7 @@ function mergeLoneRubricLines(lines: VerseLine[]): VerseLine[] {
     if (/^(V\.|R\.|\*|†|—)\s*$/.test(lines[i].text) && lines[i + 1]) {
       out.push({
         text: `${lines[i].text.trim()} ${lines[i + 1].text}`,
-        hang: lines[i].hang || /^—/.test(lines[i].text),
+        hang: Math.max(lines[i].hang, /^—/.test(lines[i].text) ? 1 : 0),
       });
       i += 1;
     } else {
@@ -243,25 +253,23 @@ function mergeLoneRubricLines(lines: VerseLine[]): VerseLine[] {
   return out;
 }
 
+function stanzaFromLines(lines: VerseLine[]): OreBlock {
+  return {
+    k: "stanza",
+    lines: lines.map((l) => l.text),
+    hang: lines.map((l) => l.hang),
+  };
+}
+
 function blocksFromVerseLines(lines: VerseLine[]): OreBlock[] {
-  const texts = lines.map((l) => l.text).filter(Boolean);
-  if (!texts.length) return [];
-  if (texts.some((t) => /^—/.test(t))) return splitDashStanzas(texts);
-  if (
-    lines.length >= 4 &&
-    lines.length % 2 === 0 &&
-    lines.every((l, i) => l.hang === (i % 2 === 1))
-  ) {
-    const out: OreBlock[] = [];
-    for (let i = 0; i < lines.length; i += 2) {
-      out.push({ k: "stanza", lines: [lines[i].text, lines[i + 1].text] });
-    }
-    return out;
+  const kept = lines.filter((l) => l.text);
+  if (!kept.length) return [];
+  if (kept.some((l) => /^—/.test(l.text))) return splitDashStanzas(kept.map((l) => l.text));
+  if (kept.length === 1 && !/[*†]/.test(kept[0].text) && !/^(V\.|R\.)/.test(kept[0].text)) {
+    return [{ k: "prose", text: kept[0].text }];
   }
-  if (texts.length === 1 && !/[*†]/.test(texts[0]) && !/^(V\.|R\.)/.test(texts[0])) {
-    return [{ k: "prose", text: texts[0] }];
-  }
-  return [{ k: "stanza", lines: texts }];
+  // Un lo_versetto CEI è già la strofa (2, 3 o 4 righe): non spezzare a coppie.
+  return [stanzaFromLines(kept)];
 }
 
 function splitDashStanzas(lines: string[]): OreBlock[] {
@@ -413,8 +421,16 @@ function dropOrphanStarLines(blocks: OreBlock[]): OreBlock[] {
   return blocks
     .map((b) => {
       if (b.k !== "stanza") return b;
-      const lines = b.lines.filter((l) => !/^[*†]\s*$/.test(l));
-      return lines.length ? { k: "stanza" as const, lines } : null;
+      const keep: number[] = [];
+      b.lines.forEach((l, i) => {
+        if (!/^[*†]\s*$/.test(l)) keep.push(i);
+      });
+      if (!keep.length) return null;
+      return {
+        k: "stanza" as const,
+        lines: keep.map((i) => b.lines[i]),
+        hang: b.hang ? keep.map((i) => b.hang?.[i] ?? 0) : undefined,
+      };
     })
     .filter((b): b is OreBlock => !!b);
 }

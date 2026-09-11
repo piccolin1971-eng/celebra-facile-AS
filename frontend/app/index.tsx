@@ -45,6 +45,25 @@ import { unifiedCacheDaysLeft } from "../src/ore/cache";
 
 const webClickable = Platform.OS === "web" ? ({ cursor: "pointer" } as const) : undefined;
 
+function DayChipWrap({
+  active,
+  styles,
+  children,
+}: {
+  active: boolean;
+  styles: Record<string, any>;
+  children: React.ReactNode;
+}) {
+  return (
+    <View style={[styles.dayButtonOuter, active && styles.dayButtonOuterActive]}>
+      {active && Platform.OS !== "web" ? (
+        <View pointerEvents="none" style={styles.dayHaloNear} />
+      ) : null}
+      {children}
+    </View>
+  );
+}
+
 const STRIP_OFFSETS = [0, 1, 2, 3, 4, 5, 6, 7] as const;
 
 /** Tasto «Celebra subito»: oro, distinto dal verde di «Celebra la Messa». */
@@ -501,6 +520,7 @@ export default function Home() {
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
+            style={styles.dayButtonsScroll}
             contentContainerStyle={styles.dayButtonsRow}
           >
             {STRIP_OFFSETS.map((offset) => {
@@ -526,13 +546,12 @@ export default function Home() {
                 ? `, ${stripMeta.subtitle}`
                 : "";
               return (
+                <DayChipWrap key={offset} active={isActive} styles={styles}>
                 <TouchableOpacity
-                  key={offset}
                   style={[
                     styles.dayButton,
                     { borderColor: borderHex },
                     isToday && styles.dayButtonToday,
-                    isActive && styles.dayButtonActive,
                     webClickable,
                   ]}
                   onPress={() => setSelectedDateISO(dateStr)}
@@ -587,13 +606,14 @@ export default function Home() {
                     <Text style={styles.dayButtonCelebration}>{stripMeta.subtitle}</Text>
                   ) : null}
                 </TouchableOpacity>
+                </DayChipWrap>
               );
             })}
+            <DayChipWrap active={!stripSelected} styles={styles}>
             <TouchableOpacity
               style={[
                 styles.dayButton,
                 styles.dayButtonCalendar,
-                !stripSelected && styles.dayButtonActive,
                 webClickable,
               ]}
               onPress={() => setDatePickerVisible(true)}
@@ -607,6 +627,7 @@ export default function Home() {
                 Altri giorni
               </Text>
             </TouchableOpacity>
+            </DayChipWrap>
           </ScrollView>
           {!stripSelected ? (
             <Text style={styles.selectedDateHint} testID="home-selected-date-hint">
@@ -1132,10 +1153,45 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
       textTransform: "uppercase",
       letterSpacing: 0.6,
     },
+    dayButtonsScroll: {
+      overflow: "visible",
+    },
     dayButtonsRow: {
       flexDirection: "row",
       gap: 10,
-      paddingRight: 12,
+      paddingLeft: 14,
+      paddingRight: 16,
+      paddingVertical: 16,
+      alignItems: "flex-start",
+    },
+    dayButtonOuter: {
+      position: "relative",
+      borderRadius: ACTION_RADIUS + 6,
+      padding: 5,
+    },
+    dayButtonOuterActive: Platform.select({
+      web: {
+        zIndex: 2,
+        boxShadow:
+          "0 0 0 3px rgba(77, 168, 218, 0.95), 0 0 10px 4px rgba(77, 168, 218, 0.5), 0 0 22px 10px rgba(77, 168, 218, 0.22), 0 0 36px 16px rgba(77, 168, 218, 0.08)",
+      },
+      default: {
+        shadowColor: ORE_BLUE,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.9,
+        shadowRadius: 12,
+        elevation: 10,
+      },
+    }),
+    dayHaloNear: {
+      position: "absolute",
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
+      borderRadius: ACTION_RADIUS + 6,
+      borderWidth: 3,
+      borderColor: ORE_BLUE,
     },
     dayButton: {
       position: "relative",
@@ -1154,10 +1210,6 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
     },
     dayButtonToday: {
       backgroundColor: "#000000",
-    },
-    dayButtonActive: {
-      backgroundColor: "#000000",
-      borderWidth: 3.6,
     },
     dayStatusDot: {
       width: 20,

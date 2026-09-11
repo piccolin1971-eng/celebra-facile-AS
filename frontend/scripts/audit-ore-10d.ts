@@ -256,6 +256,42 @@ conservaci sempre membra vive della tua santa Chiesa.</div>
   if (!dash || dash.k !== "stanza") fails.push("fixture intercessioni senza coppia —");
   else if (dash.lines.length !== 2) fails.push(`fixture coppia — righe=${dash.lines.length}`);
 
+  const psalmHtml = wrap(`
+    <div class="lo_titolo">SALMO 50 Pietà di me, o Signore</div>
+    <div class="lo_versetto">Pietà di me, o Dio,<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; secondo la tua misericordia; *<br />
+&nbsp;&nbsp; nel tuo grande amore<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cancella il mio peccato.</div>
+    <div class="lo_versetto">Lavami da tutte le mie colpe, *<br />
+&nbsp; &nbsp;mondami dal mio peccato.<br />
+Riconosco la mia colpa, *<br />
+&nbsp; &nbsp;il mio peccato mi sta sempre dinanzi.</div>
+    <div class="lo_versetto">Acclamate al Signore, voi tutti della terra, &dagger;<br />
+&nbsp; &nbsp;servite il Signore nella gioia, *<br />
+&nbsp; &nbsp;presentatevi a lui con esultanza.</div>
+    <div class="lo_versetto">Gloria al Padre e al Figlio<br />
+&nbsp;&nbsp; e allo Spirito Santo.<br />
+Come era nel principio, e ora e sempre<br />
+&nbsp;&nbsp; nei secoli dei secoli. Amen. Alleluia.</div>
+  `);
+  const psalm = parseHourHtml(psalmHtml, "lodi");
+  const psalmStanzas = psalm.blocks.filter((b) => b.k === "stanza");
+  if (psalmStanzas.length !== 4) {
+    fails.push(`fixture salmo strofe=${psalmStanzas.length} attese 4 (non spezzate a 2)`);
+  }
+  const stanzaLens = psalmStanzas.map((b) => (b.k === "stanza" ? b.lines.length : 0));
+  if (stanzaLens[0] !== 4) fails.push(`fixture salmo 4-righe spezzato: ${stanzaLens[0]}`);
+  if (stanzaLens[1] !== 4) fails.push(`fixture salmo coppia-versetti spezzata: ${stanzaLens[1]}`);
+  if (stanzaLens[2] !== 3) fails.push(`fixture salmo 3-righe: ${stanzaLens[2]}`);
+  if (stanzaLens[3] !== 4) fails.push(`fixture gloria 4-righe: ${stanzaLens[3]}`);
+  const four = psalmStanzas[0];
+  if (four && four.k === "stanza") {
+    const h = four.hang || [];
+    if ((h[0] || 0) !== 0 || (h[1] || 0) < 1 || (h[2] || 0) < 1 || (h[3] || 0) < 1) {
+      fails.push(`fixture salmo hang=${h.join(",")}`);
+    }
+  }
+
   const propria = extractHoursBanner(
     `<div class="cci-opere-giorni-liturgia">ESALTAZIONE DELLA SANTA CROCE - Festa - Liturgia propria</div><div class="cci-liturgia-ore"></div>`,
   );
@@ -354,7 +390,11 @@ async function main() {
   if (fixtureFails.length) {
     console.log("SELFTEST FAIL\n" + fixtureFails.map((f) => `  ${f}`).join("\n"));
   } else {
-    console.log("SELFTEST ok (Oppure, inno latino, banner, slugs sab/dom)");
+    console.log("SELFTEST ok (Oppure, inno latino, banner, slugs sab/dom, salmi strofe)");
+  }
+  if (process.argv.includes("--selftest")) {
+    if (fixtureFails.length) process.exitCode = 1;
+    return;
   }
 
   const cache = new Map<string, string>();

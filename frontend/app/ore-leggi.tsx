@@ -13,6 +13,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSettings } from "../src/SettingsContext";
+import { resolveBodyFont } from "../src/fontFamily";
 import { FontSizeButtons } from "../src/components/FontSizeButtons";
 import { localDateStr, parseLocalDate } from "../src/dateUtils";
 import { oreBodyLineHeight } from "../src/liturgyTypography";
@@ -31,12 +32,14 @@ const ORE_BLUE = "#4DA8DA";
 const GOLD = "#E0B429";
 const SPD_BORDER = "#c4b06a";
 const SPD_VAL_BORDER = "#b8c0bc";
-const SPD_PX = [0, 4, 6.5, 10, 16, 25, 38];
+/** px/s. 1 = vecchia 2; poi scala fino a 10 per testo grande. */
+const SPD_PX = [0, 6.5, 10, 16, 25, 38, 58, 88, 135, 205, 310];
 const SPD_MIN = 1;
-const SPD_MAX = 6;
+const SPD_MAX = 10;
 const PSALM_KEY = "ore_invit_psalm";
 const MEDIA_KEY = "ore_media_id";
 const SPD_KEY = "ore_auto_speed";
+const AUTO_KEY = "ore_auto_on";
 const MEDIA_IDS: MediaId[] = ["terza", "sesta", "nona"];
 const MEDIA_LABEL: Record<MediaId, string> = { terza: "Terza", sesta: "Sesta", nona: "Nona" };
 
@@ -58,7 +61,7 @@ function parseHourParam(raw: unknown): OreHourId {
 export default function OreLeggi() {
   const router = useRouter();
   const params = useLocalSearchParams<{ date?: string; hour?: string }>();
-  const { colors, fontSize, lineSpacing } = useSettings();
+  const { colors, fontSize, lineSpacing, fontFamilyId, isBold } = useSettings();
   const dateISO =
     typeof params.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(params.date)
       ? params.date
@@ -67,6 +70,7 @@ export default function OreLeggi() {
   const date = parseLocalDate(dateISO);
   const title = hourTitle(hour, date);
   const lineHeight = oreBodyLineHeight(fontSize, lineSpacing);
+  const headFont = resolveBodyFont(fontFamilyId, isBold);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -78,6 +82,7 @@ export default function OreLeggi() {
   const [invitAnt, setInvitAnt] = useState(DEFAULT_INVIT_ANT);
   const [speed, setSpeed] = useState(3);
   const [autoOn, setAutoOn] = useState(false);
+  const [prefsReady, setPrefsReady] = useState(false);
 
   const scrollRef = useRef<ScrollView>(null);
   const yRef = useRef(0);
@@ -88,24 +93,38 @@ export default function OreLeggi() {
   const updateMax = useCallback(() => {
     maxRef.current = Math.max(0, contentHRef.current - viewHRef.current);
   }, []);
-  const carryRef = useRef(0);
+  const wantAutoRef = useRef(false);
   const autoOnRef = useRef(false);
   const draggingRef = useRef(false);
   const lastTsRef = useRef(0);
   const rafRef = useRef<number | null>(null);
   const speedRef = useRef(3);
+  const fontSizeRef = useRef(fontSize);
 
   autoOnRef.current = autoOn;
   speedRef.current = speed;
+  fontSizeRef.current = fontSize;
 
-  const stopAuto = useCallback(() => {
-    setAutoOn(false);
-    autoOnRef.current = false;
+  const persistAuto = useCallback((on: boolean) => {
+    wantAutoRef.current = on;
+    void AsyncStorage.setItem(AUTO_KEY, on ? "1" : "0");
+  }, []);
+
+  const stopRaf = useCallback(() => {
     if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
     rafRef.current = null;
     lastTsRef.current = 0;
-    carryRef.current = 0;
   }, []);
+
+  const stopAuto = useCallback(
+    (persist = true) => {
+      setAutoOn(false);
+      autoOnRef.current = false;
+      stopRaf();
+      if (persist) persistAuto(false);
+    },
+    [persistAuto, stopRaf],
+  );
 
   const tick = useCallback((ts: number) => {
     if (!autoOnRef.current) return;
@@ -122,29 +141,28 @@ export default function OreLeggi() {
       rafRef.current = requestAnimationFrame(tick);
       return;
     }
-    carryRef.current += (SPD_PX[speedRef.current] || 10) * dt;
-    const step = Math.floor(carryRef.current);
-    if (step >= 1) {
-      carryRef.current -= step;
-      yRef.current += step;
-      scrollRef.current?.scrollTo({ y: yRef.current, animated: false });
-    }
+    const px = (SPD_PX[speedRef.current] || 16) * (fontSizeRef.current / 32);
+    yRef.current = Math.min(max, yRef.current + px * dt);
+    scrollRef.current?.scrollTo({ y: yRef.current, animated: false });
     rafRef.current = requestAnimationFrame(tick);
   }, []);
 
-  const startAuto = useCallback(() => {
-    if (yRef.current >= maxRef.current - 1) {
-      yRef.current = 0;
-      scrollRef.current?.scrollTo({ y: 0, animated: false });
-    }
-    setAutoOn(true);
-    autoOnRef.current = true;
-    lastTsRef.current = 0;
-    carryRef.current = 0;
-    rafRef.current = requestAnimationFrame(tick);
-  }, [tick]);
+  const startAuto = useCallback(
+    (persist = true) => {
+      if (maxRef.current > 0 && yRef.current >= maxRef.current - 1) {
+        yRef.current = 0;
+        scrollRef.current?.scrollTo({ y: 0, animated: false });
+      }
+      setAutoOn(true);
+      autoOnRef.current = true;
+      stopRaf();
+      rafRef.current = requestAnimationFrame(tick);
+      if (persist) persistAuto(true);
+    },
+    [persistAuto, stopRaf, tick],
+  );
 
-  useEffect(() => () => stopAuto(), [stopAuto]);
+  useEffect(() => () => stopAuto(false), [stopAuto]);
 
   useEffect(() => {
     let cancelled = false;
@@ -183,8 +201,19 @@ export default function OreLeggi() {
       if (m && MEDIA_IDS.includes(m as MediaId)) setMediaId(m as MediaId);
       const s = parseInt((await AsyncStorage.getItem(SPD_KEY)) || "3", 10);
       if (s >= SPD_MIN && s <= SPD_MAX) setSpeed(s);
+      const auto = await AsyncStorage.getItem(AUTO_KEY);
+      wantAutoRef.current = auto === "1";
+      setPrefsReady(true);
     })();
   }, []);
+
+  useEffect(() => {
+    if (loading || !prefsReady) {
+      stopRaf();
+      return;
+    }
+    if (wantAutoRef.current) startAuto(false);
+  }, [loading, prefsReady, dateISO, hour, startAuto, stopRaf]);
 
   const applyDay = useCallback(
     (day: Awaited<ReturnType<typeof ensureHour>>, media: MediaId, psalm: InvitPsalmId) => {
@@ -277,7 +306,7 @@ export default function OreLeggi() {
         </View>
         <View style={styles.scrollRow}>
           <TouchableOpacity
-            onPress={() => (autoOn ? stopAuto() : startAuto())}
+            onPress={() => (autoOn ? stopAuto(true) : startAuto(true))}
             style={[styles.autoBtn, autoOn && styles.autoOn]}
             accessibilityRole="button"
             accessibilityLabel="Scorrimento automatico"
@@ -344,11 +373,12 @@ export default function OreLeggi() {
             updateMax();
           }}
           onScroll={(e) => {
-            yRef.current = e.nativeEvent.contentOffset.y;
-            const { contentSize, layoutMeasurement } = e.nativeEvent;
+            const { contentSize, layoutMeasurement, contentOffset } = e.nativeEvent;
             viewHRef.current = layoutMeasurement.height;
             contentHRef.current = contentSize.height;
             updateMax();
+            if (autoOnRef.current && !draggingRef.current) return;
+            yRef.current = contentOffset.y;
           }}
           onScrollBeginDrag={() => {
             draggingRef.current = true;
@@ -374,6 +404,8 @@ export default function OreLeggi() {
             fontSize={fontSize}
             lineHeight={lineHeight}
             textColor={colors.textPrimary}
+            headFontFamily={headFont.fontFamily}
+            headFontWeight={headFont.fontWeight}
             afterFirstAnt={
               hour === "invitatorio" ? (
                 <View style={styles.invNums} accessibilityRole="tablist">

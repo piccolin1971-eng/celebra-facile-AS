@@ -17,7 +17,7 @@ export type OreBlock =
   | { k: "sub"; text: string }
   | { k: "rubric"; lab: string; text: string }
   | { k: "omit"; text: string }
-  | { k: "stanza"; lines: string[] }
+  | { k: "stanza"; lines: string[]; hang?: number[] }
   | { k: "hymn"; hymns: Hymn[] }
   | { k: "prose"; text: string }
   | { k: "tone"; intro: string; refrain: string }
