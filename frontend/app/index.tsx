@@ -1205,7 +1205,10 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
     },
     dayButton: {
       position: "relative",
-      flex: 1,
+      // Su Android `flex: 1` imposta flexBasis 0 e fa collassare l'altezza
+      // intrinseca dentro lo ScrollView orizzontale. flexGrow conserva la
+      // misura del contenuto e poi porta tutti i chip all'altezza del più alto.
+      flexGrow: 1,
       width: Math.round(fontSize * 8.4),
       paddingVertical: 10,
       paddingHorizontal: 10,
