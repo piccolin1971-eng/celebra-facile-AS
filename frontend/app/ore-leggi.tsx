@@ -42,6 +42,9 @@ const PSALM_KEY = "ore_invit_psalm";
 const MEDIA_KEY = "ore_media_id";
 const SPD_KEY = "ore_auto_speed";
 const AUTO_KEY = "ore_auto_on";
+const LAST_KEY = "ore_last_hour";
+const NEXT_GOLD = "#c4b06a";
+const FONT_LIT = "LibreBaskerville_400Regular";
 const MEDIA_IDS: MediaId[] = ["terza", "sesta", "nona"];
 const MEDIA_LABEL: Record<MediaId, string> = { terza: "Terza", sesta: "Sesta", nona: "Nona" };
 
@@ -283,6 +286,11 @@ export default function OreLeggi() {
     void AsyncStorage.setItem(SPD_KEY, String(next));
   };
 
+  const goToHour = (next: OreHourId) => {
+    void AsyncStorage.setItem(LAST_KEY, next);
+    router.push({ pathname: "/ore-leggi", params: { date: dateISO, hour: next } } as any);
+  };
+
   const styles = makeStyles(colors, fontSize);
 
   return (
@@ -434,6 +442,48 @@ export default function OreLeggi() {
               ) : undefined
             }
           />
+          {blocks.length > 0 && hour === "invitatorio" ? (
+            <View style={styles.nextWrap}>
+              <View style={styles.nextRow}>
+                <TouchableOpacity
+                  onPress={() => goToHour("lodi")}
+                  style={styles.nextBtn}
+                  accessibilityRole="button"
+                  accessibilityLabel="Vai alle Lodi"
+                  testID="btn-ore-next-lodi"
+                  {...webClickable}
+                >
+                  <Text style={styles.nextLab}>Lodi</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => goToHour("ufficio")}
+                  style={styles.nextBtn}
+                  accessibilityRole="button"
+                  accessibilityLabel="Vai all'Ufficio delle letture"
+                  testID="btn-ore-next-ufficio"
+                  {...webClickable}
+                >
+                  <Text style={styles.nextLab}>Ufficio</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : null}
+          {blocks.length > 0 && hour === "ufficio" ? (
+            <View style={styles.nextWrap}>
+              <View style={styles.nextRow}>
+                <TouchableOpacity
+                  onPress={() => goToHour("lodi")}
+                  style={styles.nextBtn}
+                  accessibilityRole="button"
+                  accessibilityLabel="Vai alle Lodi"
+                  testID="btn-ore-next-lodi"
+                  {...webClickable}
+                >
+                  <Text style={styles.nextLab}>Lodi</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : null}
         </ScrollView>
       )}
     </SafeAreaView>
@@ -563,5 +613,32 @@ const makeStyles = (colors: any, fontSize: number) =>
     center: { flex: 1, alignItems: "center", justifyContent: "center" },
     scroll: { flex: 1 },
     scrollInner: { padding: 16, paddingBottom: 48 },
+    nextWrap: {
+      marginTop: 36,
+      paddingTop: 22,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: "rgba(196,176,106,0.35)",
+      alignItems: "center",
+    },
+    nextRow: {
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+      gap: 36,
+    },
+    nextBtn: {
+      paddingVertical: 10,
+      paddingHorizontal: 8,
+      minHeight: 44,
+      justifyContent: "center",
+    },
+    nextLab: {
+      fontFamily: FONT_LIT,
+      color: NEXT_GOLD,
+      fontSize: Math.round(fontSize * 1.14),
+      letterSpacing: Math.max(0.8, fontSize * 0.06),
+      fontVariant: ["small-caps"],
+      ...(Platform.OS === "web" ? ({ fontVariant: "small-caps" } as const) : {}),
+    },
     err: { color: colors.textSecondary, marginBottom: 12, fontSize: Math.round(fontSize * 0.7) },
   });

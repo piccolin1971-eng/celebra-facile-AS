@@ -119,9 +119,9 @@ function LitLine({
             rubricStyle(body.fontSize),
             {
               fontFamily: FONT,
-              fontSize: Math.round(body.fontSize * 1.24),
+              fontSize: Math.round(body.fontSize * 1.24 * 0.85),
               lineHeight: body.lineHeight,
-              width: Math.round(body.fontSize * 1.24),
+              width: Math.round(body.fontSize * 1.24 * 0.85),
               textAlign: "center",
               marginRight: Math.round(body.fontSize * 0.16),
             },
@@ -459,8 +459,8 @@ function renderBlock(
           <Text
             style={{
               fontFamily: FONT_IT,
-              fontSize,
-              lineHeight,
+              fontSize: Math.round(fontSize * 1.08),
+              lineHeight: Math.round(lineHeight * 1.08),
               color: TONE_REFRAIN,
               marginTop: em(0.4),
             }}

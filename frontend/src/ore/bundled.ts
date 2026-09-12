@@ -1,7 +1,7 @@
 import type { InvitPsalmId } from "./types";
 
 export const GLORIA = [
-  "Gloria al Padre e al Figlio *",
+  "Gloria al Padre e al Figlio, *",
   "e allo Spirito Santo.",
   "Come era nel principio, e ora e sempre *",
   "nei secoli dei secoli. Amen.",
@@ -44,88 +44,91 @@ export const INVIT_PSALMS: Record<InvitPsalmId, BundledPsalm> = {
   "94": {
     title: "SALMO 94  Invito a lodare Dio",
     sub: "Esortatevi a vicenda ogni giorno, finché dura «quest’oggi»",
-    cite: "(Eb 3, 13).",
+    cite: "(Eb 3, 13)",
     verses: verses(`
 Venite, applaudiamo al Signore, *
 acclamiamo alla roccia della nostra salvezza.
 Accostiamoci a lui per rendergli grazie, *
-a lui acclamiamo con canti di gioia
+a lui acclamiamo con canti di gioia.
 
 Poiché grande Dio è il Signore, *
 grande re sopra tutti gli dèi.
 Nella sua mano sono gli abissi della terra, *
 sono sue le vette dei monti.
 Suo è il mare, egli l’ha fatto, *
-le sue mani hanno plasmato la terra
+le sue mani hanno plasmato la terra.
 
 Venite, prostràti adoriamo, *
 in ginocchio davanti al Signore che ci ha creati.
-Egli è il nostro Dio, e noi il popolo del suo pascolo, *
-il gregge che egli conduce
+Egli è nostro Dio, e noi il popolo del suo pascolo, *
+il gregge che egli conduce.
 
-Ascoltate oggi la sua voce: †
-«Non indurite il cuore, *
-come a Merìba, come nel giorno di Massa nel deserto,
-dove mi tentarono i vostri padri: *
-mi misero alla prova, pur avendo visto le mie opere
+Ascoltate oggi la sua voce: «Non indurite il cuore, *
+come a Merìba, come nel giorno di Massa
+nel deserto,
+dove mi tentarono i vostri padri: †
+mi misero alla prova, *
+pur avendo visto le mie opere.
 
 Per quarant’anni mi disgustai di quella generazione †
 e dissi: Sono un popolo dal cuore traviato, *
 non conoscono le mie vie;
 perciò ho giurato nel mio sdegno: *
-Non entreranno nel luogo del mio riposo»
+Non entreranno nel luogo del mio riposo».
     `),
   },
   "99": {
-    title: "SALMO 99  Esultanza di tutta la terra",
-    sub: "Il Signore regna, il Redentore è sul trono",
-    cite: "",
+    title: "SALMO 99  La gioia di coloro che entrano nel tempio",
+    sub: "Il Signore fa cantare ai redenti il canto della vittoria",
+    cite: "(sant’Atanasio).",
     verses: verses(`
-Acclamate al Signore, voi tutti della terra, *
-servite il Signore nella gioia,
+Acclamate al Signore, voi tutti della terra, †
+servite il Signore nella gioia, *
 presentatevi a lui con esultanza.
 
-Riconoscete che il Signore è Dio; *
-egli ci ha fatti e noi siamo suoi,
+Riconoscete che il Signore è Dio; †
+egli ci ha fatti e noi siamo suoi, *
 suo popolo e gregge del suo pascolo.
 
-Varcate le sue porte con inni di grazie, *
-i suoi atri con canti di lode;
-lodatelo, benedite il suo nome.
+Varcate le sue porte con inni di grazie, †
+i suoi atri con canti di lode, *
+lodatelo, benedite il suo nome;
 
-Perché buono è il Signore, *
-eterna la sua misericordia,
+poiché buono è il Signore, †
+eterna la sua misericordia, *
 la sua fedeltà per ogni generazione.
     `),
   },
   "66": {
-    title: "SALMO 66  Invocazione della benedizione di Dio",
-    sub: "Sappiate che Dio ha concesso la salvezza a Israele",
+    title: "SALMO 66  Tutti i popoli glorifichino il Signore",
+    sub: "Sia noto a voi che questa salvezza di Dio viene ora rivolta ai pagani",
     cite: "(At 28, 28).",
     verses: verses(`
 Dio abbia pietà di noi e ci benedica, *
 su di noi faccia splendere il suo volto;
 perché si conosca sulla terra la tua via, *
-la tua salvezza fra tutte le genti.
+fra tutte le genti la tua salvezza.
 
 Ti lodino i popoli, Dio, *
 ti lodino i popoli tutti.
-Esultino le genti e gioiscano, *
-perché giudichi i popoli con giustizia,
+
+Esultino le genti e si rallegrino, †
+perché giudichi i popoli con giustizia, *
 governi le nazioni sulla terra.
 
 Ti lodino i popoli, Dio, *
 ti lodino i popoli tutti.
-La terra ha dato il suo frutto.
-Ci benedica Dio, il nostro Dio, *
-ci benedica Dio e lo temano
-tutti i confini della terra.
+
+La terra ha dato il suo frutto. *
+Ci benedica Dio, il nostro Dio,
+ci benedica Dio *
+e lo temano tutti i confini della terra.
     `),
   },
   "23": {
-    title: "SALMO 23  Liturgia d’ingresso nel santuario",
-    sub: "Le porte si aprono al Signore della gloria",
-    cite: "",
+    title: "SALMO 23  Il Signore entra nel suo tempio",
+    sub: "Le porte del cielo si sono aperte a Cristo Signore, quando salì al cielo",
+    cite: "(sant’Ireneo).",
     verses: verses(`
 Del Signore è la terra e quanto contiene, *
 l’universo e i suoi abitanti.
@@ -134,8 +137,9 @@ e sui fiumi l’ha stabilita.
 
 Chi salirà il monte del Signore, *
 chi starà nel suo luogo santo?
-Chi ha mani innocenti e cuore puro, *
-chi non pronunzia menzogna,
+
+Chi ha mani innocenti e cuore puro, †
+chi non pronunzia menzogna, *
 chi non giura a danno del suo prossimo.
 
 Egli otterrà benedizione dal Signore, *
@@ -143,16 +147,16 @@ giustizia da Dio sua salvezza.
 Ecco la generazione che lo cerca, *
 che cerca il tuo volto, Dio di Giacobbe.
 
-Sollevate, porte, i vostri frontali, *
-alzatevi, porte antiche,
+Sollevate, porte, i vostri frontali, †
+alzatevi, porte antiche, *
 ed entri il re della gloria.
 
-Chi è questo re della gloria? *
-Il Signore forte e potente,
+Chi è questo re della gloria? †
+Il Signore forte e potente, *
 il Signore potente in battaglia.
 
-Sollevate, porte, i vostri frontali, *
-alzatevi, porte antiche,
+Sollevate, porte, i vostri frontali, †
+alzatevi, porte antiche, *
 ed entri il re della gloria.
 
 Chi è questo re della gloria? *
