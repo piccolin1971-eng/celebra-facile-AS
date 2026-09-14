@@ -74,18 +74,6 @@ export const makeStyles = (
       color: colors.textPrimary,
       textAlign: "left",
     },
-    pageIndicator: {
-      minWidth: 108,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "flex-end",
-      paddingRight: 8,
-    },
-    pageIndicatorText: {
-      fontSize: Math.round(fontSize * 0.55),
-      color: colors.textSecondary,
-      fontWeight: "600",
-    },
     fontBtns: {
       flexDirection: "row",
       gap: 6,

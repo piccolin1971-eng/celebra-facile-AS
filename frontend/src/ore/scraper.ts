@@ -121,7 +121,8 @@ function hourPatchNeedsItalian(patch: HourPatch): boolean {
 
 function cachedHoursPatch(existing: DayHoursCache, hour: OreHourId): HourPatch | null {
   if (hour === "ora-media") {
-    if (!existing.hours.terza?.blocks?.length) return null;
+    const ids: MediaId[] = ["terza", "sesta", "nona"];
+    if (!ids.every((id) => existing.hours[id]?.blocks?.length)) return null;
     return {
       terza: existing.hours.terza,
       sesta: existing.hours.sesta,

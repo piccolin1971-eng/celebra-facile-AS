@@ -5,6 +5,7 @@
  */
 import { scrapeLiturgy } from "./liturgyScraper";
 import type { CelebrationMode } from "./massSession";
+import { fillMissingFeastSecondReading } from "./saintLectionary";
 import {
   normalizeScrapedLiturgicalColor,
   celebrationTitlesMatch,
@@ -251,7 +252,7 @@ export async function getFullLiturgy(
   const scraped = await scrapeLiturgy(d, mode);
   const meta = liturgyMetadataForMode(d, mode, scraped);
 
-  return {
+  return fillMissingFeastSecondReading({
     date: iso,
     date_label: italianDateLabel(d),
     season: meta.season,
@@ -262,7 +263,7 @@ export async function getFullLiturgy(
     source_url: scraped.source_url,
     error: scraped.error || null,
     celebrationMode: mode,
-  };
+  });
 }
 
 export async function getFullLiturgyByDateStr(

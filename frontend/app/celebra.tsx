@@ -42,7 +42,7 @@ import { Ionicons } from "@expo/vector-icons";
 // su web bundla solo lo stub null.
 import PagerView from "../src/pagerView";
 import { LiturgyPagedReader } from "../src/components/LiturgyPagedReader";
-import { SettingsTopBarButton } from "../src/components/SettingsTopBarButton";
+import { ReadingBrightnessButton, ReadingBrightnessRoot } from "../src/components/ReadingBrightnessControl";
 import { PE_FIRST_PREAMBLE_ANCHORS } from "../src/peEngineSegments";
 // expo-keep-awake: import LAZY tramite require() in useEffect.
 // Motivo: in Expo SDK 54 + New Architecture, expo-keep-awake 15.x può
@@ -132,7 +132,7 @@ function CelebraScreenInner() {
   const [typographyEpoch, setTypographyEpoch] = useState(0);
 
   // Wakelock: tiene lo schermo acceso mentre la pagina è aperta. SOLO su
-  // native (Android/iOS): su web il browser nega il permesso e crashava
+  // nativo Android: su web il browser nega il permesso e crashava
   // l'app, quindi skippiamo. LAZY require per evitare che eventuali errori
   // di registrazione TurboModule (Expo SDK 54 + newArch) crashino l'app.
   useEffect(() => {
@@ -519,7 +519,6 @@ function CelebraScreenInner() {
   const engineMicroRef = useRef<Record<number, number>>({});
   const engineTotalRef = useRef<Record<number, number>>({});
   const engineMeasuringRef = useRef<Record<number, boolean>>({});
-  const [microPageUi, setMicroPageUi] = useState({ index: 0, total: 1 });
   const enginePageBottomPad = 48;
 
   const triggerEngineRemeasure = (pageIdx: number, savedMicro = 0) => {
@@ -527,10 +526,6 @@ function CelebraScreenInner() {
     engineMeasuringRef.current[pageIdx] = true;
     if (pageIdx === currentPageRef.current) {
       setEnginePaginating(true);
-      setMicroPageUi({
-        index: savedMicro,
-        total: engineTotalRef.current[pageIdx] ?? 1,
-      });
     }
     setTypographyEpoch((n) => n + 1);
   };
@@ -541,15 +536,6 @@ function CelebraScreenInner() {
     () => segments.map((s) => `${s.kind}\0${s.text.length}\0${s.text.slice(0, 64)}`).join("\x1e"),
     [segments],
   );
-
-  useEffect(() => {
-    const page = currentPage;
-    const mi = engineMicroRef.current[page] ?? 0;
-    const total = engineTotalRef.current[page] ?? 1;
-    if (page === currentPageRef.current) {
-      setMicroPageUi({ index: mi, total });
-    }
-  }, [currentPage]);
 
   const goToPage = (index: number, anchor: "start" | "restore" = "restore") => {
     const safe = Math.max(0, Math.min(index, pages.length - 1));
@@ -603,7 +589,6 @@ function CelebraScreenInner() {
     const total = engineTotalRef.current[page] ?? 1;
     if (micro + 1 < total) {
       engineMicroRef.current[page] = micro + 1;
-      setMicroPageUi({ index: micro + 1, total });
       return;
     }
     goNextPageOrIndice();
@@ -617,7 +602,6 @@ function CelebraScreenInner() {
     const total = engineTotalRef.current[page] ?? 1;
     if (micro > 0) {
       engineMicroRef.current[page] = micro - 1;
-      setMicroPageUi({ index: micro - 1, total });
       return;
     }
     if (fromIndice) {
@@ -636,8 +620,6 @@ function CelebraScreenInner() {
     return renderSegment(seg, key, styles, liturgyColors);
   };
 
-  const totalPages = pages.length;
-
   // Reset pagina solo quando cambia il contenuto liturgico (non al ridimensionamento font).
   // Se l'utente ha appena scelto prefazio/PE, resta sulla stessa macro-pagina.
   // Con sezione da indice salta alla macro-pagina richiesta.
@@ -645,7 +627,6 @@ function CelebraScreenInner() {
     engineMicroRef.current = {};
     engineTotalRef.current = {};
     engineMeasuringRef.current = {};
-    setMicroPageUi({ index: 0, total: 1 });
 
     const keep = keepPageOnRebuildRef.current;
     keepPageOnRebuildRef.current = false;
@@ -716,7 +697,6 @@ function CelebraScreenInner() {
         );
         engineMicroRef.current[pageIdx] = mi;
         if (pageIdx === currentPageRef.current) {
-          setMicroPageUi({ index: mi, total });
           setEnginePaginating(false);
         }
       }}
@@ -818,12 +798,9 @@ function CelebraScreenInner() {
     );
   }
 
-  const total = totalPages;
-  const safeIdx = Math.max(0, Math.min(currentPage, Math.max(0, total - 1)));
-
   return (
     <SafeAreaView style={styles.container} testID="celebra-screen">
-      {/* Top bar: home + indice + data + bottoni font + indicatore di pagina */}
+      {/* Top bar: home + indice + titolo + A−/A+ */}
       <View style={styles.topBar}>
         <View style={styles.topBarLeft}>
           <HomeCircleButton onPress={() => router.replace("/")} testID="btn-back-home" />
@@ -851,20 +828,7 @@ function CelebraScreenInner() {
             decreaseTestID="btn-font-decrease"
             increaseTestID="btn-font-increase"
           />
-          <SettingsTopBarButton
-            onPress={() => router.push("/impostazioni")}
-            color={colors.textPrimary}
-            size={scaledFont(32)}
-            testID="btn-settings-celebra"
-            style={styles.settingsBtn}
-          />
-        </View>
-        <View style={styles.pageIndicator}>
-          <Text style={styles.pageIndicatorText}>
-            {total > 0
-              ? `${safeIdx + 1}/${total} · p.${microPageUi.index + 1}/${microPageUi.total}`
-              : ""}
-          </Text>
+          <ReadingBrightnessButton />
         </View>
       </View>
 
@@ -982,7 +946,9 @@ export default function CelebraScreen() {
   const router = useRouter();
   return (
     <CelebraErrorBoundary onReset={() => router.replace("/")}>
-      <CelebraScreenInner />
+      <ReadingBrightnessRoot>
+        <CelebraScreenInner />
+      </ReadingBrightnessRoot>
     </CelebraErrorBoundary>
   );
 }

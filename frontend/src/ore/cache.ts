@@ -30,7 +30,15 @@ export async function loadDayHours(date: string): Promise<DayHoursCache | null> 
 
 export function hoursLookComplete(data: DayHoursCache | null): boolean {
   if (!data) return false;
-  const need: Array<OreHourId | MediaId> = ["ufficio", "lodi", "terza", "vespri", "compieta"];
+  const need: Array<OreHourId | MediaId> = [
+    "ufficio",
+    "lodi",
+    "terza",
+    "sesta",
+    "nona",
+    "vespri",
+    "compieta",
+  ];
   return need.every((h) => {
     const hour = data.hours[h];
     return !!(hour && hour.blocks && hour.blocks.length > 0);

@@ -2,11 +2,17 @@
  * Lezionario dei Santi (CEI) — dati pre-risolti a build time da saintLectionary.json.
  */
 import lectionaryData from "./data/saintLectionary.json";
-import type { Reading } from "./api";
 import type { Liturgy } from "./localLiturgy";
 import { parseLocalDate } from "./dateUtils";
+import { getObservedSaintsForDate } from "./saintsCalendar";
+import { getVigilEveContext } from "./vigilCatalog";
 
-export type SaintLectionaryReading = Reading;
+export type SaintLectionaryReading = {
+  type: string;
+  reference: string;
+  title: string;
+  text: string;
+};
 
 export type SaintLectionaryEntry = {
   saintTitle: string;
@@ -212,6 +218,71 @@ export function mergeSaintReadingsIntoLiturgy(
   });
 
   return { ...liturgy, readings: merged };
+}
+
+const FEAST_RANKS = new Set(["festa", "solennita"]);
+
+function normalizeRankName(rank: string): string {
+  return rank
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+}
+
+function lectionaryDateForLiturgy(liturgy: Liturgy): Date {
+  const d = parseLocalDate(liturgy.date);
+  if (liturgy.celebrationMode && liturgy.celebrationMode !== "calendar_day") {
+    const vigil = getVigilEveContext(d);
+    if (vigil) return parseLocalDate(vigil.solemnityDateISO);
+  }
+  return d;
+}
+
+function hasSubstantiveSecondReading(readings: { type: string; text?: string }[] | undefined): boolean {
+  const second = (readings || []).find((r) => r.type === "seconda_lettura");
+  return !!second && isSubstantiveScriptureReading(second as SaintLectionaryReading);
+}
+
+function insertSecondReading(readings: Liturgy["readings"], second: SaintLectionaryReading): Liturgy["readings"] {
+  const next = [...(readings || [])];
+  const existingIdx = next.findIndex((r) => r.type === "seconda_lettura");
+  if (existingIdx >= 0) {
+    next[existingIdx] = second;
+    return next;
+  }
+  const afterSalmo = next.findIndex((r) => r.type === "salmo");
+  const beforeGospel = next.findIndex((r) => r.type === "acclamazione" || r.type === "vangelo");
+  let at = afterSalmo >= 0 ? afterSalmo + 1 : beforeGospel;
+  if (at < 0) at = next.length;
+  next.splice(at, 0, second);
+  return next;
+}
+
+/**
+ * Festa/solennità osservata: se il CEI omette la 2ª lettura e il lezionario bundlato
+ * ce l'ha, la inserisce. Nessuno switch: le letture della festa non sono opzionali.
+ */
+export function fillMissingFeastSecondReading(liturgy: Liturgy): Liturgy {
+  if (!liturgy?.date) return liturgy;
+  if (hasSubstantiveSecondReading(liturgy.readings)) return liturgy;
+
+  const d = lectionaryDateForLiturgy(liturgy);
+  const mmdd = mmddFromDate(d);
+  const feasts = getObservedSaintsForDate(d).filter((s) => FEAST_RANKS.has(normalizeRankName(s.rank)));
+  if (feasts.length === 0) return liturgy;
+
+  let second: SaintLectionaryReading | undefined;
+  for (const feast of feasts) {
+    const entry = findEntryForSaint(mmdd, feast.title);
+    const found = entry?.readings.find((r) => r.type === "seconda_lettura");
+    if (found && isSubstantiveScriptureReading(found)) {
+      second = found;
+      break;
+    }
+  }
+  if (!second) return liturgy;
+  return { ...liturgy, readings: insertSecondReading(liturgy.readings, second) };
 }
 
 export function getSaintLectionaryMeta() {

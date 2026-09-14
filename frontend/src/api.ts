@@ -28,10 +28,10 @@ import {
   saveLiturgy,
   loadLiturgy,
   getLiturgyIndex,
-  nextDates,
 } from "./offlineCache";
 import { todayStr, parseLocalDate, italianDateLabel } from "./dateUtils";
 import type { CelebrationMode } from "./massSession";
+import { fillMissingFeastSecondReading } from "./saintLectionary";
 import { getVigilEveContext } from "./vigilCatalog";
 import {
   celebrationTitlesMatch,
@@ -95,7 +95,11 @@ function liturgyFromStorage(
 ): Liturgy | null {
   if (!local || !Array.isArray(local.readings) || local.readings.length === 0) return null;
   const withMode = { ...local, celebrationMode: mode };
-  return { ...reconcileLiturgyColors(withMode), fromLocalCache: true, celebrationMode: mode };
+  return fillMissingFeastSecondReading({
+    ...reconcileLiturgyColors(withMode),
+    fromLocalCache: true,
+    celebrationMode: mode,
+  });
 }
 
 async function liturgyForDateCached(
@@ -147,38 +151,6 @@ export type PrefetchProgress = {
   current?: string;
   failed: string[];
 };
-
-export async function prefetchLiturgies(
-  days: number,
-  onProgress?: (p: PrefetchProgress) => void,
-): Promise<PrefetchProgress> {
-  const dates = nextDates(days);
-  const prog: PrefetchProgress = { total: dates.length, done: 0, failed: [] };
-  for (const d of dates) {
-    prog.current = d;
-    onProgress?.(prog);
-    try {
-      const data = await getFullLiturgyByDateStr(d);
-      if (data && Array.isArray(data.readings) && data.readings.length > 0) {
-        await saveLiturgy(d, data);
-      } else {
-        prog.failed.push(d);
-      }
-    } catch (e) {
-      console.log(`prefetch ${d} failed:`, e);
-      prog.failed.push(d);
-    }
-    prog.done += 1;
-    onProgress?.(prog);
-  }
-  return prog;
-}
-
-// I testi statici sono già nell'app: prefetchStatic è un no-op
-export async function prefetchStatic(): Promise<void> {
-  // Nulla da fare - tutti i testi statici sono bundlati nell'APK
-  return;
-}
 
 /** Titolo CEI per banner home: cache offline, altrimenti scrape leggero. */
 function reconciledCeiTitle(
