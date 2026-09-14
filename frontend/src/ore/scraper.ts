@@ -7,6 +7,7 @@ import { fetchLdoDayHtml, ldoHymnForHour } from "./ldo";
 import { extractInvitatoryAntiphon, parseHourHtml, splitOraMediaHtml } from "./parseHour";
 import { loadDayHours, saveDayHours } from "./cache";
 import { ceiHourSlug } from "./titles";
+import { getBundledCompline } from "./complineBundled";
 import type { DayHoursCache, MediaId, OreHourId, ParsedHour } from "./types";
 import { parseLocalDate } from "../dateUtils";
 
@@ -182,6 +183,10 @@ const FETCH_HOURS: OreHourId[] = [
 export async function fetchDayHours(dateISO: string, ceiTitle = ""): Promise<DayHoursCache> {
   const date = parseLocalDate(dateISO);
   const results = await mapPool(FETCH_HOURS, CEI_FETCH_CONCURRENCY, async (hour) => {
+    if (hour === "compieta") {
+      const bundled = getBundledCompline(dateISO);
+      if (bundled?.blocks?.length) return { compieta: bundled };
+    }
     const html = await fetchHourHtml(dateISO, ceiHourSlug(hour, date));
     return enrichLatinHymns(await ingestHtml(hour, html), dateISO);
   });
@@ -214,6 +219,12 @@ export async function ensureHour(
   ceiTitle = "",
 ): Promise<DayHoursCache> {
   const existing = await loadDayHours(dateISO);
+  if (hour === "compieta") {
+    const bundled = getBundledCompline(dateISO);
+    if (bundled?.blocks?.length) {
+      return mergeDayHours(dateISO, { hours: { compieta: bundled } }, ceiTitle);
+    }
+  }
   if (hour === "invitatorio") {
     if (existing?.invitFetched) return existing;
   } else if (existing) {

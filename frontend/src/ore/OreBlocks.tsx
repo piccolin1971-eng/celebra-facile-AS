@@ -3,6 +3,7 @@ import { Text, View, StyleSheet, type StyleProp, type ViewStyle } from "react-na
 import type { AppFontWeight } from "../fontFamily";
 import type { OreBlock, DayHoursMeta } from "./types";
 import { formatHourHeadLine } from "./dayHead";
+import { enrichPsalmHead } from "./psalmHeadings";
 
 const GOLD_TITLE = "#c4b06a";
 const RUBRIC = "#E24B4B";
@@ -200,7 +201,8 @@ export function OreBlocksView({
         fontFamily={headFontFamily}
         fontWeight={headFontWeight}
       />
-      {blocks.map((b, i) => {
+      {blocks.map((raw, i) => {
+        const b = raw.k === "psalmHead" ? enrichPsalmHead(raw) : raw;
         if (inPreces && b.k === "title") inPreces = false;
         const node = renderBlock(
           b,

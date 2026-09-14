@@ -249,7 +249,7 @@ export function splitPsalmTitle(title: string): { num: string; name: string } {
 
   const t = raw.replace(/\s+/g, " ").trim();
   const psalm = t.match(
-    /^(SALMO\s+\d+[a-zA-Z]?(?:\s*,\s*[\d.\-–a-zA-Z ]+?)?)\s+([A-ZÀ-Ù«].+)$/,
+    /^(SALMO\s+\d+[a-zA-Z]?(?:\s*,\s*[\d.\-–ab ]+)?(?:\s*\((?:I{1,3}|IV)\))?)\s+([A-ZÀ-Ù«].+)$/,
   );
   if (psalm) return { num: psalm[1].trim(), name: psalm[2].trim() };
 

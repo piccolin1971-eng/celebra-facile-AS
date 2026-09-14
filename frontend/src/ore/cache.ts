@@ -45,15 +45,18 @@ export function hoursLookComplete(data: DayHoursCache | null): boolean {
   });
 }
 
-export async function unifiedCacheDaysLeft(): Promise<number> {
+export async function unifiedCacheDaysLeft(includeHours = true): Promise<number> {
   const dates = nextDates(10);
   let n = 0;
   for (const d of dates) {
     const mass = await loadLiturgy(d);
-    const hours = await loadDayHours(d);
     const massOk = !!(mass && Array.isArray(mass.readings) && mass.readings.length > 0);
-    if (massOk && hoursLookComplete(hours)) n += 1;
-    else break;
+    if (!massOk) break;
+    if (includeHours) {
+      const hours = await loadDayHours(d);
+      if (!hoursLookComplete(hours)) break;
+    }
+    n += 1;
   }
   return n;
 }

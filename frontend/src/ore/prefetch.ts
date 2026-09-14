@@ -10,7 +10,9 @@ export type { PrefetchProgress };
 export async function prefetchMassAndHours(
   days = 10,
   onProgress?: (p: PrefetchProgress) => void,
+  opts?: { includeHours?: boolean },
 ): Promise<PrefetchProgress> {
+  const includeHours = opts?.includeHours !== false;
   const dates = nextDates(days);
   const prog: PrefetchProgress = { total: dates.length, done: 0, failed: [] };
   await pruneOldHours();
@@ -18,16 +20,18 @@ export async function prefetchMassAndHours(
     prog.current = d;
     onProgress?.(prog);
     let massOk = false;
-    let hoursOk = false;
+    let hoursOk = !includeHours;
     try {
       const data = await getFullLiturgyByDateStr(d);
       if (data && Array.isArray(data.readings) && data.readings.length > 0) {
         await saveLiturgy(d, data);
         massOk = true;
       }
-      const title = typeof data?.title === "string" ? data.title : "";
-      const hours = await fetchDayHours(d, title);
-      hoursOk = hoursLookComplete(hours);
+      if (includeHours) {
+        const title = typeof data?.title === "string" ? data.title : "";
+        const hours = await fetchDayHours(d, title);
+        hoursOk = hoursLookComplete(hours);
+      }
     } catch (e) {
       console.log(`prefetch mass+hours ${d}:`, e);
     }

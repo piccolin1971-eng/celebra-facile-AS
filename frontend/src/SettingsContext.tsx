@@ -31,6 +31,8 @@ interface SettingsState {
   isBold: boolean;
   /** Tasto «Celebra subito» in Home + selettori prefazio/PE in Celebra. Default on. */
   celebraSubitoEnabled: boolean;
+  /** Tasto «Liturgia delle Ore» in Home. Default on. */
+  oreEnabled: boolean;
   /** Feedback tattile (vibrazione) ai tap principali. Default off. */
   hapticFeedbackEnabled: boolean;
   /** Fattore interlinea testo liturgico (0.85 compatto … 1.25 ampio). */
@@ -43,6 +45,7 @@ interface SettingsState {
   setFontFamilyId: (id: FontFamilyId) => void;
   setParchmentTone: (n: number) => void;
   setCelebraSubitoEnabled: (v: boolean) => void;
+  setOreEnabled: (v: boolean) => void;
   setHapticFeedbackEnabled: (v: boolean) => void;
   setLineSpacing: (n: number) => void;
   colors: ReturnType<typeof getColors>;
@@ -231,6 +234,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   const [isBold, setIsBoldState] = useState(false);
   const [parchmentTone, setParchmentToneState] = useState(PARCHMENT_TONE_DEFAULT);
   const [celebraSubitoEnabled, setCelebraSubitoEnabledState] = useState(true);
+  const [oreEnabled, setOreEnabledState] = useState(true);
   const [hapticFeedbackEnabled, setHapticFeedbackEnabledState] = useState(false);
   const [lineSpacing, setLineSpacingState] = useState(LINE_SPACING_DEFAULT);
   const [loaded, setLoaded] = useState(false);
@@ -291,6 +295,9 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
           if (typeof s.celebraSubitoEnabled === "boolean") {
             setCelebraSubitoEnabledState(s.celebraSubitoEnabled);
           }
+          if (typeof s.oreEnabled === "boolean") {
+            setOreEnabledState(s.oreEnabled);
+          }
           if (typeof s.hapticFeedbackEnabled === "boolean") {
             setHapticFeedbackEnabledState(s.hapticFeedbackEnabled);
             setAppHapticEnabled(s.hapticFeedbackEnabled);
@@ -335,8 +342,8 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     })();
   }, []);
 
-  const persist = async (patch: Partial<{ theme: ThemeMode; fontSize: number; highContrast: boolean; isBold: boolean; readingMode: ReadingMode; fontFamilyId: FontFamilyId; parchmentTone: number; celebraSubitoEnabled: boolean; hapticFeedbackEnabled: boolean; lineSpacing: number }>) => {
-    const next = { theme, fontSize, highContrast, isBold, readingMode, fontFamilyId, parchmentTone, celebraSubitoEnabled, hapticFeedbackEnabled, lineSpacing, ...patch };
+  const persist = async (patch: Partial<{ theme: ThemeMode; fontSize: number; highContrast: boolean; isBold: boolean; readingMode: ReadingMode; fontFamilyId: FontFamilyId; parchmentTone: number; celebraSubitoEnabled: boolean; oreEnabled: boolean; hapticFeedbackEnabled: boolean; lineSpacing: number }>) => {
+    const next = { theme, fontSize, highContrast, isBold, readingMode, fontFamilyId, parchmentTone, celebraSubitoEnabled, oreEnabled, hapticFeedbackEnabled, lineSpacing, ...patch };
     await AsyncStorage.setItem("messale_settings", JSON.stringify(next));
   };
 
@@ -362,6 +369,10 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     setCelebraSubitoEnabledState(v);
     persist({ celebraSubitoEnabled: v });
   };
+  const setOreEnabled = (v: boolean) => {
+    setOreEnabledState(v);
+    persist({ oreEnabled: v });
+  };
   const setHapticFeedbackEnabled = (v: boolean) => {
     setHapticFeedbackEnabledState(v);
     setAppHapticEnabled(v);
@@ -385,7 +396,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   if (!loaded) return null;
 
   return (
-    <SettingsContext.Provider value={{ theme, fontSize, highContrast, isBold, readingMode, fontFamilyId, fontFamily, parchmentTone, celebraSubitoEnabled, hapticFeedbackEnabled, lineSpacing, setTheme, setFontSize, setHighContrast, setIsBold, setReadingMode, setFontFamilyId, setParchmentTone, setCelebraSubitoEnabled, setHapticFeedbackEnabled, setLineSpacing, colors, scaledFont }}>
+    <SettingsContext.Provider value={{ theme, fontSize, highContrast, isBold, readingMode, fontFamilyId, fontFamily, parchmentTone, celebraSubitoEnabled, oreEnabled, hapticFeedbackEnabled, lineSpacing, setTheme, setFontSize, setHighContrast, setIsBold, setReadingMode, setFontFamilyId, setParchmentTone, setCelebraSubitoEnabled, setOreEnabled, setHapticFeedbackEnabled, setLineSpacing, colors, scaledFont }}>
       {children}
     </SettingsContext.Provider>
   );

@@ -90,7 +90,7 @@ function dayLabelFor(offset: number, date: Date): string {
 export default function Home() {
   const router = useRouter();
   const params = useLocalSearchParams<{ date?: string }>();
-  const { colors, scaledFont, fontSize, celebraSubitoEnabled, theme } = useSettings();
+  const { colors, scaledFont, fontSize, celebraSubitoEnabled, oreEnabled, theme } = useSettings();
   const [selectedDateISO, setSelectedDateISO] = useState(() => localDateStr(new Date()));
   const [sessions, setSessions] = useState<MassSession[]>([]);
   const [selectedCelebrateMode, setSelectedCelebrateMode] = useState<CelebrationMode | null>(null);
@@ -228,8 +228,8 @@ export default function Home() {
   }, []);
 
   const reloadDlDays = useCallback(async () => {
-    setDlDaysLeft(await unifiedCacheDaysLeft());
-  }, []);
+    setDlDaysLeft(await unifiedCacheDaysLeft(oreEnabled));
+  }, [oreEnabled]);
 
   useEffect(() => {
     void reloadPreparedFlags();
@@ -335,12 +335,17 @@ export default function Home() {
     setDlRunning(true);
     setDlProgress({ total: 10, done: 0, failed: [] });
     try {
-      const result = await prefetchMassAndHours(10, (p) => setDlProgress({ ...p }));
+      const result = await prefetchMassAndHours(10, (p) => setDlProgress({ ...p }), {
+        includeHours: oreEnabled,
+      });
       await reloadDlDays();
       const ok = result.total - result.failed.length;
+      const what = oreEnabled
+        ? "giornate (Messa e Liturgia delle Ore)"
+        : "giornate di letture della Messa";
       Alert.alert(
         "Download completato",
-        `Scaricate ${ok} su ${result.total} giornate (Messa e Liturgia delle Ore).` +
+        `Scaricate ${ok} su ${result.total} ${what}.` +
           (result.failed.length ? `\n\nGiorni incompleti:\n${result.failed.join(", ")}` : ""),
       );
     } catch (e: any) {
@@ -822,6 +827,7 @@ export default function Home() {
           </TouchableOpacity>
         </View>
 
+        {oreEnabled ? (
         <TouchableOpacity
           style={[styles.quickCelebraBtn, styles.oreBtnOutline, webClickable]}
           onPress={openOre}
@@ -833,6 +839,7 @@ export default function Home() {
             Liturgia delle Ore
           </Text>
         </TouchableOpacity>
+        ) : null}
 
         <TouchableOpacity
           style={[styles.dlCard, dlRunning && { opacity: 0.75 }, webClickable]}
@@ -840,16 +847,26 @@ export default function Home() {
           disabled={dlRunning}
           testID="btn-download-ore"
           accessibilityRole="button"
-          accessibilityLabel="Scarica 10 giorni di letture della Messa e Liturgia delle Ore"
+          accessibilityLabel={
+            oreEnabled
+              ? "Scarica 10 giorni di letture della Messa e Liturgia delle Ore"
+              : "Scarica 10 giorni di letture della Messa"
+          }
           accessibilityState={{ disabled: dlRunning, busy: dlRunning }}
         >
           <View style={styles.dlMain}>
             <Text style={styles.dlMainLine} numberOfLines={1}>
               Scarica letture
             </Text>
+            {oreEnabled ? (
             <Text style={styles.dlMainLine} numberOfLines={1}>
               e liturgia delle ore
             </Text>
+            ) : (
+            <Text style={styles.dlMainLine} numberOfLines={1}>
+              della Messa
+            </Text>
+            )}
           </View>
           <View style={styles.dlSide}>
             {dlRunning ? (
@@ -928,7 +945,9 @@ export default function Home() {
         </View>
 
         <Text style={styles.footer}>
-          Fonte: chiesacattolica.it · Messa e Liturgia delle Ore
+          {oreEnabled
+            ? "Fonte: chiesacattolica.it · Messa e Liturgia delle Ore"
+            : "Fonte: chiesacattolica.it · Letture della Messa"}
         </Text>
       </ScrollView>
 

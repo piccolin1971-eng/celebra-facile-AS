@@ -11,6 +11,7 @@ import {
 } from "./html";
 import { hymnConsumeCount, isExactInnoTitle, isInnoMarkerNode, parseCeiHymnsHtml } from "./hymns";
 import { MARIAN_ANTIPHONS, splitPsalmTitle } from "./bundled";
+import { enrichPsalmHeads } from "./psalmHeadings";
 import type { MediaId, OreBlock, OreHourId, ParsedHour } from "./types";
 
 function isMarianTitle(t: string): boolean {
@@ -783,7 +784,7 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId): ParsedHo
       error: "Testo non disponibile. Riprova con la connessione, oppure scarica 10 giorni dalla Home.",
     };
   }
-  return { hour, blocks: clean };
+  return { hour, blocks: enrichPsalmHeads(clean) };
 }
 
 function isChromeText(t: string): boolean {

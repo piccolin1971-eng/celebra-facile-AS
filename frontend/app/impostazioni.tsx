@@ -12,7 +12,7 @@ import { SectionScreenTopBar } from "../src/components/SectionScreenTopBar";
 
 export default function Impostazioni() {
   const router = useRouter();
-  const { theme, setTheme, fontSize, highContrast, setHighContrast, isBold, setIsBold, lineSpacing, setLineSpacing, fontFamilyId, setFontFamilyId, parchmentTone, setParchmentTone, celebraSubitoEnabled, setCelebraSubitoEnabled, hapticFeedbackEnabled, setHapticFeedbackEnabled, colors, scaledFont } = useSettings();
+  const { theme, setTheme, fontSize, highContrast, setHighContrast, isBold, setIsBold, lineSpacing, setLineSpacing, fontFamilyId, setFontFamilyId, parchmentTone, setParchmentTone, celebraSubitoEnabled, setCelebraSubitoEnabled, oreEnabled, setOreEnabled, hapticFeedbackEnabled, setHapticFeedbackEnabled, colors, scaledFont } = useSettings();
   const styles = makeStyles(colors, fontSize);
   const appVersion = Constants.expoConfig?.version ?? "—";
   const buildNumber =
@@ -56,6 +56,27 @@ export default function Impostazioni() {
           </View>
         </View>
 
+        <View style={styles.section} testID="section-ore-home">
+          <View style={styles.switchRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.sectionTitle}>Liturgia delle Ore in Home</Text>
+              <Text style={styles.sectionDesc}>
+                {oreEnabled
+                  ? "Attivo (predefinito): in Home compare il tasto «Liturgia delle Ore» e il download dei 10 giorni include anche le Ore. Disattiva per usare solo la Messa."
+                  : "Disattivo: in Home sparisce il tasto «Liturgia delle Ore» e il download dei 10 giorni riguarda solo le letture della Messa. Le schermate delle Ore restano raggiungibili se già aperte."}
+              </Text>
+            </View>
+            <Switch
+              value={oreEnabled}
+              onValueChange={setOreEnabled}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor="#FFFFFF"
+              style={{ transform: [{ scaleX: 1.3 }, { scaleY: 1.3 }] }}
+              testID="switch-ore-home"
+            />
+          </View>
+        </View>
+
         <View style={styles.section} testID="section-haptic">
           <View style={styles.switchRow}>
             <View style={{ flex: 1 }}>
@@ -78,7 +99,7 @@ export default function Impostazioni() {
         <View style={styles.section} testID="section-line-spacing">
           <Text style={styles.sectionTitle}>Interlinea del testo</Text>
           <Text style={styles.sectionDesc}>
-            Spaziatura verticale tra le righe in Celebra e in Scegli la liturgia (Messa). Utile con carattere grande o per leggere con più respiro. Si adatta alla dimensione testo (A-/A+).
+            Spaziatura verticale tra le righe in Celebra e in Scegli la liturgia (Messa). Utile con carattere grande o per leggere con più respiro. Si adatta alla dimensione testo (A-/A+). Nella Liturgia delle Ore, a 1,00 l’interlinea è 1,15.
           </Text>
           <Text style={[styles.sectionDesc, { marginTop: 12 }]}>
             Interlinea: {formatLineSpacingValue(lineSpacing)} (1,00 = normale)

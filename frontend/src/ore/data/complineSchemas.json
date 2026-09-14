@@ -1,0 +1,2792 @@
+{
+  "mon": {
+    "sourceDate": "2026-10-19",
+    "blocks": [
+      {
+        "k": "stanza",
+        "lines": [
+          "V. O Dio, vieni a salvarmi",
+          "R. Signore, vieni presto in mio aiuto."
+        ],
+        "hang": [
+          0,
+          0
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Gloria al Padre e al Figlio",
+          "e allo Spirito Santo.",
+          "Come era nel principio, e ora e sempre",
+          "nei secoli dei secoli. Amen. Alleluia."
+        ],
+        "hang": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      {
+        "k": "hymn",
+        "hymns": [
+          {
+            "label": null,
+            "stanzas": [
+              [
+                "Al termine del giorno,",
+                "o sommo Creatore,",
+                "vegliaci nel riposo",
+                "con amore di Padre."
+              ],
+              [
+                "Dona salute al corpo",
+                "e fervore allo spirito,",
+                "la tua luce rischiari",
+                "le ombre della notte."
+              ],
+              [
+                "Nel sonno delle membra",
+                "resti fedele il cuore,",
+                "e al ritorno dell'alba",
+                "intoni la tua lode."
+              ],
+              [
+                "Sia onore al Padre e al Figlio",
+                "e allo Spirito Santo,",
+                "al Dio trino ed unico",
+                "nei secoli sia gloria. Amen."
+              ]
+            ]
+          },
+          {
+            "label": "Oppure:",
+            "stanzas": [
+              [
+                "Gesù, luce da luce,",
+                "sole senza tramonto,",
+                "tu rischiari le tenebre",
+                "nella notte del mondo."
+              ],
+              [
+                "In te, santo Signore,",
+                "noi cerchiamo il riposo",
+                "dall'umana fatica,",
+                "al termine del giorno."
+              ],
+              [
+                "Se i nostri occhi si chiudono,",
+                "veglia in te il nostro cuore;",
+                "la tua mano protegga",
+                "coloro che in te sperano."
+              ],
+              [
+                "Difendi, o Salvatore,",
+                "dalle insidie del male",
+                "i figli che hai redenti",
+                "col tuo sangue prezioso."
+              ],
+              [
+                "A te sia gloria, o Cristo,",
+                "nato da Maria vergine,",
+                "al Padre e allo Spirito",
+                "nei secoli dei secoli. Amen."
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        "k": "rubric",
+        "lab": "Ant.",
+        "text": "Tu sei buono, Signore, e perdoni, lento all’ira e grande nell’amore."
+      },
+      {
+        "k": "psalmHead",
+        "num": "SALMO 85",
+        "name": "Preghiera a Dio nell’afflizione",
+        "sub": "Sia benedetto Dio, il quale ci consola in ogni tribolazione (2 Cor 1, 3. 4).",
+        "cite": ""
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Signore, tendi l’orecchio, rispondimi, *",
+          "perché io sono povero e infelice.",
+          "Custodiscimi perché sono fedele; *",
+          "tu, Dio mio, salva il tuo servo, che in te spera."
+        ],
+        "hang": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Pietà di me, Signore, *",
+          "a te grido tutto il giorno.",
+          "Rallegra la vita del tuo servo, *",
+          "perché a te, Signore, innalzo l’anima mia."
+        ],
+        "hang": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Tu sei buono, Signore, e perdoni, *",
+          "sei pieno di misericordia con chi ti invoca.",
+          "Porgi l’orecchio, Signore, alla mia preghiera *",
+          "e sii attento alla voce della mia supplica."
+        ],
+        "hang": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Nel giorno dell’angoscia alzo a te il mio grido *",
+          "e tu mi esaudirai."
+        ],
+        "hang": [
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Fra gli dèi nessuno è come te, Signore, *",
+          "e non c’è nulla che uguagli le tue opere."
+        ],
+        "hang": [
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Tutti i popoli che hai creato verranno †",
+          "e si prostreranno davanti a te, o Signore, *",
+          "per dare gloria al tuo nome;"
+        ],
+        "hang": [
+          0,
+          1,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "grande tu sei e compi meraviglie: *",
+          "tu solo sei Dio."
+        ],
+        "hang": [
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Mostrami, Signore, la tua via, *",
+          "perché nella tua verità io cammini;",
+          "donami un cuore semplice *",
+          "che tema il tuo nome."
+        ],
+        "hang": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Ti loderò, Signore, Dio mio, con tutto il cuore *",
+          "e darò gloria al tuo nome sempre,",
+          "perché grande con me è la tua misericordia: *",
+          "dal profondo degli inferi mi hai strappato."
+        ],
+        "hang": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Mio Dio, mi assalgono gli arroganti, †",
+          "una schiera di violenti attenta alla mia vita, *",
+          "non pongono te davanti ai loro occhi."
+        ],
+        "hang": [
+          0,
+          1,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Ma tu, Signore, Dio di pietà, compassionevole, *",
+          "lento all’ira e pieno di amore, Dio fedele,"
+        ],
+        "hang": [
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "volgiti a me e abbi misericordia: †",
+          "dona al tuo servo la tua forza, *",
+          "salva il figlio della tua ancella."
+        ],
+        "hang": [
+          0,
+          1,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Dammi un segno di benevolenza; †",
+          "vedano e siano confusi i miei nemici, *",
+          "perché tu, Signore, mi hai soccorso e consolato."
+        ],
+        "hang": [
+          0,
+          1,
+          1
+        ]
+      },
+      {
+        "k": "rubric",
+        "lab": "Ant.",
+        "text": "Tu sei buono, Signore, e perdoni, lento all’ira e grande nell’amore."
+      },
+      {
+        "k": "title",
+        "text": "LETTURA BREVE 1Ts 5, 9-10"
+      },
+      {
+        "k": "prose",
+        "text": "Dio ci ha destinati all’acquisto della salvezza per mezzo del Signor nostro Gesù Cristo, il quale è morto per noi, perché, sia che vegliamo sia che dormiamo, viviamo insieme con lui."
+      },
+      {
+        "k": "title",
+        "text": "RESPONSORIO BREVE"
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "R. Signore,",
+          "* nelle tue mani affido il mio spirito.",
+          "Signore, nelle tue mani affido il mio spirito.",
+          "V. Dio di verità, tu mi hai redento:",
+          "nelle tue mani affido il mio spirito.",
+          "Gloria al Padre e al Figlio e allo Spirito Santo.",
+          "Signore, nelle tue mani affido il mio spirito."
+        ]
+      },
+      {
+        "k": "rubric",
+        "lab": "Ant.",
+        "text": "Nella veglia salvaci, Signore, nel sonno non ci abbandonare: il cuore vegli con Cristo e il corpo riposi nella pace."
+      },
+      {
+        "k": "psalmHead",
+        "num": "CANTICO DI SIMEONE Lc 2, 29-32",
+        "name": "",
+        "sub": "Cristo, luce delle genti e gloria di Israele",
+        "cite": ""
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Ora lascia, o Signore, che il tuo servo *",
+          "vada in pace secondo la tua parola;"
+        ],
+        "hang": [
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "perché i miei occhi han visto la tua salvezza, *",
+          "preparata da te davanti a tutti i popoli,"
+        ],
+        "hang": [
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "luce per illuminare le genti *",
+          "e gloria del tuo popolo Israele."
+        ],
+        "hang": [
+          0,
+          1
+        ]
+      },
+      {
+        "k": "rubric",
+        "lab": "Ant.",
+        "text": "Nella veglia salvaci, Signore, nel sonno non ci abbandonare: il cuore vegli con Cristo e il corpo riposi nella pace."
+      },
+      {
+        "k": "title",
+        "text": "ORAZIONE"
+      },
+      {
+        "k": "prose",
+        "text": "Donaci, o Padre, un sonno ristoratore e fa’ che i germi di bene, seminati nei solchi di questa giornata, producano una messe abbondante. Per Cristo."
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Il Signore ci conceda una notte serena e un riposo tranquillo.",
+          "R. Amen."
+        ],
+        "hang": [
+          0,
+          0
+        ]
+      },
+      {
+        "k": "omit",
+        "text": "Si conclude con un’antifona della Beata Vergine Maria."
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "O santa Madre del Redentore,",
+          "porta dei cieli, stella del mare,",
+          "soccorri il tuo popolo",
+          "che anela a risorgere.",
+          "Tu che, accogliendo il saluto dell’angelo,",
+          "nello stupore di tutto il creato,",
+          "hai generato il tuo Creatore,",
+          "madre sempre vergine,",
+          "pietà di noi peccatori."
+        ],
+        "hang": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "k": "omit",
+        "text": "Oppure:"
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Alma Redemptóris Mater, quæ pérvia cæli",
+          "porta manes, et stella maris, succúrre cadénti,",
+          "súrgere qui curat, pópulo: tu quæ genuísti,",
+          "natúra miránte, tuum sanctum Genitórem,",
+          "Virgo prius ac postérius, Gabriélis ab ore",
+          "sumens illud Ave, peccatórum miserére."
+        ],
+        "hang": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    ]
+  },
+  "tue": {
+    "sourceDate": "2026-10-20",
+    "blocks": [
+      {
+        "k": "stanza",
+        "lines": [
+          "V. O Dio, vieni a salvarmi",
+          "R. Signore, vieni presto in mio aiuto."
+        ],
+        "hang": [
+          0,
+          0
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Gloria al Padre e al Figlio",
+          "e allo Spirito Santo.",
+          "Come era nel principio, e ora e sempre",
+          "nei secoli dei secoli. Amen. Alleluia."
+        ],
+        "hang": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      {
+        "k": "hymn",
+        "hymns": [
+          {
+            "label": null,
+            "stanzas": [
+              [
+                "Gesù, luce da luce,",
+                "sole senza tramonto,",
+                "tu rischiari le tenebre",
+                "nella notte del mondo."
+              ],
+              [
+                "In te, santo Signore,",
+                "noi cerchiamo il riposo",
+                "dall’umana fatica,",
+                "al termine del giorno."
+              ],
+              [
+                "Se i nostri occhi si chiudono,",
+                "veglia in te il nostro cuore;",
+                "la tua mano protegga",
+                "coloro che in te sperano."
+              ],
+              [
+                "Difendi, o Salvatore,",
+                "dalle insidie del male",
+                "i figli che hai redenti",
+                "col tuo sangue prezioso."
+              ],
+              [
+                "A te sia gloria, o Cristo,",
+                "nato da Maria vergine,",
+                "al Padre ed allo Spirito",
+                "nei secoli dei secoli. Amen."
+              ]
+            ]
+          },
+          {
+            "label": "Oppure:",
+            "stanzas": [
+              [
+                "Al termine del giorno,",
+                "o sommo Creatore,",
+                "vegliaci nel riposo",
+                "con amore di Padre."
+              ],
+              [
+                "Dona salute al corpo",
+                "e fervore allo spirito,",
+                "la tua luce rischiari",
+                "le ombre della notte."
+              ],
+              [
+                "Nel sonno delle membra",
+                "resti fedele il cuore,",
+                "e al ritorno dell’alba",
+                "intoni la tua lode."
+              ],
+              [
+                "Sia onore al Padre e al Figlio",
+                "e allo Spirito Santo,",
+                "al Dio trino ed unico",
+                "nei secoli sia gloria. Amen."
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        "k": "rubric",
+        "lab": "Ant.",
+        "text": "Non nascondermi il tuo volto, perché in te confido, Signore."
+      },
+      {
+        "k": "psalmHead",
+        "num": "SALMO 142, 1-11",
+        "name": "Preghiera nella tribolazione",
+        "sub": "Siamo giustificati dalla fede in Cristo e non dalle opere della legge (Gal 2, 16).",
+        "cite": ""
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Signore, ascolta la mia preghiera, †",
+          "porgi l’orecchio alla mia supplica,",
+          "tu che sei fedele, *",
+          "e per la tua giustizia rispondimi."
+        ],
+        "hang": [
+          0,
+          1,
+          2,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Non chiamare in giudizio il tuo servo: *",
+          "nessun vivente davanti a te è giusto."
+        ],
+        "hang": [
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Il nemico mi perseguita, †",
+          "calpesta a terra la mia vita, *",
+          "mi ha relegato nelle tenebre",
+          "come i morti da gran tempo."
+        ],
+        "hang": [
+          0,
+          1,
+          1,
+          2
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "In me languisce il mio spirito, *",
+          "si agghiaccia il mio cuore."
+        ],
+        "hang": [
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Ricordo i giorni antichi, †",
+          "ripenso a tutte le tue opere, *",
+          "medito sui tuoi prodigi."
+        ],
+        "hang": [
+          0,
+          1,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "A te protendo le mie mani, *",
+          "sono davanti a te come terra riarsa.",
+          "Rispondimi presto, Signore, *",
+          "viene meno il mio spirito."
+        ],
+        "hang": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Non nascondermi il tuo volto, *",
+          "perché non sia come chi scende nella fossa.",
+          "Al mattino fammi sentire la tua grazia, *",
+          "poiché in te confido."
+        ],
+        "hang": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Fammi conoscere la strada da percorrere, *",
+          "perché a te si innalza l’anima mia.",
+          "Salvami dai miei nemici, Signore, *",
+          "a te mi affido."
+        ],
+        "hang": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Insegnami a compiere il tuo volere, †",
+          "perché sei tu il mio Dio. *",
+          "Il tuo spirito buono mi guidi in terra piana."
+        ],
+        "hang": [
+          0,
+          1,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Per il tuo nome, Signore, fammi vivere, *",
+          "liberami dall’angoscia, per la tua giustizia."
+        ],
+        "hang": [
+          0,
+          1
+        ]
+      },
+      {
+        "k": "rubric",
+        "lab": "Ant.",
+        "text": "Non nascondermi il tuo volto, perché in te confido, Signore."
+      },
+      {
+        "k": "title",
+        "text": "LETTURA BREVE"
+      },
+      {
+        "k": "sub",
+        "text": "1 Pt 5, 8-9"
+      },
+      {
+        "k": "prose",
+        "text": "Siate temperanti, vigilate. Il vostro nemico, il diavolo, come leone ruggente va in giro, cercando chi divorare. Resistetegli saldi nella fede."
+      },
+      {
+        "k": "title",
+        "text": "RESPONSORIO BREVE"
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "R. Signore,",
+          "* nelle tue mani affido il mio spirito.",
+          "Signore, nelle tue mani affido il mio spirito.",
+          "V. Dio di verità, tu mi hai redento:",
+          "nelle tue mani affido il mio spirito.",
+          "Gloria al Padre e al Figlio e allo Spirito Santo.",
+          "Signore, nelle tue mani affido il mio spirito."
+        ]
+      },
+      {
+        "k": "rubric",
+        "lab": "Ant.",
+        "text": "Nella veglia salvaci, Signore, nel sonno non ci abbandonare: il cuore vegli con Cristo e il corpo riposi nella pace."
+      },
+      {
+        "k": "psalmHead",
+        "num": "CANTICO DI SIMEONE Lc 2, 29-32",
+        "name": "",
+        "sub": "Cristo, luce delle genti e gloria di Israele",
+        "cite": ""
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Ora lascia, o Signore, che il tuo servo *",
+          "vada in pace secondo la tua parola;"
+        ],
+        "hang": [
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "perché i miei occhi han visto la tua salvezza, *",
+          "preparata da te davanti a tutti i popoli,"
+        ],
+        "hang": [
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "luce per illuminare le genti *",
+          "e gloria del tuo popolo Israele."
+        ],
+        "hang": [
+          0,
+          1
+        ]
+      },
+      {
+        "k": "rubric",
+        "lab": "Ant.",
+        "text": "Nella veglia salvaci, Signore, nel sonno non ci abbandonare: il cuore vegli con Cristo e il corpo riposi nella pace."
+      },
+      {
+        "k": "title",
+        "text": "ORAZIONE"
+      },
+      {
+        "k": "prose",
+        "text": "Illumina questa notte, o Signore, perché dopo un sonno tranquillo ci risvegliamo alla luce del nuovo giorno, per camminare lieti nel tuo nome. Per Cristo."
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Il Signore ci conceda una notte serena e un riposo tranquillo.",
+          "R. Amen."
+        ],
+        "hang": [
+          0,
+          0
+        ]
+      },
+      {
+        "k": "omit",
+        "text": "Si conclude con un’antifona della Beata Vergine Maria."
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Salve, Regina, madre di misericordia,",
+          "vita, dolcezza e speranza nostra, salve.",
+          "A te ricorriamo, esuli figli di Eva;",
+          "a te sospiriamo, gementi e piangenti",
+          "in questa valle di lacrime.",
+          "Orsù dunque, avvocata nostra,",
+          "rivolgi a noi gli occhi tuoi misericordiosi.",
+          "E mostraci, dopo questo esilio, Gesù,",
+          "il frutto benedetto del tuo seno.",
+          "O clemente, o pia, o dolce Vergine Maria.",
+          "Oppure:",
+          "Salve, Regína, mater misericórdiæ;",
+          "vita, dulcédo et spes nostra, salve.",
+          "Ad te clamámus, éxsules fílii Evæ.",
+          "Ad te suspirámus, geméntes et flentes",
+          "in hac lacrimárum valle.",
+          "Eia ergo, advocáta nostra,",
+          "illos tuos misericórdes óculos",
+          "ad nos convérte.",
+          "Et Iesum, benedíctum fructum ventris tui,",
+          "nobis post hoc exsílium osténde.",
+          "O clemens, o pia, o dulcis Virgo María."
+        ],
+        "hang": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    ]
+  },
+  "wed": {
+    "sourceDate": "2026-10-21",
+    "blocks": [
+      {
+        "k": "stanza",
+        "lines": [
+          "V. O Dio, vieni a salvarmi",
+          "R. Signore, vieni presto in mio aiuto."
+        ],
+        "hang": [
+          0,
+          0
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Gloria al Padre e al Figlio",
+          "e allo Spirito Santo.",
+          "Come era nel principio, e ora e sempre",
+          "nei secoli dei secoli. Amen. Alleluia."
+        ],
+        "hang": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      {
+        "k": "hymn",
+        "hymns": [
+          {
+            "label": null,
+            "stanzas": [
+              [
+                "Al termine del giorno,",
+                "o sommo Creatore,",
+                "vegliaci nel riposo",
+                "con amore di Padre."
+              ],
+              [
+                "Dona salute al corpo",
+                "e fervore allo spirito,",
+                "la tua luce rischiari",
+                "le ombre della notte."
+              ],
+              [
+                "Nel sonno delle membra",
+                "resti fedele il cuore,",
+                "e al ritorno dell'alba",
+                "intoni la tua lode."
+              ],
+              [
+                "Sia onore al Padre e al Figlio",
+                "e allo Spirito Santo,",
+                "al Dio trino ed unico",
+                "nei secoli sia gloria. Amen."
+              ]
+            ]
+          },
+          {
+            "label": "Oppure:",
+            "stanzas": [
+              [
+                "Gesù, luce da luce,",
+                "sole senza tramonto,",
+                "tu rischiari le tenebre",
+                "nella notte del mondo."
+              ],
+              [
+                "In te, santo Signore,",
+                "noi cerchiamo il riposo",
+                "dall'umana fatica,",
+                "al termine del giorno."
+              ],
+              [
+                "Se i nostri occhi si chiudono,",
+                "veglia in te il nostro cuore;",
+                "la tua mano protegga",
+                "coloro che in te sperano."
+              ],
+              [
+                "Difendi, o Salvatore,",
+                "dalle insidie del male",
+                "i figli che hai redenti",
+                "col tuo sangue prezioso."
+              ],
+              [
+                "A te sia gloria, o Cristo,",
+                "nato da Maria vergine,",
+                "al Padre e allo Spirito",
+                "nei secoli dei secoli. Amen."
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        "k": "rubric",
+        "lab": "1 ant.",
+        "text": "Tu sei la mia difesa e il mio rifugio, Signore."
+      },
+      {
+        "k": "psalmHead",
+        "num": "SALMO 30, 2-6",
+        "name": "Supplica fiduciosa nell'afflizione",
+        "sub": "Padre, nelle tue mani consegno il mio spirito (Lc 23, 46).",
+        "cite": ""
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "In te, Signore, mi sono rifugiato, †",
+          "mai sarò deluso; *",
+          "per la tua giustizia salvami."
+        ],
+        "hang": [
+          0,
+          1,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Porgi a me l'orecchio, *",
+          "vieni presto a liberarmi.",
+          "Sii per me la rupe che mi accoglie, *",
+          "la cinta di riparo che mi salva."
+        ],
+        "hang": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Tu sei la mia roccia e il mio baluardo, *",
+          "per il tuo nome dirigi i miei passi.",
+          "Scioglimi dal laccio che mi hanno teso, *",
+          "perché sei tu la mia difesa."
+        ],
+        "hang": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Mi affido alle tue mani; *",
+          "tu mi riscatti, Signore, Dio fedele."
+        ],
+        "hang": [
+          0,
+          1
+        ]
+      },
+      {
+        "k": "rubric",
+        "lab": "1 ant.",
+        "text": "Tu sei la mia difesa e il mio rifugio, Signore."
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "2 ant.",
+          "Dal profondo a te grido, o Signore!"
+        ],
+        "hang": [
+          0,
+          0
+        ]
+      },
+      {
+        "k": "psalmHead",
+        "num": "SALMO 129",
+        "name": "Dal profondo a te grido",
+        "sub": "Egli salverà il suo popolo dai suoi peccati (Mt 1, 21).",
+        "cite": ""
+      },
+      {
+        "k": "rubric",
+        "lab": "2 ant.",
+        "text": "Dal profondo a te grido, o Signore!"
+      },
+      {
+        "k": "title",
+        "text": "LETTURA BREVE"
+      },
+      {
+        "k": "sub",
+        "text": "Ef 4, 26-27. 31-32"
+      },
+      {
+        "k": "prose",
+        "text": "Non peccate (Sal 4, 5); non tramonti il sole sopra la vostra ira, e non date occasione al diavolo. Scompaia da voi ogni asprezza, sdegno, ira. Siate invece benevoli gli uni verso gli altri, misericordiosi, perdonandovi a vicenda come Dio ha perdonato a voi in Cristo."
+      },
+      {
+        "k": "title",
+        "text": "RESPONSORIO BREVE"
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "R. Signore,",
+          "* nelle tue mani affido il mio spirito.",
+          "Signore, nelle tue mani affido il mio spirito.",
+          "V. Dio di verità, tu mi hai redento:",
+          "nelle tue mani affido il mio spirito.",
+          "Gloria al Padre e al Figlio e allo Spirito Santo.",
+          "Signore, nelle tue mani affido il mio spirito."
+        ]
+      },
+      {
+        "k": "rubric",
+        "lab": "Ant.",
+        "text": "Nella veglia salvaci, Signore, nel sonno non ci abbandonare: il cuore vegli con Cristo e il corpo riposi nella pace."
+      },
+      {
+        "k": "psalmHead",
+        "num": "CANTICO DI SIMEONE Lc 2, 29-32",
+        "name": "",
+        "sub": "Cristo, luce delle genti e gloria di Israele",
+        "cite": ""
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Ora lascia, o Signore, che il tuo servo *",
+          "vada in pace secondo la tua parola;"
+        ],
+        "hang": [
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "perché i miei occhi han visto la tua salvezza, *",
+          "preparata da te davanti a tutti i popoli,"
+        ],
+        "hang": [
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "luce per illuminare le genti *",
+          "e gloria del tuo popolo Israele."
+        ],
+        "hang": [
+          0,
+          1
+        ]
+      },
+      {
+        "k": "rubric",
+        "lab": "Ant.",
+        "text": "Nella veglia salvaci, Signore, nel sonno non ci abbandonare: il cuore vegli con Cristo e il corpo riposi nella pace."
+      },
+      {
+        "k": "title",
+        "text": "ORAZIONE"
+      },
+      {
+        "k": "prose",
+        "text": "Signore Gesù Cristo, mite e umile di cuore, che rendi soave il giogo e lieve il peso dei tuoi fedeli, accogli i propositi e le opere di questa giornata e fa' che il riposo della notte ci renda più generosi nel tuo servizio. Tu che vivi e regni nei secoli dei secoli."
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Il Signore ci conceda una notte serena e un riposo tranquillo.",
+          "R. Amen."
+        ],
+        "hang": [
+          0,
+          0
+        ]
+      },
+      {
+        "k": "omit",
+        "text": "Si conclude con un’antifona della Beata Vergine Maria."
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Sotto la tua protezione cerchiamo rifugio,",
+          "santa Madre di Dio:",
+          "non disprezzare le suppliche",
+          "di noi che siamo nella prova,",
+          "e liberaci da ogni pericolo,",
+          "o vergine gloriosa e benedetta.",
+          "Oppure:",
+          "Sub tuum præsídium confúgimus,",
+          "sancta Dei Génetrix;",
+          "nostras deprecatiónes ne despícias in necessitátibus;",
+          "sed a perículis cunctis líbera nos semper",
+          "Virgo gloriósa et benedícta."
+        ],
+        "hang": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    ]
+  },
+  "thu": {
+    "sourceDate": "2026-10-22",
+    "blocks": [
+      {
+        "k": "stanza",
+        "lines": [
+          "V. O Dio, vieni a salvarmi",
+          "R. Signore, vieni presto in mio aiuto."
+        ],
+        "hang": [
+          0,
+          0
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Gloria al Padre e al Figlio",
+          "e allo Spirito Santo.",
+          "Come era nel principio, e ora e sempre",
+          "nei secoli dei secoli. Amen. Alleluia."
+        ],
+        "hang": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      {
+        "k": "hymn",
+        "hymns": [
+          {
+            "label": null,
+            "stanzas": [
+              [
+                "Gesù, luce da luce,",
+                "sole senza tramonto,",
+                "tu rischiari le tenebre",
+                "nella notte del mondo."
+              ],
+              [
+                "In te, santo Signore,",
+                "noi cerchiamo il riposo",
+                "dall’umana fatica,",
+                "al termine del giorno."
+              ],
+              [
+                "Se i nostri occhi si chiudono,",
+                "veglia in te il nostro cuore;",
+                "la tua mano protegga",
+                "coloro che in te sperano."
+              ],
+              [
+                "Difendi, o Salvatore,",
+                "dalle insidie del male",
+                "i figli che hai redenti",
+                "col tuo sangue prezioso."
+              ],
+              [
+                "A te sia gloria, o Cristo,",
+                "nato da Maria vergine,",
+                "al Padre ed allo Spirito",
+                "nei secoli dei secoli. Amen."
+              ]
+            ]
+          },
+          {
+            "label": "Oppure:",
+            "stanzas": [
+              [
+                "Al termine del giorno,",
+                "o sommo Creatore,",
+                "vegliaci nel riposo",
+                "con amore di Padre."
+              ],
+              [
+                "Dona salute al corpo",
+                "e fervore allo spirito,",
+                "la tua luce rischiari",
+                "le ombre della notte."
+              ],
+              [
+                "Nel sonno delle membra",
+                "resti fedele il cuore,",
+                "e al ritorno dell’alba",
+                "intoni la tua lode."
+              ],
+              [
+                "Sia onore al Padre e al Figlio",
+                "e allo Spirito Santo,",
+                "al Dio trino ed unico",
+                "nei secoli sia gloria. Amen."
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        "k": "rubric",
+        "lab": "Ant.",
+        "text": "Nelle tue mani è la mia vita, o Dio: anche il mio corpo riposa al sicuro."
+      },
+      {
+        "k": "psalmHead",
+        "num": "SALMO 15",
+        "name": "Il Signore è mia eredità",
+        "sub": "Dio ha risuscitato Gesù, sciogliendolo dalle angosce della morte (At 2, 24).",
+        "cite": ""
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Proteggimi, o Dio: *",
+          "in te mi rifugio.",
+          "Ho detto a Dio: «Sei tu il mio Signore, *",
+          "senza di te non ho alcun bene»."
+        ],
+        "hang": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Per i santi, che sono sulla terra, uomini nobili, *",
+          "è tutto il mio amore."
+        ],
+        "hang": [
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Si affrettino altri a costruire idoli: †",
+          "io non spanderò le loro libazioni di sangue, *",
+          "né pronunzierò con le mie labbra i loro nomi."
+        ],
+        "hang": [
+          0,
+          1,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Il Signore è mia parte di eredità e mio calice: *",
+          "nelle tue mani è la mia vita.",
+          "Per me la sorte è caduta su luoghi deliziosi, *",
+          "la mia eredità è magnifica."
+        ],
+        "hang": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Benedico il Signore che mi ha dato consiglio; *",
+          "anche di notte il mio cuore mi istruisce.",
+          "Io pongo sempre innanzi a me il Signore, *",
+          "sta alla mia destra, non posso vacillare."
+        ],
+        "hang": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Di questo gioisce il mio cuore, †",
+          "esulta la mia anima; *",
+          "anche il mio corpo riposa al sicuro,"
+        ],
+        "hang": [
+          0,
+          1,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "perché non abbandonerai la mia vita nel sepolcro, *",
+          "né lascerai che il tuo santo veda la corruzione."
+        ],
+        "hang": [
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Mi indicherai il sentiero della vita, †",
+          "gioia piena nella tua presenza, *",
+          "dolcezza senza fine alla tua destra."
+        ],
+        "hang": [
+          0,
+          1,
+          1
+        ]
+      },
+      {
+        "k": "rubric",
+        "lab": "Ant.",
+        "text": "Nelle tue mani è la mia vita, o Dio: anche il mio corpo riposa al sicuro."
+      },
+      {
+        "k": "title",
+        "text": "LETTURA BREVE"
+      },
+      {
+        "k": "sub",
+        "text": "1 Ts 5, 23"
+      },
+      {
+        "k": "prose",
+        "text": "Il Dio della pace vi santifichi fino alla perfezione, e tutto quello che è vostro, spirito, anima e corpo, si conservi irreprensibile per la venuta del Signore nostro Gesù Cristo."
+      },
+      {
+        "k": "title",
+        "text": "RESPONSORIO BREVE"
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "R. Signore,",
+          "* nelle tue mani affido il mio spirito.",
+          "Signore, nelle tue mani affido il mio spirito.",
+          "V. Dio di verità, tu mi hai redento:",
+          "nelle tue mani affido il mio spirito.",
+          "Gloria al Padre e al Figlio e allo Spirito Santo.",
+          "Signore, nelle tue mani affido il mio spirito."
+        ]
+      },
+      {
+        "k": "rubric",
+        "lab": "Ant.",
+        "text": "Nella veglia salvaci, Signore, nel sonno non ci abbandonare: il cuore vegli con Cristo e il corpo riposi nella pace."
+      },
+      {
+        "k": "psalmHead",
+        "num": "CANTICO DI SIMEONE Lc 2, 29-32",
+        "name": "",
+        "sub": "Cristo, luce delle genti e gloria di Israele",
+        "cite": ""
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Ora lascia, o Signore, che il tuo servo *",
+          "vada in pace secondo la tua parola;"
+        ],
+        "hang": [
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "perché i miei occhi han visto la tua salvezza, *",
+          "preparata da te davanti a tutti i popoli,"
+        ],
+        "hang": [
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "luce per illuminare le genti *",
+          "e gloria del tuo popolo Israele."
+        ],
+        "hang": [
+          0,
+          1
+        ]
+      },
+      {
+        "k": "rubric",
+        "lab": "Ant.",
+        "text": "Nella veglia salvaci, Signore, nel sonno non ci abbandonare: il cuore vegli con Cristo e il corpo riposi nella pace."
+      },
+      {
+        "k": "title",
+        "text": "ORAZIONE"
+      },
+      {
+        "k": "prose",
+        "text": "Signore Dio nostro, donaci un sonno tranquillo, perché ristorati dalle fatiche del giorno, ci dedichiamo corpo e anima al tuo servizio. Per Cristo nostro Signore."
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Il Signore ci conceda una notte serena e un riposo tranquillo.",
+          "R. Amen."
+        ],
+        "hang": [
+          0,
+          0
+        ]
+      },
+      {
+        "k": "omit",
+        "text": "Si conclude con un’antifona della Beata Vergine Maria."
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Ave, o Maria, piena di grazia,",
+          "il Signore è con te.",
+          "Tu sei benedetta fra le donne",
+          "e benedetto è il frutto del tuo seno, Gesù.",
+          "Santa Maria, Madre di Dio,",
+          "prega per noi peccatori,",
+          "adesso e nell'ora della nostra morte. Amen.",
+          "Oppure:",
+          "Ave, María, grátia plena, Dóminus tecum;",
+          "benedícta tu in muliéribus,",
+          "et benedíctus fructus ventris tui, Iesus.",
+          "(",
+          "Sancta María, Mater Dei, ora pro nobis peccatóribus",
+          "nunc et in hora mortis nostræ. Amen.",
+          ")"
+        ],
+        "hang": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    ]
+  },
+  "fri": {
+    "sourceDate": "2026-10-23",
+    "blocks": [
+      {
+        "k": "stanza",
+        "lines": [
+          "V. O Dio, vieni a salvarmi",
+          "R. Signore, vieni presto in mio aiuto."
+        ],
+        "hang": [
+          0,
+          0
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Gloria al Padre e al Figlio",
+          "e allo Spirito Santo.",
+          "Come era nel principio, e ora e sempre",
+          "nei secoli dei secoli. Amen. Alleluia."
+        ],
+        "hang": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      {
+        "k": "hymn",
+        "hymns": [
+          {
+            "label": null,
+            "stanzas": [
+              [
+                "Al termine del giorno,",
+                "o sommo Creatore,",
+                "vegliaci nel riposo",
+                "con amore di Padre."
+              ],
+              [
+                "Dona salute al corpo",
+                "e fervore allo spirito,",
+                "la tua luce rischiari",
+                "le ombre della notte."
+              ],
+              [
+                "Nel sonno delle membra",
+                "resti fedele il cuore,",
+                "e al ritorno dell'alba",
+                "intoni la tua lode."
+              ],
+              [
+                "Sia onore al Padre e al Figlio",
+                "e allo Spirito Santo,",
+                "al Dio trino ed unico",
+                "nei secoli sia gloria. Amen."
+              ]
+            ]
+          },
+          {
+            "label": "Oppure:",
+            "stanzas": [
+              [
+                "Gesù, luce da luce,",
+                "sole senza tramonto,",
+                "tu rischiari le tenebre",
+                "nella notte del mondo."
+              ],
+              [
+                "In te, santo Signore,",
+                "noi cerchiamo il riposo",
+                "dall'umana fatica,",
+                "al termine del giorno."
+              ],
+              [
+                "Se i nostri occhi si chiudono,",
+                "veglia in te il nostro cuore;",
+                "la tua mano protegga",
+                "coloro che in te sperano."
+              ],
+              [
+                "Difendi, o Salvatore,",
+                "dalle insidie del male",
+                "i figli che hai redenti",
+                "col tuo sangue prezioso."
+              ],
+              [
+                "A te sia gloria, o Cristo,",
+                "nato da Maria vergine,",
+                "al Padre e allo Spirito",
+                "nei secoli dei secoli. Amen."
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        "k": "rubric",
+        "lab": "Ant.",
+        "text": "Giorno e notte grido a te, o Signore."
+      },
+      {
+        "k": "psalmHead",
+        "num": "SALMO 87",
+        "name": "Preghiera di un uomo gravemente malato",
+        "sub": "Questa è la vostra ora, è l’impero delle tenebre (Lc 22, 53).",
+        "cite": ""
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Signore, Dio della mia salvezza, *",
+          "davanti a te grido giorno e notte.",
+          "Giunga fino a te la mia preghiera, *",
+          "tendi l’orecchio al mio lamento."
+        ],
+        "hang": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Io sono colmo di sventure, *",
+          "la mia vita è vicino alla tomba.",
+          "Sono annoverato tra quelli che scendono nella fossa, *",
+          "sono come un uomo ormai privo di forza."
+        ],
+        "hang": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "è tra i morti il mio giaciglio, *",
+          "sono come gli uccisi stesi nel sepolcro,",
+          "dei quali tu non conservi il ricordo *",
+          "e che la tua mano ha abbandonato."
+        ],
+        "hang": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Mi hai gettato nella fossa profonda, *",
+          "nelle tenebre e nell’ombra di morte.",
+          "Pesa su di me il tuo sdegno *",
+          "e con tutti i tuoi flutti mi sommergi."
+        ],
+        "hang": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Hai allontanato da me i miei compagni, *",
+          "mi hai reso per loro un orrore.",
+          "Sono prigioniero senza scampo; *",
+          "si consumano i miei occhi nel patire."
+        ],
+        "hang": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Tutto il giorno ti chiamo, Signore, *",
+          "verso di te protendo le mie mani.",
+          "Compi forse prodigi per i morti? *",
+          "O sorgono le ombre a darti lode?"
+        ],
+        "hang": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Si celebra forse la tua bontà nel sepolcro, *",
+          "la tua fedeltà negli inferi?",
+          "Nelle tenebre si conoscono forse i tuoi prodigi, *",
+          "la tua giustizia nel paese dell’oblio?"
+        ],
+        "hang": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Ma io a te, Signore, grido aiuto, *",
+          "e al mattino giunge a te la mia preghiera.",
+          "Perché, Signore, mi respingi, *",
+          "perché mi nascondi il tuo volto?"
+        ],
+        "hang": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Sono infelice e morente dall’infanzia, *",
+          "sono sfinito, oppresso dai tuoi terrori.",
+          "Sopra di me è passata la tua ira, *",
+          "i tuoi spaventi mi hanno annientato,"
+        ],
+        "hang": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "mi circondano come acqua tutto il giorno, *",
+          "tutti insieme mi avvolgono.",
+          "Hai allontanato da me amici e conoscenti *",
+          "mi sono compagne solo le tenebre."
+        ],
+        "hang": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      {
+        "k": "rubric",
+        "lab": "Ant.",
+        "text": "Giorno e notte grido a te, o Signore."
+      },
+      {
+        "k": "title",
+        "text": "LETTURA BREVE Ger 14, 9"
+      },
+      {
+        "k": "prose",
+        "text": "Tu sei in mezzo a noi, Signore, e noi siamo chiamati con il tuo nome: non abbandonarci, Signore Dio nostro."
+      },
+      {
+        "k": "title",
+        "text": "RESPONSORIO BREVE"
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "R. Signore,",
+          "* nelle tue mani affido il mio spirito.",
+          "Signore, nelle tue mani affido il mio spirito.",
+          "V. Dio di verità, tu mi hai redento:",
+          "nelle tue mani affido il mio spirito.",
+          "Gloria al Padre e al Figlio e allo Spirito Santo.",
+          "Signore, nelle tue mani affido il mio spirito."
+        ]
+      },
+      {
+        "k": "rubric",
+        "lab": "Ant.",
+        "text": "Nella veglia salvaci, Signore, nel sonno non ci abbandonare: il cuore vegli con Cristo e il corpo riposi nella pace."
+      },
+      {
+        "k": "psalmHead",
+        "num": "CANTICO DI SIMEONE Lc 2, 29-32",
+        "name": "",
+        "sub": "Cristo, luce delle genti e gloria di Israele",
+        "cite": ""
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Ora lascia, o Signore, che il tuo servo *",
+          "vada in pace secondo la tua parola;"
+        ],
+        "hang": [
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "perché i miei occhi han visto la tua salvezza, *",
+          "preparata da te davanti a tutti i popoli,"
+        ],
+        "hang": [
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "luce per illuminare le genti *",
+          "e gloria del tuo popolo Israele."
+        ],
+        "hang": [
+          0,
+          1
+        ]
+      },
+      {
+        "k": "rubric",
+        "lab": "Ant.",
+        "text": "Nella veglia salvaci, Signore, nel sonno non ci abbandonare: il cuore vegli con Cristo e il corpo riposi nella pace."
+      },
+      {
+        "k": "title",
+        "text": "ORAZIONE"
+      },
+      {
+        "k": "prose",
+        "text": "Donaci, o Padre, di unirci nella fede alla morte e sepoltura del tuo Figlio per risorgere con lui alla vita nuova. Egli vive e regna nei secoli dei secoli."
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Il Signore ci conceda una notte serena e un riposo tranquillo.",
+          "R. Amen."
+        ],
+        "hang": [
+          0,
+          0
+        ]
+      },
+      {
+        "k": "omit",
+        "text": "Si conclude con un’antifona della Beata Vergine Maria."
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "O santa Madre del Redentore,",
+          "porta dei cieli, stella del mare,",
+          "soccorri il tuo popolo",
+          "che anela a risorgere.",
+          "Tu che, accogliendo il saluto dell’angelo,",
+          "nello stupore di tutto il creato,",
+          "hai generato il tuo Creatore,",
+          "madre sempre vergine,",
+          "pietà di noi peccatori."
+        ],
+        "hang": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "k": "omit",
+        "text": "Oppure:"
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Alma Redemptóris Mater, quæ pérvia cæli",
+          "porta manes, et stella maris, succúrre cadénti,",
+          "súrgere qui curat, pópulo: tu quæ genuísti,",
+          "natúra miránte, tuum sanctum Genitórem,",
+          "Virgo prius ac postérius, Gabriélis ab ore",
+          "sumens illud Ave, peccatórum miserére."
+        ],
+        "hang": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    ]
+  },
+  "sun-i": {
+    "sourceDate": "2026-10-24",
+    "blocks": [
+      {
+        "k": "stanza",
+        "lines": [
+          "V. O Dio, vieni a salvarmi",
+          "R. Signore, vieni presto in mio aiuto."
+        ],
+        "hang": [
+          0,
+          0
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Gloria al Padre e al Figlio",
+          "e allo Spirito Santo.",
+          "Come era nel principio, e ora e sempre",
+          "nei secoli dei secoli. Amen. Alleluia."
+        ],
+        "hang": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      {
+        "k": "hymn",
+        "hymns": [
+          {
+            "label": null,
+            "stanzas": [
+              [
+                "Al termine del giorno,",
+                "o sommo Creatore,",
+                "vegliaci nel riposo",
+                "con amore di Padre."
+              ],
+              [
+                "Dona salute al corpo",
+                "e fervore allo spirito,",
+                "la tua luce rischiari",
+                "le ombre della notte."
+              ],
+              [
+                "Nel sonno delle membra",
+                "resti fedele il cuore,",
+                "e al ritorno dell'alba",
+                "intoni la tua lode."
+              ],
+              [
+                "Sia onore al Padre e al Figlio",
+                "e allo Spirito Santo,",
+                "al Dio trino ed unico",
+                "nei secoli sia gloria. Amen."
+              ]
+            ]
+          },
+          {
+            "label": "Oppure:",
+            "stanzas": [
+              [
+                "Gesù, luce da luce,",
+                "sole senza tramonto,",
+                "tu rischiari le tenebre",
+                "nella notte del mondo."
+              ],
+              [
+                "In te, santo Signore,",
+                "noi cerchiamo il riposo",
+                "dall'umana fatica,",
+                "al termine del giorno."
+              ],
+              [
+                "Se i nostri occhi si chiudono,",
+                "veglia in te il nostro cuore;",
+                "la tua mano protegga",
+                "coloro che in te sperano."
+              ],
+              [
+                "Difendi, o Salvatore,",
+                "dalle insidie del male",
+                "i figli che hai redenti",
+                "col tuo sangue prezioso."
+              ],
+              [
+                "A te sia gloria, o Cristo,",
+                "nato da Maria vergine,",
+                "al Padre e allo Spirito",
+                "nei secoli dei secoli. Amen."
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        "k": "rubric",
+        "lab": "1 ant.",
+        "text": "Pietà di me, o Signore: ascolta la mia preghiera."
+      },
+      {
+        "k": "omit",
+        "text": "oppure:"
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "In te confido, Signore,",
+          "e in pace mi addormento."
+        ],
+        "hang": [
+          2,
+          2
+        ]
+      },
+      {
+        "k": "psalmHead",
+        "num": "SALMO 4",
+        "name": "Rendimento di grazie",
+        "sub": "E Dio che disse: «Rifulga la luce dalle tenebre», rifulse nei nostri cuori per far risplendere la conoscenza della gloria divina, che rifulge sul volto di Cristo (2 Cor 4, 6).",
+        "cite": ""
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Quando ti invoco, rispondimi,",
+          "Dio, mia giustizia: †",
+          "dalle angosce mi hai liberato; *",
+          "pietà di me, ascolta la mia preghiera."
+        ],
+        "hang": [
+          0,
+          2,
+          1,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Fino a quando, o uomini, sarete duri di cuore? *",
+          "Perché amate cose vane",
+          "e cercate la menzogna?"
+        ],
+        "hang": [
+          0,
+          1,
+          2
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Sappiate che il Signore",
+          "fa prodigi per il suo fedele: *",
+          "il Signore mi ascolta quando lo invoco."
+        ],
+        "hang": [
+          0,
+          2,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Tremate e non peccate, *",
+          "sul vostro giaciglio riflettete e placatevi."
+        ],
+        "hang": [
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Offrite sacrifici di giustizia *",
+          "e confidate nel Signore."
+        ],
+        "hang": [
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Molti dicono: «Chi ci farà vedere il bene?». *",
+          "Risplenda su di noi, Signore,",
+          "la luce del tuo volto."
+        ],
+        "hang": [
+          0,
+          1,
+          2
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Hai messo più gioia nel mio cuore *",
+          "di quando abbondano vino e frumento."
+        ],
+        "hang": [
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "In pace mi corico e subito mi addormento: *",
+          "tu solo, Signore, al sicuro mi fai riposare."
+        ],
+        "hang": [
+          0,
+          1
+        ]
+      },
+      {
+        "k": "rubric",
+        "lab": "1 ant.",
+        "text": "Pietà di me, o Signore: ascolta la mia preghiera."
+      },
+      {
+        "k": "omit",
+        "text": "oppure:"
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "In te confido, Signore,",
+          "e in pace mi addormento."
+        ],
+        "hang": [
+          2,
+          2
+        ]
+      },
+      {
+        "k": "rubric",
+        "lab": "2 ant.",
+        "text": "Nella notte, benedite il Signore."
+      },
+      {
+        "k": "psalmHead",
+        "num": "SALMO 133",
+        "name": "Orazione notturna nel tempio",
+        "sub": "Lodate il nostro Dio, voi suoi servi, voi che lo temete, piccoli e grandi (Ap 19, 5).",
+        "cite": ""
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Ecco, benedite il Signore, *",
+          "voi tutti, servi del Signore;"
+        ],
+        "hang": [
+          0,
+          0
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "voi che state nella casa del Signore *",
+          "durante le notti."
+        ],
+        "hang": [
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Alzate le mani verso il tempio *",
+          "e benedite il Signore."
+        ],
+        "hang": [
+          0,
+          0
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Da Sion ti benedica il Signore, *",
+          "che ha fatto cielo e terra."
+        ],
+        "hang": [
+          0,
+          1
+        ]
+      },
+      {
+        "k": "rubric",
+        "lab": "2 ant.",
+        "text": "Nella notte, benedite il Signore."
+      },
+      {
+        "k": "title",
+        "text": "LETTURA BREVE"
+      },
+      {
+        "k": "sub",
+        "text": "Dt 6,4-7"
+      },
+      {
+        "k": "prose",
+        "text": "\u0001\u0001\u0001Ascolta, Israele: il Signore è il nostro Dio, il Signore è uno solo. Tu amerai il Signore tuo Dio con tutto il cuore, con tutta l'anima e con tutte le forze. Questi precetti che oggi ti do, ti stiano fissi nel cuore; li ripeterai ai tuoi figli, ne parlerai quando sarai seduto in casa tua, quando camminerai per via, quando ti coricherai e quando ti alzerai."
+      },
+      {
+        "k": "title",
+        "text": "RESPONSORIO BREVE"
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "R. Signore,",
+          "* nelle tue mani affido il mio spirito.",
+          "Signore, nelle tue mani affido il mio spirito.",
+          "V. Dio di verità, tu mi hai redento:",
+          "nelle tue mani affido il mio spirito.",
+          "Gloria al Padre e al Figlio e allo Spirito Santo.",
+          "Signore, nelle tue mani affido il mio spirito."
+        ]
+      },
+      {
+        "k": "rubric",
+        "lab": "Ant.",
+        "text": "Nella veglia salvaci, Signore, nel sonno non ci abbandonare: il cuore vegli con Cristo e il corpo riposi nella pace."
+      },
+      {
+        "k": "psalmHead",
+        "num": "CANTICO DI SIMEONE Lc 2, 29-32",
+        "name": "",
+        "sub": "Cristo, luce delle genti e gloria di Israele",
+        "cite": ""
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Ora lascia, o Signore, che il tuo servo *",
+          "vada in pace secondo la tua parola;"
+        ],
+        "hang": [
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "perché i miei occhi han visto la tua salvezza, *",
+          "preparata da te davanti a tutti i popoli,"
+        ],
+        "hang": [
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "luce per illuminare le genti *",
+          "e gloria del tuo popolo Israele."
+        ],
+        "hang": [
+          0,
+          1
+        ]
+      },
+      {
+        "k": "rubric",
+        "lab": "Ant.",
+        "text": "Nella veglia salvaci, Signore, nel sonno non ci abbandonare: il cuore vegli con Cristo e il corpo riposi nella pace."
+      },
+      {
+        "k": "title",
+        "text": "ORAZIONE"
+      },
+      {
+        "k": "prose",
+        "text": "Veglia su di noi in questa notte, o Signore: la tua mano ci ridesti al nuovo giorno perché possiamo celebrare con gioia la risurrezione del tuo Figlio, che vive e regna nei secoli dei secoli."
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Il Signore ci conceda una notte serena e un riposo tranquillo.",
+          "R. Amen."
+        ],
+        "hang": [
+          0,
+          0
+        ]
+      },
+      {
+        "k": "omit",
+        "text": "Si conclude con un’antifona della Beata Vergine Maria."
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Ave, o Maria, piena di grazia,",
+          "il Signore è con te.",
+          "Tu sei benedetta fra le donne",
+          "e benedetto è il frutto del tuo seno, Gesù.",
+          "Santa Maria, Madre di Dio,",
+          "prega per noi peccatori,",
+          "adesso e nell'ora della nostra morte. Amen.",
+          "Oppure:",
+          "Ave, María, grátia plena, Dóminus tecum;",
+          "benedícta tu in muliéribus,",
+          "et benedíctus fructus ventris tui, Iesus.",
+          "(",
+          "Sancta María, Mater Dei, ora pro nobis peccatóribus",
+          "nunc et in hora mortis nostræ. Amen.",
+          ")"
+        ],
+        "hang": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    ]
+  },
+  "sun-ii": {
+    "sourceDate": "2026-10-25",
+    "blocks": [
+      {
+        "k": "stanza",
+        "lines": [
+          "V. O Dio, vieni a salvarmi",
+          "R. Signore, vieni presto in mio aiuto."
+        ],
+        "hang": [
+          0,
+          0
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Gloria al Padre e al Figlio",
+          "e allo Spirito Santo.",
+          "Come era nel principio, e ora e sempre",
+          "nei secoli dei secoli. Amen. Alleluia."
+        ],
+        "hang": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      {
+        "k": "hymn",
+        "hymns": [
+          {
+            "label": null,
+            "stanzas": [
+              [
+                "Gesù, luce da luce,",
+                "sole senza tramonto,",
+                "tu rischiari le tenebre",
+                "nella notte del mondo."
+              ],
+              [
+                "In te, santo Signore,",
+                "noi cerchiamo il riposo",
+                "dall’umana fatica,",
+                "al termine del giorno."
+              ],
+              [
+                "Se i nostri occhi si chiudono,",
+                "veglia in te il nostro cuore;",
+                "la tua mano protegga",
+                "coloro che in te sperano."
+              ],
+              [
+                "Difendi, o Salvatore,",
+                "dalle insidie del male",
+                "i figli che hai redenti",
+                "col tuo sangue prezioso."
+              ],
+              [
+                "A te sia gloria, o Cristo,",
+                "nato da Maria vergine,",
+                "al Padre ed allo Spirito",
+                "nei secoli dei secoli. Amen."
+              ]
+            ]
+          },
+          {
+            "label": "Oppure:",
+            "stanzas": [
+              [
+                "Al termine del giorno,",
+                "o sommo Creatore,",
+                "vegliaci nel riposo",
+                "con amore di Padre."
+              ],
+              [
+                "Dona salute al corpo",
+                "e fervore allo spirito,",
+                "la tua luce rischiari",
+                "le ombre della notte."
+              ],
+              [
+                "Nel sonno delle membra",
+                "resti fedele il cuore,",
+                "e al ritorno dell’alba",
+                "intoni la tua lode."
+              ],
+              [
+                "Sia onore al Padre e al Figlio",
+                "e allo Spirito Santo,",
+                "al Dio trino ed unico",
+                "nei secoli sia gloria. Amen."
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        "k": "rubric",
+        "lab": "Ant.",
+        "text": "Dimora all'ombra dell'Onnipotente: troverai rifugio dalle insidie del male."
+      },
+      {
+        "k": "psalmHead",
+        "num": "SALMO 90",
+        "name": "Beato chi si pone sotto la protezione dell'Altissimo",
+        "sub": "Ecco, io vi ho dato il potere di camminare sopra i serpenti e gli scorpioni (Lc 10, 19).",
+        "cite": ""
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Tu che abiti al riparo dell'Altissimo *",
+          "e dimori all'ombra dell'Onnipotente,",
+          "di' al Signore: «Mio rifugio e mia fortezza, *",
+          "mio Dio, in cui confido»."
+        ],
+        "hang": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Egli ti libererà dal laccio del cacciatore, *",
+          "dalla peste che distrugge.",
+          "Ti coprirà con le sue penne, *",
+          "sotto le sue ali troverai rifugio."
+        ],
+        "hang": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "La sua fedeltà ti sarà scudo e corazza; *",
+          "non temerai i terrori della notte,"
+        ],
+        "hang": [
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "né la freccia che vola di giorno, †",
+          "la peste che vaga nelle tenebre, *",
+          "lo sterminio che devasta a mezzogiorno."
+        ],
+        "hang": [
+          0,
+          1,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Mille cadranno al tuo fianco †",
+          "e diecimila alla tua destra; *",
+          "ma nulla ti potrà colpire."
+        ],
+        "hang": [
+          0,
+          1,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Solo che tu guardi, con i tuoi occhi *",
+          "vedrai il castigo degli empi.",
+          "Poiché tuo rifugio è il Signore *",
+          "e hai fatto dell'Altissimo la tua dimora,"
+        ],
+        "hang": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "non ti potrà colpire la sventura, *",
+          "nessun colpo cadrà sulla tua tenda.",
+          "Egli darà ordine ai suoi angeli *",
+          "di custodirti in tutti i tuoi passi."
+        ],
+        "hang": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Sulle loro mani ti porteranno *",
+          "perché non inciampi nella pietra il tuo piede.",
+          "Camminerai su àspidi e vipere, *",
+          "schiaccerai leoni e draghi."
+        ],
+        "hang": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Lo salverò, perché a me si è affidato; *",
+          "lo esalterò, perché ha conosciuto il mio nome."
+        ],
+        "hang": [
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Mi invocherà e gli darò risposta; †",
+          "presso di lui sarò nella sventura, *",
+          "lo salverò e lo renderò glorioso."
+        ],
+        "hang": [
+          0,
+          1,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Lo sazierò di lunghi giorni *",
+          "e gli mostrerò la mia salvezza."
+        ],
+        "hang": [
+          0,
+          1
+        ]
+      },
+      {
+        "k": "rubric",
+        "lab": "Ant.",
+        "text": "Dimora all'ombra dell'Onnipotente: troverai rifugio dalle insidie del male."
+      },
+      {
+        "k": "title",
+        "text": "LETTURA BREVE Ap 22, 4-5"
+      },
+      {
+        "k": "prose",
+        "text": "Gli eletti vedranno la faccia del Signore e porteranno il suo nome sulla fronte (Mt 5,8). Non vi sarà più notte e non avranno più bisogno di luce di lampada, né di luce di sole (Is 60, 20), perché il Signore Dio li illuminerà e regneranno nei secoli dei secoli (Dn 7, 18. 27)."
+      },
+      {
+        "k": "title",
+        "text": "RESPONSORIO BREVE"
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "R. Signore,",
+          "* nelle tue mani affido il mio spirito.",
+          "Signore, nelle tue mani affido il mio spirito.",
+          "V. Dio di verità, tu mi hai redento:",
+          "nelle tue mani affido il mio spirito.",
+          "Gloria al Padre e al Figlio e allo Spirito Santo.",
+          "Signore, nelle tue mani affido il mio spirito."
+        ]
+      },
+      {
+        "k": "rubric",
+        "lab": "Ant.",
+        "text": "Nella veglia salvaci, Signore, nel sonno non ci abbandonare: il cuore vegli con Cristo e il corpo riposi nella pace."
+      },
+      {
+        "k": "psalmHead",
+        "num": "CANTICO DI SIMEONE Lc 2, 29-32",
+        "name": "",
+        "sub": "Cristo, luce delle genti e gloria di Israele",
+        "cite": ""
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Ora lascia, o Signore, che il tuo servo *",
+          "vada in pace secondo la tua parola;"
+        ],
+        "hang": [
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "perché i miei occhi han visto la tua salvezza, *",
+          "preparata da te davanti a tutti i popoli,"
+        ],
+        "hang": [
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "luce per illuminare le genti *",
+          "e gloria del tuo popolo Israele."
+        ],
+        "hang": [
+          0,
+          1
+        ]
+      },
+      {
+        "k": "rubric",
+        "lab": "Ant.",
+        "text": "Nella veglia salvaci, Signore, nel sonno non ci abbandonare: il cuore vegli con Cristo e il corpo riposi nella pace."
+      },
+      {
+        "k": "title",
+        "text": "ORAZIONE"
+      },
+      {
+        "k": "prose",
+        "text": "Salga a te, o Padre, la nostra preghiera al termine di questo giorno, memoriale della risurrezione del Signore: la tua grazia ci conceda di riposare in pace, sicuri da ogni male, e di risvegliarci nella gioia, per cantare la tua lode. Per Cristo."
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Il Signore ci conceda una notte serena e un riposo tranquillo.",
+          "R. Amen."
+        ],
+        "hang": [
+          0,
+          0
+        ]
+      },
+      {
+        "k": "omit",
+        "text": "Si conclude con un’antifona della Beata Vergine Maria."
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Ave, regina dei cieli,",
+          "ave, signora degli angeli;",
+          "porta e radice di salvezza,",
+          "rechi nel mondo la luce.",
+          "Godi, vergine gloriosa,",
+          "bella fra tutte le donne;",
+          "salve, o tutta santa,",
+          "prega per noi Cristo Signore."
+        ],
+        "hang": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "k": "omit",
+        "text": "Oppure:"
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Ave, Regína cælórum,",
+          "ave, Dómina angelórum,",
+          "salve, radix, salve, porta,",
+          "ex qua mundo lux est orta.",
+          "Gaude, Virgo gloriósa,",
+          "super omnes speciósa;",
+          "vale, o valde decóra,",
+          "et pro nobis Christum exóra."
+        ],
+        "hang": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    ]
+  }
+}
