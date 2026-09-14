@@ -1,5 +1,9 @@
 import { parseHourHtml, extractInvitatoryAntiphon, splitOraMediaHtml } from "../src/ore/parseHour";
 import { extractHoursBanner } from "../src/ore/html";
+import { splitPsalmTitle } from "../src/ore/bundled";
+import { hymnNeedsItalianAlternate, prependItalianHymn } from "../src/ore/hymnLang";
+import { parseLdoHymn } from "../src/ore/ldo";
+import { packSegmentIndicesIntoPages } from "../src/liturgyPaginationEngine";
 import { hourHeadMeta } from "../src/ore/dayHead";
 import { ceiHourSlug, hourTitle } from "../src/ore/titles";
 import { parseLocalDate } from "../src/dateUtils";
@@ -355,6 +359,149 @@ Come era nel principio, e ora e sempre<br />
   }
   if (!/ora nona ci chiama/i.test(media.nona) || /ora sesta c.invita/i.test(media.nona)) {
     fails.push("fixture nona slice");
+  }
+
+  const psalm62 = splitPsalmTitle("SALMO 62, 2-9 L'anima assetata del Signore");
+  if (psalm62.num !== "SALMO 62, 2-9" || !/assetata/i.test(psalm62.name)) {
+    fails.push(`splitPsalmTitle 62: ${JSON.stringify(psalm62)}`);
+  }
+  const cantDn = splitPsalmTitle("CANTICO Dn 3, 57-88. 56 Ogni creatura lodi il Signore");
+  if (!/^CANTICO Dn 3, 57-88\. 56$/i.test(cantDn.num) || !/Ogni creatura/i.test(cantDn.name)) {
+    fails.push(`splitPsalmTitle Dn: ${JSON.stringify(cantDn)}`);
+  }
+
+  const lodiFix = wrap(`
+    <div class="lo_titolo">SALMO 62, 2-9&nbsp;&nbsp;&nbsp; L&#39;anima assetata del Signore</div>
+    <div class="lo_versetto">
+      <div class="lo_sottotitolo">La Chiesa ha sete del suo Salvatore
+        <div class="lo_normal">(cfr. Cassiodoro).</div>
+      </div>
+    </div>
+    <div class="lo_versetto">O Dio, tu sei il mio Dio, * all'aurora ti cerco.</div>
+    <div class="lo_titolo">CANTICO Dn 3, 57-88. 56&nbsp;&nbsp;&nbsp; Ogni creatura lodi il Signore</div>
+    <div class="lo_sottotitolo">
+      <div class="lo_versetto">Lodate il nostro Dio voi tutti suoi servi
+        <div class="lo_normal">(Ap 19, 5).</div>
+      </div>
+    </div>
+    <div class="lo_versetto">
+      <div class="lo_titolo">RESPONSORIO BREVE</div>
+      <div class="lo_rosso"><br />R.</div>
+      Noi ti adoriamo,
+      <div class="lo_rosso">*</div>
+      ti benediciamo, o Cristo.<br />
+      Noi ti adoriamo, ti benediciamo, o Cristo.
+      <div class="lo_rosso"><br />V.</div>
+      Con la tua croce hai redento il mondo:<br />
+      ti benediciamo, o Cristo.
+    </div>
+    <div class="lo_versetto">
+      <div class="lo_antifona">Ant. al Ben.</div>
+      Adoriamo la tua croce, Signore;<br />
+      la gioia &egrave; venuta nel mondo.&nbsp;<br </div>
+    <div class="lo_titolo">CANTICO DI ZACCARIA
+      <div class="lo_rif">Lc 1, 68-79</div>
+    </div>
+    <div class="lo_sottotitolonoi">
+      <div class="lo_versetto">Il Messia e il suo Precursore</div>
+    </div>
+    <div class="lo_versetto">
+      <div class="lo_titolo">INVOCAZIONI<br />&nbsp;</div>
+      Esaltiamo Cristo Signore e, supplicandolo con fede, diciamo:
+      <div class="lo_sottotitolo">Salvaci, Signore, per la tua croce.</div>
+      Figlio di Dio, che nel deserto guarivi,
+      <div class="lo_rosso"><br />&mdash;</div>
+      per la tua croce curaci dai morsi velenosi dell&#39;orgoglio<br />
+      &nbsp;&nbsp; e della sensualit&agrave;.<br />
+      Figlio dell&#39;uomo, che fosti elevato in croce,
+      <div class="lo_rosso"><br />&mdash;</div>
+      per la tua passione donaci la vita.<br />
+    </div>
+    <div class="lo_versetto">Il Signore ci benedica.
+      <div class="lo_antifona"><br />R.</div>
+      Amen.</div>
+                </div>
+                <div class="
+  `);
+  const lodiParsed = parseHourHtml(lodiFix, "lodi");
+  const lodiBlob = blobOf(lodiParsed.blocks);
+  const heads = lodiParsed.blocks.filter((b): b is Extract<OreBlock, { k: "psalmHead" }> => b.k === "psalmHead");
+  const sal62 = heads.find((h) => /SALMO 62/i.test(h.num));
+  if (!sal62 || !/62, 2-9/.test(sal62.num) || !/assetata/i.test(sal62.name)) {
+    fails.push(`fixture salmo 62 head ${JSON.stringify(sal62)}`);
+  }
+  const cantHead = heads.find((h) => /CANTICO Dn/i.test(h.num));
+  if (!cantHead || !/Dn 3, 57-88/.test(cantHead.num) || !/Ogni creatura/i.test(cantHead.name)) {
+    fails.push(`fixture cantico Dn head ${JSON.stringify(cantHead)}`);
+  }
+  if (/CANTICO Dn 3[^\n]*Ogni creatura/i.test(cantHead?.num || "")) {
+    fails.push("fixture cantico Dn titolo non spezzato");
+  }
+  if (/nel mondo\.\s*br\b/i.test(lodiBlob) || /\sbr\s*$/im.test(lodiBlob)) {
+    fails.push("fixture Ant. al Ben. con br residuo");
+  }
+  const zac = heads.find((h) => /ZACCARIA/i.test(h.num));
+  if (!zac || !/Lc 1, 68-79/.test(zac.cite) || !/Messia/i.test(zac.sub)) {
+    fails.push(`fixture Zaccaria ${JSON.stringify(zac)}`);
+  }
+  if (!/R\.\s*Noi ti adoriamo/i.test(lodiBlob) || !/V\.\s*Con la tua croce/i.test(lodiBlob)) {
+    fails.push("fixture responsorio senza R./V.");
+  }
+  const preces = lodiParsed.blocks.filter((b) => b.k === "stanza" && b.lines.some((l) => /^—/.test(l)));
+  if (preces.length < 2) fails.push(`fixture invocazioni coppie=${preces.length}`);
+  else {
+    const first = preces[0];
+    const second = preces[1];
+    if (first.k === "stanza" && first.lines.some((l) => /Figlio dell.uomo/i.test(l))) {
+      fails.push("fixture invocazioni risposta incollata alla petizione successiva");
+    }
+    if (first.k === "stanza" && !first.lines.some((l) => /sensualit/i.test(l))) {
+      fails.push(`fixture invocazioni wrap risposta: ${first.lines.join(" | ")}`);
+    }
+    if (second.k === "stanza" && !/Figlio dell.uomo/i.test(second.lines[0] || "")) {
+      fails.push(`fixture invocazioni seconda petizione: ${second.lines.join(" | ")}`);
+    }
+  }
+  if (/div class=/i.test(lodiBlob)) fails.push("fixture coda HTML nel testo");
+
+  const paceSegs = [
+    { kind: "normal", text: "Padre nostro" },
+    { kind: "sectionTitle", text: "Rito della Pace" },
+    { kind: "celebrante", text: "Signore Gesù Cristo" },
+    { kind: "sectionTitle", text: "Frazione del Pane" },
+    { kind: "celebrante", text: "Agnello di Dio" },
+  ];
+  const paceH = new Map<number, number>([
+    [0, 200],
+    [1, 40],
+    [2, 80],
+    [3, 40],
+    [4, 60],
+  ]);
+  const packedPace = packSegmentIndicesIntoPages(paceSegs, paceH, 278, { paddingBottom: 28 });
+  const pacePage = packedPace.find((p) => p.includes(1));
+  if (!pacePage || !pacePage.includes(2)) {
+    fails.push(`fixture pace orfana pages=${JSON.stringify(packedPace)}`);
+  }
+
+  const latinH = {
+    label: null as string | null,
+    stanzas: [["Eia, mater, fons amóris,", "me sentíre vim dolóris", "fac, ut tecum lúgeam."]],
+  };
+  if (!hymnNeedsItalianAlternate([latinH])) fails.push("fixture Stabat non rilevato come latino");
+  const ldoInno = parseLdoHymn(
+    `<FONT CLASS=Risalto>I<FONT CLASS=Minuscoletto>NNO</FONT></FONT><br><br>O Donna gloriosa,<br>alta sopra le stelle,<br>tu nutri sul tuo seno<br>il Dio che ti ha creato.<br><br>La gioia che Eva ci tolse<br>ci rendi nel tuo Figlio<br>e dischiudi il cammino<br>verso il regno dei cieli.<br><br><FONT CLASS=Risalto>1 ant.</FONT> A te si stringe`,
+  );
+  if (!ldoInno || !/Donna gloriosa/i.test(ldoInno.stanzas[0]?.[0] || "")) {
+    fails.push(`fixture LDO inno ${JSON.stringify(ldoInno)}`);
+  } else {
+    const merged = prependItalianHymn([latinH], ldoInno);
+    if (merged.length !== 2 || merged[0].label || merged[1].label !== "Oppure:") {
+      fails.push(`fixture merge inno labels ${merged.map((h) => h.label).join("|")}`);
+    }
+    if (!/Donna gloriosa/i.test(merged[0].stanzas[0]?.[0] || "") || !/amóris/i.test(merged[1].stanzas[0]?.[0] || "")) {
+      fails.push("fixture merge inno ordine italiano/latino");
+    }
   }
 
   return fails;

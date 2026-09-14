@@ -236,11 +236,34 @@ export const MARIAN_ANTIPHONS: string[][] = [
   ],
 ];
 
+const BIBLE_BOOK =
+  "(?:[1-3]\\s*)?(?:Sam|Re|Cr|Mac|Cor|Ts|Tm|Pt|Gv|Tess|Tim|Dan|Dn|Is|Mt|Mc|Lc|At|Rm|Gal|Ef|Fil|Col|Eb|Ap|Ger|Ez|Tb|Gdt|Sap|Sir|Bar|Es|Lv|Nm|Dt|Gs|Gdc|Rt|Esd|Ne|Est|Gb|Pr|Qo|Ct|Lam|Gen|Sal|Os|Gl|Am|Ab|Na|So|Ag|Zc|Ml|Fm|Gc|Gd|Tt|Gio)";
+
 export function splitPsalmTitle(title: string): { num: string; name: string } {
-  const parts = String(title)
+  const raw = String(title);
+  const parts = raw
     .split(/\u2003+| {3,}/)
     .map((s) => s.trim())
     .filter(Boolean);
   if (parts.length >= 2) return { num: parts[0], name: parts.slice(1).join(" ") };
-  return { num: title, name: "" };
+
+  const t = raw.replace(/\s+/g, " ").trim();
+  const psalm = t.match(
+    /^(SALMO\s+\d+[a-zA-Z]?(?:\s*,\s*[\d.\-–a-zA-Z ]+?)?)\s+([A-ZÀ-Ù«].+)$/,
+  );
+  if (psalm) return { num: psalm[1].trim(), name: psalm[2].trim() };
+
+  const cant = t.match(
+    new RegExp(
+      `^(CANTICO(?:\\s+(?:DI|DEI|DEGLI|DELL[AEIO]'?|DELLE|DEL)\\s+[A-ZÀ-Ù][A-Za-zÀ-ÿ'’ ]*?)?)\\s+(${BIBLE_BOOK}\\s+[\\d.,\\-–ab ]+?)\\s+([A-ZÀ-Ù«].+)$`,
+      "i",
+    ),
+  );
+  if (cant) {
+    return {
+      num: `${cant[1].trim()} ${cant[2].replace(/\s+/g, " ").trim()}`,
+      name: cant[3].trim(),
+    };
+  }
+  return { num: t, name: "" };
 }

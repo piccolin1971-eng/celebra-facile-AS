@@ -62,6 +62,44 @@ config.server = {
             });
           return;
         }
+        if (rawUrl.startsWith("/ldo-ore")) {
+          const u = new URL(rawUrl, "http://localhost");
+          const data = (u.searchParams.get("data-liturgia") || "").replace(/\D/g, "");
+          if (!/^\d{8}$/.test(data)) {
+            res.statusCode = 400;
+            res.end("Missing data-liturgia=YYYYMMDD");
+            return;
+          }
+          const dd = data.slice(6, 8);
+          const mm = data.slice(4, 6);
+          const yyyy = data.slice(0, 4);
+          const target =
+            "https://www.liturgiadelleore.it/testo/SoloTestoGiorno.php?data=" +
+            encodeURIComponent(dd + "/" + mm + "/" + yyyy);
+          https
+            .get(
+              target,
+              {
+                headers: {
+                  "User-Agent":
+                    "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+                  "Accept-Language": "it-IT,it;q=0.9",
+                  Accept: "text/html,application/xhtml+xml",
+                },
+              },
+              (up) => {
+                res.statusCode = up.statusCode || 502;
+                res.setHeader("Content-Type", "text/html; charset=utf-8");
+                res.setHeader("Access-Control-Allow-Origin", "*");
+                up.pipe(res);
+              },
+            )
+            .on("error", (err) => {
+              res.statusCode = 502;
+              res.end(String(err && err.message ? err.message : err));
+            });
+          return;
+        }
         if (!rawUrl.startsWith("/cei-liturgia")) {
           return middleware(req, res, next);
         }

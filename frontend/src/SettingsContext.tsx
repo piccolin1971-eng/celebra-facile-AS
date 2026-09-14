@@ -29,7 +29,7 @@ interface SettingsState {
   // Stringa fontFamily da passare ai componenti Text (undefined per il sistema)
   fontFamily: string | undefined;
   isBold: boolean;
-  /** Tasto «Celebra subito» in Home + selettori prefazio/PE in Celebra. Default off. */
+  /** Tasto «Celebra subito» in Home + selettori prefazio/PE in Celebra. Default on. */
   celebraSubitoEnabled: boolean;
   /** Feedback tattile (vibrazione) ai tap principali. Default off. */
   hapticFeedbackEnabled: boolean;
@@ -230,7 +230,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   const [fontFamilyId, setFontFamilyIdState] = useState<FontFamilyId>("system");
   const [isBold, setIsBoldState] = useState(false);
   const [parchmentTone, setParchmentToneState] = useState(PARCHMENT_TONE_DEFAULT);
-  const [celebraSubitoEnabled, setCelebraSubitoEnabledState] = useState(false);
+  const [celebraSubitoEnabled, setCelebraSubitoEnabledState] = useState(true);
   const [hapticFeedbackEnabled, setHapticFeedbackEnabledState] = useState(false);
   const [lineSpacing, setLineSpacingState] = useState(LINE_SPACING_DEFAULT);
   const [loaded, setLoaded] = useState(false);
@@ -240,9 +240,14 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
       try {
         const saved = await AsyncStorage.getItem("messale_settings");
         let migrationDoneV6 = false;
+        let celebraSubitoDefaultOnDone = false;
         try {
           const flagV6 = await AsyncStorage.getItem("messale_settings_migrated_v6");
           migrationDoneV6 = flagV6 === "1";
+        } catch {}
+        try {
+          celebraSubitoDefaultOnDone =
+            (await AsyncStorage.getItem("messale_celebra_subito_default_on_v1")) === "1";
         } catch {}
         if (saved) {
           const s = JSON.parse(saved);
@@ -309,6 +314,18 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
             }
           } catch {}
           await AsyncStorage.setItem("messale_settings_migrated_v6", "1");
+        }
+        // Prima era default off: chi ha solo salvato altre impostazioni ha false persistito.
+        // Una tantum: accendi Celebra subito; dopo, lo switch dell'utente resta valido.
+        if (!celebraSubitoDefaultOnDone) {
+          setCelebraSubitoEnabledState(true);
+          try {
+            const raw = await AsyncStorage.getItem("messale_settings");
+            const cur = raw ? JSON.parse(raw) : {};
+            cur.celebraSubitoEnabled = true;
+            await AsyncStorage.setItem("messale_settings", JSON.stringify(cur));
+            await AsyncStorage.setItem("messale_celebra_subito_default_on_v1", "1");
+          } catch {}
         }
       } catch (e) {
         console.log("Impossibile caricare settings:", e);

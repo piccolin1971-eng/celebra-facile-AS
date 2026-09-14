@@ -383,15 +383,19 @@ const CORS_PROXIES: Array<(u: string) => string> = [
   (u) => `https://api.codetabs.com/v1/proxy?quest=${u}`,
 ];
 
-const CEI_FETCH_HEADERS = {
-  "User-Agent":
-    "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+const CEI_ACCEPT_HEADERS = {
   "Accept-Language": "it-IT,it;q=0.9",
   Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
 } as const;
 
-/** Timeout per singolo tentativo (web: proxy in parallelo; APK: fetch diretto). */
-const CEI_FETCH_TIMEOUT_MS = 12_000;
+const CEI_FETCH_HEADERS = {
+  "User-Agent":
+    "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+  ...CEI_ACCEPT_HEADERS,
+} as const;
+
+/** Timeout per singolo tentativo. Le Ore CEI pesano ~300 KB (immagine in pagina). */
+const CEI_FETCH_TIMEOUT_MS = 25_000;
 
 export function isCeiWebFetch(): boolean {
   // @ts-ignore - "document" esiste solo nei browser
@@ -423,14 +427,14 @@ export async function fetchCeiUrl(url: string): Promise<string | null> {
   }
 }
 
-async function fetchCeiHtmlViaCandidate(candidate: string): Promise<string> {
+async function fetchCeiHtmlOnce(
+  candidate: string,
+  headers: Record<string, string>,
+): Promise<string> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), CEI_FETCH_TIMEOUT_MS);
   try {
-    const res = await fetch(candidate, {
-      headers: CEI_FETCH_HEADERS,
-      signal: controller.signal,
-    });
+    const res = await fetch(candidate, { headers, signal: controller.signal });
     clearTimeout(timer);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const txt = await res.text();
@@ -441,6 +445,15 @@ async function fetchCeiHtmlViaCandidate(candidate: string): Promise<string> {
   } catch (e) {
     clearTimeout(timer);
     throw e;
+  }
+}
+
+async function fetchCeiHtmlViaCandidate(candidate: string): Promise<string> {
+  try {
+    return await fetchCeiHtmlOnce(candidate, { ...CEI_FETCH_HEADERS });
+  } catch (e) {
+    // Su alcuni Android vecchi User-Agent è un header vietato e il fetch fallisce.
+    return await fetchCeiHtmlOnce(candidate, { ...CEI_ACCEPT_HEADERS });
   }
 }
 

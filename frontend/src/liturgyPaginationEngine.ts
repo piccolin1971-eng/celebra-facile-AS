@@ -65,6 +65,20 @@ export function splitSegmentForPaging(seg: SegmentPackMeta): SegmentPackMeta[] {
   return [seg];
 }
 
+const SECTION_TITLE_KINDS = new Set([
+  "sectionTitle",
+  "sectionTitleBreak",
+  "antifonaTitle",
+  "readingTitle",
+  "orazioneTitle",
+  "peTitle",
+  "troparioTitle",
+]);
+
+export function isSectionTitleKind(kind: string): boolean {
+  return SECTION_TITLE_KINDS.has(kind);
+}
+
 export function isPackableSegmentKind(kind: string): boolean {
   return kind !== "kindleBreak";
 }
@@ -113,6 +127,47 @@ function measurePackUnit(
   return { indices, height: totalH, nextIndex: j };
 }
 
+function heightSpan(
+  segments: SegmentPackMeta[],
+  heights: ReadonlyMap<number, number>,
+  from: number,
+  to: number,
+): number {
+  let h = 0;
+  for (let k = from; k < to; k++) {
+    if (!isPackableSegmentKind(segments[k]?.kind ?? "")) continue;
+    h += heights.get(k) ?? 0;
+  }
+  return h;
+}
+
+/** Primo blocco dopo un titolo, saltando spacer; null se c'è un altro titolo o un break. */
+function nextKeepWithUnit(
+  segments: SegmentPackMeta[],
+  heights: ReadonlyMap<number, number>,
+  startIndex: number,
+): PackUnit | null {
+  let j = startIndex;
+  while (j < segments.length) {
+    const s = segments[j];
+    if (!s) return null;
+    if (s.kind === "kindleBreak") return null;
+    const unit = measurePackUnit(segments, heights, j);
+    if (!unit) {
+      j += 1;
+      continue;
+    }
+    const kind = segments[unit.indices[0]]?.kind ?? "";
+    if (kind === "spacer") {
+      j = unit.nextIndex;
+      continue;
+    }
+    if (isSectionTitleKind(kind)) return null;
+    return unit;
+  }
+  return null;
+}
+
 /**
  * Impacchetta indici segmento in pagine che entrano in viewportH.
  * `kindleBreak` forza salto pagina; `packGroup` tiene segmenti adiacenti insieme
@@ -153,11 +208,7 @@ export function packSegmentIndicesIntoPages(
       continue;
     }
 
-    const h = unit.height;
-    if (h <= 0) {
-      i = unit.nextIndex;
-      continue;
-    }
+    let h = Math.max(unit.height, 1);
 
     if (h > usable) {
       // Segmento più alto del viewport: LiturgyPagedReader lo spezza prima del pack.
@@ -165,6 +216,17 @@ export function packSegmentIndicesIntoPages(
       pages.push([...unit.indices]);
       i = unit.nextIndex;
       continue;
+    }
+
+    // Titolo + primo blocco di testo: se non entrano insieme, il titolo
+    // parte dalla pagina successiva (niente «Rito della Pace» orfano).
+    if (isSectionTitleKind(seg.kind) && !seg.packGroup?.trim() && current.length > 0) {
+      const keep = nextKeepWithUnit(segments, heights, unit.nextIndex);
+      if (keep) {
+        const together =
+          h + heightSpan(segments, heights, unit.nextIndex, keep.indices[0]) + Math.max(keep.height, 1);
+        if (currentH + together > usable) flush();
+      }
     }
 
     if (current.length > 0 && currentH + h > usable) {

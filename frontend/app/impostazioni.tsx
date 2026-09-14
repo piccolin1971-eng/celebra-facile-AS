@@ -41,8 +41,8 @@ export default function Impostazioni() {
               <Text style={styles.sectionTitle}>Celebra subito la Messa</Text>
               <Text style={styles.sectionDesc}>
                 {celebraSubitoEnabled
-                  ? "Attivo: in Home compare «Celebra subito la Messa» (indice a parti), senza nascondere le scelte preparate né «Scegli la liturgia» e «Celebra la Messa». Disattiva per togliere solo il tasto oro."
-                  : "Disattivo (predefinito): in Home restano «Scegli la liturgia» e «Celebra la Messa». Attiva per aggiungere «Celebra subito» sopra quei tasti, lasciando visibile l’elenco delle scelte con Azzera."}
+                  ? "Attivo (predefinito): in Home compare «Celebra subito la Messa» (indice a parti), senza nascondere le scelte preparate né «Scegli la liturgia» e «Celebra la Messa». Disattiva per togliere solo il tasto oro."
+                  : "Disattivo: in Home restano «Scegli la liturgia» e «Celebra la Messa». Attiva per aggiungere «Celebra subito» sopra quei tasti, lasciando visibile l’elenco delle scelte con Azzera."}
               </Text>
             </View>
             <Switch

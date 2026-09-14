@@ -330,8 +330,7 @@ export const makeStyles = (
     },
     // ----- Tipografia (stessi colori/taglie di /messa) -----
     // I titoli sezione e PE hanno marginTop per respiro visivo quando seguono
-    // testo precedente (l'orphan protection garantisce che il titolo non
-    // resti mai solo in fondo a una pagina).
+    // testo precedente. Il packer (keep-with-next) evita il titolo orfano in fondo.
     sectionTitle: {
       fontSize: Math.round(fontSize * 1.05),
       fontFamily: headingFont.fontFamily,

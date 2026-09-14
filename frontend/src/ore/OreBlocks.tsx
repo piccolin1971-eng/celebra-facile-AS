@@ -288,7 +288,21 @@ function renderBlock(
             {b.name}
           </Text>
         ) : null}
-        {b.sub || b.cite ? (
+        {b.cite && !/^\(/.test(b.cite.trim()) ? (
+          <Text
+            style={{
+              fontFamily: FONT_IT,
+              fontSize: Math.round(fontSize * 0.78),
+              lineHeight: Math.round(fontSize * 1.4 * 1.1),
+              color: CITE,
+              textAlign: "center",
+              marginBottom: em(0.12),
+            }}
+          >
+            {b.cite}
+          </Text>
+        ) : null}
+        {b.sub || (b.cite && /^\(/.test(b.cite.trim())) ? (
           <Text
             style={{
               fontFamily: FONT_IT,
@@ -300,7 +314,7 @@ function renderBlock(
             }}
           >
             {b.sub}
-            {b.cite ? (
+            {b.cite && /^\(/.test(b.cite.trim()) ? (
               <Text style={{ fontFamily: FONT_IT, fontSize: Math.round(fontSize * 0.78), color: CITE }}>
                 {b.sub ? " " : ""}
                 {b.cite}

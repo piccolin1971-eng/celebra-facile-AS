@@ -2,6 +2,8 @@ import { fetchCeiUrl } from "../liturgyScraper";
 import { DEFAULT_INVIT_ANT } from "./bundled";
 import { hourHeadMeta } from "./dayHead";
 import { extractHoursBanner } from "./html";
+import { hymnNeedsItalianAlternate, prependItalianHymn } from "./hymnLang";
+import { fetchLdoDayHtml, ldoHymnForHour } from "./ldo";
 import { extractInvitatoryAntiphon, parseHourHtml, splitOraMediaHtml } from "./parseHour";
 import { loadDayHours, saveDayHours } from "./cache";
 import { ceiHourSlug } from "./titles";
@@ -105,6 +107,68 @@ async function ingestHtml(
   return { [hour]: parseHourHtml(html, hour), hoursBanner };
 }
 
+function parsedNeedsItalianHymn(parsed: ParsedHour | undefined): boolean {
+  if (!parsed?.blocks?.length) return false;
+  return parsed.blocks.some((b) => b.k === "hymn" && hymnNeedsItalianAlternate(b.hymns));
+}
+
+function hourPatchNeedsItalian(patch: HourPatch): boolean {
+  return Object.entries(patch).some(([k, v]) => {
+    if (k === "invitAnt" || k === "invitFetched" || k === "hoursBanner") return false;
+    return parsedNeedsItalianHymn(v as ParsedHour);
+  });
+}
+
+function cachedHoursPatch(existing: DayHoursCache, hour: OreHourId): HourPatch | null {
+  if (hour === "ora-media") {
+    if (!existing.hours.terza?.blocks?.length) return null;
+    return {
+      terza: existing.hours.terza,
+      sesta: existing.hours.sesta,
+      nona: existing.hours.nona,
+    };
+  }
+  const parsed = existing.hours[hour];
+  if (!parsed?.blocks?.length) return null;
+  return { [hour]: parsed };
+}
+
+function hymnFingerprint(patch: HourPatch): string {
+  const hymns: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(patch)) {
+    if (k === "invitAnt" || k === "invitFetched" || k === "hoursBanner") continue;
+    const parsed = v as ParsedHour | undefined;
+    hymns[k] = parsed?.blocks?.filter((b) => b.k === "hymn") ?? [];
+  }
+  return JSON.stringify(hymns);
+}
+
+function applyItalianHymn(parsed: ParsedHour, italian: ReturnType<typeof ldoHymnForHour>): ParsedHour {
+  if (!italian) return parsed;
+  return {
+    ...parsed,
+    blocks: parsed.blocks.map((b) => {
+      if (b.k !== "hymn" || !hymnNeedsItalianAlternate(b.hymns)) return b;
+      return { k: "hymn" as const, hymns: prependItalianHymn(b.hymns, italian) };
+    }),
+  };
+}
+
+async function enrichLatinHymns(patch: HourPatch, dateISO: string): Promise<HourPatch> {
+  const hours = Object.entries(patch).filter(([k, v]) => {
+    if (k === "invitAnt" || k === "invitFetched" || k === "hoursBanner") return false;
+    return parsedNeedsItalianHymn(v as ParsedHour);
+  }) as Array<[OreHourId | MediaId, ParsedHour]>;
+  if (!hours.length) return patch;
+  const ldo = await fetchLdoDayHtml(dateISO);
+  if (!ldo) return patch;
+  const next: HourPatch = { ...patch };
+  for (const [id, parsed] of hours) {
+    (next as Record<string, unknown>)[id] = applyItalianHymn(parsed, ldoHymnForHour(ldo, id));
+  }
+  return next;
+}
+
 const FETCH_HOURS: OreHourId[] = [
   "invitatorio",
   "ufficio",
@@ -118,7 +182,7 @@ export async function fetchDayHours(dateISO: string, ceiTitle = ""): Promise<Day
   const date = parseLocalDate(dateISO);
   const results = await mapPool(FETCH_HOURS, CEI_FETCH_CONCURRENCY, async (hour) => {
     const html = await fetchHourHtml(dateISO, ceiHourSlug(hour, date));
-    return ingestHtml(hour, html);
+    return enrichLatinHymns(await ingestHtml(hour, html), dateISO);
   });
   let hours: DayHoursCache["hours"] = {};
   let invitAnt: string | undefined;
@@ -151,14 +215,19 @@ export async function ensureHour(
   const existing = await loadDayHours(dateISO);
   if (hour === "invitatorio") {
     if (existing?.invitFetched) return existing;
-  } else if (hour === "ora-media") {
-    if (existing?.hours.terza?.blocks?.length) return existing;
-  } else if (existing?.hours[hour]?.blocks?.length) {
-    return existing;
+  } else if (existing) {
+    const cached = cachedHoursPatch(existing, hour);
+    if (cached) {
+      if (!hourPatchNeedsItalian(cached)) return existing;
+      const enriched = await enrichLatinHymns(cached, dateISO);
+      if (hymnFingerprint(enriched) === hymnFingerprint(cached)) return existing;
+      const { invitAnt: _a, invitFetched: _f, hoursBanner: _b, ...hourMap } = enriched;
+      return mergeDayHours(dateISO, { hours: hourMap }, ceiTitle);
+    }
   }
   const date = parseLocalDate(dateISO);
   const html = await fetchHourHtml(dateISO, ceiHourSlug(hour, date));
-  const patch = await ingestHtml(hour, html);
+  const patch = await enrichLatinHymns(await ingestHtml(hour, html), dateISO);
   const { invitAnt, invitFetched, hoursBanner, ...hourMap } = patch;
   return mergeDayHours(
     dateISO,

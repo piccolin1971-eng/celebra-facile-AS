@@ -1009,6 +1009,10 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
       borderBottomWidth: 2,
       borderBottomColor: colors.border,
       gap: 8,
+      backgroundColor: colors.background,
+      zIndex: 30,
+      elevation: 16,
+      position: "relative",
     },
     brandPill: {
       flex: 1,
@@ -1094,7 +1098,7 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
     fontBtns: { flexDirection: "row", gap: 6, flexShrink: 0 },
     homeScroll: {
       flex: 1,
-      overflow: "visible",
+      overflow: "hidden",
     },
     content: { paddingHorizontal: 8, paddingTop: 2, paddingBottom: 24, gap: 14 },
     daySelector: {

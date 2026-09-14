@@ -183,12 +183,10 @@ function pickPrimarySaint(saints?: LiturgySaint[]): LiturgySaint | null {
 }
 
 function pickPrimarySaintForLiturgy(liturgy: LiturgyLike): LiturgySaint | null {
-  const fromLiturgy = pickPrimarySaint(liturgy.saints);
-  if (fromLiturgy) return fromLiturgy;
   if (liturgy.date && /^\d{4}-\d{2}-\d{2}$/.test(liturgy.date)) {
     return pickPrimarySaint(getObservedSaintsForDate(parseLocalDate(liturgy.date)));
   }
-  return null;
+  return pickPrimarySaint(liturgy.saints);
 }
 
 function isMarianCelebration(title: string, rank: string): boolean {

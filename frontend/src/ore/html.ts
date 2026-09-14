@@ -45,7 +45,11 @@ export function decodeHtmlEntities(s: string): string {
 
 export function stripTags(html: string): string {
   return decodeHtmlEntities(
-    html.replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, ""),
+    html
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<br\s*(?=<|$)/gi, "\n")
+      .replace(/<[^>]+>/g, "")
+      .replace(/<[^>]*$/g, ""),
   )
     .replace(/\u00a0/g, " ")
     .replace(/[\u200B\uFEFF]/g, "")
@@ -133,10 +137,19 @@ export function topLevelNodes(html: string): HtmlNode[] {
       i = end < 0 ? html.length : end + 3;
       continue;
     }
+    // <!doctype …>, <?xml …> — non saltare il '<' o resta "!doctype html>"
+    if (html[i + 1] === "!" || html[i + 1] === "?") {
+      const end = html.indexOf(">", i);
+      i = end < 0 ? html.length : end + 1;
+      continue;
+    }
     const slice = html.slice(i, i + 12);
-    if (/^<br\s*\/?>/i.test(slice)) {
+    if (/^<br\b/i.test(slice)) {
       nodes.push({ kind: "br" });
-      i = html.indexOf(">", i) + 1;
+      const gt = html.indexOf(">", i);
+      const nextLt = html.indexOf("<", i + 1);
+      if (gt >= 0 && (nextLt < 0 || gt < nextLt)) i = gt + 1;
+      else i = nextLt >= 0 ? nextLt : html.length;
       continue;
     }
     const open = html.slice(i).match(/^<([a-zA-Z][\w:-]*)([^>]*)>/);
@@ -195,25 +208,118 @@ export function extractHoursBanner(html: string): string {
   return stripTags(m[1]).replace(/\s+/g, " ").trim();
 }
 
+/** True se la pagina CEI contiene il markup delle Ore (non solo il guscio del sito). */
+export function hasHoursMarkup(html: string): boolean {
+  return classTokenIndex(html, "lo_titolo") >= 0 || classTokenIndex(html, "lo_versetto") >= 0;
+}
+
+/**
+ * Toglie script, CSS e le JPEG in base64 della pagina CEI (~200 KB).
+ * Su telefoni vecchi regex/parse sull'HTML intero finivano per mostrare il chrome del sito.
+ */
+export function stripHeavyCeiAssets(html: string): string {
+  let s = removeBetween(html, "<script", "</script>");
+  s = removeBetween(s, "<SCRIPT", "</SCRIPT>");
+  s = removeBetween(s, "<style", "</style>");
+  s = removeBetween(s, "<STYLE", "</STYLE>");
+  return removeDataImages(s);
+}
+
+function removeBetween(html: string, open: string, close: string): string {
+  let out = "";
+  let i = 0;
+  const openLen = open.length;
+  const closeLen = close.length;
+  while (i < html.length) {
+    const start = html.indexOf(open, i);
+    if (start < 0) {
+      out += html.slice(i);
+      break;
+    }
+    out += html.slice(i, start);
+    const end = html.indexOf(close, start + openLen);
+    i = end < 0 ? html.length : end + closeLen;
+  }
+  return out;
+}
+
+function removeDataImages(html: string): string {
+  let out = "";
+  let i = 0;
+  while (i < html.length) {
+    const data = html.indexOf("data:image", i);
+    if (data < 0) {
+      out += html.slice(i);
+      break;
+    }
+    const tagStart = html.lastIndexOf("<", data);
+    if (tagStart < i || tagStart < 0) {
+      out += html.slice(i, data + 10);
+      i = data + 10;
+      continue;
+    }
+    out += html.slice(i, tagStart);
+    const tagEnd = html.indexOf(">", data);
+    i = tagEnd < 0 ? html.length : tagEnd + 1;
+  }
+  return out;
+}
+
+/** Indice di una class CSS intera, senza regex su pagine da 300 KB. */
+function classTokenIndex(html: string, name: string, from = 0): number {
+  let i = from;
+  while (i < html.length) {
+    const at = html.indexOf(name, i);
+    if (at < 0) return -1;
+    const prev = at > 0 ? html[at - 1] : "";
+    const next = html[at + name.length] || "";
+    const prevOk = prev === '"' || prev === "'" || prev === " " || prev === "=";
+    const nextOk = next === '"' || next === "'" || next === " " || next === "";
+    if (prevOk && nextOk) return at;
+    i = at + name.length;
+  }
+  return -1;
+}
+
+function tagStartBefore(html: string, at: number): number {
+  const open = html.lastIndexOf("<", at);
+  return open >= 0 ? open : at;
+}
+
 /** Solo il corpo liturgico CEI, senza share Facebook / sidebar. */
 export function liturgicalFragment(html: string): string {
-  const first = html.search(
-    /<div[^>]*class="[^"]*lo_(titolo|versetto|antifona|sottotitolo|rosso)[^"]*"[^>]*>/i,
-  );
-  const share = html.search(/<[^>]*class="[^"]*(share-container|cci_get_social_share)/i);
-  if (first >= 0) {
-    const end = share > first ? share : html.length;
-    return html.slice(first, end);
+  const src = stripHeavyCeiAssets(html);
+  const keys = ["lo_versetto", "lo_titolo", "lo_antifona", "lo_sottotitolo", "lo_rosso"];
+  let first = -1;
+  for (const key of keys) {
+    const at = classTokenIndex(src, key);
+    if (at < 0) continue;
+    const open = tagStartBefore(src, at);
+    if (first < 0 || open < first) first = open;
   }
-  const openRe = /<div[^>]*class="[^"]*cci-liturgia-ore(?![-\w])[^"]*"[^>]*>/i;
-  const open = html.match(openRe);
-  if (open && open.index != null) {
-    const el = extractMatchingElement(html, open.index);
-    if (el?.inner && el.inner.length > 80) {
-      return cutChrome(el.inner);
+  const shareAt = classTokenIndex(src, "share-container");
+  const shareAt2 = classTokenIndex(src, "cci_get_social_share");
+  const share = [shareAt, shareAt2].filter((n) => n >= 0).sort((a, b) => a - b)[0] ?? -1;
+  if (first >= 0) {
+    const end = share > first ? share : src.length;
+    return dropIncompleteTail(src.slice(first, end));
+  }
+  const cci = classTokenIndex(src, "cci-liturgia-ore");
+  if (cci >= 0) {
+    const el = extractMatchingElement(src, tagStartBefore(src, cci));
+    if (el?.inner && (classTokenIndex(el.inner, "lo_titolo") >= 0 || classTokenIndex(el.inner, "lo_versetto") >= 0)) {
+      return dropIncompleteTail(cutChrome(el.inner));
     }
   }
-  return cutChrome(html);
+  // Mai restituire il guscio della pagina (doctype, menu, "Nessun Contenuto Trovato").
+  return "";
+}
+
+/** La pagina CEI a volte taglia l'HTML a metà di un tag (`<div class="`). */
+function dropIncompleteTail(html: string): string {
+  const cut = html.search(/<[a-zA-Z][\w:-]*\b[^>]*$/);
+  if (cut > 0) return html.slice(0, cut);
+  return html;
 }
 
 function cutChrome(html: string): string {

@@ -69,16 +69,13 @@ function isCelebrationRank(rank: string): boolean {
 function collectCandidateTitles(liturgy: LiturgyLike | null | undefined): string[] {
   const titles: string[] = [];
   if (liturgy?.title?.trim()) titles.push(liturgy.title);
-  for (const saint of liturgy?.saints ?? []) {
-    if (isCelebrationRank(saint.rank) && saint.title?.trim()) {
+  const dated = !!(liturgy?.date && /^\d{4}-\d{2}-\d{2}$/.test(liturgy.date));
+  const saints = dated
+    ? getObservedSaintsForDate(parseLocalDate(liturgy!.date!))
+    : (liturgy?.saints ?? []);
+  for (const saint of saints) {
+    if (isCelebrationRank(saint.rank) && saint.title?.trim() && !titles.includes(saint.title)) {
       titles.push(saint.title);
-    }
-  }
-  if (liturgy?.date && /^\d{4}-\d{2}-\d{2}$/.test(liturgy.date)) {
-    for (const saint of getObservedSaintsForDate(parseLocalDate(liturgy.date))) {
-      if (isCelebrationRank(saint.rank) && saint.title?.trim() && !titles.includes(saint.title)) {
-        titles.push(saint.title);
-      }
     }
   }
   return titles;
