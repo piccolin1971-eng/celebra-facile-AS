@@ -42,7 +42,7 @@ import { Ionicons } from "@expo/vector-icons";
 // su web bundla solo lo stub null.
 import PagerView from "../src/pagerView";
 import { LiturgyPagedReader } from "../src/components/LiturgyPagedReader";
-import { ReadingBrightnessButton, ReadingBrightnessRoot } from "../src/components/ReadingBrightnessControl";
+import { ReadingBrightnessButton, ReadingBrightnessRoot, ReadingBrightnessRow } from "../src/components/ReadingBrightnessControl";
 import { PE_FIRST_PREAMBLE_ANCHORS } from "../src/peEngineSegments";
 // expo-keep-awake: import LAZY tramite require() in useEffect.
 // Motivo: in Expo SDK 54 + New Architecture, expo-keep-awake 15.x può
@@ -800,36 +800,39 @@ function CelebraScreenInner() {
 
   return (
     <SafeAreaView style={styles.container} testID="celebra-screen">
-      {/* Top bar: home + indice + titolo + A−/A+ */}
-      <View style={styles.topBar}>
-        <View style={styles.topBarLeft}>
-          <HomeCircleButton onPress={() => router.replace("/")} testID="btn-back-home" />
-          {fromIndice ? (
-            <TouchableOpacity
-              style={styles.indiceBtn}
-              onPress={() => setShowIndiceModal(true)}
-              testID="btn-celebra-indice"
-              accessibilityRole="button"
-              accessibilityLabel="Torna all'indice delle parti"
-            >
-              <Text style={styles.indiceBtnText}>Indice</Text>
-            </TouchableOpacity>
-          ) : null}
-        </View>
-        <BrandScreenTitle
-          title="Celebra la Messa"
-          textStyle={styles.title}
-          numberOfLines={1}
-          markSize={Math.max(28, Math.round(fontSize * 0.85))}
-        />
-        <View style={styles.fontBtns}>
-          <FontSizeButtons
-            extraDisabled={enginePaginating}
-            decreaseTestID="btn-font-decrease"
-            increaseTestID="btn-font-increase"
+      {/* Top bar: home + indice + titolo + A−/A+ ; luminosità = 2ª riga */}
+      <View>
+        <View style={styles.topBar}>
+          <View style={styles.topBarLeft}>
+            <HomeCircleButton onPress={() => router.replace("/")} testID="btn-back-home" />
+            {fromIndice ? (
+              <TouchableOpacity
+                style={styles.indiceBtn}
+                onPress={() => setShowIndiceModal(true)}
+                testID="btn-celebra-indice"
+                accessibilityRole="button"
+                accessibilityLabel="Torna all'indice delle parti"
+              >
+                <Text style={styles.indiceBtnText}>Indice</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
+          <BrandScreenTitle
+            title="Celebra la Messa"
+            textStyle={styles.title}
+            numberOfLines={1}
+            markSize={Math.max(28, Math.round(fontSize * 0.85))}
           />
-          <ReadingBrightnessButton />
+          <View style={styles.fontBtns}>
+            <FontSizeButtons
+              extraDisabled={enginePaginating}
+              decreaseTestID="btn-font-decrease"
+              increaseTestID="btn-font-increase"
+            />
+            <ReadingBrightnessButton />
+          </View>
         </View>
+        <ReadingBrightnessRow />
       </View>
 
       {/* Area di lettura: PagerView nativo con swipe orizzontale tra pagine.

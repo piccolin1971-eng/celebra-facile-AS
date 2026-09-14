@@ -15,7 +15,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSettings } from "../src/SettingsContext";
 import { resolveBodyFont } from "../src/fontFamily";
 import { FontSizeButtons } from "../src/components/FontSizeButtons";
-import { ReadingBrightnessButton, ReadingBrightnessRoot } from "../src/components/ReadingBrightnessControl";
+import { ReadingBrightnessButton, ReadingBrightnessRoot, ReadingBrightnessRow } from "../src/components/ReadingBrightnessControl";
 import { localDateStr, parseLocalDate } from "../src/dateUtils";
 import { oreBodyLineHeight } from "../src/liturgyTypography";
 import { ACTION_TITLE_WEIGHT } from "../src/uiActionTokens";
@@ -297,6 +297,7 @@ export default function OreLeggi() {
   return (
     <ReadingBrightnessRoot>
     <SafeAreaView style={styles.container} testID="ore-read-screen">
+      <View>
       <View style={[styles.topBar, { borderBottomColor: colors.border }]}>
         <View style={styles.titleRow}>
           <TouchableOpacity
@@ -357,6 +358,8 @@ export default function OreLeggi() {
           <View style={{ flex: 1 }} />
           <ReadingBrightnessButton />
         </View>
+      </View>
+      <ReadingBrightnessRow />
       </View>
 
       {hour === "ora-media" ? (

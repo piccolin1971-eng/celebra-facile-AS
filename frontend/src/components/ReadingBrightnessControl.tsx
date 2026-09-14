@@ -1,12 +1,5 @@
-import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Platform,
-  Dimensions,
-} from "react-native";
+import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { View, Text, TouchableOpacity, StyleSheet, Platform } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { triggerAppHaptic } from "../appHaptics";
@@ -24,41 +17,26 @@ import {
 } from "../readingBrightness";
 
 const CREAM = "#E8DCC4";
-const CREAM_DIM = "#9A9080";
-const PANEL_BG = "#241F1B";
-const SUN_GOLD = "#F0D060";
+const ROW_BG = "#000000";
+const ORANGE = "#FF6A00";
+const LIME = "#22E85A";
+const SUN_YELLOW = "#FFE14A";
+const BORDER_STOPS = ["#000000", "#1A1A1A", "#4A4A4A", "#8A8A8A", "#C8C8C8", "#FFFFFF"] as const;
 
 const webClickable = Platform.OS === "web" ? ({ cursor: "pointer" } as const) : undefined;
-
-type Anchor = { top: number; right: number };
 
 type BrightnessCtx = {
   open: boolean;
   level: number;
-  toggleFrom: (node: View | null) => void;
+  toggle: () => void;
   bump: (delta: number) => void;
 };
 
 const Ctx = createContext<BrightnessCtx | null>(null);
 
-function measureAnchor(node: View | null, cb: (a: Anchor) => void) {
-  if (!node || typeof (node as any).measureInWindow !== "function") {
-    cb({ top: 56, right: 8 });
-    return;
-  }
-  (node as any).measureInWindow((x: number, y: number, w: number, h: number) => {
-    const winW = Dimensions.get("window").width;
-    cb({
-      top: Math.round((y || 0) + (h || 36) + 6),
-      right: Math.max(8, Math.round(winW - (x || 0) - (w || 36))),
-    });
-  });
-}
-
 export function ReadingBrightnessRoot({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const [level, setLevel] = useState(3);
-  const [anchor, setAnchor] = useState<Anchor>({ top: 56, right: 8 });
 
   useFocusEffect(
     useCallback(() => {
@@ -92,146 +70,173 @@ export function ReadingBrightnessRoot({ children }: { children: React.ReactNode 
     void triggerAppHaptic("light");
   }, []);
 
-  const toggleFrom = useCallback((node: View | null) => {
-    setOpen((v) => {
-      if (!v) measureAnchor(node, setAnchor);
-      return !v;
-    });
+  const toggle = useCallback(() => {
+    setOpen((v) => !v);
     void triggerAppHaptic("light");
   }, []);
 
-  const value = useMemo(() => ({ open, level, toggleFrom, bump }), [open, level, toggleFrom, bump]);
+  const value = useMemo(() => ({ open, level, toggle, bump }), [open, level, toggle, bump]);
 
-  return (
-    <Ctx.Provider value={value}>
-      <View style={styles.root}>
-        {children}
-        {open ? (
-          <View pointerEvents="box-none" style={StyleSheet.absoluteFill} testID="brightness-stepper">
-            <View style={[styles.panelWrap, { top: anchor.top, right: anchor.right }]}>
-              <View style={styles.panel} accessibilityRole="adjustable">
-                <TouchableOpacity
-                  style={styles.pm}
-                  onPress={() => bump(-1)}
-                  accessibilityRole="button"
-                  accessibilityLabel="Diminuisci luminosità"
-                  testID="btn-brightness-minus"
-                  {...webClickable}
-                >
-                  <Text style={styles.pmLab}>−</Text>
-                </TouchableOpacity>
-                <View style={styles.val} accessible accessibilityLabel={`Luminosità ${level} su ${BRIGHTNESS_MAX}`}>
-                  <Text style={styles.glyph}>{brightnessSunGlyph(level)}</Text>
-                  <Text style={styles.valN}>{level} / {BRIGHTNESS_MAX}</Text>
-                </View>
-                <TouchableOpacity
-                  style={styles.pm}
-                  onPress={() => bump(1)}
-                  accessibilityRole="button"
-                  accessibilityLabel="Aumenta luminosità"
-                  testID="btn-brightness-plus"
-                  {...webClickable}
-                >
-                  <Text style={styles.pmLab}>+</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        ) : null}
-      </View>
-    </Ctx.Provider>
-  );
+  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
 export function ReadingBrightnessButton() {
   const ctx = useContext(Ctx);
-  const { colors } = useSettings();
-  const wrapRef = useRef<View>(null);
+  const { colors, fontSize } = useSettings();
   if (!ctx) return null;
   const iconColor = ctx.open ? "#1A1208" : colors.textPrimary;
+  // Stesso box di FontSizeButtons (minWidth 62, paddingVertical 10).
+  const boxH = 20 + Math.round(fontSize * 1.2);
+  const iconSize = Math.max(18, Math.min(26, boxH - 16));
   return (
-    <View ref={wrapRef} collapsable={false}>
+    <TouchableOpacity
+      onPress={ctx.toggle}
+      style={[
+        styles.sunBtn,
+        { height: boxH, borderColor: ctx.open ? "#E0B429" : colors.textPrimary },
+        ctx.open && styles.sunBtnOpen,
+      ]}
+      accessibilityRole="button"
+      accessibilityLabel={ctx.open ? "Chiudi luminosità" : "Luminosità"}
+      accessibilityState={{ expanded: ctx.open }}
+      testID="btn-reading-brightness"
+      hitSlop={4}
+      {...webClickable}
+    >
+      <Ionicons name="sunny" size={iconSize} color={iconColor} />
+    </TouchableOpacity>
+  );
+}
+
+/** Riga nera a tutta larghezza: − / sole animato / +, solo contorni colorati. */
+export function ReadingBrightnessRow() {
+  const ctx = useContext(Ctx);
+  if (!ctx?.open) return null;
+  return (
+    <View style={styles.row} testID="brightness-stepper" accessibilityRole="adjustable">
       <TouchableOpacity
-        onPress={() => ctx.toggleFrom(wrapRef.current)}
-        style={[
-          styles.sunBtn,
-          { borderColor: ctx.open ? "#E0B429" : colors.textPrimary },
-          ctx.open && styles.sunBtnOpen,
-        ]}
+        style={[styles.pill, styles.pillMinus]}
+        onPress={() => ctx.bump(-1)}
         accessibilityRole="button"
-        accessibilityLabel={ctx.open ? "Chiudi luminosità" : "Luminosità"}
-        accessibilityState={{ expanded: ctx.open }}
-        testID="btn-reading-brightness"
-        hitSlop={4}
+        accessibilityLabel="Diminuisci luminosità"
+        testID="btn-brightness-minus"
         {...webClickable}
       >
-        <Ionicons name="sunny" size={22} color={iconColor} />
+        <Text style={styles.pillMinusLab}>−</Text>
+      </TouchableOpacity>
+      <View
+        style={[styles.midShell, Platform.OS === "web" ? styles.midShellWeb : null]}
+        accessible
+        accessibilityLabel={`Luminosità ${ctx.level} su ${BRIGHTNESS_MAX}`}
+      >
+        {Platform.OS === "web" ? null : (
+          <View style={styles.midGrad} pointerEvents="none">
+            {BORDER_STOPS.map((c) => (
+              <View key={c} style={[styles.midGradStop, { backgroundColor: c }]} />
+            ))}
+          </View>
+        )}
+        <View style={styles.midInner}>
+          <Text style={styles.glyph}>{brightnessSunGlyph(ctx.level)}</Text>
+          <Text style={styles.midN}>
+            {ctx.level} / {BRIGHTNESS_MAX}
+          </Text>
+        </View>
+      </View>
+      <TouchableOpacity
+        style={[styles.pill, styles.pillPlus]}
+        onPress={() => ctx.bump(1)}
+        accessibilityRole="button"
+        accessibilityLabel="Aumenta luminosità"
+        testID="btn-brightness-plus"
+        {...webClickable}
+      >
+        <Text style={styles.pillPlusLab}>+</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
-  panelWrap: {
-    position: "absolute",
-    zIndex: 80,
-    elevation: 80,
-  },
-  panel: {
+  row: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    minWidth: 210,
-    backgroundColor: PANEL_BG,
-    borderColor: CREAM,
-    borderWidth: 1.5,
-    borderRadius: 14,
-    paddingHorizontal: 8,
-    paddingVertical: 7,
+    justifyContent: "space-between",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    minHeight: 56,
+    backgroundColor: ROW_BG,
+    gap: 10,
   },
-  pm: {
-    width: 46,
-    height: 42,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: CREAM,
+  pill: {
+    minWidth: 90,
+    height: 44,
+    paddingHorizontal: 25,
+    borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 2.5,
+    backgroundColor: ROW_BG,
   },
-  pmLab: {
-    color: CREAM,
-    fontSize: 26,
+  pillMinus: { borderColor: ORANGE },
+  pillPlus: { borderColor: LIME },
+  pillMinusLab: {
+    color: ORANGE,
+    fontSize: 28,
     fontWeight: "800",
-    lineHeight: 28,
+    lineHeight: 30,
     marginTop: Platform.OS === "android" ? -2 : 0,
   },
-  val: {
-    flexGrow: 1,
-    minWidth: 72,
-    height: 42,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: CREAM_DIM,
-    alignItems: "center",
+  pillPlusLab: {
+    color: LIME,
+    fontSize: 28,
+    fontWeight: "800",
+    lineHeight: 30,
+    marginTop: Platform.OS === "android" ? -2 : 0,
+  },
+  midShell: {
+    flex: 1,
+    height: 44,
+    borderRadius: 999,
+    padding: 3,
+    overflow: "hidden",
     justifyContent: "center",
   },
-  glyph: {
-    color: SUN_GOLD,
-    fontSize: 20,
-    lineHeight: 22,
-    fontWeight: "700",
+  midShellWeb: {
+    // @ts-expect-error web-only: bordo da nero (sx) a bianco pieno (dx)
+    backgroundImage: "linear-gradient(90deg, #000000 0%, #000000 22%, #5A5A5A 58%, #E8E8E8 82%, #FFFFFF 100%)",
   },
-  valN: {
-    color: CREAM,
-    fontSize: 10,
+  midGrad: {
+    ...StyleSheet.absoluteFillObject,
+    flexDirection: "row",
+  },
+  midGradStop: { flex: 1 },
+  midInner: {
+    flex: 1,
+    flexDirection: "row",
+    borderRadius: 999,
+    backgroundColor: ROW_BG,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    paddingHorizontal: 10,
+  },
+  glyph: {
+    color: SUN_YELLOW,
+    fontSize: 28,
+    lineHeight: 32,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  midN: {
+    color: SUN_YELLOW,
+    fontSize: 18,
     fontWeight: "800",
     letterSpacing: 0.6,
-    opacity: 0.75,
   },
   sunBtn: {
-    width: 36,
-    height: 36,
+    minWidth: 62,
+    paddingHorizontal: 8,
     borderRadius: 10,
     borderWidth: 1.5,
     borderColor: CREAM,
