@@ -4,6 +4,7 @@ import { useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { triggerAppHaptic } from "../appHaptics";
 import { useSettings } from "../SettingsContext";
+import { PlusMinusGlyph } from "./PlusMinusGlyph";
 import {
   BRIGHTNESS_MAX,
   applyReadingBrightnessLevel,
@@ -122,7 +123,7 @@ export function ReadingBrightnessRow() {
         testID="btn-brightness-minus"
         {...webClickable}
       >
-        <Text style={styles.pillMinusLab}>−</Text>
+        <PlusMinusGlyph kind="minus" color={ORANGE} size={22} stroke={3.2} />
       </TouchableOpacity>
       <View
         style={[styles.midShell, Platform.OS === "web" ? styles.midShellWeb : null]}
@@ -151,7 +152,7 @@ export function ReadingBrightnessRow() {
         testID="btn-brightness-plus"
         {...webClickable}
       >
-        <Text style={styles.pillPlusLab}>+</Text>
+        <PlusMinusGlyph kind="plus" color={LIME} size={22} stroke={3.2} />
       </TouchableOpacity>
     </View>
   );
@@ -180,20 +181,6 @@ const styles = StyleSheet.create({
   },
   pillMinus: { borderColor: ORANGE },
   pillPlus: { borderColor: LIME },
-  pillMinusLab: {
-    color: ORANGE,
-    fontSize: 28,
-    fontWeight: "800",
-    lineHeight: 30,
-    marginTop: Platform.OS === "android" ? -2 : 0,
-  },
-  pillPlusLab: {
-    color: LIME,
-    fontSize: 28,
-    fontWeight: "800",
-    lineHeight: 30,
-    marginTop: Platform.OS === "android" ? -2 : 0,
-  },
   midShell: {
     flex: 1,
     height: 44,

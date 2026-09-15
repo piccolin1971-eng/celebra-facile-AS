@@ -135,14 +135,21 @@ function consumeSubAfterPsalm(nodes: HtmlNode[], i: number): { sub: string; cite
       cite = parsed2.cite || cite;
     }
   } else if (n && n.kind === "el" && hasClass(n.cls, "lo_versetto")) {
-    const innerSub = topLevelNodes(n.inner).find(
-      (x) => x.kind === "el" && hasClassPrefix(x.cls, "lo_sottotitolo"),
-    );
+    const kids = topLevelNodes(n.inner);
+    const innerSub = kids.find((x) => x.kind === "el" && hasClassPrefix(x.cls, "lo_sottotitolo"));
     if (innerSub && innerSub.kind === "el") {
       const parsed = extractCite(stripTags(innerSub.inner));
       sub = parsed.sub;
       cite = parsed.cite;
-      skip = 1;
+      const leftover = kids
+        .filter((x) => x !== innerSub)
+        .map((x) => (x.kind === "el" ? stripTags(x.inner) : x.kind === "text" ? x.text : ""))
+        .join(" ")
+        .replace(/\s+/g, " ")
+        .trim();
+      // Se il CEI mette i versetti (e a volte il resto dell'ora) nello stesso lo_versetto,
+      // non saltare il nodo: altrimenti si perdono Benedictus, invocazioni, orazione.
+      skip = leftover.length < 40 ? 1 : 0;
     } else {
       const t = stripTags(n.inner);
       if (t && t.length < 80 && !/[*†]/.test(t) && !/lo_antifona/.test(n.inner)) {
@@ -375,7 +382,7 @@ function joinPrecesWrap(lines: string[]): string[] {
     }
     const prev = out[out.length - 1];
     const prevIsDash = !!prev && /^—/.test(prev);
-    const wrapAfterDash = prevIsDash && /^[a-zàèéìòù«]/.test(t);
+    const wrapAfterDash = prevIsDash && !/^—/.test(t) && !/[.!?]$/.test(prev);
     const cont =
       prev &&
       !/:\s*$/.test(prev) &&
@@ -402,7 +409,13 @@ function rebuildPreces(grabbed: OreBlock[]): OreBlock[] | null {
   }
   if (introEnd < 0) {
     if (!looksLikeToneIntro(lines.join(" "))) return null;
-    introEnd = lines.length - 1;
+    // Senza due punti: solo le righe d'invito, non le petizioni del secondo formulario.
+    for (let i = 0; i < lines.length; i++) {
+      if (/^—/.test(lines[i])) break;
+      if (i > 0 && !looksLikeToneIntro(lines[i])) break;
+      if (looksLikeToneIntro(lines[i]) || i === 0) introEnd = i;
+    }
+    if (introEnd < 0) return null;
   }
   let intro = "";
   let refrain = refrainHint;
@@ -427,25 +440,108 @@ function rebuildPreces(grabbed: OreBlock[]): OreBlock[] | null {
   return out;
 }
 
-function applyTonePhrases(blocks: OreBlock[]): OreBlock[] {
+function normalizeOrElseText(t: string): string {
+  const s = t.replace(/\s+/g, " ").trim() || "Oppure";
+  return /:$/.test(s) ? s : `${s}:`;
+}
+
+function orElseRawText(b: OreBlock): string | null {
+  const from = (t: string) => {
+    const s = t.replace(/\s+/g, " ").trim();
+    return /^Oppure\b/i.test(s) ? s : null;
+  };
+  if (b.k === "omit" || b.k === "prose" || b.k === "sub" || b.k === "title") return from(b.text);
+  if (b.k === "rubric") return from(b.lab) || from(b.text) || from(`${b.lab} ${b.text}`.trim());
+  return null;
+}
+
+/** Porta ogni «Oppure» a un blocco omit, anche se il CEI lo mette in una strofa. */
+function explodeOrElse(blocks: OreBlock[]): OreBlock[] {
   const out: OreBlock[] = [];
-  for (let i = 0; i < blocks.length; i++) {
-    const b = blocks[i];
+  for (const b of blocks) {
+    if (b.k !== "stanza") {
+      const raw = orElseRawText(b);
+      if (raw) out.push({ k: "omit", text: normalizeOrElseText(raw) });
+      else out.push(b);
+      continue;
+    }
+    let lines: string[] = [];
+    let hang: number[] = [];
+    const flush = () => {
+      if (!lines.length) return;
+      out.push({ k: "stanza", lines, hang: hang.length ? hang : undefined });
+      lines = [];
+      hang = [];
+    };
+    b.lines.forEach((line, i) => {
+      if (/^Oppure\b/i.test(line.trim())) {
+        flush();
+        out.push({ k: "omit", text: normalizeOrElseText(line) });
+        return;
+      }
+      lines.push(line);
+      hang.push(b.hang?.[i] ?? 0);
+    });
+    flush();
+  }
+  return out;
+}
+
+function isPrecesStop(n: OreBlock): boolean {
+  if (n.k === "title" || n.k === "marian") return true;
+  if (n.k === "omit" && /^Oppure\b/i.test(n.text)) return true;
+  if (n.k === "prose" && /^Padre nostro\b/i.test(n.text.trim())) return true;
+  return false;
+}
+
+function unwrapPrecesLine(t: string): string {
+  return t.replace(/^\(\s*/, "").replace(/\s*\)\.?$/, "").trim();
+}
+
+/** Dopo un «Oppure» che non apre un secondo formulario: petizioni (anche in parentesi). */
+function petitionsFromBlocks(grabbed: OreBlock[]): OreBlock[] {
+  const { lines } = flattenPrecesLines(grabbed);
+  const joined = joinPrecesWrap(lines)
+    .map(unwrapPrecesLine)
+    .filter((l) => l && !/^Padre nostro\b/i.test(l));
+  return splitDashStanzas(joined);
+}
+
+function applyTonePhrases(blocks: OreBlock[]): OreBlock[] {
+  const src = explodeOrElse(blocks);
+  const out: OreBlock[] = [];
+  for (let i = 0; i < src.length; i++) {
+    const b = src[i];
     out.push(b);
     if (b.k !== "title" || !/^(INVOCAZIONI|INTERCESSIONI)\b/i.test(b.text)) continue;
-    const grabbed: OreBlock[] = [];
+
     let j = i + 1;
-    while (j < blocks.length) {
-      const n = blocks[j];
-      if (n.k === "title") break;
-      if (n.k === "marian") break;
-      if (n.k === "prose" && /^Padre nostro\.?$/i.test(n.text.trim())) break;
-      grabbed.push(n);
-      j += 1;
+    const rebuiltAll: OreBlock[] = [];
+    let hadOrElse = false;
+    let rebuiltTone = false;
+    while (j < src.length) {
+      const grabbed: OreBlock[] = [];
+      while (j < src.length && !isPrecesStop(src[j])) {
+        grabbed.push(src[j]);
+        j += 1;
+      }
+      const rebuilt = rebuildPreces(grabbed);
+      if (rebuilt && rebuilt.some((x) => x.k === "tone" && x.intro.length > 8)) {
+        rebuiltAll.push(...rebuilt);
+        rebuiltTone = true;
+      } else if (grabbed.length) {
+        rebuiltAll.push(...(hadOrElse ? petitionsFromBlocks(grabbed) : grabbed));
+      }
+      if (j < src.length && src[j].k === "omit" && /^Oppure\b/i.test(src[j].text)) {
+        rebuiltAll.push(src[j]);
+        hadOrElse = true;
+        j += 1;
+        continue;
+      }
+      break;
     }
-    const rebuilt = rebuildPreces(grabbed);
-    if (rebuilt && rebuilt.some((x) => x.k === "tone" && x.intro.length > 8)) {
-      out.push(...rebuilt);
+    if (rebuiltTone || hadOrElse) {
+      out.push(...rebuiltAll);
       i = j - 1;
     }
   }

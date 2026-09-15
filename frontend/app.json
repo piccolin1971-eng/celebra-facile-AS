@@ -48,7 +48,8 @@
       "typedRoutes": true
     },
     "extra": {
-      "router": {}
+      "router": {},
+      "apkDate": ""
     }
   }
 }

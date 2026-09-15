@@ -15,6 +15,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSettings } from "../src/SettingsContext";
 import { resolveBodyFont } from "../src/fontFamily";
 import { FontSizeButtons } from "../src/components/FontSizeButtons";
+import { PlusMinusGlyph } from "../src/components/PlusMinusGlyph";
 import { ReadingBrightnessButton, ReadingBrightnessRoot, ReadingBrightnessRow } from "../src/components/ReadingBrightnessControl";
 import { localDateStr, parseLocalDate } from "../src/dateUtils";
 import { oreBodyLineHeight } from "../src/liturgyTypography";
@@ -87,7 +88,7 @@ export default function OreLeggi() {
   const [mediaId, setMediaId] = useState<MediaId>("terza");
   const [invitAnt, setInvitAnt] = useState(DEFAULT_INVIT_ANT);
   const [speed, setSpeed] = useState(3);
-  const [autoOn, setAutoOn] = useState(false);
+  const [autoOn, setAutoOn] = useState(true);
   const [prefsReady, setPrefsReady] = useState(false);
 
   const scrollRef = useRef<ScrollView>(null);
@@ -99,7 +100,7 @@ export default function OreLeggi() {
   const updateMax = useCallback(() => {
     maxRef.current = Math.max(0, contentHRef.current - viewHRef.current);
   }, []);
-  const wantAutoRef = useRef(false);
+  const wantAutoRef = useRef(true);
   const autoOnRef = useRef(false);
   const draggingRef = useRef(false);
   const lastTsRef = useRef(0);
@@ -207,8 +208,8 @@ export default function OreLeggi() {
       if (m && MEDIA_IDS.includes(m as MediaId)) setMediaId(m as MediaId);
       const s = parseInt((await AsyncStorage.getItem(SPD_KEY)) || "3", 10);
       if (s >= SPD_MIN && s <= SPD_MAX) setSpeed(s);
-      const auto = await AsyncStorage.getItem(AUTO_KEY);
-      wantAutoRef.current = auto === "1";
+      wantAutoRef.current = true;
+      setAutoOn(true);
       setPrefsReady(true);
     })();
   }, []);
@@ -341,7 +342,7 @@ export default function OreLeggi() {
             hitSlop={4}
             {...webClickable}
           >
-            <Text style={styles.spdLab}>−</Text>
+            <PlusMinusGlyph kind="minus" color={colors.textPrimary} size={18} stroke={2.8} />
           </TouchableOpacity>
           <View style={styles.spdValBox} accessibilityLabel={`Velocità ${speed}`}>
             <Text style={styles.spdVal}>{speed}</Text>
@@ -353,7 +354,7 @@ export default function OreLeggi() {
             hitSlop={4}
             {...webClickable}
           >
-            <Text style={styles.spdLab}>+</Text>
+            <PlusMinusGlyph kind="plus" color={colors.textPrimary} size={18} stroke={2.8} />
           </TouchableOpacity>
           <View style={{ flex: 1 }} />
           <ReadingBrightnessButton />
@@ -554,15 +555,6 @@ const makeStyles = (colors: any, fontSize: number) =>
       borderWidth: 2,
       borderColor: SPD_BORDER,
       backgroundColor: colors.background,
-    },
-    spdLab: {
-      color: colors.textPrimary,
-      fontSize: 32,
-      lineHeight: 32,
-      fontWeight: "700",
-      includeFontPadding: false,
-      textAlignVertical: "center",
-      transform: [{ translateY: -1 }],
     },
     spdValBox: {
       minWidth: 46,

@@ -130,6 +130,8 @@ function CelebraScreenInner() {
   const typographyDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [enginePaginating, setEnginePaginating] = useState(false);
   const [typographyEpoch, setTypographyEpoch] = useState(0);
+  // Solo per ridisegnare al tap: il contatore N/M non è in UI.
+  const [microTick, setMicroTick] = useState(0);
 
   // Wakelock: tiene lo schermo acceso mentre la pagina è aperta. SOLO su
   // nativo Android: su web il browser nega il permesso e crashava
@@ -589,6 +591,7 @@ function CelebraScreenInner() {
     const total = engineTotalRef.current[page] ?? 1;
     if (micro + 1 < total) {
       engineMicroRef.current[page] = micro + 1;
+      setMicroTick((n) => n + 1);
       return;
     }
     goNextPageOrIndice();
@@ -602,6 +605,7 @@ function CelebraScreenInner() {
     const total = engineTotalRef.current[page] ?? 1;
     if (micro > 0) {
       engineMicroRef.current[page] = micro - 1;
+      setMicroTick((n) => n + 1);
       return;
     }
     if (fromIndice) {
@@ -682,7 +686,7 @@ function CelebraScreenInner() {
     <LiturgyPagedReader
       key={`engine-${pageIdx}`}
       segments={pageSegments}
-      microIndex={engineMicroRef.current[pageIdx] ?? 0}
+      microIndex={microTick >= 0 ? engineMicroRef.current[pageIdx] ?? 0 : 0}
       paddingBottom={enginePageBottomPad}
       contentContainerStyle={styles.nativePageContent}
       remountKey={`${typographyEpoch}`}

@@ -15,10 +15,10 @@ export default function Impostazioni() {
   const { theme, setTheme, fontSize, highContrast, setHighContrast, isBold, setIsBold, lineSpacing, setLineSpacing, fontFamilyId, setFontFamilyId, parchmentTone, setParchmentTone, celebraSubitoEnabled, setCelebraSubitoEnabled, oreEnabled, setOreEnabled, hapticFeedbackEnabled, setHapticFeedbackEnabled, colors, scaledFont } = useSettings();
   const styles = makeStyles(colors, fontSize);
   const appVersion = Constants.expoConfig?.version ?? "—";
-  const buildNumber =
-    Platform.OS === "android"
-      ? String(Constants.expoConfig?.android?.versionCode ?? "—")
-      : (Constants.nativeBuildVersion ?? "—");
+  const apkDate = (Constants.expoConfig?.extra as { apkDate?: string } | undefined)?.apkDate?.trim();
+  const versionLabel = apkDate
+    ? `Versione ${appVersion} · ${apkDate} by AP`
+    : `Versione ${appVersion} by AP`;
 
   return (
     <SafeAreaView style={styles.container} testID="settings-screen">
@@ -308,7 +308,7 @@ export default function Impostazioni() {
             I testi dell'Ordinario seguono la liturgia del Messale Romano. Si raccomanda il confronto con l'edizione CEI ufficiale.
           </Text>
           <Text style={styles.versionInfo} testID="app-version">
-            Versione {appVersion} (build {buildNumber}) by AP
+            {versionLabel}
           </Text>
         </View>
       </ScrollView>

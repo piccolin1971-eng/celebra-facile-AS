@@ -64,6 +64,29 @@ jobs:
               -dname "CN=Android Debug,O=Android,C=US"
           fi
 
+      - name: Stamp APK version and production date
+        working-directory: ./frontend
+        run: |
+          node <<'EOF'
+          const fs = require("fs");
+          const path = "app.json";
+          const j = JSON.parse(fs.readFileSync(path, "utf8"));
+          const n = Number(process.env.GITHUB_RUN_NUMBER || "1");
+          const date = new Intl.DateTimeFormat("it-IT", {
+            timeZone: "Europe/Rome",
+            day: "2-digit",
+            month: "2-digit",
+            year: "2-digit",
+          }).format(new Date());
+          j.expo.version = `1.0.${n}`;
+          j.expo.android = j.expo.android || {};
+          j.expo.android.versionCode = n;
+          j.expo.extra = j.expo.extra || {};
+          j.expo.extra.apkDate = date;
+          fs.writeFileSync(path, JSON.stringify(j, null, 2) + "\n");
+          console.log(`APK version 1.0.${n} · ${date}`);
+          EOF
+
       - name: Expo prebuild (genera progetto Android nativo)
         working-directory: ./frontend
         run: npx expo prebuild --platform android --clean --no-install

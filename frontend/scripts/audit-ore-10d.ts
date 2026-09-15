@@ -337,6 +337,126 @@ Come era nel principio, e ora e sempre<br />
     fails.push("fixture italic risposta invocazioni");
   }
 
+  const twoPreces = wrap(`
+    <div class="lo_titolo">INVOCAZIONI</div>
+    <div class="lo_versetto">Rivolgiamo la nostra lode al Cristo Salvatore e diciamo:
+      <i>Maria, la Madre tua, sostenga la nostra preghiera.</i></div>
+    <div class="lo_versetto">Sole di giustizia, che hai voluto farti precedere da Maria,
+<div class="lo_rosso"><br />&mdash;</div>
+fa' che camminiamo sempre nella luce della tua presenza.</div>
+    <div class="lo_versetto">Verbo eterno, che hai scelto Maria come arca santa,
+<div class="lo_rosso"><br />&mdash;</div>
+liberaci dalla corruzione del peccato.</div>
+    <div class="lo_rosso">Oppure:</div>
+    <div class="lo_versetto">Ringraziamo il nostro Salvatore e preghiamo con fiducia.
+      <i>Interceda per noi la Madre tua, o Signore.</i></div>
+    <div class="lo_versetto">Salvatore del mondo, che hai preservato la Madre tua,
+<div class="lo_rosso"><br />&mdash;</div>
+conservaci liberi dal peccato.</div>
+    <div class="lo_versetto">Redentore nostro, che in Maria hai posto la tua dimora,
+<div class="lo_rosso"><br />&mdash;</div>
+trasformaci in tempio vivo del tuo Spirito.</div>
+    <div class="lo_versetto">Padre nostro.</div>
+    <div class="lo_rosso">ORAZIONE</div>
+    <div class="lo_versetto">O Dio, tu hai voluto che accanto al tuo Figlio.</div>
+  `);
+  const two = parseHourHtml(twoPreces, "lodi");
+  const tones = two.blocks.filter((b) => b.k === "tone");
+  const orElse = two.blocks.filter((b) => b.k === "omit" && /^Oppure\b/i.test(b.text));
+  if (tones.length !== 2) fails.push(`fixture due formulari toni=${tones.length} attesi 2`);
+  if (orElse.length !== 1) fails.push(`fixture due formulari oppure=${orElse.length}`);
+  if (tones[0] && tones[0].k === "tone" && !/sostenga la nostra preghiera/i.test(tones[0].refrain)) {
+    fails.push("fixture primo formulario senza risposta");
+  }
+  if (tones[1] && tones[1].k === "tone" && !/Interceda per noi/i.test(tones[1].refrain)) {
+    fails.push("fixture secondo formulario senza risposta");
+  }
+  if (tones[0] && tones[1] && tones[0].k === "tone" && tones[1].k === "tone") {
+    const i0 = two.blocks.indexOf(tones[0]);
+    const iOr = two.blocks.findIndex((b) => b.k === "omit" && /^Oppure\b/i.test(b.text));
+    const i1 = two.blocks.indexOf(tones[1]);
+    if (!(i0 < iOr && iOr < i1)) fails.push("fixture Oppure non sta tra i due formulari");
+  }
+  const firstPetitions = two.blocks.filter((b) => b.k === "stanza" && b.lines.some((l) => /^—/.test(l)));
+  if (firstPetitions.length < 4) {
+    fails.push(`fixture invocazioni coppie=${firstPetitions.length} attese 4`);
+  }
+
+  const nestHtml = wrap(`
+    <div class="lo_titolo">INNO</div>
+    <div class="lo_versetto">O sole di giustizia,<br>Verbo del Dio vivente,</div>
+    <div class="lo_titolo">SALMO 134, 1-12 Lodate il Signore che opera meraviglie</div>
+    <div class="lo_versetto">
+      <div class="lo_sottotitolo">Popolo che Dio si è acquistato, proclama le opere meravigliose</div>
+      <div class="lo_versetto">Lodate il nome del Signore, * lodatelo, servi del Signore.</div>
+      <div class="lo_titolo">LETTURA BREVE</div>
+      <div class="lo_versetto">Ricordatevi che i vostri padri furono messi alla prova.</div>
+      <div class="lo_titolo">CANTICO DI ZACCARIA
+        <div class="lo_rif">Lc 1, 68-79</div>
+      </div>
+      <div class="lo_versetto">Benedetto il Signore Dio d'Israele, * perché ha visitato e redento il suo popolo.</div>
+      <div class="lo_titolo">INVOCAZIONI</div>
+      <div class="lo_versetto">Invochiamo il suo nome:
+        <i>Tu sei la nostra speranza, Signore.</i></div>
+      <div class="lo_versetto">O Dio, ricco di misericordia,
+        <div class="lo_rosso"><br />&mdash;</div>
+        noi ti ringraziamo per il tuo immenso amore.</div>
+      <div class="lo_versetto">Padre nostro.</div>
+      <div class="lo_titolo">ORAZIONE</div>
+      <div class="lo_versetto">O Dio, che hai affidato all'uomo l'opera della creazione.</div>
+    </div>
+  `);
+  const nest = parseHourHtml(nestHtml, "lodi");
+  const nestBlob = blobOf(nest.blocks);
+  if (!nest.blocks.some((b) => b.k === "title" && /LETTURA/i.test(b.text))) {
+    fails.push("fixture salmo annidato senza LETTURA");
+  }
+  if (!/Benedetto il Signore Dio d.Israele/i.test(nestBlob)) {
+    fails.push("fixture salmo annidato senza Benedictus");
+  }
+  if (!nest.blocks.some((b) => b.k === "title" && /INVOCAZIONI/i.test(b.text))) {
+    fails.push("fixture salmo annidato senza INVOCAZIONI");
+  }
+  const nestTone = nest.blocks.find((b) => b.k === "tone");
+  if (!nestTone || nestTone.k !== "tone" || !/speranza/i.test(nestTone.refrain)) {
+    fails.push("fixture salmo annidato senza tono invocazioni");
+  }
+  if (!/Padre nostro/i.test(nestBlob)) fails.push("fixture salmo annidato senza Padre nostro");
+  if (!nest.blocks.some((b) => b.k === "title" && /ORAZIONE/i.test(b.text))) {
+    fails.push("fixture salmo annidato senza ORAZIONE");
+  }
+
+  const optHtml = wrap(`
+    <div class="lo_titolo">INNO</div>
+    <div class="lo_versetto">Dio, che di chiara luce<br>tessi la trama al giorno,</div>
+    <div class="lo_titolo">INTERCESSIONI</div>
+    <div class="lo_versetto">Memori dei suoi benefici, diciamo:
+      <i>Noi confidiamo in te, Signore.</i></div>
+    <div class="lo_versetto">Dona e conserva i frutti della terra,
+      <div class="lo_rosso"><br />&mdash;</div>
+      perché nessun uomo sia privo del pane quotidiano.</div>
+    <div class="lo_rosso">Oppure:</div>
+    <div class="lo_versetto">( Difendi il nostro popolo da ogni pericolo,
+      <div class="lo_rosso"><br />&mdash;</div>
+      perché possa vivere nella prosperità e nella pace. )</div>
+    <div class="lo_versetto">Accogli fra le braccia della tua misericordia i nostri defunti,
+      <div class="lo_rosso"><br />&mdash;</div>
+      concedi loro il riposo eterno.</div>
+    <div class="lo_versetto">Padre nostro.</div>
+    <div class="lo_titolo">ORAZIONE</div>
+    <div class="lo_versetto">O Dio, che riveli la tua onnipotenza.</div>
+  `);
+  const opt = parseHourHtml(optHtml, "vespri");
+  const optTones = opt.blocks.filter((b) => b.k === "tone");
+  if (optTones.length !== 1) fails.push(`fixture Oppure petizione toni=${optTones.length} atteso 1`);
+  const optPairs = opt.blocks.filter((b) => b.k === "stanza" && b.lines.some((l) => /^—/.test(l)));
+  if (optPairs.length !== 3) fails.push(`fixture Oppure petizione coppie=${optPairs.length} attese 3`);
+  const optBlob = blobOf(opt.blocks);
+  if (!/Difendi il nostro popolo/i.test(optBlob) || !/Accogli fra le braccia/i.test(optBlob)) {
+    fails.push("fixture Oppure petizione testi persi");
+  }
+  if (optTones[1]) fails.push("fixture Oppure petizione secondo tono spurio");
+
   const mediaHtml = wrap(`
     <div class="lo_titolo">INNO</div>
     <div class="lo_versetto">L'ora terza risuona<br>nel servizio di lode,<br>con cuore puro e ardente,<br>preghiamo il Dio glorioso.</div>
