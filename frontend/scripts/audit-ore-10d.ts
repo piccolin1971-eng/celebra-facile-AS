@@ -624,6 +624,145 @@ trasformaci in tempio vivo del tuo Spirito.</div>
     }
   }
 
+  const nestInnoHtml = wrap(`
+    <div class="lo_titolo">INNO</div>
+    <div class="lo_versetto">Re immortale e glorioso,<br />
+che accogli nella luce<br />
+i tuoi servi fedeli,
+    <div class="lo_versetto">esaudisci il tuo popolo,<br />
+che canta le tue lodi<br />
+nel ricordo dei martiri.</div>
+    <div class="lo_versetto">La forza del tuo Spirito<br />
+ci guidi alla vittoria<br />
+sul male e sulla morte.</div>
+    </div>
+    <div class="lo_rosso">Oppure:</div>
+    <div class="lo_versetto">
+      Sanctórum méritis ínclita gáudia<br />
+      pangámus, sócii, géstaque fórtia;<br />
+      nam gliscit ánimus prómere cántibus<br />
+      victórum genus óptimum.<br />
+      <br />
+      Hi
+      <div class="lo_rosso">(</div>
+      Hæ
+      <div class="lo_rosso">)</div>
+      sunt quos
+      <div class="lo_rosso">(</div>
+      quas
+      <div class="lo_rosso">)</div>
+      rétinens mundus inhórruit.
+    </div>
+    <div class="lo_versetto">1 ant. Come splende la tua sapienza.</div>
+    <div class="lo_titolo">SALMO 138</div>
+  `);
+  const nestInno = parseHourHtml(nestInnoHtml, "vespri");
+  const nestH = hymnStats(nestInno.blocks);
+  if (nestH.nHymns < 2) fails.push(`fixture inno annidato inni=${nestH.nHymns} attesi 2`);
+  if (!/Re immortale e glorioso/i.test(blobOf(nestInno.blocks))) {
+    fails.push("fixture inno annidato senza prima strofa italiana");
+  }
+  const latinHymn = nestH.hymns[0]?.hymns.find((h) => /Sanctórum|Sanctorum/i.test(h.stanzas.flat().join(" ")));
+  if (!latinHymn) fails.push("fixture inno latino assente");
+  else {
+    const joined = latinHymn.stanzas.map((s) => s.join(" | "));
+    if (latinHymn.stanzas.some((st) => st.some((l) => /^\($/.test(l) || /^Hæ$/.test(l) || /^\)$/.test(l)))) {
+      fails.push(`fixture latino spezzato sui parentesi: ${joined.join(" / ")}`);
+    }
+    if (!latinHymn.stanzas.some((st) => /Hi \(Hæ\) sunt quos/i.test(st.join(" ")))) {
+      fails.push(`fixture latino senza Hi (Hæ) in riga: ${joined.join(" / ")}`);
+    }
+    if ((latinHymn.stanzas[0]?.length || 0) !== 4) {
+      fails.push(`fixture latino strofa1=${latinHymn.stanzas[0]?.length} attesa 4`);
+    }
+  }
+
+  const antInStanza = wrap(`
+    <div class="lo_titolo">INNO</div>
+    <div class="lo_versetto">O Cristo, Verbo del Padre,<br />re glorioso fra gli angeli,<br />luce e salvezza del mondo,<br />in te crediamo.</div>
+    <div class="lo_versetto">Cibo e bevanda di vita,<br />balsamo, veste, dimora,<br />forza, rifugio, conforto,<br />in te speriamo.</div>
+    <div class="lo_versetto">Illumina col tuo Spirito<br />l'oscura notte del male,<br />orienta il nostro cammino<br />incontro al Padre. Amen.
+      <div class="lo_versetto">
+        <div class="lo_antifona">1 ant.</div>
+        La tua destra, Signore, ha salvato i nostri padri.
+      </div>
+      <div class="lo_titolo">SALMO 43 Il popolo di Dio nella sventura</div>
+    </div>
+  `);
+  const antIn = parseHourHtml(antInStanza, "ufficio");
+  const antBlob = blobOf(antIn.blocks);
+  if (!/Illumina col tuo Spirito/i.test(antBlob)) fails.push("fixture Illumina persa nell'inno");
+  const antH = hymnStats(antIn.blocks);
+  if (antH.st < 3) fails.push(`fixture Illumina strofe=${antH.st} attese 3`);
+  if (!antIn.blocks.some((b) => b.k === "rubric" && /1\s*ant/i.test(b.lab))) {
+    fails.push("fixture 1 ant. persa dopo inno misto");
+  }
+  if (!antIn.blocks.some((b) => b.k === "psalmHead" && /SALMO 43/i.test(b.num))) {
+    fails.push("fixture SALMO 43 perso dopo inno misto");
+  }
+
+  const doxOppHtml = wrap(`
+    <div class="lo_titolo">INNO</div>
+    <div class="lo_versetto">Gerusalemme nuova,<br />immagine di pace.</div>
+    <div class="lo_versetto">Sia onore al Padre e al Figlio<br />e allo Spirito Santo.
+      <div class="lo_rosso">Oppure:</div>
+      Rex glorióse mártyrum,<br />coróna confiténtium.
+    </div>
+    <div class="lo_versetto">1 ant. Cristo, nostra pace.</div>
+    <div class="lo_titolo">SALMO 4</div>
+  `);
+  const doxOpp = parseHourHtml(doxOppHtml, "ufficio");
+  const doxH = hymnStats(doxOpp.blocks);
+  const doxBlob = blobOf(doxOpp.blocks);
+  if (!/Sia onore al Padre/i.test(doxBlob)) fails.push("fixture dossologia italiana persa");
+  if (!/Rex glorióse|Rex gloriose/i.test(doxBlob)) fails.push("fixture inno latino dopo Oppure perso");
+  if (!doxH.labels.some((l) => /^Oppure\b/i.test(l))) fails.push("fixture dossologia senza label Oppure");
+  const itHymn = doxH.hymns[0]?.hymns.find((h) => !h.label);
+  if (itHymn && /Rex glorióse|Rex gloriose/i.test(itHymn.stanzas.flat().join(" "))) {
+    fails.push("fixture latino finito nell'inno italiano");
+  }
+  const laHymn = doxH.hymns[0]?.hymns.find((h) => h.label && /^Oppure\b/i.test(h.label));
+  if (laHymn && /Sia onore al Padre/i.test(laHymn.stanzas.flat().join(" "))) {
+    fails.push("fixture dossologia finita nell'inno latino");
+  }
+
+  const multiSubHtml = wrap(`
+    <div class="lo_titolo">INTERCESSIONI</div>
+    <div class="lo_versetto">Nell'ora in cui Cristo offrì la sua vita, s'innalzi a lui la lode della Chiesa:
+      <div class="lo_sottotitolo">Noi ti lodiamo e ti adoriamo, Signore.</div>
+      Noi ti lodiamo e ti adoriamo, o Cristo, causa e modello di ogni martirio,
+      <div class="lo_sottotitolo"><div class="lo_rosso">–</div> noi ti lodiamo e ti adoriamo, Signore.</div>
+      Perché hai chiamato i peccatori pentiti al premio della vita eterna,
+      <div class="lo_sottotitolo"><div class="lo_rosso">–</div> noi ti lodiamo e ti adoriamo, Signore.</div>
+    </div>
+    <div class="lo_versetto">Padre nostro.</div>
+    <div class="lo_titolo">ORAZIONE</div>
+    <div class="lo_versetto">O Dio, che hai dato al tuo popolo i santi Cornelio e Cipriano.</div>
+  `);
+  const multiSub = parseHourHtml(multiSubHtml, "vespri");
+  const multiPairs = multiSub.blocks.filter((b) => b.k === "stanza" && b.lines.some((l) => /^—/.test(l)));
+  if (multiPairs.length !== 2) {
+    fails.push(`fixture sottotitoli petizioni coppie=${multiPairs.length} attese 2`);
+  } else if (multiPairs[0].k === "stanza" && multiPairs[1].k === "stanza") {
+    if (/Perché hai chiamato/i.test(multiPairs[0].lines.join(" "))) {
+      fails.push("fixture sottotitoli petizioni incollate");
+    }
+    if (!/modello di ogni martirio/i.test(multiPairs[0].lines[0] || "")) {
+      fails.push(`fixture prima petizione: ${multiPairs[0].lines.join(" | ")}`);
+    }
+    if (!/Perché hai chiamato/i.test(multiPairs[1].lines[0] || "")) {
+      fails.push(`fixture seconda petizione: ${multiPairs[1].lines.join(" | ")}`);
+    }
+  }
+  if (!/L.anima mia magnifica il Signore/i.test(blobOf(parseHourHtml(wrap(`
+    <div class="lo_titolo">CANTICO DELLA BEATA VERGINE<br />Lc 1, 46-55</div>
+    <div class="lo_versetto">L'anima mia magnifica il Signore * e il mio spirito esulta.</div>
+    <div class="lo_titolo">INTERCESSIONI</div>
+    <div class="lo_versetto">Preghiamo:<i>Ascoltaci, Signore.</i></div>
+  `), "vespri").blocks))) {
+    fails.push("fixture Magnificat bundled assente");
+  }
+
   return fails;
 }
 

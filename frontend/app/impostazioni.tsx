@@ -12,7 +12,7 @@ import { SectionScreenTopBar } from "../src/components/SectionScreenTopBar";
 
 export default function Impostazioni() {
   const router = useRouter();
-  const { theme, setTheme, fontSize, highContrast, setHighContrast, isBold, setIsBold, lineSpacing, setLineSpacing, fontFamilyId, setFontFamilyId, parchmentTone, setParchmentTone, celebraSubitoEnabled, setCelebraSubitoEnabled, oreEnabled, setOreEnabled, hapticFeedbackEnabled, setHapticFeedbackEnabled, colors, scaledFont } = useSettings();
+  const { theme, setTheme, fontSize, highContrast, setHighContrast, isBold, setIsBold, lineSpacing, setLineSpacing, fontFamilyId, setFontFamilyId, parchmentTone, setParchmentTone, celebraSubitoEnabled, setCelebraSubitoEnabled, preparaCelebraEnabled, setPreparaCelebraEnabled, oreEnabled, setOreEnabled, hapticFeedbackEnabled, setHapticFeedbackEnabled, colors, scaledFont } = useSettings();
   const styles = makeStyles(colors, fontSize);
   const appVersion = Constants.expoConfig?.version ?? "—";
   const apkDate = (Constants.expoConfig?.extra as { apkDate?: string } | undefined)?.apkDate?.trim();
@@ -41,17 +41,40 @@ export default function Impostazioni() {
               <Text style={styles.sectionTitle}>Celebra subito la Messa</Text>
               <Text style={styles.sectionDesc}>
                 {celebraSubitoEnabled
-                  ? "Attivo (predefinito): in Home compare «Celebra subito la Messa» (indice a parti), senza nascondere le scelte preparate né «Scegli la liturgia» e «Celebra la Messa». Disattiva per togliere solo il tasto oro."
-                  : "Disattivo: in Home restano «Scegli la liturgia» e «Celebra la Messa». Attiva per aggiungere «Celebra subito» sopra quei tasti, lasciando visibile l’elenco delle scelte con Azzera."}
+                  ? "Attivo (predefinito): in Home compare il tasto oro «Celebra subito la Messa». Non si possono spegnere insieme questo tasto e «Scegli la liturgia / Celebra la Messa»."
+                  : "Disattivo: in Home restano «Scegli la liturgia» e «Celebra la Messa». Attiva per aggiungere «Celebra subito»."}
               </Text>
             </View>
             <Switch
               value={celebraSubitoEnabled}
               onValueChange={setCelebraSubitoEnabled}
+              disabled={celebraSubitoEnabled && !preparaCelebraEnabled}
               trackColor={{ false: colors.border, true: colors.primary }}
               thumbColor="#FFFFFF"
               style={{ transform: [{ scaleX: 1.3 }, { scaleY: 1.3 }] }}
               testID="switch-celebra-subito"
+            />
+          </View>
+        </View>
+
+        <View style={styles.section} testID="section-prepara-celebra">
+          <View style={styles.switchRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.sectionTitle}>Scegli la liturgia / Celebra la Messa</Text>
+              <Text style={styles.sectionDesc}>
+                {preparaCelebraEnabled
+                  ? "Attivo (predefinito): in Home i tasti «Scegli la liturgia» e «Celebra la Messa». Disattiva per lasciare solo «Celebra subito»."
+                  : "Disattivo: in Home resta «Celebra subito la Messa». Attiva per mostrare di nuovo preparazione e celebrazione."}
+              </Text>
+            </View>
+            <Switch
+              value={preparaCelebraEnabled}
+              onValueChange={setPreparaCelebraEnabled}
+              disabled={preparaCelebraEnabled && !celebraSubitoEnabled}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor="#FFFFFF"
+              style={{ transform: [{ scaleX: 1.3 }, { scaleY: 1.3 }] }}
+              testID="switch-prepara-celebra"
             />
           </View>
         </View>

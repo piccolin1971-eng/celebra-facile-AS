@@ -1,4 +1,4 @@
-import type { InvitPsalmId } from "./types";
+import type { InvitPsalmId, OreBlock } from "./types";
 
 export const GLORIA = [
   "Gloria al Padre e al Figlio, *",
@@ -18,6 +18,154 @@ export const PADRE = [
   "e non ci indurre in tentazione,",
   "ma liberaci dal male.",
 ];
+
+/** Magnificat CEI (Lc 1, 46-55) + Gloria. L’antifona resta dal sito. */
+export const MAGNIFICAT: string[][] = verses(`
+L’anima mia magnifica il Signore *
+e il mio spirito esulta in Dio, mio salvatore,
+
+perché ha guardato l’umiltà della sua serva. *
+D’ora in poi tutte le generazioni
+mi chiameranno beata.
+
+Grandi cose ha fatto in me l’Onnipotente *
+e Santo è il suo nome:
+
+di generazione in generazione la sua misericordia *
+si stende su quelli che lo temono.
+
+Ha spiegato la potenza del suo braccio, *
+ha disperso i superbi nei pensieri del loro cuore;
+
+ha rovesciato i potenti dai troni, *
+ha innalzato gli umili;
+
+ha ricolmato di beni gli affamati, *
+ha rimandato i ricchi a mani vuote.
+
+Ha soccorso Israele, suo servo, *
+ricordandosi della sua misericordia,
+
+come aveva promesso ai nostri padri, *
+ad Abramo e alla sua discendenza, per sempre.
+
+Gloria al Padre e al Figlio *
+e allo Spirito Santo.
+
+Come era nel principio, e ora e sempre *
+nei secoli dei secoli. Amen.
+`);
+
+/** Benedictus CEI (Lc 1, 68-79) + Gloria. L’antifona resta dal sito. */
+export const BENEDICTUS: string[][] = verses(`
+Benedetto il Signore Dio d’Israele, *
+perché ha visitato e redento il suo popolo,
+
+e ha suscitato per noi una salvezza potente *
+nella casa di Davide, suo servo,
+
+come aveva promesso *
+per bocca dei suoi santi profeti d’un tempo:
+
+salvezza dai nostri nemici, *
+e dalle mani di quanti ci odiano.
+
+Così egli ha concesso misericordia ai nostri padri *
+e si è ricordato della sua santa alleanza,
+
+del giuramento fatto ad Abramo, nostro padre, *
+di concederci, liberàti dalle mani dei nemici,
+
+di servirlo senza timore, in santità e giustizia *
+al suo cospetto, per tutti i nostri giorni.
+
+E tu, bambino, sarai chiamato profeta dell’Altissimo *
+perché andrai innanzi al Signore
+a preparargli le strade,
+
+per dare al suo popolo la conoscenza della salvezza *
+nella remissione dei suoi peccati,
+
+grazie alla bontà misericordiosa del nostro Dio, *
+per cui verrà a visitarci dall’alto un sole che sorge,
+
+per rischiarare quelli che stanno nelle tenebre *
+e nell’ombra della morte
+
+e dirigere i nostri passi *
+sulla via della pace.
+
+Gloria al Padre e al Figlio *
+e allo Spirito Santo.
+
+Come era nel principio, e ora e sempre *
+nei secoli dei secoli. Amen.
+`);
+
+function gospelCanticleKind(b: OreBlock): "mag" | "ben" | null {
+  const t =
+    b.k === "title" ? b.text : b.k === "psalmHead" ? `${b.num} ${b.name}` : "";
+  if (!t) return null;
+  if (/CANTICO DELLA BEATA|CANTICO DI MARIA|\bMAGNIFICAT\b/i.test(t)) return "mag";
+  if (/CANTICO DI ZACCARIA|\bBENEDICTUS\b/i.test(t)) return "ben";
+  return null;
+}
+
+function canticleSectionStop(b: OreBlock): boolean {
+  if (b.k === "hymn" || b.k === "marian" || b.k === "tone") return true;
+  if (b.k === "psalmHead") return true;
+  if (b.k === "title") {
+    return /^(INVOCAZIONI|INTERCESSIONI|ORAZIONE|PREGHIERA|TE DEUM|LETTURA|RESPONSORIO|SALMO|CANTICO)\b/i.test(
+      b.text,
+    );
+  }
+  return false;
+}
+
+function isBundledCanticleBody(b: OreBlock, startRe: RegExp): boolean {
+  const blob = b.k === "stanza" ? b.lines.join(" ") : b.k === "prose" ? b.text : "";
+  if (!blob) return false;
+  if (startRe.test(blob)) return true;
+  if (/gloria al padre/i.test(blob) && /spirito santo/i.test(blob)) return true;
+  if (/come era nel principio/i.test(blob) && /secoli dei secoli/i.test(blob)) return true;
+  if (b.k === "stanza" && /[*†]/.test(blob) && blob.length > 24) return true;
+  return false;
+}
+
+/** Sostituisce il corpo di Magnificat/Benedictus col testo in app; antifone e titoli restano dal CEI. */
+export function applyBundledGospelCanticles(blocks: OreBlock[]): OreBlock[] {
+  const out: OreBlock[] = [];
+  for (let i = 0; i < blocks.length; i++) {
+    const kind = gospelCanticleKind(blocks[i]);
+    if (!kind) {
+      out.push(blocks[i]);
+      continue;
+    }
+    out.push(blocks[i]);
+    const verses = kind === "mag" ? MAGNIFICAT : BENEDICTUS;
+    const startRe =
+      kind === "mag" ? /l.anima mia magnifica|magnificat anima/i : /benedetto il signore dio/i;
+    let j = i + 1;
+    let inserted = false;
+    while (j < blocks.length && !canticleSectionStop(blocks[j])) {
+      if (isBundledCanticleBody(blocks[j], startRe)) {
+        if (!inserted) {
+          for (const v of verses) out.push({ k: "stanza", lines: v });
+          inserted = true;
+        }
+        j += 1;
+        continue;
+      }
+      out.push(blocks[j]);
+      j += 1;
+    }
+    if (!inserted) {
+      for (const v of verses) out.push({ k: "stanza", lines: v });
+    }
+    i = j - 1;
+  }
+  return out;
+}
 
 function verses(block: string): string[][] {
   return block

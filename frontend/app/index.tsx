@@ -90,7 +90,7 @@ function dayLabelFor(offset: number, date: Date): string {
 export default function Home() {
   const router = useRouter();
   const params = useLocalSearchParams<{ date?: string }>();
-  const { colors, scaledFont, fontSize, celebraSubitoEnabled, oreEnabled, theme } = useSettings();
+  const { colors, scaledFont, fontSize, celebraSubitoEnabled, preparaCelebraEnabled, oreEnabled, theme } = useSettings();
   const [selectedDateISO, setSelectedDateISO] = useState(() => localDateStr(new Date()));
   const [sessions, setSessions] = useState<MassSession[]>([]);
   const [selectedCelebrateMode, setSelectedCelebrateMode] = useState<CelebrationMode | null>(null);
@@ -694,7 +694,7 @@ export default function Home() {
           </View>
         ) : null}
 
-        {sessions.length === 0 ? null : (
+        {preparaCelebraEnabled && sessions.length > 0 ? (
           <View style={styles.summariesStack} testID="home-summaries">
             {hasDualPrepared ? (
               <Text style={styles.summariesHint}>Tocca per selezionare la celebrazione</Text>
@@ -722,7 +722,7 @@ export default function Home() {
               );
             })}
           </View>
-        )}
+        ) : null}
 
         {celebraSubitoEnabled ? (
           <TouchableOpacity
@@ -757,12 +757,13 @@ export default function Home() {
           </TouchableOpacity>
         ) : null}
 
-        {celebraSubitoEnabled ? (
+        {celebraSubitoEnabled && preparaCelebraEnabled ? (
           <Text style={styles.orDivider} testID="home-or-divider">
             oppure
           </Text>
         ) : null}
 
+        {preparaCelebraEnabled ? (
         <View style={styles.heroRow} testID="hero-row">
           <TouchableOpacity
             style={[styles.heroCard, { backgroundColor: muteFill(colors.primary) }, webClickable]}
@@ -826,6 +827,7 @@ export default function Home() {
               ) : null}
           </TouchableOpacity>
         </View>
+        ) : null}
 
         {oreEnabled ? (
         <TouchableOpacity

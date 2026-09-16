@@ -9,8 +9,8 @@ import {
   topLevelNodes,
   type HtmlNode,
 } from "./html";
-import { hymnConsumeCount, isExactInnoTitle, isInnoMarkerNode, parseCeiHymnsHtml } from "./hymns";
-import { MARIAN_ANTIPHONS, splitPsalmTitle } from "./bundled";
+import { hymnConsume, isExactInnoTitle, isInnoMarkerNode, parseCeiHymnsHtml } from "./hymns";
+import { MARIAN_ANTIPHONS, applyBundledGospelCanticles, splitPsalmTitle } from "./bundled";
 import { enrichPsalmHeads } from "./psalmHeadings";
 import type { MediaId, OreBlock, OreHourId, ParsedHour } from "./types";
 
@@ -159,6 +159,16 @@ function consumeSubAfterPsalm(nodes: HtmlNode[], i: number): { sub: string; cite
     }
   }
   return { sub, cite, skip };
+}
+
+function takeHymn(nodes: HtmlNode[], i: number, blocks: OreBlock[]): number | null {
+  const hymns = parseCeiHymnsHtml(restToHtml(nodes.slice(i)));
+  if (!hymns.length) return null;
+  const { count, tail } = hymnConsume(nodes.slice(i));
+  const consumed = Math.max(1, count);
+  blocks.push({ k: "hymn", hymns });
+  if (tail.length) nodes.splice(i + consumed, 0, ...tail);
+  return consumed;
 }
 
 function restToHtml(nodes: HtmlNode[]): string {
@@ -395,7 +405,57 @@ function joinPrecesWrap(lines: string[]): string[] {
   return out;
 }
 
+function blockPlain(b: OreBlock): string {
+  if (b.k === "prose" || b.k === "sub" || b.k === "omit" || b.k === "title") return b.text;
+  if (b.k === "stanza") return b.lines.join(" ");
+  if (b.k === "tone") return `${b.intro} ${b.refrain}`.trim();
+  return "";
+}
+
+function responseFromSub(text: string, fallback: string): string {
+  const t = text.replace(/\s+/g, " ").trim().replace(/^[–\-—]\s*/, "").trim();
+  return t || fallback;
+}
+
+/** Petizioni CEI con un lo_sottotitolo (risposta) dopo ciascuna. */
+function rebuildPrecesFromSubs(grabbed: OreBlock[]): OreBlock[] | null {
+  const subIdxs = grabbed.map((b, i) => (b.k === "sub" ? i : -1)).filter((i) => i >= 0);
+  if (subIdxs.length < 2) return null;
+  const firstSub = subIdxs[0];
+  const intro = grabbed
+    .slice(0, firstSub)
+    .map(blockPlain)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const refrain = grabbed[firstSub].k === "sub" ? responseFromSub(grabbed[firstSub].text, "") : "";
+  if (!intro || intro.length < 8) return null;
+  const out: OreBlock[] = [{ k: "tone", intro, refrain }];
+  let pet: string[] = [];
+  const flush = (resp: string) => {
+    const t = pet.join(" ").replace(/\s+/g, " ").trim();
+    pet = [];
+    if (!t || /^Padre nostro\b/i.test(t)) return;
+    const lines = [t];
+    if (resp) lines.push(`— ${resp}`);
+    out.push({ k: "stanza", lines });
+  };
+  for (let i = firstSub + 1; i < grabbed.length; i++) {
+    const b = grabbed[i];
+    if (b.k === "sub") {
+      flush(responseFromSub(b.text, refrain));
+    } else {
+      const t = blockPlain(b).trim();
+      if (t && !/^Padre nostro\b/i.test(t)) pet.push(t);
+    }
+  }
+  if (pet.length) flush(refrain);
+  return out.some((b) => b.k === "stanza") ? out : null;
+}
+
 function rebuildPreces(grabbed: OreBlock[]): OreBlock[] | null {
+  const fromSubs = rebuildPrecesFromSubs(grabbed);
+  if (fromSubs) return fromSubs;
   if (!grabbed.length) return null;
   const { lines: rawLines, refrainHint } = flattenPrecesLines(grabbed);
   const lines = joinPrecesWrap(rawLines);
@@ -638,6 +698,46 @@ function blocksFromVersetto(inner: string): OreBlock[] {
     }
     return out;
   }
+  const subCount = nodes.filter((n) => n.kind === "el" && hasClassPrefix(n.cls, "lo_sottotitolo")).length;
+  if (subCount >= 1) {
+    const out: OreBlock[] = [];
+    let acc = "";
+    const flushAcc = () => {
+      if (!acc.replace(/<[^>]+>/g, "").replace(/\s+/g, "").trim()) {
+        acc = "";
+        return;
+      }
+      out.push(...blocksFromVerseLines(coalesceCeiVerseLines(serializeRosso(acc))));
+      acc = "";
+    };
+    for (const n of nodes) {
+      if (n.kind === "el" && hasClassPrefix(n.cls, "lo_sottotitolo")) {
+        flushAcc();
+        const t = stripTags(n.inner).replace(/\s+/g, " ").trim();
+        if (t) out.push({ k: "sub", text: t });
+        continue;
+      }
+      if (n.kind === "el" && /^(i|em)$/i.test(n.tag)) {
+        const t = stripTags(n.inner).replace(/\s+/g, " ").trim();
+        if (t) {
+          flushAcc();
+          out.push({ k: "sub", text: t });
+        }
+        continue;
+      }
+      if (n.kind === "br") {
+        acc += "<br/>";
+        continue;
+      }
+      if (n.kind === "text") {
+        acc += n.text;
+        continue;
+      }
+      if (n.kind === "el") acc += `<${n.tag} class="${n.cls}">${n.inner}</${n.tag}>`;
+    }
+    flushAcc();
+    return out;
+  }
   if (/lo_antifona/.test(inner) && !/lo_rosso/.test(inner)) {
     return blocksFromAntiphonal(inner);
   }
@@ -732,12 +832,9 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId): ParsedHo
         break;
       }
       if (isExactInnoTitle(t) || isInnoMarkerNode(node)) {
-        const hymns = parseCeiHymnsHtml(restToHtml(nodes.slice(i)));
-        if (hymns.length) {
-          const consumed = Math.max(1, hymnConsumeCount(nodes.slice(i)));
-          blocks.push({ k: "hymn", hymns });
-          i += consumed;
-        } else {
+        const consumed = takeHymn(nodes, i, blocks);
+        if (consumed != null) i += consumed;
+        else {
           blocks.push({ k: "title", text: "INNO" });
           i += 1;
         }
@@ -782,10 +879,8 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId): ParsedHo
     }
 
     if (isInnoMarkerNode(node)) {
-      const hymns = parseCeiHymnsHtml(restToHtml(nodes.slice(i)));
-      if (hymns.length) {
-        const consumed = Math.max(1, hymnConsumeCount(nodes.slice(i)));
-        blocks.push({ k: "hymn", hymns });
+      const consumed = takeHymn(nodes, i, blocks);
+      if (consumed != null) {
         i += consumed;
         continue;
       }
@@ -880,7 +975,7 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId): ParsedHo
       error: "Testo non disponibile. Riprova con la connessione, oppure scarica 10 giorni dalla Home.",
     };
   }
-  return { hour, blocks: enrichPsalmHeads(clean) };
+  return { hour, blocks: applyBundledGospelCanticles(enrichPsalmHeads(clean)) };
 }
 
 function isChromeText(t: string): boolean {

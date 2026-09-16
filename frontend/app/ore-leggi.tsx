@@ -88,7 +88,7 @@ export default function OreLeggi() {
   const [mediaId, setMediaId] = useState<MediaId>("terza");
   const [invitAnt, setInvitAnt] = useState(DEFAULT_INVIT_ANT);
   const [speed, setSpeed] = useState(3);
-  const [autoOn, setAutoOn] = useState(true);
+  const [autoOn, setAutoOn] = useState(false);
   const [prefsReady, setPrefsReady] = useState(false);
 
   const scrollRef = useRef<ScrollView>(null);
@@ -100,7 +100,7 @@ export default function OreLeggi() {
   const updateMax = useCallback(() => {
     maxRef.current = Math.max(0, contentHRef.current - viewHRef.current);
   }, []);
-  const wantAutoRef = useRef(true);
+  const wantAutoRef = useRef(false);
   const autoOnRef = useRef(false);
   const draggingRef = useRef(false);
   const lastTsRef = useRef(0);
@@ -208,8 +208,8 @@ export default function OreLeggi() {
       if (m && MEDIA_IDS.includes(m as MediaId)) setMediaId(m as MediaId);
       const s = parseInt((await AsyncStorage.getItem(SPD_KEY)) || "3", 10);
       if (s >= SPD_MIN && s <= SPD_MAX) setSpeed(s);
-      wantAutoRef.current = true;
-      setAutoOn(true);
+      wantAutoRef.current = false;
+      setAutoOn(false);
       setPrefsReady(true);
     })();
   }, []);

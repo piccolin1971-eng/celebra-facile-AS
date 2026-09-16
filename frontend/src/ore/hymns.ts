@@ -1,4 +1,5 @@
-import { hasClass, hymnLineSplit, stripTags, topLevelNodes, type HtmlNode } from "./html";
+import { hasClass, hymnLineSplit, nodesToHtml, stripTags, topLevelNodes, type HtmlNode } from "./html";
+import { looksLatinText } from "./hymnLang";
 import type { Hymn } from "./types";
 
 function isExactInnoTitle(text: string): boolean {
@@ -54,6 +55,11 @@ function chunkLines(lines: string[], size: number): string[][] {
 
 /** Strofe da 1 riga o blocchi >8 versi: raggruppa 3 (latino) o 4 (italiano). */
 export function normalizeHymnStanzas(stanzas: string[][]): string[][] {
+  const blob = stanzas.flat().join(" ");
+  // Latino già spezzato sui `<br>` CEI: non ricomporre a 3/4.
+  if (looksLatinText(blob) && stanzas.some((s) => s.length >= 2)) {
+    return stanzas.filter((s) => s.length);
+  }
   if (stanzas.length < 2 && (stanzas[0]?.length || 0) <= 8) return stanzas;
   const splitLong: string[][] = [];
   for (const st of stanzas) {
@@ -91,6 +97,51 @@ export function isInnoMarkerNode(node: HtmlNode): boolean {
   return !!(rosso && rosso.kind === "el" && isExactInnoTitle(stripTags(rosso.inner)));
 }
 
+function isHymnBoundaryNode(n: HtmlNode): boolean {
+  if (n.kind !== "el") return false;
+  if (hasClass(n.cls, "lo_antifona")) return true;
+  if (hasClass(n.cls, "lo_titolo") && isHymnStopTitle(stripTags(n.inner))) return true;
+  if (/lo_sottotitolo/.test(n.cls) && isHymnBoundaryText(stripTags(n.inner))) return true;
+  if (hasClass(n.cls, "lo_versetto")) {
+    if (/lo_antifona/.test(n.inner)) return true;
+    if (isHymnBoundaryText(stripTags(n.inner))) return true;
+  }
+  return false;
+}
+
+/** Testo d'inno prima di 1 ant./SALMO annidati nello stesso versetto CEI. */
+function splitHymnPrefix(inner: string): { prefix: string; tail: HtmlNode[]; hasBoundary: boolean } {
+  const kids = topLevelNodes(inner);
+  const pre: HtmlNode[] = [];
+  const tail: HtmlNode[] = [];
+  let boundary = false;
+  for (const n of kids) {
+    if (!boundary && isHymnBoundaryNode(n)) boundary = true;
+    if (boundary) tail.push(n);
+    else pre.push(n);
+  }
+  return { prefix: nodesToHtml(pre), tail, hasBoundary: boundary };
+}
+
+function findHymnLabelNode(nodes: HtmlNode[]): { index: number; label: string } | null {
+  for (let i = 0; i < nodes.length; i++) {
+    const n = nodes[i];
+    if (n.kind !== "el") continue;
+    if (!(hasClass(n.cls, "lo_titolo") || hasClass(n.cls, "lo_rosso"))) continue;
+    const label = hymnRubricLabel(stripTags(n.inner));
+    if (label) return { index: i, label };
+  }
+  return null;
+}
+function stanzasFromBr(html: string): string[][] {
+  const raw = String(html || "");
+  if (!stripTags(raw).trim()) return [];
+  return raw
+    .split(/<br\s*\/?>\s*(?:&nbsp;\s*)*<br\s*\/?>/i)
+    .map((part) => hymnLineSplit(part))
+    .filter((st) => st.length);
+}
+
 /**
  * Porta di parseCeiHymnsHtml (sim HTML) senza DOM.
  * Ogni strofa tiene i <br> originali. «Oppure» apre l’inno successivo.
@@ -108,17 +159,11 @@ export function parseCeiHymnsHtml(html: string): Hymn[] {
 
   const hymns: Hymn[] = [{ label: null, stanzas: [] }];
   let buf = "";
+  let stop = false;
   const current = () => hymns[hymns.length - 1];
   const flushLoose = () => {
-    const raw = stripTags(buf.replace(/<br\s*\/?>/gi, "\n"));
+    for (const st of stanzasFromBr(buf)) current().stanzas.push(st);
     buf = "";
-    raw.split(/\n\s*\n/).forEach((chunk) => {
-      const lines = chunk
-        .split(/\n/)
-        .map((s) => s.trim())
-        .filter(Boolean);
-      if (lines.length) current().stanzas.push(lines);
-    });
   };
   const startHymn = (label: string) => {
     flushLoose();
@@ -128,67 +173,105 @@ export function parseCeiHymnsHtml(html: string): Hymn[] {
       hymns.push({ label, stanzas: [] });
     }
   };
-  const pushVersesHtml = (inner: string) => {
-    const lines = hymnLineSplit(inner);
-    if (lines.length) current().stanzas.push(lines);
+  const pushStanzas = (inner: string) => {
+    for (const st of stanzasFromBr(inner)) current().stanzas.push(st);
+  };
+  const emitVersetto = (inner: string) => {
+    if (stop) return;
+    if (isHymnBoundaryText(stripTags(inner))) {
+      stop = true;
+      return;
+    }
+    const split = splitHymnPrefix(inner);
+    if (split.hasBoundary) {
+      if (stripTags(split.prefix).trim()) emitVersetto(split.prefix);
+      stop = true;
+      return;
+    }
+    const innerNodes = topLevelNodes(inner);
+    const labeled = findHymnLabelNode(innerNodes);
+    if (labeled) {
+      const before = nodesToHtml(innerNodes.slice(0, labeled.index));
+      if (stripTags(before).trim()) emitVersetto(before);
+      startHymn(labeled.label);
+      const after = nodesToHtml(innerNodes.slice(labeled.index + 1));
+      if (stripTags(after).trim()) emitVersetto(after);
+      return;
+    }
+    const innerRosso = innerNodes.find((n) => n.kind === "el" && hasClass(n.cls, "lo_rosso"));
+    if (innerRosso && innerRosso.kind === "el" && isExactInnoTitle(stripTags(innerRosso.inner))) {
+      const without = inner.replace(/<div[^>]*class="[^"]*lo_rosso[^"]*"[^>]*>[\s\S]*?<\/div>/i, "");
+      emitVersetto(without);
+      return;
+    }
+    const hasNested = innerNodes.some((n) => n.kind === "el" && hasClass(n.cls, "lo_versetto"));
+    const hasRubric = innerNodes.some((n) => {
+      if (n.kind !== "el") return false;
+      if (!(hasClass(n.cls, "lo_titolo") || hasClass(n.cls, "lo_rosso"))) return false;
+      return !!hymnRubricLabel(stripTags(n.inner));
+    });
+    if (!hasNested && !hasRubric) {
+      pushStanzas(inner);
+      return;
+    }
+    let acc = "";
+    const flushAcc = () => {
+      pushStanzas(acc);
+      acc = "";
+    };
+    for (const n of innerNodes) {
+      if (stop) break;
+      if (n.kind === "el" && hasClass(n.cls, "lo_versetto")) {
+        flushAcc();
+        emitVersetto(n.inner);
+        continue;
+      }
+      if (n.kind === "el" && (hasClass(n.cls, "lo_titolo") || hasClass(n.cls, "lo_rosso"))) {
+        const label = hymnRubricLabel(stripTags(n.inner));
+        if (label) {
+          flushAcc();
+          startHymn(label);
+          continue;
+        }
+        if (isExactInnoTitle(stripTags(n.inner))) continue;
+      }
+      if (n.kind === "br") {
+        acc += "<br/>";
+        continue;
+      }
+      if (n.kind === "text") {
+        acc += n.text;
+        continue;
+      }
+      if (n.kind === "el") acc += `<${n.tag} class="${n.cls}">${n.inner}</${n.tag}>`;
+    }
+    flushAcc();
   };
 
-  nodeLoop: for (const node of scope) {
+  for (const node of scope) {
+    if (stop) break;
     if (node.kind === "text") {
       if (!node.text.trim()) continue;
       buf += node.text.replace(/^\s+|\s+$/g, "");
       continue;
     }
     if (node.kind === "br") {
-      buf += "\n";
+      buf += "<br/>";
       continue;
     }
     if (hasClass(node.cls, "lo_versetto")) {
-      if (/lo_antifona/.test(node.inner) || isHymnBoundaryText(stripTags(node.inner))) {
+      if (isHymnBoundaryText(stripTags(node.inner))) {
         flushLoose();
         break;
       }
-      const innerNodes = topLevelNodes(node.inner);
-      const innerTit = innerNodes.find((n) => n.kind === "el" && hasClass(n.cls, "lo_titolo"));
-      const innerRosso = innerNodes.find((n) => n.kind === "el" && hasClass(n.cls, "lo_rosso"));
-      const innerLabel =
-        innerTit && innerTit.kind === "el"
-          ? hymnRubricLabel(stripTags(innerTit.inner))
-          : innerRosso && innerRosso.kind === "el"
-            ? hymnRubricLabel(stripTags(innerRosso.inner))
-            : null;
-      if (innerLabel) {
-        startHymn(innerLabel);
-        const without = node.inner.replace(
-          /<div[^>]*class="[^"]*lo_(?:titolo|rosso)[^"]*"[^>]*>[\s\S]*?<\/div>/i,
-          "",
-        );
-        if (stripTags(without).trim()) {
-          buf += without.replace(/<br\s*\/?>/gi, "\n");
-          flushLoose();
-        }
-        continue;
-      }
-      if (innerRosso && innerRosso.kind === "el" && isExactInnoTitle(stripTags(innerRosso.inner))) {
-        const without = node.inner.replace(/<div[^>]*class="[^"]*lo_rosso[^"]*"[^>]*>[\s\S]*?<\/div>/i, "");
-        buf += without.replace(/<br\s*\/?>/gi, "\n");
+      const split = splitHymnPrefix(node.inner);
+      if (split.hasBoundary && !stripTags(split.prefix).trim()) {
         flushLoose();
-        continue;
+        break;
       }
       flushLoose();
-      const nested = innerNodes.filter((n) => n.kind === "el" && hasClass(n.cls, "lo_versetto"));
-      if (nested.length) {
-        for (const v of nested) {
-          if (v.kind !== "el") continue;
-          if (/lo_antifona/.test(v.inner) || isHymnBoundaryText(stripTags(v.inner))) {
-            flushLoose();
-            break nodeLoop;
-          }
-          pushVersesHtml(v.inner);
-        }
-        continue;
-      }
-      pushVersesHtml(node.inner);
+      emitVersetto(node.inner);
+      if (stop) break;
       continue;
     }
     if (hasClass(node.cls, "lo_titolo") || hasClass(node.cls, "lo_rosso")) {
@@ -217,8 +300,9 @@ export function parseCeiHymnsHtml(html: string): Hymn[] {
     .filter((h) => h.stanzas.length);
 }
 
-export function hymnConsumeCount(nodes: HtmlNode[]): number {
+export function hymnConsume(nodes: HtmlNode[]): { count: number; tail: HtmlNode[] } {
   let n = 0;
+  let tail: HtmlNode[] = [];
   for (const node of nodes) {
     if (node.kind === "text" && !node.text.trim()) {
       n += 1;
@@ -229,8 +313,18 @@ export function hymnConsumeCount(nodes: HtmlNode[]): number {
       continue;
     }
     if (hasClass(node.cls, "lo_antifona")) break;
-    if (hasClass(node.cls, "lo_versetto") && ( /lo_antifona/.test(node.inner) || isHymnBoundaryText(stripTags(node.inner)))) {
-      break;
+    if (hasClass(node.cls, "lo_versetto")) {
+      const split = splitHymnPrefix(node.inner);
+      if (split.hasBoundary) {
+        if (stripTags(split.prefix).trim()) {
+          n += 1;
+          tail = split.tail;
+        }
+        break;
+      }
+      if (isHymnBoundaryText(stripTags(node.inner))) break;
+      n += 1;
+      continue;
     }
     if (node.kind === "el" && /lo_sottotitolo/.test(node.cls) && isHymnBoundaryText(stripTags(node.inner))) {
       break;
@@ -247,7 +341,11 @@ export function hymnConsumeCount(nodes: HtmlNode[]): number {
     }
     n += 1;
   }
-  return n;
+  return { count: n, tail };
+}
+
+export function hymnConsumeCount(nodes: HtmlNode[]): number {
+  return hymnConsume(nodes).count;
 }
 
 export { isExactInnoTitle };

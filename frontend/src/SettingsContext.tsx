@@ -31,6 +31,8 @@ interface SettingsState {
   isBold: boolean;
   /** Tasto «Celebra subito» in Home + selettori prefazio/PE in Celebra. Default on. */
   celebraSubitoEnabled: boolean;
+  /** Tasti «Scegli la liturgia» e «Celebra la Messa» in Home. Default on. */
+  preparaCelebraEnabled: boolean;
   /** Tasto «Liturgia delle Ore» in Home. Default on. */
   oreEnabled: boolean;
   /** Feedback tattile (vibrazione) ai tap principali. Default off. */
@@ -45,6 +47,7 @@ interface SettingsState {
   setFontFamilyId: (id: FontFamilyId) => void;
   setParchmentTone: (n: number) => void;
   setCelebraSubitoEnabled: (v: boolean) => void;
+  setPreparaCelebraEnabled: (v: boolean) => void;
   setOreEnabled: (v: boolean) => void;
   setHapticFeedbackEnabled: (v: boolean) => void;
   setLineSpacing: (n: number) => void;
@@ -234,6 +237,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   const [isBold, setIsBoldState] = useState(false);
   const [parchmentTone, setParchmentToneState] = useState(PARCHMENT_TONE_DEFAULT);
   const [celebraSubitoEnabled, setCelebraSubitoEnabledState] = useState(true);
+  const [preparaCelebraEnabled, setPreparaCelebraEnabledState] = useState(true);
   const [oreEnabled, setOreEnabledState] = useState(true);
   const [hapticFeedbackEnabled, setHapticFeedbackEnabledState] = useState(false);
   const [lineSpacing, setLineSpacingState] = useState(LINE_SPACING_DEFAULT);
@@ -295,6 +299,14 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
           if (typeof s.celebraSubitoEnabled === "boolean") {
             setCelebraSubitoEnabledState(s.celebraSubitoEnabled);
           }
+          if (typeof s.preparaCelebraEnabled === "boolean") {
+            setPreparaCelebraEnabledState(s.preparaCelebraEnabled);
+          }
+          const subitoOn = typeof s.celebraSubitoEnabled === "boolean" ? s.celebraSubitoEnabled : true;
+          const preparaOn = typeof s.preparaCelebraEnabled === "boolean" ? s.preparaCelebraEnabled : true;
+          if (!subitoOn && !preparaOn) {
+            setPreparaCelebraEnabledState(true);
+          }
           if (typeof s.oreEnabled === "boolean") {
             setOreEnabledState(s.oreEnabled);
           }
@@ -330,6 +342,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
             const raw = await AsyncStorage.getItem("messale_settings");
             const cur = raw ? JSON.parse(raw) : {};
             cur.celebraSubitoEnabled = true;
+            if (typeof cur.preparaCelebraEnabled !== "boolean") cur.preparaCelebraEnabled = true;
             await AsyncStorage.setItem("messale_settings", JSON.stringify(cur));
             await AsyncStorage.setItem("messale_celebra_subito_default_on_v1", "1");
           } catch {}
@@ -342,8 +355,8 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     })();
   }, []);
 
-  const persist = async (patch: Partial<{ theme: ThemeMode; fontSize: number; highContrast: boolean; isBold: boolean; readingMode: ReadingMode; fontFamilyId: FontFamilyId; parchmentTone: number; celebraSubitoEnabled: boolean; oreEnabled: boolean; hapticFeedbackEnabled: boolean; lineSpacing: number }>) => {
-    const next = { theme, fontSize, highContrast, isBold, readingMode, fontFamilyId, parchmentTone, celebraSubitoEnabled, oreEnabled, hapticFeedbackEnabled, lineSpacing, ...patch };
+  const persist = async (patch: Partial<{ theme: ThemeMode; fontSize: number; highContrast: boolean; isBold: boolean; readingMode: ReadingMode; fontFamilyId: FontFamilyId; parchmentTone: number; celebraSubitoEnabled: boolean; preparaCelebraEnabled: boolean; oreEnabled: boolean; hapticFeedbackEnabled: boolean; lineSpacing: number }>) => {
+    const next = { theme, fontSize, highContrast, isBold, readingMode, fontFamilyId, parchmentTone, celebraSubitoEnabled, preparaCelebraEnabled, oreEnabled, hapticFeedbackEnabled, lineSpacing, ...patch };
     await AsyncStorage.setItem("messale_settings", JSON.stringify(next));
   };
 
@@ -366,8 +379,14 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     persist({ parchmentTone: clamped });
   };
   const setCelebraSubitoEnabled = (v: boolean) => {
+    if (!v && !preparaCelebraEnabled) return;
     setCelebraSubitoEnabledState(v);
     persist({ celebraSubitoEnabled: v });
+  };
+  const setPreparaCelebraEnabled = (v: boolean) => {
+    if (!v && !celebraSubitoEnabled) return;
+    setPreparaCelebraEnabledState(v);
+    persist({ preparaCelebraEnabled: v });
   };
   const setOreEnabled = (v: boolean) => {
     setOreEnabledState(v);
@@ -396,7 +415,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   if (!loaded) return null;
 
   return (
-    <SettingsContext.Provider value={{ theme, fontSize, highContrast, isBold, readingMode, fontFamilyId, fontFamily, parchmentTone, celebraSubitoEnabled, oreEnabled, hapticFeedbackEnabled, lineSpacing, setTheme, setFontSize, setHighContrast, setIsBold, setReadingMode, setFontFamilyId, setParchmentTone, setCelebraSubitoEnabled, setOreEnabled, setHapticFeedbackEnabled, setLineSpacing, colors, scaledFont }}>
+    <SettingsContext.Provider value={{ theme, fontSize, highContrast, isBold, readingMode, fontFamilyId, fontFamily, parchmentTone, celebraSubitoEnabled, preparaCelebraEnabled, oreEnabled, hapticFeedbackEnabled, lineSpacing, setTheme, setFontSize, setHighContrast, setIsBold, setReadingMode, setFontFamilyId, setParchmentTone, setCelebraSubitoEnabled, setPreparaCelebraEnabled, setOreEnabled, setHapticFeedbackEnabled, setLineSpacing, colors, scaledFont }}>
       {children}
     </SettingsContext.Provider>
   );

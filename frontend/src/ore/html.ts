@@ -178,10 +178,17 @@ export function nodesToHtml(nodes: HtmlNode[]): string {
     .join("");
 }
 
+/** Solo `<br>` è un verso: i newline dell’HTML CEI (es. `(Hæ)` in lo_rosso) restano sulla stessa riga. */
 export function hymnLineSplit(htmlOrText: string): string[] {
-  return stripTags(String(htmlOrText).replace(/<br\s*\/?>/gi, "\n"))
-    .split(/\n/)
-    .map((s) => s.trim())
+  return String(htmlOrText)
+    .split(/<br\s*\/?>/i)
+    .map((s) =>
+      stripTags(s)
+        .replace(/\s+/g, " ")
+        .replace(/\(\s+/g, "(")
+        .replace(/\s+\)/g, ")")
+        .trim(),
+    )
     .filter(Boolean);
 }
 
