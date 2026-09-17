@@ -31,6 +31,24 @@ function stripMarian(blocks: OreBlock[]): OreBlock[] {
   );
 }
 
+function tidyComplineBlocks(blocks: OreBlock[]): OreBlock[] {
+  const out: OreBlock[] = [];
+  for (const b of blocks) {
+    if (b.k === "stanza" && b.lines?.length === 2 && /^\d+\s*ant\.\s*$/i.test(b.lines[0].trim())) {
+      out.push({ k: "rubric", lab: b.lines[0].trim(), text: b.lines[1].trim() });
+      continue;
+    }
+    if (b.k === "sub") {
+      const prev = out[out.length - 1];
+      if (prev?.k === "psalmHead" && prev.sub.replace(/\s+/g, " ").trim() === b.text.replace(/\s+/g, " ").trim()) {
+        continue;
+      }
+    }
+    out.push(b);
+  }
+  return out;
+}
+
 async function main() {
   const out: Partial<Record<ComplineSchemaId, { sourceDate: string; blocks: OreBlock[] }>> = {};
   let d = parseLocalDate("2026-10-19");
@@ -52,7 +70,7 @@ async function main() {
     const psalms = parsed.blocks.filter((b) => b.k === "psalmHead").length;
     console.log(iso, schema, slug, "blocks", parsed.blocks.length, "psalms", psalms, parsed.error || "");
     if (parsed.blocks.length >= 8 && psalms >= 1) {
-      out[schema] = { sourceDate: iso, blocks: stripMarian(parsed.blocks) };
+      out[schema] = { sourceDate: iso, blocks: tidyComplineBlocks(stripMarian(parsed.blocks)) };
     }
     d = addDays(d, 1);
   }

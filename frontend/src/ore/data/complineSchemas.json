@@ -307,6 +307,15 @@
           "nelle tue mani affido il mio spirito.",
           "Gloria al Padre e al Figlio e allo Spirito Santo.",
           "Signore, nelle tue mani affido il mio spirito."
+        ],
+        "hang": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
         ]
       },
       {
@@ -707,6 +716,15 @@
           "nelle tue mani affido il mio spirito.",
           "Gloria al Padre e al Figlio e allo Spirito Santo.",
           "Signore, nelle tue mani affido il mio spirito."
+        ],
+        "hang": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
         ]
       },
       {
@@ -794,8 +812,28 @@
           "rivolgi a noi gli occhi tuoi misericordiosi.",
           "E mostraci, dopo questo esilio, Gesù,",
           "il frutto benedetto del tuo seno.",
-          "O clemente, o pia, o dolce Vergine Maria.",
-          "Oppure:",
+          "O clemente, o pia, o dolce Vergine Maria."
+        ],
+        "hang": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "k": "omit",
+        "text": "Oppure:"
+      },
+      {
+        "k": "stanza",
+        "lines": [
           "Salve, Regína, mater misericórdiæ;",
           "vita, dulcédo et spes nostra, salve.",
           "Ad te clamámus, éxsules fílii Evæ.",
@@ -809,17 +847,6 @@
           "O clemens, o pia, o dulcis Virgo María."
         ],
         "hang": [
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
           0,
           0,
           0,
@@ -1005,15 +1032,9 @@
         "text": "Tu sei la mia difesa e il mio rifugio, Signore."
       },
       {
-        "k": "stanza",
-        "lines": [
-          "2 ant.",
-          "Dal profondo a te grido, o Signore!"
-        ],
-        "hang": [
-          0,
-          0
-        ]
+        "k": "rubric",
+        "lab": "2 ant.",
+        "text": "Dal profondo a te grido, o Signore!"
       },
       {
         "k": "psalmHead",
@@ -1021,6 +1042,66 @@
         "name": "Dal profondo a te grido",
         "sub": "Egli salverà il suo popolo dai suoi peccati (Mt 1, 21).",
         "cite": ""
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Dal profondo a te grido, o Signore; *",
+          "† Signore, ascolta la mia voce.",
+          "Siano i tuoi orecchi attenti *",
+          "alla voce della mia preghiera."
+        ],
+        "hang": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Se consideri le colpe, Signore, *",
+          "Signore, chi potrà sussistere?",
+          "Ma presso di te è il perdono, *",
+          "perciò avremo il tuo timore."
+        ],
+        "hang": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Io spero nel Signore, *",
+          "l’anima mia spera nella sua parola.",
+          "L’anima mia attende il Signore *",
+          "più che le sentinelle l’aurora."
+        ],
+        "hang": [
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Israele attenda il Signore, *",
+          "perché presso il Signore è la misericordia,",
+          "grande è presso di lui la redenzione; *",
+          "egli redimerà Israele da tutte le sue colpe."
+        ],
+        "hang": [
+          0,
+          1,
+          0,
+          1
+        ]
       },
       {
         "k": "rubric",
@@ -1053,6 +1134,15 @@
           "nelle tue mani affido il mio spirito.",
           "Gloria al Padre e al Figlio e allo Spirito Santo.",
           "Signore, nelle tue mani affido il mio spirito."
+        ],
+        "hang": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
         ]
       },
       {
@@ -1136,13 +1226,7 @@
           "non disprezzare le suppliche",
           "di noi che siamo nella prova,",
           "e liberaci da ogni pericolo,",
-          "o vergine gloriosa e benedetta.",
-          "Oppure:",
-          "Sub tuum præsídium confúgimus,",
-          "sancta Dei Génetrix;",
-          "nostras deprecatiónes ne despícias in necessitátibus;",
-          "sed a perículis cunctis líbera nos semper",
-          "Virgo gloriósa et benedícta."
+          "o vergine gloriosa e benedetta."
         ],
         "hang": [
           0,
@@ -1150,8 +1234,23 @@
           0,
           0,
           0,
-          0,
-          0,
+          0
+        ]
+      },
+      {
+        "k": "omit",
+        "text": "Oppure:"
+      },
+      {
+        "k": "stanza",
+        "lines": [
+          "Sub tuum præsídium confúgimus,",
+          "sancta Dei Génetrix;",
+          "nostras deprecatiónes ne despícias in necessitátibus;",
+          "sed a perículis cunctis líbera nos semper",
+          "Virgo gloriósa et benedícta."
+        ],
+        "hang": [
           0,
           0,
           0,
@@ -1408,6 +1507,15 @@
           "nelle tue mani affido il mio spirito.",
           "Gloria al Padre e al Figlio e allo Spirito Santo.",
           "Signore, nelle tue mani affido il mio spirito."
+        ],
+        "hang": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
         ]
       },
       {
@@ -1492,8 +1600,25 @@
           "e benedetto è il frutto del tuo seno, Gesù.",
           "Santa Maria, Madre di Dio,",
           "prega per noi peccatori,",
-          "adesso e nell'ora della nostra morte. Amen.",
-          "Oppure:",
+          "adesso e nell'ora della nostra morte. Amen."
+        ],
+        "hang": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "k": "omit",
+        "text": "Oppure:"
+      },
+      {
+        "k": "stanza",
+        "lines": [
           "Ave, María, grátia plena, Dóminus tecum;",
           "benedícta tu in muliéribus,",
           "et benedíctus fructus ventris tui, Iesus.",
@@ -1503,14 +1628,6 @@
           ")"
         ],
         "hang": [
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
           0,
           0,
           0,
@@ -1809,6 +1926,15 @@
           "nelle tue mani affido il mio spirito.",
           "Gloria al Padre e al Figlio e allo Spirito Santo.",
           "Signore, nelle tue mani affido il mio spirito."
+        ],
+        "hang": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
         ]
       },
       {
@@ -2264,6 +2390,15 @@
           "nelle tue mani affido il mio spirito.",
           "Gloria al Padre e al Figlio e allo Spirito Santo.",
           "Signore, nelle tue mani affido il mio spirito."
+        ],
+        "hang": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
         ]
       },
       {
@@ -2348,8 +2483,25 @@
           "e benedetto è il frutto del tuo seno, Gesù.",
           "Santa Maria, Madre di Dio,",
           "prega per noi peccatori,",
-          "adesso e nell'ora della nostra morte. Amen.",
-          "Oppure:",
+          "adesso e nell'ora della nostra morte. Amen."
+        ],
+        "hang": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "k": "omit",
+        "text": "Oppure:"
+      },
+      {
+        "k": "stanza",
+        "lines": [
           "Ave, María, grátia plena, Dóminus tecum;",
           "benedícta tu in muliéribus,",
           "et benedíctus fructus ventris tui, Iesus.",
@@ -2359,14 +2511,6 @@
           ")"
         ],
         "hang": [
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
           0,
           0,
           0,
@@ -2662,6 +2806,15 @@
           "nelle tue mani affido il mio spirito.",
           "Gloria al Padre e al Figlio e allo Spirito Santo.",
           "Signore, nelle tue mani affido il mio spirito."
+        ],
+        "hang": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
         ]
       },
       {
