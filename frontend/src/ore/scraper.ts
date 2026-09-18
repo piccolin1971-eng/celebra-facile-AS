@@ -87,6 +87,7 @@ type HourPatch = Partial<Record<OreHourId | MediaId, ParsedHour>> & {
 async function ingestHtml(
   hour: OreHourId,
   html: string | null,
+  dateISO?: string,
 ): Promise<HourPatch> {
   if (!html) {
     if (hour === "invitatorio") return {};
@@ -101,11 +102,11 @@ async function ingestHtml(
     const parts = splitOraMediaHtml(html);
     const out: Partial<Record<MediaId, ParsedHour>> = {};
     (["terza", "sesta", "nona"] as MediaId[]).forEach((id) => {
-      out[id] = parseHourHtml(parts[id], id);
+      out[id] = parseHourHtml(parts[id], id, dateISO);
     });
     return { ...out, hoursBanner };
   }
-  return { [hour]: parseHourHtml(html, hour), hoursBanner };
+  return { [hour]: parseHourHtml(html, hour, dateISO), hoursBanner };
 }
 
 function parsedNeedsItalianHymn(parsed: ParsedHour | undefined): boolean {
@@ -188,7 +189,7 @@ export async function fetchDayHours(dateISO: string, ceiTitle = ""): Promise<Day
       if (bundled?.blocks?.length) return { compieta: bundled };
     }
     const html = await fetchHourHtml(dateISO, ceiHourSlug(hour, date));
-    return enrichLatinHymns(await ingestHtml(hour, html), dateISO);
+    return enrichLatinHymns(await ingestHtml(hour, html, dateISO), dateISO);
   });
   let hours: DayHoursCache["hours"] = {};
   let invitAnt: string | undefined;
@@ -239,7 +240,7 @@ export async function ensureHour(
   }
   const date = parseLocalDate(dateISO);
   const html = await fetchHourHtml(dateISO, ceiHourSlug(hour, date));
-  const patch = await enrichLatinHymns(await ingestHtml(hour, html), dateISO);
+  const patch = await enrichLatinHymns(await ingestHtml(hour, html, dateISO), dateISO);
   const { invitAnt, invitFetched, hoursBanner, ...hourMap } = patch;
   return mergeDayHours(
     dateISO,

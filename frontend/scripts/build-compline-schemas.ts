@@ -1,6 +1,7 @@
 import { writeFileSync } from "fs";
 import { fetchCeiUrl } from "../src/liturgyScraper";
 import { addDays, localDateStr, parseLocalDate } from "../src/dateUtils";
+import { scrubLoneParenLines, stripCeiMarianTail } from "../src/ore/bundled";
 import { parseHourHtml } from "../src/ore/parseHour";
 import { hoursUrl } from "../src/ore/scraper";
 import { complineCeiSlug } from "../src/ore/titles";
@@ -25,15 +26,16 @@ function weekdaySchema(d: Date): ComplineSchemaId {
   return (["sun-ii", "mon", "tue", "wed", "thu", "fri", "sun-i"] as const)[dow];
 }
 
-function stripMarian(blocks: OreBlock[]): OreBlock[] {
-  return blocks.filter(
-    (b) => b.k !== "marian" && !(b.k === "title" && /ANTIFONE DELLA BEATA VERGINE/i.test(b.text)),
-  );
-}
-
 function tidyComplineBlocks(blocks: OreBlock[]): OreBlock[] {
+  const stripped = scrubLoneParenLines(
+    stripCeiMarianTail(
+      blocks.filter(
+        (b) => b.k !== "marian" && !(b.k === "title" && /ANTIFONE DELLA BEATA VERGINE/i.test(b.text)),
+      ),
+    ),
+  );
   const out: OreBlock[] = [];
-  for (const b of blocks) {
+  for (const b of stripped) {
     if (b.k === "stanza" && b.lines?.length === 2 && /^\d+\s*ant\.\s*$/i.test(b.lines[0].trim())) {
       out.push({ k: "rubric", lab: b.lines[0].trim(), text: b.lines[1].trim() });
       continue;
@@ -70,7 +72,7 @@ async function main() {
     const psalms = parsed.blocks.filter((b) => b.k === "psalmHead").length;
     console.log(iso, schema, slug, "blocks", parsed.blocks.length, "psalms", psalms, parsed.error || "");
     if (parsed.blocks.length >= 8 && psalms >= 1) {
-      out[schema] = { sourceDate: iso, blocks: tidyComplineBlocks(stripMarian(parsed.blocks)) };
+      out[schema] = { sourceDate: iso, blocks: tidyComplineBlocks(parsed.blocks) };
     }
     d = addDays(d, 1);
   }

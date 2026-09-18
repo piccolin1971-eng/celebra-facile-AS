@@ -1,3 +1,5 @@
+import { addDays } from "../dateUtils";
+import { computeEasterSunday, firstAdventSunday } from "../liturgicalDates";
 import type { InvitPsalmId, OreBlock } from "./types";
 
 export const GLORIA = [
@@ -370,7 +372,7 @@ export const MARIAN_ANTIPHONS: string[][] = [
     "adesso e nell’ora della nostra morte. Amen.",
   ],
   [
-    "Sotto la tua protezione troviamo rifugio,",
+    "Sotto la tua protezione cerchiamo rifugio,",
     "santa Madre di Dio:",
     "non disprezzare le suppliche di noi che siamo nella prova,",
     "e liberaci da ogni pericolo,",
@@ -383,6 +385,80 @@ export const MARIAN_ANTIPHONS: string[][] = [
     "Prega il Signore per noi, alleluia.",
   ],
 ];
+
+const MARIAN_ALMA = 0;
+const MARIAN_AVE_REGINA = 1;
+const MARIAN_SALVE = 2;
+const MARIAN_AVE_MARIA = 3;
+const MARIAN_SUB_TUUM = 4;
+const MARIAN_REGINA_CAELI = 5;
+
+function startOfLocalDay(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+/** Antifona mariana di stagione (Compieta), più Ave Maria e Sub tuum. */
+export function marianAntiphonsForDate(date: Date): string[][] {
+  const y = date.getFullYear();
+  const t = startOfLocalDay(date).getTime();
+  const easter = computeEasterSunday(y);
+  const pentecost = addDays(easter, 49);
+  const holyWed = addDays(easter, -4);
+  const candlemas = new Date(y, 1, 2).getTime();
+  const adventThis = firstAdventSunday(y).getTime();
+  const adventPrev = firstAdventSunday(y - 1).getTime();
+
+  let seasonal = MARIAN_SALVE;
+  if (t >= adventThis || (t >= adventPrev && t < candlemas)) seasonal = MARIAN_ALMA;
+  else if (t >= candlemas && t <= holyWed.getTime()) seasonal = MARIAN_AVE_REGINA;
+  else if (t >= easter.getTime() && t <= pentecost.getTime()) seasonal = MARIAN_REGINA_CAELI;
+  else seasonal = MARIAN_SALVE;
+
+  const picked = [MARIAN_ANTIPHONS[seasonal], MARIAN_ANTIPHONS[MARIAN_AVE_MARIA], MARIAN_ANTIPHONS[MARIAN_SUB_TUUM]];
+  return picked.filter((a, i, arr) => arr.findIndex((b) => b[0] === a[0]) === i);
+}
+
+/** Tolgie la coda CEI (Ave Maria del giorno + «Si conclude…») prima del blocco bundled. */
+export function stripCeiMarianTail(blocks: OreBlock[]): OreBlock[] {
+  let cut = blocks.findIndex(
+    (b) =>
+      b.k === "marian" ||
+      (b.k === "title" && /ANTIFONE DELLA BEATA VERGINE/i.test(b.text)) ||
+      (b.k === "omit" && /antifona della [Bb]eata [Vv]ergine/i.test(b.text)),
+  );
+  if (cut < 0) {
+    cut = blocks.findIndex(
+      (b, i) =>
+        i > 8 &&
+        b.k === "stanza" &&
+        /^(Ave,? o Maria|O santa Madre|Salve,? Regina|Ave,? regina|Sotto la tua protezione|Regina dei cieli)/i.test(
+          (b.lines[0] || "").trim(),
+        ),
+    );
+  }
+  return cut >= 0 ? blocks.slice(0, cut) : blocks;
+}
+
+/** Righe monche «(» / «)» tipiche dell’Ave Maria latina CEI. */
+export function scrubLoneParenLines(blocks: OreBlock[]): OreBlock[] {
+  return blocks
+    .map((b) => {
+      if (b.k !== "stanza") return b;
+      const keepIdx: number[] = [];
+      b.lines.forEach((l, i) => {
+        const t = l.trim();
+        if (t === "(" || t === ")" || t === "()") return;
+        keepIdx.push(i);
+      });
+      if (!keepIdx.length) return null;
+      return {
+        k: "stanza" as const,
+        lines: keepIdx.map((i) => b.lines[i]),
+        hang: b.hang ? keepIdx.map((i) => b.hang![i] ?? 0) : undefined,
+      };
+    })
+    .filter((b): b is OreBlock => !!b);
+}
 
 const BIBLE_BOOK =
   "(?:[1-3]\\s*)?(?:Sam|Re|Cr|Mac|Cor|Ts|Tm|Pt|Gv|Tess|Tim|Dan|Dn|Is|Mt|Mc|Lc|At|Rm|Gal|Ef|Fil|Col|Eb|Ap|Ger|Ez|Tb|Gdt|Sap|Sir|Bar|Es|Lv|Nm|Dt|Gs|Gdc|Rt|Esd|Ne|Est|Gb|Pr|Qo|Ct|Lam|Gen|Sal|Os|Gl|Am|Ab|Na|So|Ag|Zc|Ml|Fm|Gc|Gd|Tt|Gio)";

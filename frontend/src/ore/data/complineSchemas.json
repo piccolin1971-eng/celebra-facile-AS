@@ -386,58 +386,6 @@
           0,
           0
         ]
-      },
-      {
-        "k": "omit",
-        "text": "Si conclude con un’antifona della Beata Vergine Maria."
-      },
-      {
-        "k": "stanza",
-        "lines": [
-          "O santa Madre del Redentore,",
-          "porta dei cieli, stella del mare,",
-          "soccorri il tuo popolo",
-          "che anela a risorgere.",
-          "Tu che, accogliendo il saluto dell’angelo,",
-          "nello stupore di tutto il creato,",
-          "hai generato il tuo Creatore,",
-          "madre sempre vergine,",
-          "pietà di noi peccatori."
-        ],
-        "hang": [
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0
-        ]
-      },
-      {
-        "k": "omit",
-        "text": "Oppure:"
-      },
-      {
-        "k": "stanza",
-        "lines": [
-          "Alma Redemptóris Mater, quæ pérvia cæli",
-          "porta manes, et stella maris, succúrre cadénti,",
-          "súrgere qui curat, pópulo: tu quæ genuísti,",
-          "natúra miránte, tuum sanctum Genitórem,",
-          "Virgo prius ac postérius, Gabriélis ab ore",
-          "sumens illud Ave, peccatórum miserére."
-        ],
-        "hang": [
-          0,
-          0,
-          0,
-          0,
-          0,
-          0
-        ]
       }
     ]
   },
@@ -795,70 +743,6 @@
           0,
           0
         ]
-      },
-      {
-        "k": "omit",
-        "text": "Si conclude con un’antifona della Beata Vergine Maria."
-      },
-      {
-        "k": "stanza",
-        "lines": [
-          "Salve, Regina, madre di misericordia,",
-          "vita, dolcezza e speranza nostra, salve.",
-          "A te ricorriamo, esuli figli di Eva;",
-          "a te sospiriamo, gementi e piangenti",
-          "in questa valle di lacrime.",
-          "Orsù dunque, avvocata nostra,",
-          "rivolgi a noi gli occhi tuoi misericordiosi.",
-          "E mostraci, dopo questo esilio, Gesù,",
-          "il frutto benedetto del tuo seno.",
-          "O clemente, o pia, o dolce Vergine Maria."
-        ],
-        "hang": [
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0
-        ]
-      },
-      {
-        "k": "omit",
-        "text": "Oppure:"
-      },
-      {
-        "k": "stanza",
-        "lines": [
-          "Salve, Regína, mater misericórdiæ;",
-          "vita, dulcédo et spes nostra, salve.",
-          "Ad te clamámus, éxsules fílii Evæ.",
-          "Ad te suspirámus, geméntes et flentes",
-          "in hac lacrimárum valle.",
-          "Eia ergo, advocáta nostra,",
-          "illos tuos misericórdes óculos",
-          "ad nos convérte.",
-          "Et Iesum, benedíctum fructum ventris tui,",
-          "nobis post hoc exsílium osténde.",
-          "O clemens, o pia, o dulcis Virgo María."
-        ],
-        "hang": [
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0
-        ]
       }
     ]
   },
@@ -1213,50 +1097,6 @@
           0,
           0
         ]
-      },
-      {
-        "k": "omit",
-        "text": "Si conclude con un’antifona della Beata Vergine Maria."
-      },
-      {
-        "k": "stanza",
-        "lines": [
-          "Sotto la tua protezione cerchiamo rifugio,",
-          "santa Madre di Dio:",
-          "non disprezzare le suppliche",
-          "di noi che siamo nella prova,",
-          "e liberaci da ogni pericolo,",
-          "o vergine gloriosa e benedetta."
-        ],
-        "hang": [
-          0,
-          0,
-          0,
-          0,
-          0,
-          0
-        ]
-      },
-      {
-        "k": "omit",
-        "text": "Oppure:"
-      },
-      {
-        "k": "stanza",
-        "lines": [
-          "Sub tuum præsídium confúgimus,",
-          "sancta Dei Génetrix;",
-          "nostras deprecatiónes ne despícias in necessitátibus;",
-          "sed a perículis cunctis líbera nos semper",
-          "Virgo gloriósa et benedícta."
-        ],
-        "hang": [
-          0,
-          0,
-          0,
-          0,
-          0
-        ]
       }
     ]
   },
@@ -1583,56 +1423,6 @@
           "R. Amen."
         ],
         "hang": [
-          0,
-          0
-        ]
-      },
-      {
-        "k": "omit",
-        "text": "Si conclude con un’antifona della Beata Vergine Maria."
-      },
-      {
-        "k": "stanza",
-        "lines": [
-          "Ave, o Maria, piena di grazia,",
-          "il Signore è con te.",
-          "Tu sei benedetta fra le donne",
-          "e benedetto è il frutto del tuo seno, Gesù.",
-          "Santa Maria, Madre di Dio,",
-          "prega per noi peccatori,",
-          "adesso e nell'ora della nostra morte. Amen."
-        ],
-        "hang": [
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0
-        ]
-      },
-      {
-        "k": "omit",
-        "text": "Oppure:"
-      },
-      {
-        "k": "stanza",
-        "lines": [
-          "Ave, María, grátia plena, Dóminus tecum;",
-          "benedícta tu in muliéribus,",
-          "et benedíctus fructus ventris tui, Iesus.",
-          "(",
-          "Sancta María, Mater Dei, ora pro nobis peccatóribus",
-          "nunc et in hora mortis nostræ. Amen.",
-          ")"
-        ],
-        "hang": [
-          0,
-          0,
-          0,
-          0,
-          0,
           0,
           0
         ]
@@ -2002,58 +1792,6 @@
           "R. Amen."
         ],
         "hang": [
-          0,
-          0
-        ]
-      },
-      {
-        "k": "omit",
-        "text": "Si conclude con un’antifona della Beata Vergine Maria."
-      },
-      {
-        "k": "stanza",
-        "lines": [
-          "O santa Madre del Redentore,",
-          "porta dei cieli, stella del mare,",
-          "soccorri il tuo popolo",
-          "che anela a risorgere.",
-          "Tu che, accogliendo il saluto dell’angelo,",
-          "nello stupore di tutto il creato,",
-          "hai generato il tuo Creatore,",
-          "madre sempre vergine,",
-          "pietà di noi peccatori."
-        ],
-        "hang": [
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0
-        ]
-      },
-      {
-        "k": "omit",
-        "text": "Oppure:"
-      },
-      {
-        "k": "stanza",
-        "lines": [
-          "Alma Redemptóris Mater, quæ pérvia cæli",
-          "porta manes, et stella maris, succúrre cadénti,",
-          "súrgere qui curat, pópulo: tu quæ genuísti,",
-          "natúra miránte, tuum sanctum Genitórem,",
-          "Virgo prius ac postérius, Gabriélis ab ore",
-          "sumens illud Ave, peccatórum miserére."
-        ],
-        "hang": [
-          0,
-          0,
-          0,
-          0,
           0,
           0
         ]
@@ -2469,56 +2207,6 @@
           0,
           0
         ]
-      },
-      {
-        "k": "omit",
-        "text": "Si conclude con un’antifona della Beata Vergine Maria."
-      },
-      {
-        "k": "stanza",
-        "lines": [
-          "Ave, o Maria, piena di grazia,",
-          "il Signore è con te.",
-          "Tu sei benedetta fra le donne",
-          "e benedetto è il frutto del tuo seno, Gesù.",
-          "Santa Maria, Madre di Dio,",
-          "prega per noi peccatori,",
-          "adesso e nell'ora della nostra morte. Amen."
-        ],
-        "hang": [
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0
-        ]
-      },
-      {
-        "k": "omit",
-        "text": "Oppure:"
-      },
-      {
-        "k": "stanza",
-        "lines": [
-          "Ave, María, grátia plena, Dóminus tecum;",
-          "benedícta tu in muliéribus,",
-          "et benedíctus fructus ventris tui, Iesus.",
-          "(",
-          "Sancta María, Mater Dei, ora pro nobis peccatóribus",
-          "nunc et in hora mortis nostræ. Amen.",
-          ")"
-        ],
-        "hang": [
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0
-        ]
       }
     ]
   },
@@ -2882,60 +2570,6 @@
           "R. Amen."
         ],
         "hang": [
-          0,
-          0
-        ]
-      },
-      {
-        "k": "omit",
-        "text": "Si conclude con un’antifona della Beata Vergine Maria."
-      },
-      {
-        "k": "stanza",
-        "lines": [
-          "Ave, regina dei cieli,",
-          "ave, signora degli angeli;",
-          "porta e radice di salvezza,",
-          "rechi nel mondo la luce.",
-          "Godi, vergine gloriosa,",
-          "bella fra tutte le donne;",
-          "salve, o tutta santa,",
-          "prega per noi Cristo Signore."
-        ],
-        "hang": [
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0
-        ]
-      },
-      {
-        "k": "omit",
-        "text": "Oppure:"
-      },
-      {
-        "k": "stanza",
-        "lines": [
-          "Ave, Regína cælórum,",
-          "ave, Dómina angelórum,",
-          "salve, radix, salve, porta,",
-          "ex qua mundo lux est orta.",
-          "Gaude, Virgo gloriósa,",
-          "super omnes speciósa;",
-          "vale, o valde decóra,",
-          "et pro nobis Christum exóra."
-        ],
-        "hang": [
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
           0,
           0
         ]

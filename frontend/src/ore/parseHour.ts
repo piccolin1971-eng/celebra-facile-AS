@@ -10,8 +10,15 @@ import {
   type HtmlNode,
 } from "./html";
 import { hymnConsume, isExactInnoTitle, isInnoMarkerNode, parseCeiHymnsHtml } from "./hymns";
-import { MARIAN_ANTIPHONS, applyBundledGospelCanticles, splitPsalmTitle } from "./bundled";
+import {
+  applyBundledGospelCanticles,
+  marianAntiphonsForDate,
+  scrubLoneParenLines,
+  splitPsalmTitle,
+  stripCeiMarianTail,
+} from "./bundled";
 import { enrichPsalmHeads } from "./psalmHeadings";
+import { parseLocalDate } from "../dateUtils";
 import type { MediaId, OreBlock, OreHourId, ParsedHour } from "./types";
 
 function isMarianTitle(t: string): boolean {
@@ -620,6 +627,35 @@ function mergeRubricPrefixLines(blocks: OreBlock[]): OreBlock[] {
   });
 }
 
+/** Unisce «3 ant.» vuota + strofa successiva senza *† (testo antifona fuori dal div CEI). */
+function attachOrphanAntiphonText(blocks: OreBlock[]): OreBlock[] {
+  const out: OreBlock[] = [];
+  for (let i = 0; i < blocks.length; i++) {
+    const b = blocks[i];
+    const next = blocks[i + 1];
+    if (
+      b.k === "rubric" &&
+      /ant/i.test(b.lab) &&
+      !b.text &&
+      next?.k === "stanza"
+    ) {
+      const joined = next.lines.join(" ").replace(/\s+/g, " ").trim();
+      if (
+        joined.length > 0 &&
+        joined.length < 180 &&
+        !/[*†]/.test(joined) &&
+        !next.lines.some((l) => /Gloria al Padre/i.test(l))
+      ) {
+        out.push({ k: "rubric", lab: b.lab, text: joined });
+        i += 1;
+        continue;
+      }
+    }
+    out.push(b);
+  }
+  return out;
+}
+
 function dropOrphanStarLines(blocks: OreBlock[]): OreBlock[] {
   return blocks
     .map((b) => {
@@ -758,7 +794,7 @@ function blocksFromVersetto(inner: string): OreBlock[] {
   return out;
 }
 
-export function parseHourHtml(html: string, hour: OreHourId | MediaId): ParsedHour {
+export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?: string): ParsedHour {
   const missing = {
     hour,
     blocks: [] as OreBlock[],
@@ -842,7 +878,21 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId): ParsedHo
       }
       if (looksLikePsalmTitle(t)) {
         const { sub, cite, skip } = consumeSubAfterPsalm(nodes, i + 1);
-        blocks.push(psalmHeadFromTitle(t, sub, cite || rif));
+        const brLines = node.inner
+          .split(/<br\s*\/?>/i)
+          .map((p) => stripTags(p).replace(/\s+/g, " ").trim())
+          .filter((p) => p && !/^Cfr\.?\s*$/i.test(p));
+        if (brLines.length >= 2 && looksLikePsalmTitle(brLines[0])) {
+          blocks.push({
+            k: "psalmHead",
+            num: brLines[0],
+            name: brLines.slice(1).join(" "),
+            sub: tidyLitText(sub),
+            cite: tidyLitText(cite || rif),
+          });
+        } else {
+          blocks.push(psalmHeadFromTitle(t, sub, cite || rif));
+        }
         i += 1 + skip;
         continue;
       }
@@ -873,8 +923,44 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId): ParsedHo
     }
 
     if (hasClass(node.cls, "lo_antifona")) {
-      blocks.push({ k: "rubric", lab: normalizeLab(stripTags(node.inner)), text: "" });
-      i += 1;
+      const lab = normalizeLab(stripTags(node.inner));
+      let text = "";
+      let j = i + 1;
+      // CEI a volte lascia solo «3 ant.» nel div e il testo subito dopo come nodi testo.
+      while (j < nodes.length && !text) {
+        const n = nodes[j];
+        if (n.kind === "br") {
+          j += 1;
+          continue;
+        }
+        if (n.kind === "text") {
+          const piece = stripTags(n.text).replace(/\s+/g, " ").trim();
+          if (piece && !isChromeText(piece)) text = piece;
+          j += 1;
+          continue;
+        }
+        break;
+      }
+      if (text) {
+        const more: string[] = [text];
+        while (j < nodes.length) {
+          const n = nodes[j];
+          if (n.kind === "br") {
+            j += 1;
+            continue;
+          }
+          if (n.kind !== "text") break;
+          const piece = stripTags(n.text).replace(/\s+/g, " ").trim();
+          if (piece && !isChromeText(piece)) more.push(piece);
+          j += 1;
+        }
+        text = more.join(" ").replace(/\s+/g, " ").trim();
+        blocks.push({ k: "rubric", lab, text });
+        i = j;
+      } else {
+        blocks.push({ k: "rubric", lab, text: "" });
+        i += 1;
+      }
       continue;
     }
 
@@ -945,10 +1031,13 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId): ParsedHo
   }
 
   if (hour === "compieta" || sawMarian) {
-    const already = blocks.some((b) => b.k === "marian");
-    if (!already) {
+    const marianDate = dateISO ? parseLocalDate(dateISO) : new Date();
+    const trimmed = scrubLoneParenLines(stripCeiMarianTail(blocks));
+    blocks.length = 0;
+    blocks.push(...trimmed);
+    if (!blocks.some((b) => b.k === "marian")) {
       blocks.push({ k: "title", text: "ANTIFONE DELLA BEATA VERGINE MARIA" });
-      blocks.push({ k: "marian", antiphons: MARIAN_ANTIPHONS });
+      blocks.push({ k: "marian", antiphons: marianAntiphonsForDate(marianDate) });
     }
   }
 
@@ -956,13 +1045,17 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId): ParsedHo
     coalesceResponsory(
       dropOrphanStarLines(
         mergeRubricPrefixLines(
-          blocks.filter((b) => {
-            if (b.k === "prose") return !isChromeText(b.text) && b.text.length > 1;
-            if (b.k === "tone") return b.intro.length > 1 && !isChromeText(b.intro);
-            if (b.k === "rubric") return !!(b.lab || b.text);
-            if (b.k === "stanza") return b.lines.length > 0;
-            return true;
-          }),
+          attachOrphanAntiphonText(
+            scrubLoneParenLines(
+              blocks.filter((b) => {
+                if (b.k === "prose") return !isChromeText(b.text) && b.text.length > 1;
+                if (b.k === "tone") return b.intro.length > 1 && !isChromeText(b.intro);
+                if (b.k === "rubric") return !!(b.lab || b.text);
+                if (b.k === "stanza") return b.lines.length > 0;
+                return true;
+              }),
+            ),
+          ),
         ),
       ),
     ),

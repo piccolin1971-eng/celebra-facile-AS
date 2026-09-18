@@ -8,7 +8,7 @@ import { computeEasterSunday } from "../liturgicalDates";
 import { getMoveableFeastsForYear } from "../moveableFeasts";
 import { getObservedSaintsForDate } from "../saintsCalendar";
 import { isSolemnityVigilEvening } from "./titles";
-import { MARIAN_ANTIPHONS } from "./bundled";
+import { marianAntiphonsForDate, scrubLoneParenLines, stripCeiMarianTail } from "./bundled";
 import type { OreBlock, ParsedHour } from "./types";
 import schemasData from "./data/complineSchemas.json";
 
@@ -62,13 +62,13 @@ export function complineNeedsCeiFetch(date: Date): boolean {
   return false;
 }
 
-function withMarian(blocks: OreBlock[]): OreBlock[] {
-  const already = blocks.some((b) => b.k === "marian");
-  if (already) return blocks;
+function withMarian(blocks: OreBlock[], date: Date): OreBlock[] {
+  const cleaned = scrubLoneParenLines(stripCeiMarianTail(blocks));
+  if (cleaned.some((b) => b.k === "marian")) return cleaned;
   return [
-    ...blocks,
+    ...cleaned,
     { k: "title", text: "ANTIFONE DELLA BEATA VERGINE MARIA" },
-    { k: "marian", antiphons: MARIAN_ANTIPHONS },
+    { k: "marian", antiphons: marianAntiphonsForDate(date) },
   ];
 }
 
@@ -77,6 +77,6 @@ export function getBundledCompline(dateISO: string): ParsedHour | null {
   if (complineNeedsCeiFetch(date)) return null;
   const pack = SCHEMAS[complineSchemaId(date)];
   if (!pack?.blocks?.length) return null;
-  const blocks = withMarian(JSON.parse(JSON.stringify(pack.blocks)) as OreBlock[]);
+  const blocks = withMarian(JSON.parse(JSON.stringify(pack.blocks)) as OreBlock[], date);
   return { hour: "compieta", blocks };
 }
