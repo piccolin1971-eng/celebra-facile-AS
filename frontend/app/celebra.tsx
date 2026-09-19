@@ -320,7 +320,12 @@ function CelebraScreenInner() {
     (patch: Partial<MassSession>) => {
       if (!session || !currentSessionTarget) return;
       keepPageOnRebuildRef.current = true;
-      const next: MassSession = { ...session, ...patch };
+      const next: MassSession = {
+        ...session,
+        ...patch,
+        // Non forzare «subito» su sessioni legacy/prepara aperte dall'indice.
+        prepSource: patch.prepSource ?? session.prepSource ?? "prepara",
+      };
       setSession(next);
       void saveSessionForTarget(currentSessionTarget, next);
       if (
@@ -734,7 +739,11 @@ function CelebraScreenInner() {
       onPatchSession={(patch) => {
         if (!session) return;
         if (!currentSessionTarget && sessionDate) {
-          const next = { ...session, ...patch };
+          const next: MassSession = {
+            ...session,
+            ...patch,
+            prepSource: patch.prepSource ?? session.prepSource ?? "prepara",
+          };
           setSession(next);
           void saveSession(sessionDate, celebrationMode, next);
           if (

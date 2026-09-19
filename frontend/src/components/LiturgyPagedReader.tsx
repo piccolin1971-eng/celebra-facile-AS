@@ -17,6 +17,7 @@ import {
   splitSegmentForPaging,
   type SegmentPackMeta,
 } from "../liturgyPaginationEngine";
+import { DEFAULT_FONT_SIZE } from "../SettingsContext";
 
 export type LiturgyPagedReaderProps = {
   segments: SegmentPackMeta[];
@@ -48,7 +49,7 @@ export function LiturgyPagedReader({
   paddingBottom = 0,
   contentContainerStyle,
   remountKey,
-  fontSize = 32,
+  fontSize = DEFAULT_FONT_SIZE,
   renderSegment,
   onPagesReady,
   onMeasuring,

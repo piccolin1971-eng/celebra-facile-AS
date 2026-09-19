@@ -17,6 +17,9 @@ export const PARCHMENT_TONE_MIN = 35;
 export const PARCHMENT_TONE_MAX = 65;
 export const PARCHMENT_TONE_DEFAULT = 50;
 
+/** Dimensione testo lettura di default (pt). */
+export const DEFAULT_FONT_SIZE = 26;
+
 interface SettingsState {
   theme: ThemeMode;
   fontSize: number; // reading text size in pt
@@ -230,7 +233,7 @@ const SettingsContext = createContext<SettingsState | null>(null);
 
 export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   const [theme, setThemeState] = useState<ThemeMode>("dark");
-  const [fontSize, setFontSizeState] = useState(32);
+  const [fontSize, setFontSizeState] = useState(DEFAULT_FONT_SIZE);
   const [highContrast, setHighContrastState] = useState(false);
   const [readingMode, setReadingModeState] = useState<ReadingMode>("tap");
   const [fontFamilyId, setFontFamilyIdState] = useState<FontFamilyId>("system");
@@ -408,7 +411,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   const fontFamily = getFontFamilyString(fontFamilyId);
   // scaledFont: UI elements scale proportionally based on reading font
   const scaledFont = (base: number) => {
-    const ratio = fontSize / 32; // 32 is default
+    const ratio = fontSize / DEFAULT_FONT_SIZE;
     return Math.round(base * ratio);
   };
 

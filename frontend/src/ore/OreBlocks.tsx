@@ -475,8 +475,8 @@ function renderBlock(
           <Text
             style={{
               fontFamily: FONT_IT,
-              fontSize: Math.round(fontSize * 1.08),
-              lineHeight: Math.round(lineHeight * 1.08),
+              fontSize: Math.round(fontSize * 1.2),
+              lineHeight: Math.round(lineHeight * 1.2),
               color: TONE_REFRAIN,
               marginTop: em(0.4),
             }}

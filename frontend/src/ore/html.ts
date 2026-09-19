@@ -1,5 +1,6 @@
 export function decodeHtmlEntities(s: string): string {
   return s
+    .replace(/&#8203;|&#x200[bB];/gi, "")
     .replace(/&nbsp;/gi, " ")
     .replace(/&#160;/g, " ")
     .replace(/&amp;/g, "&")
@@ -35,12 +36,24 @@ export function decodeHtmlEntities(s: string): string {
     .replace(/&ucirc;/gi, "û")
     .replace(/&uuml;/gi, "ü")
     .replace(/&ccedil;/gi, "ç")
+    .replace(/&Ccedil;/g, "Ç")
     .replace(/&aelig;/gi, "æ")
     .replace(/&AElig;/g, "Æ")
     .replace(/&oelig;/gi, "œ")
     .replace(/&OElig;/g, "Œ")
-    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
-    .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCharCode(parseInt(n, 16)));
+    .replace(/&#(\d+);/g, (_, n) => {
+      const code = Number(n);
+      if (code === 8203) return "";
+      if (code === 160) return " ";
+      return String.fromCharCode(code);
+    })
+    .replace(/&#x([0-9a-fA-F]+);/gi, (_, h) => {
+      const code = parseInt(h, 16);
+      if (code === 0x200b) return "";
+      if (code === 0xa0) return " ";
+      return String.fromCharCode(code);
+    })
+    .replace(/[\u200B\uFEFF\u200C\u200D]/g, "");
 }
 
 export function stripTags(html: string): string {
@@ -52,7 +65,7 @@ export function stripTags(html: string): string {
       .replace(/<[^>]*$/g, ""),
   )
     .replace(/\u00a0/g, " ")
-    .replace(/[\u200B\uFEFF]/g, "")
+    .replace(/[\u200B\uFEFF\u200C\u200D]/g, "")
     .replace(/[ \t]+\n/g, "\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim();

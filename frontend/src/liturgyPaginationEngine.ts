@@ -168,6 +168,71 @@ function nextKeepWithUnit(
   return null;
 }
 
+function pageHeightSum(
+  page: number[],
+  heights: ReadonlyMap<number, number>,
+): number {
+  let h = 0;
+  for (const i of page) h += heights.get(i) ?? 0;
+  return h;
+}
+
+/** Ultimo segmento “contenuto” (salta trailing non-packable e spacer). */
+function lastContentSlot(page: number[], segments: SegmentPackMeta[]): number {
+  for (let k = page.length - 1; k >= 0; k--) {
+    const kind = segments[page[k]]?.kind ?? "";
+    if (!isPackableSegmentKind(kind)) continue;
+    if (kind === "spacer") continue;
+    return k;
+  }
+  return -1;
+}
+
+/**
+ * Se una pagina finisce con un titolo di sezione e la successiva ha spazio,
+ * sposta il titolo (e gli spacer finali) sulla pagina dopo — senza superare usable.
+ */
+function repairTrailingOrphanTitles(
+  pages: number[][],
+  segments: SegmentPackMeta[],
+  heights: ReadonlyMap<number, number>,
+  usable: number,
+): number[][] {
+  if (pages.length < 2) return pages;
+  const out = pages.map((p) => [...p]);
+
+  for (let p = 0; p < out.length - 1; p++) {
+    let guard = 0;
+    while (guard++ < 8) {
+      const page = out[p];
+      const slot = lastContentSlot(page, segments);
+      if (slot < 0) break;
+      const titleIdx = page[slot];
+      if (!isSectionTitleKind(segments[titleIdx]?.kind ?? "")) break;
+
+      const moved: number[] = page.splice(slot);
+      const moveH = pageHeightSum(moved, heights);
+      const nextH = pageHeightSum(out[p + 1], heights);
+      if (moveH + nextH > usable) {
+        page.push(...moved);
+        break;
+      }
+      out[p + 1] = [...moved, ...out[p + 1]];
+
+      const stillPackable = page.some((i) =>
+        isPackableSegmentKind(segments[i]?.kind ?? ""),
+      );
+      if (!stillPackable) {
+        out.splice(p, 1);
+        p = Math.max(-1, p - 1);
+        break;
+      }
+    }
+  }
+
+  return out.filter((p) => p.length > 0);
+}
+
 /**
  * Impacchetta indici segmento in pagine che entrano in viewportH.
  * `kindleBreak` forza salto pagina; `packGroup` tiene segmenti adiacenti insieme
@@ -218,14 +283,24 @@ export function packSegmentIndicesIntoPages(
       continue;
     }
 
-    // Titolo + primo blocco di testo: se non entrano insieme, il titolo
-    // parte dalla pagina successiva (niente «Rito della Pace» orfano).
-    if (isSectionTitleKind(seg.kind) && !seg.packGroup?.trim() && current.length > 0) {
+    // Titolo + primo blocco: stessa pagina se entrano insieme (niente titolo orfano).
+    // Se insieme superano usable, si lascia il pack normale (corpo troppo alto).
+    if (isSectionTitleKind(seg.kind) && !seg.packGroup?.trim()) {
       const keep = nextKeepWithUnit(segments, heights, unit.nextIndex);
       if (keep) {
-        const together =
-          h + heightSpan(segments, heights, unit.nextIndex, keep.indices[0]) + Math.max(keep.height, 1);
-        if (currentH + together > usable) flush();
+        const gapH = heightSpan(segments, heights, unit.nextIndex, keep.indices[0]);
+        const together = h + gapH + Math.max(keep.height, 1);
+        if (together <= usable) {
+          if (current.length > 0 && currentH + together > usable) flush();
+          const gapIndices: number[] = [];
+          for (let g = unit.nextIndex; g < keep.indices[0]; g++) {
+            if (isPackableSegmentKind(segments[g]?.kind ?? "")) gapIndices.push(g);
+          }
+          current.push(...unit.indices, ...gapIndices, ...keep.indices);
+          currentH += together;
+          i = keep.nextIndex;
+          continue;
+        }
       }
     }
 
@@ -245,7 +320,7 @@ export function packSegmentIndicesIntoPages(
       .filter((idx) => isPackableSegmentKind(segments[idx].kind));
     return all.length ? [all] : [[]];
   }
-  return pages;
+  return repairTrailingOrphanTitles(pages, segments, heights, usable);
 }
 
 export function packedPagesCoverAllPackable(

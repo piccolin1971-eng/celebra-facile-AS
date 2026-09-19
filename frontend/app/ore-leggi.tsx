@@ -12,7 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useSettings } from "../src/SettingsContext";
+import { DEFAULT_FONT_SIZE, useSettings } from "../src/SettingsContext";
 import { resolveBodyFont } from "../src/fontFamily";
 import { FontSizeButtons } from "../src/components/FontSizeButtons";
 import { PlusMinusGlyph } from "../src/components/PlusMinusGlyph";
@@ -148,7 +148,7 @@ export default function OreLeggi() {
       rafRef.current = requestAnimationFrame(tick);
       return;
     }
-    const px = (SPD_PX[speedRef.current] || 16) * (fontSizeRef.current / 32);
+    const px = (SPD_PX[speedRef.current] || 16) * (fontSizeRef.current / DEFAULT_FONT_SIZE);
     yRef.current = Math.min(max, yRef.current + px * dt);
     scrollRef.current?.scrollTo({ y: yRef.current, animated: false });
     rafRef.current = requestAnimationFrame(tick);

@@ -17,6 +17,7 @@ import {
   loadCelebratePick,
   routeParamStr,
   routeSearchParam,
+  filterHomeSummarySessions,
   type MassSession,
   type CelebrationMode,
   parseCelebrationMode,
@@ -185,7 +186,7 @@ export default function Home() {
 
   const reloadSessions = useCallback(
     async (dateStr: string) => {
-      const saved = await loadSessionsForDate(dateStr);
+      const saved = filterHomeSummarySessions(await loadSessionsForDate(dateStr));
       setSessions(saved);
       await syncCelebrateSelection(dateStr, saved);
     },
@@ -196,7 +197,7 @@ export default function Home() {
     const entries = await Promise.all(
       STRIP_OFFSETS.map(async (offset) => {
         const dateStr = localDateStr(addDays(new Date(), offset));
-        const saved = await loadSessionsForDate(dateStr);
+        const saved = filterHomeSummarySessions(await loadSessionsForDate(dateStr));
         return [dateStr, saved.length] as const;
       }),
     );
@@ -206,7 +207,7 @@ export default function Home() {
   const handleResetSession = useCallback(
     async (mode: CelebrationMode) => {
       await clearSession(selectedDateStr, mode);
-      const remaining = await loadSessionsForDate(selectedDateStr);
+      const remaining = filterHomeSummarySessions(await loadSessionsForDate(selectedDateStr));
       setSessions(remaining);
       setPreparedCounts((prev) => ({ ...prev, [selectedDateStr]: remaining.length }));
       await syncCelebrateSelection(selectedDateStr, remaining);
@@ -724,124 +725,192 @@ export default function Home() {
           </View>
         ) : null}
 
-        {celebraSubitoEnabled ? (
-          <TouchableOpacity
-            style={[
-              styles.quickCelebraBtn,
-              styles.quickCelebraBtnOutline,
-              webClickable,
-              quickStarting && { opacity: 0.7 },
-            ]}
-            onPress={() => void openCelebraSubito()}
-            disabled={quickStarting}
-            testID="btn-celebra-subito"
-            accessibilityRole="button"
-            accessibilityLabel="Celebra subito la Messa con la liturgia di default di questo giorno"
-            accessibilityState={{ disabled: quickStarting, busy: quickStarting }}
-          >
-            {quickStarting ? (
-              <ActivityIndicator color={QUICK_CELEBRA_GOLD} />
-            ) : (
-              <HomeHeroIcon
-                variant="celebra"
-                size={Math.round(heroIconSize * 0.78)}
-                activeColor={QUICK_CELEBRA_GOLD}
-              />
-            )}
-            <Text
-              style={[styles.heroTitle, styles.heroTitleGoldOutline]}
-              numberOfLines={1}
+        {celebraSubitoEnabled && !preparaCelebraEnabled ? (
+          <View style={styles.flagStack} testID="home-subito-flag-stack">
+            <TouchableOpacity
+              style={[
+                styles.flagBtn,
+                styles.flagBtnGold,
+                webClickable,
+                quickStarting && { opacity: 0.7 },
+              ]}
+              onPress={() => void openCelebraSubito()}
+              disabled={quickStarting}
+              testID="btn-celebra-subito"
+              accessibilityRole="button"
+              accessibilityLabel="Celebra subito la Messa con la liturgia di default di questo giorno"
+              accessibilityState={{ disabled: quickStarting, busy: quickStarting }}
             >
-              {quickStarting ? "Avvio…" : "Celebra subito la Messa"}
-            </Text>
-          </TouchableOpacity>
-        ) : null}
-
-        {celebraSubitoEnabled && preparaCelebraEnabled ? (
-          <Text style={styles.orDivider} testID="home-or-divider">
-            oppure
-          </Text>
-        ) : null}
-
-        {preparaCelebraEnabled ? (
-        <View style={styles.heroRow} testID="hero-row">
-          <TouchableOpacity
-            style={[styles.heroCard, { backgroundColor: muteFill(colors.primary) }, webClickable]}
-            onPress={openMessa}
-            testID="btn-mass-of-the-day"
-            accessibilityRole="button"
-            accessibilityLabel="Scegli la liturgia"
-          >
-              <Text style={styles.heroTitle} numberOfLines={2}>
-                Scegli la liturgia
-              </Text>
-          </TouchableOpacity>
-
-          <View
-            style={styles.heroFlowArrow}
-            pointerEvents="none"
-            accessible={false}
-            testID="home-hero-flow-arrow"
-          >
-            <Ionicons
-              name="arrow-forward"
-              size={Math.round(scaledFont(22))}
-              color="#FFFFFF"
-            />
-          </View>
-
-          <TouchableOpacity
-            style={[
-              styles.heroCard,
-              hasPreparedSession
-                ? { backgroundColor: muteFill(colors.liturgicalGreen) }
-                : styles.heroCardGhost,
-              webClickable,
-            ]}
-            onPress={openCelebra}
-            disabled={!hasPreparedSession}
-            testID="btn-celebrate-clean"
-            accessibilityRole="button"
-            accessibilityLabel={
-              hasPreparedSession
-                ? celebrateButtonSub
-                  ? `Celebra la Messa: ${celebrateButtonSub}`
-                  : "Celebra la Messa, modalità lettura per l'altare"
-                : "Celebra la Messa, disponibile dopo la preparazione della liturgia"
-            }
-            accessibilityState={{ disabled: !hasPreparedSession }}
-          >
-              <Text
-                style={[
-                  styles.heroTitle,
-                  !hasPreparedSession && styles.heroTitleGhost,
-                ]}
-                numberOfLines={2}
-              >
-                Celebra la Messa
-              </Text>
-              {celebrateButtonSub ? (
-                <Text style={styles.heroSub} numberOfLines={2}>
-                  {celebrateButtonSub}
+              <View style={styles.flagLeft}>
+                {quickStarting ? (
+                  <ActivityIndicator color={QUICK_CELEBRA_GOLD} />
+                ) : (
+                  <HomeHeroIcon
+                    variant="celebra"
+                    size={Math.round(heroIconSize * 0.72)}
+                    activeColor={QUICK_CELEBRA_GOLD}
+                  />
+                )}
+                <Text style={[styles.flagTitle, styles.flagTitleGold]} numberOfLines={2}>
+                  {quickStarting ? "Avvio…" : "Celebra subito la Messa"}
                 </Text>
-              ) : null}
-          </TouchableOpacity>
-        </View>
-        ) : null}
+              </View>
+              <Ionicons
+                name="chevron-forward"
+                size={Math.round(scaledFont(26))}
+                color={QUICK_CELEBRA_GOLD}
+                style={styles.flagChevron}
+              />
+            </TouchableOpacity>
+            {oreEnabled ? (
+              <TouchableOpacity
+                style={[styles.flagBtn, styles.flagBtnOre, webClickable]}
+                onPress={openOre}
+                testID="btn-ore"
+                accessibilityRole="button"
+                accessibilityLabel="Liturgia delle Ore"
+              >
+                <View style={styles.flagLeft}>
+                  <Ionicons
+                    name="book-outline"
+                    size={Math.round(scaledFont(28))}
+                    color={ORE_BLUE}
+                  />
+                  <Text style={[styles.flagTitle, styles.flagTitleOre]} numberOfLines={2}>
+                    Liturgia delle Ore
+                  </Text>
+                </View>
+                <Ionicons
+                  name="chevron-forward"
+                  size={Math.round(scaledFont(26))}
+                  color={ORE_BLUE}
+                  style={styles.flagChevron}
+                />
+              </TouchableOpacity>
+            ) : null}
+          </View>
+        ) : (
+          <>
+            {celebraSubitoEnabled ? (
+              <TouchableOpacity
+                style={[
+                  styles.quickCelebraBtn,
+                  styles.quickCelebraBtnOutline,
+                  webClickable,
+                  quickStarting && { opacity: 0.7 },
+                ]}
+                onPress={() => void openCelebraSubito()}
+                disabled={quickStarting}
+                testID="btn-celebra-subito"
+                accessibilityRole="button"
+                accessibilityLabel="Celebra subito la Messa con la liturgia di default di questo giorno"
+                accessibilityState={{ disabled: quickStarting, busy: quickStarting }}
+              >
+                {quickStarting ? (
+                  <ActivityIndicator color={QUICK_CELEBRA_GOLD} />
+                ) : (
+                  <HomeHeroIcon
+                    variant="celebra"
+                    size={Math.round(heroIconSize * 0.78)}
+                    activeColor={QUICK_CELEBRA_GOLD}
+                  />
+                )}
+                <Text
+                  style={[styles.heroTitle, styles.heroTitleGoldOutline]}
+                  numberOfLines={1}
+                >
+                  {quickStarting ? "Avvio…" : "Celebra subito la Messa"}
+                </Text>
+              </TouchableOpacity>
+            ) : null}
 
-        {oreEnabled ? (
-        <TouchableOpacity
-          style={[styles.quickCelebraBtn, styles.oreBtnOutline, webClickable]}
-          onPress={openOre}
-          testID="btn-ore"
-          accessibilityRole="button"
-          accessibilityLabel="Liturgia delle Ore"
-        >
-          <Text style={[styles.heroTitle, styles.heroTitleBlueOutline]} numberOfLines={1}>
-            Liturgia delle Ore
-          </Text>
-        </TouchableOpacity>
-        ) : null}
+            {celebraSubitoEnabled && preparaCelebraEnabled ? (
+              <Text style={styles.orDivider} testID="home-or-divider">
+                oppure
+              </Text>
+            ) : null}
+
+            {preparaCelebraEnabled ? (
+            <View style={styles.heroRow} testID="hero-row">
+              <TouchableOpacity
+                style={[styles.heroCard, { backgroundColor: muteFill(colors.primary) }, webClickable]}
+                onPress={openMessa}
+                testID="btn-mass-of-the-day"
+                accessibilityRole="button"
+                accessibilityLabel="Scegli la liturgia"
+              >
+                  <Text style={styles.heroTitle} numberOfLines={2}>
+                    Scegli la liturgia
+                  </Text>
+              </TouchableOpacity>
+
+              <View
+                style={styles.heroFlowArrow}
+                pointerEvents="none"
+                accessible={false}
+                testID="home-hero-flow-arrow"
+              >
+                <Ionicons
+                  name="arrow-forward"
+                  size={Math.round(scaledFont(22))}
+                  color="#FFFFFF"
+                />
+              </View>
+
+              <TouchableOpacity
+                style={[
+                  styles.heroCard,
+                  hasPreparedSession
+                    ? { backgroundColor: muteFill(colors.liturgicalGreen) }
+                    : styles.heroCardGhost,
+                  webClickable,
+                ]}
+                onPress={openCelebra}
+                disabled={!hasPreparedSession}
+                testID="btn-celebrate-clean"
+                accessibilityRole="button"
+                accessibilityLabel={
+                  hasPreparedSession
+                    ? celebrateButtonSub
+                      ? `Celebra la Messa: ${celebrateButtonSub}`
+                      : "Celebra la Messa, modalità lettura per l'altare"
+                    : "Celebra la Messa, disponibile dopo la preparazione della liturgia"
+                }
+                accessibilityState={{ disabled: !hasPreparedSession }}
+              >
+                  <Text
+                    style={[
+                      styles.heroTitle,
+                      !hasPreparedSession && styles.heroTitleGhost,
+                    ]}
+                    numberOfLines={2}
+                  >
+                    Celebra la Messa
+                  </Text>
+                  {celebrateButtonSub ? (
+                    <Text style={styles.heroSub} numberOfLines={2}>
+                      {celebrateButtonSub}
+                    </Text>
+                  ) : null}
+              </TouchableOpacity>
+            </View>
+            ) : null}
+
+            {oreEnabled ? (
+            <TouchableOpacity
+              style={[styles.quickCelebraBtn, styles.oreBtnOutline, webClickable]}
+              onPress={openOre}
+              testID="btn-ore"
+              accessibilityRole="button"
+              accessibilityLabel="Liturgia delle Ore"
+            >
+              <Text style={[styles.heroTitle, styles.heroTitleBlueOutline]} numberOfLines={1}>
+                Liturgia delle Ore
+              </Text>
+            </TouchableOpacity>
+            ) : null}
+          </>
+        )}
 
         <TouchableOpacity
           style={[styles.dlCard, dlRunning && { opacity: 0.75 }, webClickable]}
@@ -980,7 +1049,10 @@ export default function Home() {
             setDatePickerVisible(false);
             setSelectedDateISO(dateISO);
             void loadSessionsForDate(dateISO).then((saved) => {
-              setPreparedCounts((prev) => ({ ...prev, [dateISO]: saved.length }));
+              setPreparedCounts((prev) => ({
+                ...prev,
+                [dateISO]: filterHomeSummarySessions(saved).length,
+              }));
             });
           }}
           onCancel={() => setDatePickerVisible(false)}
@@ -1370,6 +1442,67 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
       textAlign: "center",
       letterSpacing: 1.2,
       textTransform: "uppercase",
+    },
+    flagStack: {
+      width: "100%",
+      gap: 12,
+    },
+    flagBtn: {
+      width: "100%",
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 12,
+      minHeight: Math.round(ACTION_MIN_HEIGHT * 1.05),
+      paddingVertical: 16,
+      paddingRight: 14,
+      paddingLeft: 14,
+      borderRadius: 14,
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      borderLeftWidth: 5,
+    },
+    flagBtnGold: {
+      borderLeftColor: QUICK_CELEBRA_GOLD,
+      borderColor: "rgba(224, 180, 41, 0.35)",
+    },
+    flagBtnOre: {
+      borderLeftColor: ORE_BLUE,
+      borderColor: "rgba(77, 168, 218, 0.35)",
+    },
+    flagLeft: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 14,
+      minWidth: 0,
+    },
+    flagTitle: {
+      flex: 1,
+      flexShrink: 1,
+      fontSize: Math.round(fontSize * 1.22),
+      lineHeight: Math.round(fontSize * 1.38),
+      fontWeight: ACTION_TITLE_WEIGHT,
+      textAlign: "left",
+      letterSpacing: Math.round(fontSize * 0.15),
+      fontVariant: ["small-caps"],
+      includeFontPadding: false,
+      ...(Platform.OS === "web"
+        ? ({
+            fontVariant: "small-caps",
+          } as const)
+        : {}),
+    },
+    flagTitleGold: {
+      color: QUICK_CELEBRA_GOLD,
+    },
+    flagTitleOre: {
+      color: ORE_BLUE,
+    },
+    flagChevron: {
+      opacity: 0.7,
+      flexShrink: 0,
     },
     quickCelebraBtn: {
       width: "100%",

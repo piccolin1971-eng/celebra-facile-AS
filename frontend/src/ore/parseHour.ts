@@ -50,10 +50,42 @@ function psalmHeadFromTitle(text: string, sub = "", cite = ""): OreBlock {
 
 function tidyLitText(t: string): string {
   return t
+    .replace(/[\u200B\uFEFF\u200C\u200D]/g, "")
     .replace(/\s+/g, " ")
     .replace(/\s*\bbr\s*$/i, "")
     .replace(/\s*(?:div|span)\s+class\s*=\s*"?\s*$/i, "")
     .trim();
+}
+
+/** Maiuscola iniziale (è→È) senza toccare V./R./*†. */
+function capitalizeLitStart(t: string): string {
+  const s = tidyLitText(t);
+  if (!s || /^(V\.|R\.|\*|†|—)/.test(s)) return s;
+  const ch = s[0];
+  if (/[a-zàáâäåèéêëìíîïòóôöùúûüçœæ]/i.test(ch) && ch === ch.toLocaleLowerCase("it-IT")) {
+    return ch.toLocaleUpperCase("it-IT") + s.slice(1);
+  }
+  return s;
+}
+
+/** Antifone e primo verso dopo il titolo del salmo/cantico. */
+function capitalizePsalmOpenings(blocks: OreBlock[]): OreBlock[] {
+  const out: OreBlock[] = [];
+  for (let i = 0; i < blocks.length; i++) {
+    const b = blocks[i];
+    if (b.k === "rubric" && /ant/i.test(b.lab) && b.text) {
+      out.push({ ...b, text: capitalizeLitStart(b.text) });
+      continue;
+    }
+    if (b.k === "stanza" && out[out.length - 1]?.k === "psalmHead" && b.lines.length) {
+      const lines = [...b.lines];
+      lines[0] = capitalizeLitStart(lines[0]);
+      out.push({ ...b, lines });
+      continue;
+    }
+    out.push(b);
+  }
+  return out;
 }
 
 function extractCite(sub: string): { sub: string; cite: string } {
@@ -1041,19 +1073,21 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
     }
   }
 
-  const clean = applyTonePhrases(
-    coalesceResponsory(
-      dropOrphanStarLines(
-        mergeRubricPrefixLines(
-          attachOrphanAntiphonText(
-            scrubLoneParenLines(
-              blocks.filter((b) => {
-                if (b.k === "prose") return !isChromeText(b.text) && b.text.length > 1;
-                if (b.k === "tone") return b.intro.length > 1 && !isChromeText(b.intro);
-                if (b.k === "rubric") return !!(b.lab || b.text);
-                if (b.k === "stanza") return b.lines.length > 0;
-                return true;
-              }),
+  const clean = capitalizePsalmOpenings(
+    applyTonePhrases(
+      coalesceResponsory(
+        dropOrphanStarLines(
+          mergeRubricPrefixLines(
+            attachOrphanAntiphonText(
+              scrubLoneParenLines(
+                blocks.filter((b) => {
+                  if (b.k === "prose") return !isChromeText(b.text) && b.text.length > 1;
+                  if (b.k === "tone") return b.intro.length > 1 && !isChromeText(b.intro);
+                  if (b.k === "rubric") return !!(b.lab || b.text);
+                  if (b.k === "stanza") return b.lines.length > 0;
+                  return true;
+                }),
+              ),
             ),
           ),
         ),

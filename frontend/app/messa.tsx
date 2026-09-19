@@ -681,6 +681,7 @@ export default function MessaScreen() {
       liturgyKind: activeVotiveId ? "votive" : "calendar",
       votiveId: activeVotiveId ?? undefined,
       liturgyTitle,
+      prepSource: "prepara",
       showGloria, showCredo, showAntifone, showOrazionalePray,
       useSaintProperReadings,
       selectedOrazionaleId, selectedPrefaceId, selectedPrayerId,

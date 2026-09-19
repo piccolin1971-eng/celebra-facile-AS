@@ -137,6 +137,14 @@ export type MassSession = {
 
   votiveId?: string;
 
+  /**
+   * Origine della sessione in Home:
+   * - prepara = da «Scegli / Prepara la liturgia» → mostra il riassunto
+   * - subito = da «Celebra subito» → niente riassunto in Home
+   * Assente = sessioni vecchie: trattate come prepara.
+   */
+  prepSource?: "prepara" | "subito";
+
 };
 
 export type SessionTarget =
@@ -315,6 +323,15 @@ export async function clearVotiveSession(votiveId: string): Promise<void> {
 }
 
 
+
+/** Sessioni da mostrare nel riassunto Home (non quelle di «Celebra subito»). */
+export function isHomeSummarySession(session: MassSession): boolean {
+  return session.prepSource !== "subito";
+}
+
+export function filterHomeSummarySessions(sessions: MassSession[]): MassSession[] {
+  return sessions.filter(isHomeSummarySession);
+}
 
 function celebrationModeSortIndex(mode: CelebrationMode): number {
   if (mode === "calendar_day") return 0;

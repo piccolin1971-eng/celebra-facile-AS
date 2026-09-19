@@ -3,7 +3,10 @@ import { extractHoursBanner } from "../src/ore/html";
 import { splitPsalmTitle } from "../src/ore/bundled";
 import { hymnNeedsItalianAlternate, prependItalianHymn } from "../src/ore/hymnLang";
 import { parseLdoHymn } from "../src/ore/ldo";
-import { packSegmentIndicesIntoPages } from "../src/liturgyPaginationEngine";
+import {
+  packedPagesCoverAllPackable,
+  packSegmentIndicesIntoPages,
+} from "../src/liturgyPaginationEngine";
 import { hourHeadMeta } from "../src/ore/dayHead";
 import { ceiHourSlug, hourTitle } from "../src/ore/titles";
 import { parseLocalDate } from "../src/dateUtils";
@@ -602,6 +605,40 @@ trasformaci in tempio vivo del tuo Spirito.</div>
   const pacePage = packedPace.find((p) => p.includes(1));
   if (!pacePage || !pacePage.includes(2)) {
     fails.push(`fixture pace orfana pages=${JSON.stringify(packedPace)}`);
+  }
+
+  // Titolo che inizia pagina nuova: corpo deve restare attaccato se entra.
+  const orphanSegs = [
+    { kind: "normal", text: "fine sezione" },
+    { kind: "sectionTitle", text: "Comunione" },
+    { kind: "celebrante", text: "Ecco l'Agnello di Dio" },
+    { kind: "assemblea", text: "O Signore, non sono degno" },
+  ];
+  const orphanH = new Map<number, number>([
+    [0, 210],
+    [1, 36],
+    [2, 72],
+    [3, 48],
+  ]);
+  const packedOrphan = packSegmentIndicesIntoPages(orphanSegs, orphanH, 278, { paddingBottom: 28 });
+  const titlePage = packedOrphan.find((p) => p.includes(1));
+  if (!titlePage || !titlePage.includes(2)) {
+    fails.push(`fixture titolo orfano pages=${JSON.stringify(packedOrphan)}`);
+  }
+  // Corpo troppo alto: titolo può restare solo (non forzare overflow).
+  const tallH = new Map<number, number>([
+    [0, 40],
+    [1, 36],
+    [2, 240],
+  ]);
+  const tallSegs = [
+    { kind: "normal", text: "x" },
+    { kind: "sectionTitle", text: "Titolo" },
+    { kind: "celebrante", text: "corpo alto" },
+  ];
+  const packedTall = packSegmentIndicesIntoPages(tallSegs, tallH, 278, { paddingBottom: 28 });
+  if (!packedPagesCoverAllPackable(packedTall, tallSegs)) {
+    fails.push(`fixture tall orphan cover ${JSON.stringify(packedTall)}`);
   }
 
   const latinH = {

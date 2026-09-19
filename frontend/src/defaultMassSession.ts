@@ -41,6 +41,7 @@ export function buildDefaultMassSession(args: {
     celebrationMode: mode,
     liturgyKind: "calendar",
     liturgyTitle,
+    prepSource: "subito",
     showGloria: toggleDefaults.showGloria,
     showCredo: toggleDefaults.showCredo,
     showAntifone: false,
@@ -64,7 +65,8 @@ export function buildDefaultMassSession(args: {
   };
 }
 
-/** Se manca una sessione per data+modo, la crea con i default del giorno. Non sovrascrive. */
+/** Se manca una sessione per data+modo, la crea con i default del giorno (prepSource: subito).
+ *  Non sovrascrive: prefazio/PE già scelti restano per tutta la giornata. */
 export async function ensureQuickCelebrateSession(
   dateISO: string,
   mode: CelebrationMode,
