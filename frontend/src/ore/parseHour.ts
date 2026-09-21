@@ -9,6 +9,7 @@ import {
   topLevelNodes,
   type HtmlNode,
 } from "./html";
+import { normalizeTypewriterCapAccents } from "../litTextNormalize";
 import { hymnConsume, isExactInnoTitle, isInnoMarkerNode, parseCeiHymnsHtml } from "./hymns";
 import {
   applyBundledGospelCanticles,
@@ -49,12 +50,14 @@ function psalmHeadFromTitle(text: string, sub = "", cite = ""): OreBlock {
 }
 
 function tidyLitText(t: string): string {
-  return t
-    .replace(/[\u200B\uFEFF\u200C\u200D]/g, "")
-    .replace(/\s+/g, " ")
-    .replace(/\s*\bbr\s*$/i, "")
-    .replace(/\s*(?:div|span)\s+class\s*=\s*"?\s*$/i, "")
-    .trim();
+  return normalizeTypewriterCapAccents(
+    t
+      .replace(/[\u200B\uFEFF\u200C\u200D]/g, "")
+      .replace(/\s+/g, " ")
+      .replace(/\s*\bbr\s*$/i, "")
+      .replace(/\s*(?:div|span)\s+class\s*=\s*"?\s*$/i, "")
+      .trim(),
+  );
 }
 
 /** Maiuscola iniziale (è→È) senza toccare V./R./*†. */

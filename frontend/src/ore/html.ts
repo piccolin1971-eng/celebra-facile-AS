@@ -1,59 +1,79 @@
+import { normalizeTypewriterCapAccents } from "../litTextNormalize";
+
 export function decodeHtmlEntities(s: string): string {
-  return s
-    .replace(/&#8203;|&#x200[bB];/gi, "")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&#160;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;|&apos;/g, "'")
-    .replace(/&laquo;/gi, "«")
-    .replace(/&raquo;/gi, "»")
-    .replace(/&rsquo;/gi, "’")
-    .replace(/&lsquo;/gi, "‘")
-    .replace(/&ldquo;/gi, "“")
-    .replace(/&rdquo;/gi, "”")
-    .replace(/&ndash;/gi, "–")
-    .replace(/&mdash;/gi, "—")
-    .replace(/&dagger;/gi, "†")
-    .replace(/&Dagger;/g, "‡")
-    .replace(/&hellip;/gi, "…")
-    .replace(/&agrave;/gi, "à")
-    .replace(/&aacute;/gi, "á")
-    .replace(/&acirc;/gi, "â")
-    .replace(/&egrave;/gi, "è")
-    .replace(/&eacute;/gi, "é")
-    .replace(/&ecirc;/gi, "ê")
-    .replace(/&igrave;/gi, "ì")
-    .replace(/&iacute;/gi, "í")
-    .replace(/&icirc;/gi, "î")
-    .replace(/&ograve;/gi, "ò")
-    .replace(/&oacute;/gi, "ó")
-    .replace(/&ocirc;/gi, "ô")
-    .replace(/&ugrave;/gi, "ù")
-    .replace(/&uacute;/gi, "ú")
-    .replace(/&ucirc;/gi, "û")
-    .replace(/&uuml;/gi, "ü")
-    .replace(/&ccedil;/gi, "ç")
-    .replace(/&Ccedil;/g, "Ç")
-    .replace(/&aelig;/gi, "æ")
-    .replace(/&AElig;/g, "Æ")
-    .replace(/&oelig;/gi, "œ")
-    .replace(/&OElig;/g, "Œ")
-    .replace(/&#(\d+);/g, (_, n) => {
-      const code = Number(n);
-      if (code === 8203) return "";
-      if (code === 160) return " ";
-      return String.fromCharCode(code);
-    })
-    .replace(/&#x([0-9a-fA-F]+);/gi, (_, h) => {
-      const code = parseInt(h, 16);
-      if (code === 0x200b) return "";
-      if (code === 0xa0) return " ";
-      return String.fromCharCode(code);
-    })
-    .replace(/[\u200B\uFEFF\u200C\u200D]/g, "");
+  return normalizeTypewriterCapAccents(
+    s
+      .replace(/&#8203;|&#x200[bB];/gi, "")
+      .replace(/&nbsp;/gi, " ")
+      .replace(/&#160;/g, " ")
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;|&apos;/g, "'")
+      .replace(/&laquo;/gi, "«")
+      .replace(/&raquo;/gi, "»")
+      .replace(/&rsquo;/gi, "’")
+      .replace(/&lsquo;/gi, "‘")
+      .replace(/&ldquo;/gi, "“")
+      .replace(/&rdquo;/gi, "”")
+      .replace(/&ndash;/gi, "–")
+      .replace(/&mdash;/gi, "—")
+      .replace(/&dagger;/gi, "†")
+      .replace(/&Dagger;/g, "‡")
+      .replace(/&hellip;/gi, "…")
+      // Maiuscole prima delle minuscole (evita /i che mappa &Egrave; → è).
+      .replace(/&Agrave;/g, "À")
+      .replace(/&agrave;/gi, "à")
+      .replace(/&Aacute;/g, "Á")
+      .replace(/&aacute;/gi, "á")
+      .replace(/&Acirc;/g, "Â")
+      .replace(/&acirc;/gi, "â")
+      .replace(/&Egrave;/g, "È")
+      .replace(/&egrave;/gi, "è")
+      .replace(/&Eacute;/g, "É")
+      .replace(/&eacute;/gi, "é")
+      .replace(/&Ecirc;/g, "Ê")
+      .replace(/&ecirc;/gi, "ê")
+      .replace(/&Igrave;/g, "Ì")
+      .replace(/&igrave;/gi, "ì")
+      .replace(/&Iacute;/g, "Í")
+      .replace(/&iacute;/gi, "í")
+      .replace(/&Icirc;/g, "Î")
+      .replace(/&icirc;/gi, "î")
+      .replace(/&Ograve;/g, "Ò")
+      .replace(/&ograve;/gi, "ò")
+      .replace(/&Oacute;/g, "Ó")
+      .replace(/&oacute;/gi, "ó")
+      .replace(/&Ocirc;/g, "Ô")
+      .replace(/&ocirc;/gi, "ô")
+      .replace(/&Ugrave;/g, "Ù")
+      .replace(/&ugrave;/gi, "ù")
+      .replace(/&Uacute;/g, "Ú")
+      .replace(/&uacute;/gi, "ú")
+      .replace(/&Ucirc;/g, "Û")
+      .replace(/&ucirc;/gi, "û")
+      .replace(/&uuml;/gi, "ü")
+      .replace(/&ccedil;/gi, "ç")
+      .replace(/&Ccedil;/g, "Ç")
+      .replace(/&aelig;/gi, "æ")
+      .replace(/&AElig;/g, "Æ")
+      .replace(/&oelig;/gi, "œ")
+      .replace(/&OElig;/g, "Œ")
+      .replace(/&#(\d+);/g, (_, n) => {
+        const code = Number(n);
+        if (code === 8203) return "";
+        if (code === 160) return " ";
+        return String.fromCharCode(code);
+      })
+      .replace(/&#x([0-9a-fA-F]+);/gi, (_, h) => {
+        const code = parseInt(h, 16);
+        if (code === 0x200b) return "";
+        if (code === 0xa0) return " ";
+        return String.fromCharCode(code);
+      })
+      .replace(/[\u200B\uFEFF\u200C\u200D]/g, ""),
+  );
 }
 
 export function stripTags(html: string): string {

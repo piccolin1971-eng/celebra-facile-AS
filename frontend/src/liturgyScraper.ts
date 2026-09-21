@@ -16,6 +16,7 @@ import {
 import { getVigilEveContext } from "./vigilCatalog";
 import type { CelebrationMode } from "./massSession";
 import { localDateStr, parseLocalDate } from "./dateUtils";
+import { normalizeTypewriterCapAccents } from "./litTextNormalize";
 
 export type Reading = {
   type: string;
@@ -71,25 +72,33 @@ const ORDER = [
 ];
 
 function decodeHtmlEntities(s: string): string {
-  return s
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;|&apos;/g, "'")
-    .replace(/&rsquo;/g, "’")
-    .replace(/&lsquo;/g, "‘")
-    .replace(/&ldquo;/g, "“")
-    .replace(/&rdquo;/g, "”")
-    .replace(/&egrave;/g, "è")
-    .replace(/&eacute;/g, "é")
-    .replace(/&agrave;/g, "à")
-    .replace(/&ograve;/g, "ò")
-    .replace(/&ugrave;/g, "ù")
-    .replace(/&igrave;/g, "ì")
-    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(parseInt(n, 10)))
-    .replace(/&#x([0-9a-fA-F]+);/g, (_, h) => String.fromCharCode(parseInt(h, 16)));
+  return normalizeTypewriterCapAccents(
+    s
+      .replace(/&nbsp;/g, " ")
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;|&apos;/g, "'")
+      .replace(/&rsquo;/g, "’")
+      .replace(/&lsquo;/g, "‘")
+      .replace(/&ldquo;/g, "“")
+      .replace(/&rdquo;/g, "”")
+      .replace(/&Egrave;/g, "È")
+      .replace(/&egrave;/g, "è")
+      .replace(/&Eacute;/g, "É")
+      .replace(/&eacute;/g, "é")
+      .replace(/&Agrave;/g, "À")
+      .replace(/&agrave;/g, "à")
+      .replace(/&Ograve;/g, "Ò")
+      .replace(/&ograve;/g, "ò")
+      .replace(/&Ugrave;/g, "Ù")
+      .replace(/&ugrave;/g, "ù")
+      .replace(/&Igrave;/g, "Ì")
+      .replace(/&igrave;/g, "ì")
+      .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(parseInt(n, 10)))
+      .replace(/&#x([0-9a-fA-F]+);/g, (_, h) => String.fromCharCode(parseInt(h, 16))),
+  );
 }
 
 function stripTags(html: string, insertNewlines = true): string {
