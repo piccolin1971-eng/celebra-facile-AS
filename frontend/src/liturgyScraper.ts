@@ -96,6 +96,14 @@ function decodeHtmlEntities(s: string): string {
       .replace(/&ugrave;/g, "ù")
       .replace(/&Igrave;/g, "Ì")
       .replace(/&igrave;/g, "ì")
+      .replace(/&Uuml;/g, "Ü")
+      .replace(/&uuml;/gi, "ü")
+      .replace(/&Iuml;/g, "Ï")
+      .replace(/&iuml;/gi, "ï")
+      .replace(/&Auml;/g, "Ä")
+      .replace(/&auml;/gi, "ä")
+      .replace(/&Ouml;/g, "Ö")
+      .replace(/&ouml;/gi, "ö")
       .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(parseInt(n, 10)))
       .replace(/&#x([0-9a-fA-F]+);/g, (_, h) => String.fromCharCode(parseInt(h, 16))),
   );

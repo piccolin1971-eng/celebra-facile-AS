@@ -53,13 +53,20 @@ export function decodeHtmlEntities(s: string): string {
       .replace(/&uacute;/gi, "ú")
       .replace(/&Ucirc;/g, "Û")
       .replace(/&ucirc;/gi, "û")
+      .replace(/&Uuml;/g, "Ü")
       .replace(/&uuml;/gi, "ü")
-      .replace(/&ccedil;/gi, "ç")
+      .replace(/&Iuml;/g, "Ï")
+      .replace(/&iuml;/gi, "ï")
+      .replace(/&Auml;/g, "Ä")
+      .replace(/&auml;/gi, "ä")
+      .replace(/&Ouml;/g, "Ö")
+      .replace(/&ouml;/gi, "ö")
       .replace(/&Ccedil;/g, "Ç")
-      .replace(/&aelig;/gi, "æ")
+      .replace(/&ccedil;/gi, "ç")
       .replace(/&AElig;/g, "Æ")
-      .replace(/&oelig;/gi, "œ")
+      .replace(/&aelig;/gi, "æ")
       .replace(/&OElig;/g, "Œ")
+      .replace(/&oelig;/gi, "œ")
       .replace(/&#(\d+);/g, (_, n) => {
         const code = Number(n);
         if (code === 8203) return "";

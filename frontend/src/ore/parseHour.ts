@@ -113,37 +113,55 @@ function indentHang(spaces: number): number {
   return 0;
 }
 
-function coalesceCeiVerseLines(inner: string): VerseLine[] {
-  const text = decodeHtmlEntities(inner.replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, "")).replace(
-    /\u00a0/g,
-    " ",
-  );
-  const rawLines = text.split(/\n/);
-  const merged: VerseLine[] = [];
-  for (const raw of rawLines) {
-    if (!raw.trim()) continue;
-    const spaces = (raw.match(/^[ \t]+/) || [""])[0].length;
-    const indent = spaces >= 2;
-    const t = raw.replace(/\s+/g, " ").trim();
-    if (!t) continue;
-    const prev = merged[merged.length - 1];
-    const joinWrap =
-      indent &&
-      prev &&
-      !/[*†]\s*$/.test(prev.text) &&
-      prev.text.length >= 40 &&
-      !/^—/.test(t) &&
-      !/^(V\.|R\.|Ant\.)/i.test(t);
-    if (joinWrap) {
-      prev.text = `${prev.text} ${t}`;
-      continue;
+/**
+ * Spezza un lo_versetto CEI in più strofe se ci sono <br><br> (riga vuota voluta).
+ * Un solo <br> (anche seguito da \\n nel HTML) non spezza.
+ * Es. cantico Tb: «Convertitevi…» e «e allora egli…» nello stesso div.
+ */
+function coalesceCeiVerseGroups(inner: string): VerseLine[][] {
+  const withBreaks = inner.replace(/<br\s*\/?>\s*<br\s*\/?>/gi, "{{STANZA_BREAK}}");
+  const text = decodeHtmlEntities(
+    withBreaks.replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, ""),
+  ).replace(/\u00a0/g, " ");
+  const chunks = text.split("{{STANZA_BREAK}}");
+  const groups: VerseLine[][] = [];
+  for (const chunk of chunks) {
+    const rawLines = chunk.split(/\n/);
+    const merged: VerseLine[] = [];
+    for (const raw of rawLines) {
+      if (!raw.trim()) continue;
+      const spaces = (raw.match(/^[ \t]+/) || [""])[0].length;
+      const indent = spaces >= 2;
+      const t = raw.replace(/\s+/g, " ").trim();
+      if (!t) continue;
+      const prev = merged[merged.length - 1];
+      const joinWrap =
+        indent &&
+        prev &&
+        !/[*†]\s*$/.test(prev.text) &&
+        prev.text.length >= 40 &&
+        !/^—/.test(t) &&
+        !/^(V\.|R\.|Ant\.)/i.test(t);
+      if (joinWrap) {
+        prev.text = `${prev.text} ${t}`;
+        continue;
+      }
+      let hang = indentHang(spaces);
+      if (/^—/.test(t)) hang = Math.max(hang, 1);
+      if (prev && /[*†]\s*$/.test(prev.text)) hang = Math.max(hang, 1);
+      merged.push({ text: t, hang });
     }
-    let hang = indentHang(spaces);
-    if (/^—/.test(t)) hang = Math.max(hang, 1);
-    if (prev && /[*†]\s*$/.test(prev.text)) hang = Math.max(hang, 1);
-    merged.push({ text: t, hang });
+    if (merged.length) groups.push(mergeLoneRubricLines(merged));
   }
-  return mergeLoneRubricLines(merged);
+  return groups;
+}
+
+function blocksFromCoalescedVersetto(inner: string): OreBlock[] {
+  const out: OreBlock[] = [];
+  for (const group of coalesceCeiVerseGroups(inner)) {
+    out.push(...blocksFromVerseLines(group));
+  }
+  return out;
 }
 
 function parseRubricLine(inner: string): OreBlock | null {
@@ -158,6 +176,19 @@ function normalizeLab(raw: string): string {
   if (/^V\.?$/i.test(t)) return "V.";
   if (/^R\.?$/i.test(t)) return "R.";
   return t;
+}
+
+function isAntiphonLabel(t: string): boolean {
+  const s = t.replace(/\s+/g, " ").trim();
+  return /^\d+\s*ant\.$/i.test(s) || /^Ant\.\s*al\s+Ben\.$/i.test(s) || /^Ant\.$/i.test(s);
+}
+
+/** †/* isolati in lo_rosso: sul CEI a volte finiscono nell’antifona e bloccano il parse. */
+function stripDecorativeRosso(inner: string): string {
+  return inner.replace(
+    /<div[^>]*class="[^"]*lo_rosso[^"]*"[^>]*>\s*(?:&dagger;|†|\*|&nbsp;|\s)*<\/div>/gi,
+    "",
+  );
 }
 
 function consumeSubAfterPsalm(nodes: HtmlNode[], i: number): { sub: string; cite: string; skip: number } {
@@ -263,7 +294,7 @@ function flattenKeepText(nodes: HtmlNode[]): HtmlNode[] {
 }
 
 function blocksFromAntiphonal(inner: string): OreBlock[] {
-  const nodes = topLevelNodes(inner);
+  const nodes = topLevelNodes(stripDecorativeRosso(inner));
   const out: OreBlock[] = [];
   let lab = "";
   let acc: string[] = [];
@@ -276,10 +307,14 @@ function blocksFromAntiphonal(inner: string): OreBlock[] {
     acc = [];
   };
   for (const n of nodes) {
-    if (n.kind === "el" && hasClass(n.cls, "lo_antifona")) {
-      if (lab || acc.length) flush();
-      lab = stripTags(n.inner);
-      continue;
+    if (n.kind === "el" && (hasClass(n.cls, "lo_antifona") || hasClass(n.cls, "lo_rosso"))) {
+      const raw = stripTags(n.inner).replace(/\s+/g, " ").trim();
+      if (!raw || raw === "*" || raw === "†") continue;
+      if (hasClass(n.cls, "lo_antifona") || isAntiphonLabel(raw) || /^(V\.?|R\.?)$/i.test(raw)) {
+        if (lab || acc.length) flush();
+        lab = raw;
+        continue;
+      }
     }
     if (n.kind === "br") continue;
     if (n.kind === "text") {
@@ -289,7 +324,7 @@ function blocksFromAntiphonal(inner: string): OreBlock[] {
     }
     if (n.kind === "el") {
       const t = stripTags(n.inner);
-      if (t) acc.push(t);
+      if (t && t !== "*" && t !== "†") acc.push(t);
     }
   }
   flush();
@@ -302,6 +337,7 @@ function serializeRosso(inner: string): string {
     if (t === "*" || t === "†") return ` ${t} `;
     if (/^R\.?$/i.test(t)) return "\nR. ";
     if (/^V\.?$/i.test(t)) return "\nV. ";
+    if (isAntiphonLabel(t)) return `\n${t}\n`;
     if (t === "—" || t === "–" || t === "-") return "\n— ";
     return ` ${t} `;
   });
@@ -336,6 +372,16 @@ function blocksFromVerseLines(lines: VerseLine[]): OreBlock[] {
     .map((l) => ({ ...l, text: tidyLitText(l.text) }))
     .filter((l) => l.text && !isChromeText(l.text));
   if (!kept.length) return [];
+  // «3 ant.» (spesso in lo_rosso) + testo senza *† → antifona in riga, come 1/2 ant.
+  if (isAntiphonLabel(kept[0].text)) {
+    const lab = normalizeLab(kept[0].text);
+    const rest = kept.slice(1);
+    if (!rest.length) return [{ k: "rubric", lab, text: "" }];
+    if (!rest.some((l) => /[*†]/.test(l.text))) {
+      return [{ k: "rubric", lab, text: tidyLitText(rest.map((l) => l.text).join(" ")) }];
+    }
+    return [{ k: "rubric", lab, text: "" }, stanzaFromLines(rest)];
+  }
   if (kept.some((l) => /^—/.test(l.text))) return splitDashStanzas(kept.map((l) => l.text));
   if (kept.length === 1 && !/[*†]/.test(kept[0].text) && !/^(V\.|R\.)/.test(kept[0].text)) {
     return [{ k: "prose", text: kept[0].text }];
@@ -662,26 +708,29 @@ function mergeRubricPrefixLines(blocks: OreBlock[]): OreBlock[] {
   });
 }
 
-/** Unisce «3 ant.» vuota + strofa successiva senza *† (testo antifona fuori dal div CEI). */
+/** Unisce «3 ant.» vuota / strofa-sola + testo successivo senza *† (testo fuori dal div CEI). */
 function attachOrphanAntiphonText(blocks: OreBlock[]): OreBlock[] {
   const out: OreBlock[] = [];
   for (let i = 0; i < blocks.length; i++) {
     const b = blocks[i];
     const next = blocks[i + 1];
-    if (
-      b.k === "rubric" &&
-      /ant/i.test(b.lab) &&
-      !b.text &&
-      next?.k === "stanza"
-    ) {
-      const joined = next.lines.join(" ").replace(/\s+/g, " ").trim();
+    const emptyRubric =
+      b.k === "rubric" && /ant/i.test(b.lab) && !b.text && next?.k === "stanza";
+    const loneLabelStanza =
+      b.k === "stanza" &&
+      b.lines.length === 1 &&
+      isAntiphonLabel(b.lines[0]) &&
+      next?.k === "stanza";
+    if (emptyRubric || loneLabelStanza) {
+      const lab = b.k === "rubric" ? b.lab : normalizeLab(b.lines[0]);
+      const joined = next!.lines.join(" ").replace(/\s+/g, " ").trim();
       if (
         joined.length > 0 &&
         joined.length < 180 &&
         !/[*†]/.test(joined) &&
-        !next.lines.some((l) => /Gloria al Padre/i.test(l))
+        !next!.lines.some((l) => /Gloria al Padre/i.test(l))
       ) {
-        out.push({ k: "rubric", lab: b.lab, text: joined });
+        out.push({ k: "rubric", lab, text: joined });
         i += 1;
         continue;
       }
@@ -740,6 +789,7 @@ function coalesceResponsory(blocks: OreBlock[]): OreBlock[] {
 }
 
 function blocksFromVersetto(inner: string): OreBlock[] {
+  inner = stripDecorativeRosso(inner);
   inner = inner.replace(
     /<div[^>]*class="[^"]*lo_antifona[^"]*"[^>]*>([\s\S]*?)<\/div>/gi,
     (full, body) => {
@@ -778,7 +828,7 @@ function blocksFromVersetto(inner: string): OreBlock[] {
         acc = "";
         return;
       }
-      out.push(...blocksFromVerseLines(coalesceCeiVerseLines(serializeRosso(acc))));
+      out.push(...blocksFromCoalescedVersetto(serializeRosso(acc)));
       acc = "";
     };
     for (const n of nodes) {
@@ -809,8 +859,10 @@ function blocksFromVersetto(inner: string): OreBlock[] {
     flushAcc();
     return out;
   }
-  if (/lo_antifona/.test(inner) && !/lo_rosso/.test(inner)) {
-    return blocksFromAntiphonal(inner);
+  // Anche con lo_rosso residuo (es. † spuri): se c’è lo_antifona è un’antifona.
+  if (/lo_antifona/.test(inner) || /lo_rosso[^>]*>\s*\d+\s*ant\./i.test(inner)) {
+    const antBlocks = blocksFromAntiphonal(inner);
+    if (antBlocks.some((b) => b.k === "rubric" && /ant/i.test(b.lab))) return antBlocks;
   }
   const subMatch = inner.match(/<div[^>]*class="[^"]*lo_sottotitolo[^"]*"[^>]*>([\s\S]*?)<\/div>/i);
   const italics: string[] = [];
@@ -822,8 +874,7 @@ function blocksFromVersetto(inner: string): OreBlock[] {
     if (t) italics.push(t);
     return " ";
   });
-  const lines = coalesceCeiVerseLines(serializeRosso(withoutSub));
-  const out = blocksFromVerseLines(lines);
+  const out = blocksFromCoalescedVersetto(serializeRosso(withoutSub));
   const refrain = (subMatch ? stripTags(subMatch[1]).replace(/\s+/g, " ").trim() : "") || italics.join(" ");
   if (refrain) out.push({ k: "sub", text: refrain });
   return out;
