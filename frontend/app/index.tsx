@@ -1085,13 +1085,13 @@ export default function Home() {
           if (!updateInfo) return;
           setUpdateBusy(true);
           void (async () => {
-            const ok = await openApkDownload(updateInfo);
-            setUpdateBusy(false);
-            if (!ok) {
-              Alert.alert(
-                "Download",
-                "Download non riuscito. Puoi installare l’APK dalla Release su GitHub oppure riprovare.",
-              );
+            try {
+              await openApkDownload(updateInfo);
+            } catch (e) {
+              const msg = e instanceof Error ? e.message : "Download o installazione non riuscita.";
+              Alert.alert("Aggiornamento", msg);
+            } finally {
+              setUpdateBusy(false);
             }
           })();
         }}

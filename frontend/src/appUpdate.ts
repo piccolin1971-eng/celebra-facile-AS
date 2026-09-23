@@ -4,10 +4,15 @@
  *
  * Download in-app + Intent install: evita il browser GitHub (login / soft-wall).
  */
-import { Platform, Linking } from "react-native";
+import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
-import { cacheDirectory, downloadAsync, getContentUriAsync } from "expo-file-system/legacy";
+import {
+  cacheDirectory,
+  downloadAsync,
+  getContentUriAsync,
+  getInfoAsync,
+} from "expo-file-system/legacy";
 import * as IntentLauncher from "expo-intent-launcher";
 
 const DISMISS_KEY = "apk_update_dismissed_code";
@@ -144,35 +149,64 @@ export async function dismissUpdateUntil(versionCode: number): Promise<void> {
 
 /**
  * Scarica l'APK in cache e apre l'installer Android (senza browser GitHub).
- * Fallback: apre l'URL nel browser solo se il download in-app fallisce.
+ * Non apre mai github.com nel browser: lì spesso chiede login.
+ * @throws Error con messaggio utente se fallisce
  */
 export async function openApkDownload(info: AppUpdateInfo): Promise<boolean> {
-  const url = info.apkUrl || info.releaseUrl;
-  if (!url) return false;
+  if (Platform.OS !== "android") return false;
+  const url = info.apkUrl;
+  if (!url) throw new Error("Link APK mancante.");
+  if (!cacheDirectory) throw new Error("Cache non disponibile sul dispositivo.");
 
-  if (Platform.OS === "android") {
-    try {
-      const dest = `${cacheDirectory}celebra-update-v${info.versionCode}.apk`;
-      const dl = await downloadAsync(url, dest);
-      if (!dl?.uri) throw new Error("download vuoto");
-      const contentUri = await getContentUriAsync(dl.uri);
-      await IntentLauncher.startActivityAsync("android.intent.action.VIEW", {
-        data: contentUri,
-        flags: 1,
-        type: "application/vnd.android.package-archive",
-      });
-      return true;
-    } catch {
-      /* fallback browser sotto */
-    }
-  }
+  const dest = `${cacheDirectory}celebra-update-v${info.versionCode}.apk`;
 
+  // 1) Risolvi redirect GitHub → CDN senza scaricare il body
+  let downloadUrl = url;
   try {
-    const can = await Linking.canOpenURL(url);
-    if (!can) return false;
-    await Linking.openURL(url);
-    return true;
+    const head = await fetch(url, {
+      method: "HEAD",
+      headers: { Accept: "application/octet-stream,*/*" },
+    });
+    if (typeof head.url === "string" && /^https?:\/\//i.test(head.url)) {
+      downloadUrl = head.url;
+    }
   } catch {
-    return false;
+    downloadUrl = url;
   }
+
+  // 2) Download in cache
+  const dl = await downloadAsync(downloadUrl, dest, {
+    headers: {
+      Accept: "application/vnd.android.package-archive,application/octet-stream,*/*",
+      "User-Agent": "CelebraPregaFacile-Android",
+    },
+  });
+  if (!dl?.uri) throw new Error("Download APK non riuscito.");
+
+  const meta = await getInfoAsync(dl.uri, { size: true });
+  const size = meta.exists && "size" in meta ? Number(meta.size || 0) : 0;
+  // APK reale ~50MB; una pagina di login HTML è pochi KB
+  if (!meta.exists || size < 1_000_000) {
+    throw new Error(
+      "Il file scaricato non è un APK valido (possibile blocco di rete). Riprova o installa dalla Release.",
+    );
+  }
+
+  // 3) Apri installer di sistema con content://
+  const contentUri = await getContentUriAsync(dl.uri);
+  try {
+    await IntentLauncher.startActivityAsync("android.intent.action.VIEW", {
+      data: contentUri,
+      flags: 1, // FLAG_GRANT_READ_URI_PERMISSION
+      type: "application/vnd.android.package-archive",
+    });
+  } catch {
+    // Alcuni OEM preferiscono INSTALL_PACKAGE
+    await IntentLauncher.startActivityAsync("android.intent.action.INSTALL_PACKAGE", {
+      data: contentUri,
+      flags: 1,
+      type: "application/vnd.android.package-archive",
+    });
+  }
+  return true;
 }

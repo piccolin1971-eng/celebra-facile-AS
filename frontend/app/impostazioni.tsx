@@ -389,10 +389,13 @@ export default function Impostazioni() {
           if (!updateInfo) return;
           setUpdateBusy(true);
           void (async () => {
-            const ok = await openApkDownload(updateInfo);
-            setUpdateBusy(false);
-            if (!ok) {
-              Alert.alert("Download", "Non riesco ad aprire il link dell’APK.");
+            try {
+              await openApkDownload(updateInfo);
+            } catch (e) {
+              const msg = e instanceof Error ? e.message : "Download o installazione non riuscita.";
+              Alert.alert("Aggiornamento", msg);
+            } finally {
+              setUpdateBusy(false);
             }
           })();
         }}
