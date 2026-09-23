@@ -1,10 +1,14 @@
 /**
  * Aggiornamento APK guidato (sideload).
  * Fail-soft: errori di rete/API non bloccano l'app.
+ *
+ * Download in-app + Intent install: evita il browser GitHub (login / soft-wall).
  */
 import { Platform, Linking } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
+import { cacheDirectory, downloadAsync, getContentUriAsync } from "expo-file-system/legacy";
+import * as IntentLauncher from "expo-intent-launcher";
 
 const DISMISS_KEY = "apk_update_dismissed_code";
 const DEFAULT_REPO = "piccolin1971-eng/celebra-facile-AS";
@@ -138,9 +142,32 @@ export async function dismissUpdateUntil(versionCode: number): Promise<void> {
   }
 }
 
+/**
+ * Scarica l'APK in cache e apre l'installer Android (senza browser GitHub).
+ * Fallback: apre l'URL nel browser solo se il download in-app fallisce.
+ */
 export async function openApkDownload(info: AppUpdateInfo): Promise<boolean> {
+  const url = info.apkUrl || info.releaseUrl;
+  if (!url) return false;
+
+  if (Platform.OS === "android") {
+    try {
+      const dest = `${cacheDirectory}celebra-update-v${info.versionCode}.apk`;
+      const dl = await downloadAsync(url, dest);
+      if (!dl?.uri) throw new Error("download vuoto");
+      const contentUri = await getContentUriAsync(dl.uri);
+      await IntentLauncher.startActivityAsync("android.intent.action.VIEW", {
+        data: contentUri,
+        flags: 1,
+        type: "application/vnd.android.package-archive",
+      });
+      return true;
+    } catch {
+      /* fallback browser sotto */
+    }
+  }
+
   try {
-    const url = info.apkUrl || info.releaseUrl;
     const can = await Linking.canOpenURL(url);
     if (!can) return false;
     await Linking.openURL(url);

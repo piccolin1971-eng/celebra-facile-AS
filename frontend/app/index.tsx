@@ -1090,7 +1090,7 @@ export default function Home() {
             if (!ok) {
               Alert.alert(
                 "Download",
-                "Non riesco ad aprire il link dell’APK. Riprova da Impostazioni oppure dalla pagina Release su GitHub.",
+                "Download non riuscito. Puoi installare l’APK dalla Release su GitHub oppure riprovare.",
               );
             }
           })();

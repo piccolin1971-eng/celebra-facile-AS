@@ -46,14 +46,14 @@ export function AppUpdateModal({ visible, info, busy, onUpdate, onLater, colors 
             </Text>
           ) : (
             <Text style={styles.body}>
-              Scarica l’APK e conferma «Installa» quando Android lo chiede. Impostazioni e
-              liturgie scaricate restano.
+              Tocca «Aggiorna ora»: l’app scarica l’APK e chiede a Android di installarlo.
+              Impostazioni e liturgie scaricate restano.
             </Text>
           )}
           <View style={styles.steps}>
-            <Text style={styles.step}>1. Tocca «Aggiorna ora»</Text>
-            <Text style={styles.step}>2. Scarica il file APK</Text>
-            <Text style={styles.step}>3. Tocca Installa (conferma Android)</Text>
+            <Text style={styles.step}>1. Tocca «Aggiorna ora» (attendi il download)</Text>
+            <Text style={styles.step}>2. Conferma «Installa» quando Android lo chiede</Text>
+            <Text style={styles.step}>3. Se richiesto, abilita installazione da questa app</Text>
           </View>
           <TouchableOpacity
             style={[styles.primaryBtn, busy && { opacity: 0.6 }]}
