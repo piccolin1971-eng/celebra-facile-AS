@@ -90,28 +90,34 @@ async function enrichFromManifest(info: ParsedRelease): Promise<AppUpdateInfo> {
   }
 }
 
-/** Controlla GitHub Releases. Null se non c'è update o in caso di errore. */
+/** Controlla GitHub Releases. Null = nessuno update (o non supportato). Throw su errore rete/API. */
 export async function checkForAppUpdate(): Promise<AppUpdateInfo | null> {
   if (!isAppUpdateSupported()) return null;
+  const repo = githubRepo();
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 10000);
+  let res: Response;
   try {
-    const repo = githubRepo();
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 10000);
-    const res = await fetch(`https://api.github.com/repos/${repo}/releases/latest`, {
+    res = await fetch(`https://api.github.com/repos/${repo}/releases/latest`, {
       signal: ctrl.signal,
       headers: { Accept: "application/vnd.github+json" },
     });
+  } catch (e) {
     clearTimeout(t);
-    if (!res.ok) return null;
-    const rel = (await res.json()) as GhRelease;
-    const parsed = parseVersionFromRelease(rel);
-    if (!parsed || parsed.versionCode <= 0) return null;
-    const info = await enrichFromManifest(parsed);
-    if (info.versionCode <= currentAppVersionCode()) return null;
-    return info;
-  } catch {
-    return null;
+    throw e;
   }
+  clearTimeout(t);
+  if (!res.ok) {
+    throw new Error(`GitHub releases: HTTP ${res.status}`);
+  }
+  const rel = (await res.json()) as GhRelease;
+  const parsed = parseVersionFromRelease(rel);
+  if (!parsed || parsed.versionCode <= 0) {
+    throw new Error("Release senza APK o versionCode");
+  }
+  const info = await enrichFromManifest(parsed);
+  if (info.versionCode <= currentAppVersionCode()) return null;
+  return info;
 }
 
 export async function getDismissedUpdateCode(): Promise<number> {
