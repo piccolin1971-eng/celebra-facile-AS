@@ -318,7 +318,6 @@ export default function OreLeggi() {
             <FontSizeButtons
               decreaseTestID="btn-ore-read-a-minus"
               increaseTestID="btn-ore-read-a-plus"
-              labelScale={0.86}
             />
           </View>
         </View>

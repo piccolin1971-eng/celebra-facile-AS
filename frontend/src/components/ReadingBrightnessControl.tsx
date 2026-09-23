@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { triggerAppHaptic } from "../appHaptics";
 import { useSettings } from "../SettingsContext";
 import { PlusMinusGlyph } from "./PlusMinusGlyph";
+import { FONT_SIZE_SEG_HEIGHT } from "./FontSizeButtons";
 import {
   BRIGHTNESS_MAX,
   applyReadingBrightnessLevel,
@@ -83,12 +84,12 @@ export function ReadingBrightnessRoot({ children }: { children: React.ReactNode 
 
 export function ReadingBrightnessButton() {
   const ctx = useContext(Ctx);
-  const { colors, fontSize } = useSettings();
+  const { colors } = useSettings();
   if (!ctx) return null;
   const iconColor = ctx.open ? "#1A1208" : colors.textPrimary;
-  // Stesso box di FontSizeButtons (minWidth 62, paddingVertical 10).
-  const boxH = 20 + Math.round(fontSize * 1.2);
-  const iconSize = Math.max(18, Math.min(26, boxH - 16));
+  // Stessa altezza del segmento FontSizeButtons (fissa, non scala col testo).
+  const boxH = FONT_SIZE_SEG_HEIGHT;
+  const iconSize = 22;
   return (
     <TouchableOpacity
       onPress={ctx.toggle}
@@ -222,9 +223,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
   },
   sunBtn: {
-    minWidth: 62,
+    minWidth: FONT_SIZE_SEG_HEIGHT,
     paddingHorizontal: 8,
-    borderRadius: 10,
+    borderRadius: 8,
     borderWidth: 1.5,
     borderColor: CREAM,
     alignItems: "center",

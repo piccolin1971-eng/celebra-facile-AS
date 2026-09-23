@@ -1,5 +1,5 @@
-import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch, Platform } from "react-native";
+import React, { useState } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch, Platform, Alert, ActivityIndicator } from "react-native";
 import Constants from "expo-constants";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -9,6 +9,13 @@ import { LINE_SPACING_MIN, LINE_SPACING_MAX, LINE_SPACING_STEP, formatLineSpacin
 import { SettingsStepperSlider } from "../src/components/SettingsStepperSlider";
 import { FONT_OPTIONS, FontFamilyId, resolveBodyFont } from "../src/fontFamily";
 import { SectionScreenTopBar } from "../src/components/SectionScreenTopBar";
+import { AppUpdateModal } from "../src/components/AppUpdateModal";
+import {
+  checkForAppUpdate,
+  openApkDownload,
+  isAppUpdateSupported,
+  type AppUpdateInfo,
+} from "../src/appUpdate";
 
 export default function Impostazioni() {
   const router = useRouter();
@@ -19,6 +26,10 @@ export default function Impostazioni() {
   const versionLabel = apkDate
     ? `Versione ${appVersion} · ${apkDate} by AP`
     : `Versione ${appVersion} by AP`;
+  const [updateInfo, setUpdateInfo] = useState<AppUpdateInfo | null>(null);
+  const [updateVisible, setUpdateVisible] = useState(false);
+  const [updateBusy, setUpdateBusy] = useState(false);
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
 
   return (
     <SafeAreaView style={styles.container} testID="settings-screen">
@@ -333,8 +344,59 @@ export default function Impostazioni() {
           <Text style={styles.versionInfo} testID="app-version">
             {versionLabel}
           </Text>
+          {isAppUpdateSupported() ? (
+            <TouchableOpacity
+              style={styles.previewLinkBtn}
+              disabled={checkingUpdate}
+              onPress={() => {
+                setCheckingUpdate(true);
+                void (async () => {
+                  try {
+                    const info = await checkForAppUpdate();
+                    if (!info) {
+                      Alert.alert("Aggiornamenti", "Hai già l’ultima versione disponibile.");
+                      return;
+                    }
+                    setUpdateInfo(info);
+                    setUpdateVisible(true);
+                  } catch {
+                    Alert.alert("Aggiornamenti", "Controllo non riuscito. Riprova con la connessione.");
+                  } finally {
+                    setCheckingUpdate(false);
+                  }
+                })();
+              }}
+              testID="btn-check-app-update"
+            >
+              {checkingUpdate ? (
+                <ActivityIndicator color={colors.primary} />
+              ) : (
+                <Ionicons name="cloud-download-outline" size={scaledFont(24)} color={colors.primary} />
+              )}
+              <Text style={styles.previewLinkText}>Controlla aggiornamenti</Text>
+              <Ionicons name="chevron-forward" size={scaledFont(22)} color={colors.textSecondary} />
+            </TouchableOpacity>
+          ) : null}
         </View>
       </ScrollView>
+      <AppUpdateModal
+        visible={updateVisible}
+        info={updateInfo}
+        busy={updateBusy}
+        colors={colors}
+        onLater={() => setUpdateVisible(false)}
+        onUpdate={() => {
+          if (!updateInfo) return;
+          setUpdateBusy(true);
+          void (async () => {
+            const ok = await openApkDownload(updateInfo);
+            setUpdateBusy(false);
+            if (!ok) {
+              Alert.alert("Download", "Non riesco ad aprire il link dell’APK.");
+            }
+          })();
+        }}
+      />
     </SafeAreaView>
   );
 }

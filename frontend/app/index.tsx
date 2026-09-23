@@ -29,6 +29,15 @@ import {
   celebrationShortLabel,
 } from "../src/celebrationModeLabels";
 import { CelebrateChoiceDialog } from "../src/components/CelebrateChoiceDialog";
+import { AppUpdateModal } from "../src/components/AppUpdateModal";
+import {
+  checkForAppUpdate,
+  dismissUpdateUntil,
+  getDismissedUpdateCode,
+  openApkDownload,
+  isAppUpdateSupported,
+  type AppUpdateInfo,
+} from "../src/appUpdate";
 import { HomeDatePickerModal } from "../src/components/HomeDatePickerModal";
 import { QuickAccessModal } from "../src/components/QuickAccessModal";
 import { loadLiturgyFavorites } from "../src/liturgyFavorites";
@@ -108,8 +117,12 @@ export default function Home() {
   const [prayers, setPrayers] = useState<EucharisticPrayer[]>([]);
   const [ceiDayTitle, setCeiDayTitle] = useState("");
   const [stripCeiTitles, setStripCeiTitles] = useState<Record<string, string>>({});
+  const [updateInfo, setUpdateInfo] = useState<AppUpdateInfo | null>(null);
+  const [updateVisible, setUpdateVisible] = useState(false);
+  const [updateBusy, setUpdateBusy] = useState(false);
   const calendarDayRef = useRef(localDateStr(new Date()));
   const selectedDateStrRef = useRef("");
+  const updateCheckedRef = useRef(false);
 
   const muteFill = (hex: string) =>
     mixHexTowardBlack(hex, theme === "dark" ? 0.32 : theme === "parchment" ? 0.16 : 0.12);
@@ -300,6 +313,28 @@ export default function Home() {
       setSelectedDateISO(dateParam);
     }
   }, [params.date]);
+
+  // Aggiornamento APK: fail-soft, una volta per avvio, solo Android.
+  useEffect(() => {
+    if (updateCheckedRef.current || !isAppUpdateSupported()) return;
+    updateCheckedRef.current = true;
+    let cancelled = false;
+    (async () => {
+      try {
+        const info = await checkForAppUpdate();
+        if (cancelled || !info) return;
+        const dismissed = await getDismissedUpdateCode();
+        if (dismissed >= info.versionCode) return;
+        setUpdateInfo(info);
+        setUpdateVisible(true);
+      } catch {
+        /* ignore */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -1037,6 +1072,30 @@ export default function Home() {
           onCancel={() => setCelebrateDialogVisible(false)}
         />
       ) : null}
+      <AppUpdateModal
+        visible={updateVisible}
+        info={updateInfo}
+        busy={updateBusy}
+        colors={colors}
+        onLater={() => {
+          setUpdateVisible(false);
+          if (updateInfo) void dismissUpdateUntil(updateInfo.versionCode);
+        }}
+        onUpdate={() => {
+          if (!updateInfo) return;
+          setUpdateBusy(true);
+          void (async () => {
+            const ok = await openApkDownload(updateInfo);
+            setUpdateBusy(false);
+            if (!ok) {
+              Alert.alert(
+                "Download",
+                "Non riesco ad aprire il link dell’APK. Riprova da Impostazioni oppure dalla pagina Release su GitHub.",
+              );
+            }
+          })();
+        }}
+      />
 
       {datePickerVisible ? (
         <HomeDatePickerModal

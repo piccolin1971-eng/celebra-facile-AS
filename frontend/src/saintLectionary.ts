@@ -62,7 +62,8 @@ function normalizeCompareText(text: string): string {
 }
 
 const SAINT_PREFIX_RE = /^(santi|sante|san|santa|beati|beato|beata)\s+/;
-const SAINT_SUFFIX_RE = /\s+(martiri|martire|vescovo|vergine|compagni|confessori|dottori)(\s|$)/g;
+const SAINT_SUFFIX_RE =
+  /\s+(martiri|martire|vescovo|vescovi|vergine|vergini|compagni|confessori|dottore|dottori|presbitero|presbiteri|sacerdote|sacerdoti|papa|papi|apostolo|apostoli|abate|abati|monaco|monaci|diacono|diaconi|eremita|eremiti|religiosi|religiosa)(\s|$)/g;
 
 /** Solo memoria obbligatoria: feste/solennità hanno già tutto dallo scraper CEI. */
 const MEMORIA_OBBLIGATORIA = "memoria_obbligatoria";
@@ -91,11 +92,17 @@ export function hasInlineProperReadings(entry: SaintLectionaryEntry): boolean {
   return isSubstantiveScriptureReading(pl) && isSubstantiveScriptureReading(vg);
 }
 
-/** Chiave di confronto titoli santo (ignora Santi/San, virgole, suffissi comuni). */
+/** Chiave di confronto titoli santo (ignora Santi/San, virgole, suffissi e sinonimi). */
 export function saintMatchKey(title: string): string {
   return normalizeSaintTitle(title)
+    .replace(/\([^)]*\)/g, " ")
     .replace(SAINT_PREFIX_RE, "")
     .replace(SAINT_SUFFIX_RE, " ")
+    .replace(/\bsacerdote\b/g, "presbitero")
+    .replace(/\bsacerdoti\b/g, "presbiteri")
+    .replace(/\bd avila\b/g, "avila")
+    .replace(/\bdi avila\b/g, "avila")
+    .replace(/\bdi gesu bambino\b/g, "gesu bambino")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -125,7 +132,19 @@ function findEntryForSaint(mmdd: string, saintTitle: string): SaintLectionaryEnt
   }
 
   const legacyFuzzy = Object.entries(dayEntries).find(([k]) => k.includes(key) || key.includes(k));
-  return legacyFuzzy ? legacyFuzzy[1] : null;
+  if (legacyFuzzy) return legacyFuzzy[1];
+
+  // Un solo santo quel giorno: basta il nome proprio principale (es. Teresa / Avila).
+  const dayList = Object.entries(dayEntries);
+  if (dayList.length === 1 && matchKey) {
+    const main = matchKey.split(/\s+/).find((w) => w.length >= 5);
+    if (main) {
+      const [k, entry] = dayList[0];
+      const blob = `${saintMatchKey(k)} ${saintMatchKey(entry.saintTitle)}`;
+      if (blob.includes(main)) return entry;
+    }
+  }
+  return null;
 }
 
 export function getSaintLectionaryForDate(
@@ -158,10 +177,30 @@ function scraperHasSaintProperReadings(
   const lecV = entry.readings.find((r) => r.type === "vangelo");
   if (!scraperV?.text || !lecV?.text) return false;
 
-  const sv = normalizeCompareText(scraperV.text);
-  const lv = normalizeCompareText(lecV.text);
-  if (sv.length < 40 || lv.length < 40) return false;
-  return sv.slice(0, 60) === lv.slice(0, 60) || sv.includes(lv.slice(0, 40)) || lv.includes(sv.slice(0, 40));
+  // Preferisci il confronto sulle citazioni bibliche (evita falsi positivi su «In quel tempo…»).
+  const sr = normalizeCompareText(scraperV.reference || "");
+  const lr = normalizeCompareText(lecV.reference || "");
+  if (sr.length >= 6 && lr.length >= 6) {
+    const sCore = sr.replace(/^(dal vangelo secondo|vangelo|gv|mc|mt|lc)\s*/i, "").trim();
+    const lCore = lr.replace(/^(dal vangelo secondo|vangelo|gv|mc|mt|lc)\s*/i, "").trim();
+    if (sCore.length >= 4 && lCore.length >= 4) {
+      return sCore.includes(lCore.slice(0, 10)) || lCore.includes(sCore.slice(0, 10));
+    }
+  }
+
+  const stripOpening = (t: string) =>
+    t.replace(
+      /^(in quel tempo[^a-z0-9]{0,40}|in quei giorni[^a-z0-9]{0,40}|in quel momento[^a-z0-9]{0,40})/i,
+      "",
+    ).trim();
+  const sv = stripOpening(normalizeCompareText(scraperV.text));
+  const lv = stripOpening(normalizeCompareText(lecV.text));
+  if (sv.length < 50 || lv.length < 50) return false;
+  return (
+    sv.slice(0, 80) === lv.slice(0, 80) ||
+    sv.includes(lv.slice(0, 55)) ||
+    lv.includes(sv.slice(0, 55))
+  );
 }
 
 /** True when the Messa screen may offer "Letture proprie" from the lezionario. */

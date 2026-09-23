@@ -1,12 +1,15 @@
 name: Build Android APK (Native Gradle)
 
 # APK di Celebra e prega facile (package it.messaparroco.prega).
-# Gradle diretto, senza EAS. Artifact scaricabile dalla pagina Actions.
+# Gradle diretto, senza EAS. Artifact + Release GitHub (per aggiornamento in-app).
 
 on:
   push:
     branches: [main, master]
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -24,8 +27,6 @@ jobs:
           cache: yarn
           cache-dependency-path: frontend/yarn.lock
 
-      # JDK via apt: evita setup-java quando codeload.github.com è instabile
-      # (errore "Failed to download archive ... setup-java/tar.gz").
       - name: Setup Java JDK 17
         run: |
           sudo apt-get update -qq
@@ -33,7 +34,6 @@ jobs:
           echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> "$GITHUB_ENV"
           java -version
 
-      # SDK via sdkmanager: evita setup-android quando codeload.github.com è instabile.
       - name: Setup Android SDK
         run: |
           SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
@@ -47,21 +47,36 @@ jobs:
 
       - name: Install dependencies
         working-directory: ./frontend
-        # NOTA: NON usiamo --frozen-lockfile perché il workflow di
-        # "Save to GitHub" di Emergent a volte non include yarn.lock
-        # nel commit (specialmente quando viene aggiornato in seguito a
-        # yarn add/remove). Con yarn install standard, in caso di
-        # disallineamento minore, yarn aggiorna il lock e prosegue.
         run: yarn install --network-timeout 600000
 
-      - name: Generate debug keystore for signing (sideload-friendly)
+      - name: Prepare signing keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          mkdir -p $HOME/.android
-          if [ ! -f "$HOME/.android/debug.keystore" ]; then
-            keytool -genkey -v -keystore $HOME/.android/debug.keystore \
-              -storepass android -alias androiddebugkey -keypass android \
-              -keyalg RSA -keysize 2048 -validity 10000 \
-              -dname "CN=Android Debug,O=Android,C=US"
+          mkdir -p "$HOME/signing"
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ] && [ -n "$ANDROID_KEYSTORE_PASSWORD" ] && [ -n "$ANDROID_KEY_ALIAS" ]; then
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$HOME/signing/release.keystore"
+            echo "SIGN_STORE_FILE=$HOME/signing/release.keystore" >> "$GITHUB_ENV"
+            echo "SIGN_STORE_PASSWORD=$ANDROID_KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+            echo "SIGN_KEY_ALIAS=$ANDROID_KEY_ALIAS" >> "$GITHUB_ENV"
+            echo "SIGN_KEY_PASSWORD=${ANDROID_KEY_PASSWORD:-$ANDROID_KEYSTORE_PASSWORD}" >> "$GITHUB_ENV"
+            echo "Using RELEASE keystore from secrets (in-app updates OK)."
+          else
+            mkdir -p "$HOME/.android"
+            if [ ! -f "$HOME/.android/debug.keystore" ]; then
+              keytool -genkey -v -keystore "$HOME/.android/debug.keystore" \
+                -storepass android -alias androiddebugkey -keypass android \
+                -keyalg RSA -keysize 2048 -validity 10000 \
+                -dname "CN=Android Debug,O=Android,C=US"
+            fi
+            echo "SIGN_STORE_FILE=$HOME/.android/debug.keystore" >> "$GITHUB_ENV"
+            echo "SIGN_STORE_PASSWORD=android" >> "$GITHUB_ENV"
+            echo "SIGN_KEY_ALIAS=androiddebugkey" >> "$GITHUB_ENV"
+            echo "SIGN_KEY_PASSWORD=android" >> "$GITHUB_ENV"
+            echo "::warning::No release keystore secrets — signed with debug keystore. In-app update requires fixed secrets."
           fi
 
       - name: Stamp APK version and production date
@@ -83,8 +98,21 @@ jobs:
           j.expo.android.versionCode = n;
           j.expo.extra = j.expo.extra || {};
           j.expo.extra.apkDate = date;
+          j.expo.extra.githubRepo = j.expo.extra.githubRepo || "piccolin1971-eng/celebra-facile-AS";
           fs.writeFileSync(path, JSON.stringify(j, null, 2) + "\n");
           console.log(`APK version 1.0.${n} · ${date}`);
+          fs.writeFileSync(
+            "version.json",
+            JSON.stringify(
+              {
+                versionCode: n,
+                versionName: `1.0.${n}`,
+                apkDate: date,
+              },
+              null,
+              2,
+            ) + "\n",
+          );
           EOF
 
       - name: Expo prebuild (genera progetto Android nativo)
@@ -103,29 +131,47 @@ jobs:
         working-directory: ./frontend/android
         run: chmod +x ./gradlew
 
-      - name: Build Release APK (firmato con debug keystore)
+      - name: Build Release APK
         working-directory: ./frontend/android
         env:
           GRADLE_OPTS: "-Xmx6g -Dfile.encoding=UTF-8 -XX:MaxMetaspaceSize=1g"
         run: |
           ./gradlew assembleRelease \
             -PreactNativeArchitectures=arm64-v8a,armeabi-v7a \
-            -Pandroid.injected.signing.store.file=$HOME/.android/debug.keystore \
-            -Pandroid.injected.signing.store.password=android \
-            -Pandroid.injected.signing.key.alias=androiddebugkey \
-            -Pandroid.injected.signing.key.password=android \
+            -Pandroid.injected.signing.store.file=$SIGN_STORE_FILE \
+            -Pandroid.injected.signing.store.password=$SIGN_STORE_PASSWORD \
+            -Pandroid.injected.signing.key.alias=$SIGN_KEY_ALIAS \
+            -Pandroid.injected.signing.key.password=$SIGN_KEY_PASSWORD \
             --no-daemon
 
       - name: Locate APK
         id: locate
         run: |
           APK=$(find frontend/android/app/build/outputs/apk -name "*.apk" | head -1)
-          echo "apk_path=$APK" >> $GITHUB_OUTPUT
-          ls -lh "$APK"
+          echo "apk_path=$APK" >> "$GITHUB_OUTPUT"
+          DEST="celebra-prega-facile-v${GITHUB_RUN_NUMBER}.apk"
+          cp "$APK" "$DEST"
+          echo "apk_named=$DEST" >> "$GITHUB_OUTPUT"
+          ls -lh "$DEST"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4.6.1
         with:
           name: celebra-prega-facile-v${{ github.run_number }}-apk
-          path: ${{ steps.locate.outputs.apk_path }}
+          path: ${{ steps.locate.outputs.apk_named }}
           retention-days: 30
+
+      - name: Publish GitHub Release (for in-app update)
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="v1.0.${GITHUB_RUN_NUMBER}"
+          cp frontend/version.json ./version.json
+          gh release delete "$TAG" --yes 2>/dev/null || true
+          gh release create "$TAG" \
+            "${{ steps.locate.outputs.apk_named }}" \
+            version.json \
+            --title "Celebra $TAG" \
+            --notes "Build automatica ${TAG} (run ${GITHUB_RUN_NUMBER}). Aggiornamento in-app: scarica l'APK e conferma Installa." \
+            --latest

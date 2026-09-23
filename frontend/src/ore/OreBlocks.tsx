@@ -85,8 +85,10 @@ function stanzaHangLevel(lines: string[], j: number): number {
 }
 
 function lineHang(b: Extract<OreBlock, { k: "stanza" }>, j: number): number {
-  if (b.hang && j < b.hang.length) return b.hang[j] || 0;
-  return stanzaHangLevel(b.lines, j);
+  const heuristic = stanzaHangLevel(b.lines, j);
+  if (!b.hang || j >= b.hang.length) return heuristic;
+  // Max: hang CEI + euristica *† (se l'array è tutto 0 per strofe orfane).
+  return Math.max(b.hang[j] || 0, heuristic);
 }
 
 function hangPad(fontSize: number, hang: number) {
@@ -251,7 +253,7 @@ function renderBlock(
           fontSize: Math.round(fontSize * 0.88),
           lineHeight: titleLh,
           color: GOLD_TITLE,
-          textAlign: "center",
+          textAlign: "left",
           marginTop: em(0.85),
           marginBottom: em(0.35),
           letterSpacing: 0.2,
@@ -392,7 +394,7 @@ function renderBlock(
             fontSize: Math.round(fontSize * 0.88),
             lineHeight: titleLh,
             color: GOLD_TITLE,
-            textAlign: "center",
+            textAlign: "left",
             marginTop: em(0.85),
             marginBottom: em(0.35),
           }}

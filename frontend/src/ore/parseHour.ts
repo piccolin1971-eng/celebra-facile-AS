@@ -114,6 +114,43 @@ function indentHang(spaces: number): number {
 }
 
 /**
+ * Costruisce versetti da righe già spezzate (spazi iniziali = rientro CEI).
+ * Prosa senza *†/—: niente rientri (evita &nbsp; spurio nelle letture brevi).
+ */
+function verseLinesFromRawRows(rawLines: string[]): VerseLine[] {
+  const merged: VerseLine[] = [];
+  for (const raw of rawLines) {
+    if (!raw.trim()) continue;
+    const spaces = (raw.match(/^[ \t]+/) || [""])[0].length;
+    const indent = spaces >= 2;
+    const t = raw.replace(/\s+/g, " ").trim();
+    if (!t) continue;
+    const prev = merged[merged.length - 1];
+    const joinWrap =
+      indent &&
+      prev &&
+      !/[*†]\s*$/.test(prev.text) &&
+      prev.text.length >= 40 &&
+      !/^—/.test(t) &&
+      !/^(V\.|R\.|Ant\.)/i.test(t);
+    if (joinWrap) {
+      prev.text = `${prev.text} ${t}`;
+      continue;
+    }
+      let hang = indentHang(spaces);
+      if (/^—/.test(t)) hang = Math.max(hang, 1);
+      if (prev && /[*†]\s*$/.test(prev.text)) hang = Math.max(hang, 1);
+      // Wrap più profondo del CEI (es. 4–5 &nbsp; dopo un emistichio già rientrato).
+      else if (prev && prev.hang > 0 && spaces >= 4) hang = Math.max(hang, 2);
+      merged.push({ text: t, hang });
+  }
+  const withRubrics = mergeLoneRubricLines(merged);
+  const hasMarks = withRubrics.some((l) => /[*†]/.test(l.text) || /^—/.test(l.text));
+  if (!hasMarks) return withRubrics.map((l) => ({ ...l, hang: 0 }));
+  return withRubrics;
+}
+
+/**
  * Spezza un lo_versetto CEI in più strofe se ci sono <br><br> (riga vuota voluta).
  * Un solo <br> (anche seguito da \\n nel HTML) non spezza.
  * Es. cantico Tb: «Convertitevi…» e «e allora egli…» nello stesso div.
@@ -126,32 +163,8 @@ function coalesceCeiVerseGroups(inner: string): VerseLine[][] {
   const chunks = text.split("{{STANZA_BREAK}}");
   const groups: VerseLine[][] = [];
   for (const chunk of chunks) {
-    const rawLines = chunk.split(/\n/);
-    const merged: VerseLine[] = [];
-    for (const raw of rawLines) {
-      if (!raw.trim()) continue;
-      const spaces = (raw.match(/^[ \t]+/) || [""])[0].length;
-      const indent = spaces >= 2;
-      const t = raw.replace(/\s+/g, " ").trim();
-      if (!t) continue;
-      const prev = merged[merged.length - 1];
-      const joinWrap =
-        indent &&
-        prev &&
-        !/[*†]\s*$/.test(prev.text) &&
-        prev.text.length >= 40 &&
-        !/^—/.test(t) &&
-        !/^(V\.|R\.|Ant\.)/i.test(t);
-      if (joinWrap) {
-        prev.text = `${prev.text} ${t}`;
-        continue;
-      }
-      let hang = indentHang(spaces);
-      if (/^—/.test(t)) hang = Math.max(hang, 1);
-      if (prev && /[*†]\s*$/.test(prev.text)) hang = Math.max(hang, 1);
-      merged.push({ text: t, hang });
-    }
-    if (merged.length) groups.push(mergeLoneRubricLines(merged));
+    const group = verseLinesFromRawRows(chunk.split(/\n/));
+    if (group.length) groups.push(group);
   }
   return groups;
 }
@@ -907,26 +920,33 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
       continue;
     }
     if (node.kind === "text") {
-      const collected: string[] = [];
+      // CEI a volte lascia l'ultima strofa fuori da lo_versetto (testo orfano + <br>).
+      const rawRows: string[] = [];
       let j = i;
       while (j < nodes.length) {
         const n = nodes[j];
         if (n.kind === "br") {
+          rawRows.push("");
           j += 1;
           continue;
         }
         if (n.kind !== "text") break;
-        const t = stripTags(n.text);
-        if (t && !isChromeText(t)) collected.push(t);
+        const decoded = decodeHtmlEntities(n.text).replace(/\u00a0/g, " ");
+        if (decoded.replace(/\s+/g, " ").trim() && !isChromeText(decoded)) {
+          rawRows.push(decoded);
+        }
         j += 1;
       }
-      if (collected.length) {
-        const merged = mergeLoneRubricLines(collected.map((text) => ({ text, hang: 0 })));
+      if (rawRows.length) {
+        const merged = verseLinesFromRawRows(rawRows);
         const lines = merged.map((l) => tidyLitText(l.text)).filter(Boolean);
         if (lines.length === 1 && !/[*†]/.test(lines[0]) && !/^(V\.|R\.)/.test(lines[0])) {
           blocks.push({ k: "prose", text: lines[0] });
         } else if (lines.length) {
-          blocks.push({ k: "stanza", lines, hang: merged.map((l) => l.hang) });
+          const hangs = merged
+            .filter((l) => tidyLitText(l.text))
+            .map((l) => l.hang);
+          blocks.push({ k: "stanza", lines, hang: hangs });
         }
       }
       i = j;
