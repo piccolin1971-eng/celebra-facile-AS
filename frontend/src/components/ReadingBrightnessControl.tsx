@@ -18,7 +18,6 @@ import {
   saveBrightnessLevel,
 } from "../readingBrightness";
 
-const CREAM = "#E8DCC4";
 const ROW_BG = "#000000";
 const ORANGE = "#FF6A00";
 const LIME = "#22E85A";
@@ -86,17 +85,18 @@ export function ReadingBrightnessButton() {
   const ctx = useContext(Ctx);
   const { colors } = useSettings();
   if (!ctx) return null;
-  const iconColor = ctx.open ? "#1A1208" : colors.textPrimary;
-  // Stessa altezza del segmento FontSizeButtons (fissa, non scala col testo).
-  const boxH = FONT_SIZE_SEG_HEIGHT;
-  const iconSize = 22;
+  // Pillola come «Auto»: sole sempre giallo (anche a riposo).
+  const border = ctx.open ? "#E0B429" : colors.primary;
   return (
     <TouchableOpacity
       onPress={ctx.toggle}
       style={[
         styles.sunBtn,
-        { height: boxH, borderColor: ctx.open ? "#E0B429" : colors.textPrimary },
-        ctx.open && styles.sunBtnOpen,
+        {
+          height: FONT_SIZE_SEG_HEIGHT,
+          borderColor: border,
+          backgroundColor: ctx.open ? "rgba(224,180,41,0.22)" : `${colors.primary}14`,
+        },
       ]}
       accessibilityRole="button"
       accessibilityLabel={ctx.open ? "Chiudi luminosità" : "Luminosità"}
@@ -105,7 +105,7 @@ export function ReadingBrightnessButton() {
       hitSlop={4}
       {...webClickable}
     >
-      <Ionicons name="sunny" size={iconSize} color={iconColor} />
+      <Ionicons name="sunny" size={22} color={SUN_YELLOW} />
     </TouchableOpacity>
   );
 }
@@ -223,16 +223,12 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
   },
   sunBtn: {
-    minWidth: FONT_SIZE_SEG_HEIGHT,
-    paddingHorizontal: 8,
-    borderRadius: 8,
+    minWidth: 64,
+    paddingHorizontal: 14,
+    borderRadius: 999,
     borderWidth: 1.5,
-    borderColor: CREAM,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "transparent",
-  },
-  sunBtnOpen: {
-    backgroundColor: CREAM,
+    flexShrink: 0,
   },
 });

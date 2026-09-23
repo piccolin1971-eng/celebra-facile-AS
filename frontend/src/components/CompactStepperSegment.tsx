@@ -2,23 +2,16 @@ import React from "react";
 import { Text, TouchableOpacity, StyleSheet, View, Platform } from "react-native";
 import { useSettings } from "../SettingsContext";
 import { ACTION_TITLE_WEIGHT } from "../uiActionTokens";
+import {
+  FONT_SIZE_SEG_HEIGHT,
+  FONT_SIZE_SEG_WIDTH,
+} from "./FontSizeButtons";
 
-const FONT_MIN = 12;
-const FONT_MAX = 60;
-const FONT_STEP = 2;
-
-/** Larghezza totale ≤ due tasti storici (62 + 8 + 62). */
-export const FONT_SIZE_SEG_WIDTH = 132;
-/** Altezza fissa del segmento (non scala col testo liturgico). */
-export const FONT_SIZE_SEG_HEIGHT = 40;
-
-const SIDE_LABEL_SIZE = 20;
-/** Valore al centro: più grande, non grassetto; il box resta 132×40. */
+const SIDE_LABEL_SIZE = 22;
 const MID_LABEL_SIZE = 18;
 
 const webClickable = Platform.OS === "web" ? ({ cursor: "pointer" } as const) : undefined;
 
-/** Centraggio verticale stabile (Android + web). */
 const labelCenter = {
   includeFontPadding: false as const,
   textAlignVertical: "center" as const,
@@ -33,27 +26,36 @@ const labelCenter = {
     : null),
 };
 
-/** Glifi A± / −+ tendono a sedersi in basso: leggero offset ottico. */
-const SIDE_NUDGE_UP = -2;
+/** −/+ seduti in basso nella box: offset più marcato dello A±. */
+const SIDE_NUDGE_UP = -3;
 const MID_NUDGE_UP = -1;
 
 type Props = {
-  extraDisabled?: boolean;
+  value: number;
+  min: number;
+  max: number;
+  onChange: (next: number) => void;
   decreaseTestID: string;
   increaseTestID: string;
-  /** @deprecated Il chrome del segmento non scala più col testo. */
-  labelScale?: number;
+  accessibilityLabel?: string;
 };
 
-/** Segmento compatto A− | N | A+ (stile extra-slim, A± in evidenza). */
-export function FontSizeButtons({
-  extraDisabled = false,
+/**
+ * Segmento − | N | + gemello di FontSizeButtons (stesse dimensioni / chrome blu).
+ * Usato per la velocità di scorrimento Ore.
+ */
+export function CompactStepperSegment({
+  value,
+  min,
+  max,
+  onChange,
   decreaseTestID,
   increaseTestID,
+  accessibilityLabel = "Velocità scorrimento",
 }: Props) {
-  const { colors, fontSize, setFontSize } = useSettings();
-  const decreaseDisabled = extraDisabled || fontSize <= FONT_MIN;
-  const increaseDisabled = extraDisabled || fontSize >= FONT_MAX;
+  const { colors } = useSettings();
+  const decreaseDisabled = value <= min;
+  const increaseDisabled = value >= max;
   const midBorder = `${colors.primary}59`;
   const fill = `${colors.primary}1A`;
 
@@ -67,33 +69,35 @@ export function FontSizeButtons({
         },
       ]}
       accessibilityRole="adjustable"
-      accessibilityLabel={`Dimensione testo ${fontSize}`}
-      accessibilityValue={{ min: FONT_MIN, max: FONT_MAX, now: fontSize }}
+      accessibilityLabel={`${accessibilityLabel} ${value}`}
+      accessibilityValue={{ min, max, now: value }}
     >
       <TouchableOpacity
         style={[styles.side, decreaseDisabled && styles.disabled, webClickable]}
-        onPress={() => setFontSize(Math.max(FONT_MIN, fontSize - FONT_STEP))}
+        onPress={() => onChange(Math.max(min, value - 1))}
         disabled={decreaseDisabled}
         testID={decreaseTestID}
         accessibilityRole="button"
-        accessibilityLabel={`Riduci dimensione testo, attuale ${fontSize}`}
+        accessibilityLabel="Rallenta"
         activeOpacity={0.55}
+        hitSlop={4}
       >
-        <Text style={[styles.sideLabel, { color: colors.textPrimary }]}>A-</Text>
+        <Text style={[styles.sideLabel, { color: colors.textPrimary }]}>-</Text>
       </TouchableOpacity>
       <View style={[styles.mid, { borderLeftColor: midBorder, borderRightColor: midBorder }]}>
-        <Text style={[styles.midLabel, { color: colors.focus }]}>{fontSize}</Text>
+        <Text style={[styles.midLabel, { color: colors.focus }]}>{value}</Text>
       </View>
       <TouchableOpacity
         style={[styles.side, increaseDisabled && styles.disabled, webClickable]}
-        onPress={() => setFontSize(Math.min(FONT_MAX, fontSize + FONT_STEP))}
+        onPress={() => onChange(Math.min(max, value + 1))}
         disabled={increaseDisabled}
         testID={increaseTestID}
         accessibilityRole="button"
-        accessibilityLabel={`Aumenta dimensione testo, attuale ${fontSize}`}
+        accessibilityLabel="Accelera"
         activeOpacity={0.55}
+        hitSlop={4}
       >
-        <Text style={[styles.sideLabel, { color: colors.textPrimary }]}>A+</Text>
+        <Text style={[styles.sideLabel, { color: colors.textPrimary }]}>+</Text>
       </TouchableOpacity>
     </View>
   );

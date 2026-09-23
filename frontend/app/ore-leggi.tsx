@@ -14,8 +14,8 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { DEFAULT_FONT_SIZE, useSettings } from "../src/SettingsContext";
 import { resolveBodyFont } from "../src/fontFamily";
-import { FontSizeButtons } from "../src/components/FontSizeButtons";
-import { PlusMinusGlyph } from "../src/components/PlusMinusGlyph";
+import { FontSizeButtons, FONT_SIZE_SEG_HEIGHT } from "../src/components/FontSizeButtons";
+import { CompactStepperSegment } from "../src/components/CompactStepperSegment";
 import { ReadingBrightnessButton, ReadingBrightnessRoot, ReadingBrightnessRow } from "../src/components/ReadingBrightnessControl";
 import { localDateStr, parseLocalDate } from "../src/dateUtils";
 import { oreBodyLineHeight } from "../src/liturgyTypography";
@@ -34,8 +34,6 @@ const ORE_BLUE = "#4DA8DA";
 const GOLD = "#E0B429";
 const AUTO_ON_BG = "#173B4D";
 const AUTO_ON_TEXT = "#B8E6FA";
-const SPD_BORDER = "#c4b06a";
-const SPD_VAL_BORDER = "#b8c0bc";
 /** px/s. 1 = vecchia 2; poi scala fino a 10 per testo grande. */
 const SPD_PX = [0, 6.5, 10, 16, 25, 38, 58, 88, 135, 205, 310];
 const SPD_MIN = 1;
@@ -322,6 +320,15 @@ export default function OreLeggi() {
           </View>
         </View>
         <View style={styles.scrollRow}>
+          <CompactStepperSegment
+            value={speed}
+            min={SPD_MIN}
+            max={SPD_MAX}
+            onChange={changeSpeed}
+            decreaseTestID="btn-ore-speed-minus"
+            increaseTestID="btn-ore-speed-plus"
+            accessibilityLabel="Velocità scorrimento"
+          />
           <TouchableOpacity
             onPress={() => (autoOn ? stopAuto(true) : startAuto(true))}
             style={[styles.autoBtn, autoOn && styles.autoOn]}
@@ -333,27 +340,6 @@ export default function OreLeggi() {
             {...webClickable}
           >
             <Text style={[styles.autoLab, autoOn && styles.autoLabOn]}>Auto</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => changeSpeed(speed - 1)}
-            style={styles.spdBtn}
-            accessibilityLabel="Rallenta"
-            hitSlop={4}
-            {...webClickable}
-          >
-            <PlusMinusGlyph kind="minus" color={colors.textPrimary} size={18} stroke={2.8} />
-          </TouchableOpacity>
-          <View style={styles.spdValBox} accessibilityLabel={`Velocità ${speed}`}>
-            <Text style={styles.spdVal}>{speed}</Text>
-          </View>
-          <TouchableOpacity
-            onPress={() => changeSpeed(speed + 1)}
-            style={styles.spdBtn}
-            accessibilityLabel="Accelera"
-            hitSlop={4}
-            {...webClickable}
-          >
-            <PlusMinusGlyph kind="plus" color={colors.textPrimary} size={18} stroke={2.8} />
           </TouchableOpacity>
           <View style={{ flex: 1 }} />
           <ReadingBrightnessButton />
@@ -506,7 +492,8 @@ const makeStyles = (colors: any, fontSize: number) =>
       paddingTop: 6,
       paddingBottom: 8,
       borderBottomWidth: 1,
-      gap: 8,
+      // +~12–15% rispetto a gap 8: un filo più aria tra titolo e riga scroll
+      gap: 12,
     },
     titleRow: {
       flexDirection: "row",
@@ -516,8 +503,9 @@ const makeStyles = (colors: any, fontSize: number) =>
     scrollRow: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 9,
+      gap: 10,
       paddingLeft: 4,
+      marginTop: 2,
     },
     fonts: { flexDirection: "row", alignItems: "center", gap: 6, flexShrink: 0 },
     iconBtn: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
@@ -532,39 +520,19 @@ const makeStyles = (colors: any, fontSize: number) =>
       ...(Platform.OS === "web" ? ({ fontVariant: "small-caps" } as const) : {}),
     },
     autoBtn: {
-      borderWidth: 2,
+      borderWidth: 1.5,
       borderColor: ORE_BLUE,
-      borderRadius: 9,
-      minWidth: 68,
-      height: 39,
+      borderRadius: 999,
+      minWidth: 64,
+      height: FONT_SIZE_SEG_HEIGHT,
       paddingHorizontal: 14,
-      marginRight: 12,
       alignItems: "center",
       justifyContent: "center",
+      backgroundColor: "rgba(77,168,218,0.08)",
     },
     autoOn: { backgroundColor: AUTO_ON_BG, borderColor: ORE_BLUE },
-    autoLab: { color: ORE_BLUE, fontWeight: "800", fontSize: Math.round(fontSize * 0.78) },
+    autoLab: { color: ORE_BLUE, fontWeight: "800", fontSize: 14 },
     autoLabOn: { color: AUTO_ON_TEXT },
-    spdBtn: {
-      minWidth: 46,
-      height: 39,
-      alignItems: "center",
-      justifyContent: "center",
-      borderRadius: 9,
-      borderWidth: 2,
-      borderColor: SPD_BORDER,
-      backgroundColor: colors.background,
-    },
-    spdValBox: {
-      minWidth: 46,
-      height: 39,
-      borderRadius: 9,
-      borderWidth: 2,
-      borderColor: SPD_VAL_BORDER,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    spdVal: { color: colors.textPrimary, fontWeight: "800", fontSize: Math.round(fontSize * 0.88) },
     chips: {
       flexDirection: "row",
       justifyContent: "center",
