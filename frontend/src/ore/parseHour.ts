@@ -204,7 +204,8 @@ function isAntiphonLabel(t: string): boolean {
 
 /**
  * `lo_rosso` con solo † = croce di congiunzione (antifona = inizio/fine salmo).
- * `lo_rosso` con solo * = segno spurio in antifona → togli.
+ * `lo_rosso` con solo * = asterisco liturgico (es. risposta del responsorio): conservalo.
+ * Non eliminarlo: sul CEI marca la parte ripetuta da chi risponde.
  */
 function stripDecorativeRosso(inner: string): string {
   return inner
@@ -214,7 +215,7 @@ function stripDecorativeRosso(inner: string): string {
     )
     .replace(
       /<div[^>]*class="[^"]*lo_rosso[^"]*"[^>]*>\s*(?:<br\s*\/?>|&nbsp;|\s)*(?:\*)(?:&nbsp;|\s|<br\s*\/?>)*<\/div>/gi,
-      "",
+      " * ",
     );
 }
 
@@ -391,6 +392,33 @@ function mergeLoneRubricLines(lines: VerseLine[]): VerseLine[] {
         hang: lines[i + 1].hang,
       });
       i += 1;
+      continue;
+    }
+    // Asterisco di risposta/flessa solo → in coda alla riga precedente
+    // (es. responsorio: «Ci nutri, Signore,» + «*» + «con fiore…»).
+    if (
+      cur === "*" &&
+      out.length > 0 &&
+      !/[*†]\s*$/.test(out[out.length - 1].text) &&
+      !hasJoinCross(out[out.length - 1].text)
+    ) {
+      const prev = out[out.length - 1];
+      prev.text = `${prev.text.replace(/\s+$/, "")} *`;
+      continue;
+    }
+    // «* testo» all’inizio riga → * in coda alla precedente, testo resta qui
+    if (
+      /^\*\s+\S/.test(cur) &&
+      out.length > 0 &&
+      !/[*†]\s*$/.test(out[out.length - 1].text) &&
+      !hasJoinCross(out[out.length - 1].text)
+    ) {
+      const prev = out[out.length - 1];
+      prev.text = `${prev.text.replace(/\s+$/, "")} *`;
+      out.push({
+        text: cur.replace(/^\*\s+/, ""),
+        hang: Math.max(lines[i].hang, 1),
+      });
       continue;
     }
     if (/^(V\.|R\.|\*|†|—)\s*$/.test(cur) && lines[i + 1]) {
