@@ -5,16 +5,17 @@ import { ACTION_TITLE_WEIGHT } from "../uiActionTokens";
 
 const FONT_MIN = 12;
 const FONT_MAX = 60;
-const FONT_STEP = 2;
+const FONT_STEP = 1;
 
 /** Larghezza totale ≤ due tasti storici (62 + 8 + 62). */
 export const FONT_SIZE_SEG_WIDTH = 132;
 /** Altezza fissa del segmento (non scala col testo liturgico). */
 export const FONT_SIZE_SEG_HEIGHT = 40;
 
-const SIDE_LABEL_SIZE = 20;
-/** Valore al centro: più grande, non grassetto; il box resta 132×40. */
-const MID_LABEL_SIZE = 18;
+/** Più piccolo del testo liturgico: A+/A− devono stare interi nella cella stretta. */
+const SIDE_LABEL_SIZE = 16;
+/** Valore al centro: non grassetto; il box resta 132×40. */
+const MID_LABEL_SIZE = 17;
 
 const webClickable = Platform.OS === "web" ? ({ cursor: "pointer" } as const) : undefined;
 
@@ -79,10 +80,14 @@ export function FontSizeButtons({
         accessibilityLabel={`Riduci dimensione testo, attuale ${fontSize}`}
         activeOpacity={0.55}
       >
-        <Text style={[styles.sideLabel, { color: colors.textPrimary }]}>A-</Text>
+        <Text style={[styles.sideLabel, { color: colors.textPrimary }]} allowFontScaling={false}>
+          A−
+        </Text>
       </TouchableOpacity>
       <View style={[styles.mid, { borderLeftColor: midBorder, borderRightColor: midBorder }]}>
-        <Text style={[styles.midLabel, { color: colors.focus }]}>{fontSize}</Text>
+        <Text style={[styles.midLabel, { color: colors.focus }]} allowFontScaling={false}>
+          {fontSize}
+        </Text>
       </View>
       <TouchableOpacity
         style={[styles.side, increaseDisabled && styles.disabled, webClickable]}
@@ -93,7 +98,9 @@ export function FontSizeButtons({
         accessibilityLabel={`Aumenta dimensione testo, attuale ${fontSize}`}
         activeOpacity={0.55}
       >
-        <Text style={[styles.sideLabel, { color: colors.textPrimary }]}>A+</Text>
+        <Text style={[styles.sideLabel, { color: colors.textPrimary }]} allowFontScaling={false}>
+          A+
+        </Text>
       </TouchableOpacity>
     </View>
   );
@@ -117,12 +124,12 @@ const styles = StyleSheet.create({
     height: "100%",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 2,
+    paddingHorizontal: 0,
   },
   mid: {
-    width: 34,
-    maxWidth: 36,
-    minWidth: 30,
+    width: 30,
+    maxWidth: 32,
+    minWidth: 28,
     height: "100%",
     alignItems: "center",
     justifyContent: "center",
@@ -131,9 +138,9 @@ const styles = StyleSheet.create({
   },
   sideLabel: {
     fontSize: SIDE_LABEL_SIZE,
-    lineHeight: SIDE_LABEL_SIZE,
+    lineHeight: SIDE_LABEL_SIZE + 2,
     fontWeight: ACTION_TITLE_WEIGHT,
-    letterSpacing: 0.3,
+    letterSpacing: -0.4,
     marginTop: SIDE_NUDGE_UP,
     ...labelCenter,
   },

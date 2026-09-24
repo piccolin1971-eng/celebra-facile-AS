@@ -37,7 +37,7 @@ const Ctx = createContext<BrightnessCtx | null>(null);
 
 export function ReadingBrightnessRoot({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
-  const [level, setLevel] = useState(3);
+  const [level, setLevel] = useState(4);
 
   useFocusEffect(
     useCallback(() => {

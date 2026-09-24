@@ -6,14 +6,17 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
 
-const KEY = "messale_reading_brightness_level";
-export const BRIGHTNESS_MIN = 1;
-export const BRIGHTNESS_MAX = 5;
+const KEY = "messale_reading_brightness_level_v8";
+/** Legacy: scala 1–5 (pre-v8). */
+const KEY_LEGACY = "messale_reading_brightness_level";
 
-const SUN_GLYPHS = ["·", "○", "◑", "◕", "☀"] as const;
+export const BRIGHTNESS_MIN = 1;
+export const BRIGHTNESS_MAX = 8;
+
+const SUN_GLYPHS = ["·", "∘", "○", "◔", "◑", "◕", "☼", "☀"] as const;
 
 export function clampBrightnessLevel(n: number): number {
-  if (!Number.isFinite(n)) return 3;
+  if (!Number.isFinite(n)) return 4;
   return Math.max(BRIGHTNESS_MIN, Math.min(BRIGHTNESS_MAX, Math.round(n)));
 }
 
@@ -32,6 +35,11 @@ export function brightnessSunGlyph(level: number): string {
   return SUN_GLYPHS[clampBrightnessLevel(level) - 1];
 }
 
+/** Scala legacy 1–5 → 1–8 mantenendo circa la stessa luminosità relativa. */
+function remapLegacy5To8(n: number): number {
+  return clampBrightnessLevel(1 + ((n - 1) * (BRIGHTNESS_MAX - 1)) / 4);
+}
+
 function brightnessMod(): typeof import("expo-brightness") | null {
   if (Platform.OS === "web") return null;
   try {
@@ -46,10 +54,17 @@ function brightnessMod(): typeof import("expo-brightness") | null {
 export async function loadSavedBrightnessLevel(): Promise<number | null> {
   try {
     const raw = await AsyncStorage.getItem(KEY);
-    if (raw == null || raw === "") return null;
-    const n = parseInt(raw, 10);
+    if (raw != null && raw !== "") {
+      const n = parseInt(raw, 10);
+      if (Number.isFinite(n)) return clampBrightnessLevel(n);
+    }
+    const legacy = await AsyncStorage.getItem(KEY_LEGACY);
+    if (legacy == null || legacy === "") return null;
+    const n = parseInt(legacy, 10);
     if (!Number.isFinite(n)) return null;
-    if (n > BRIGHTNESS_MAX) {
+    // Vecchia scala 1–5, oppure residui 1–10.
+    if (n >= 1 && n <= 5) return remapLegacy5To8(n);
+    if (n > 5 && n <= 10) {
       return clampBrightnessLevel(1 + ((n - 1) * (BRIGHTNESS_MAX - 1)) / 9);
     }
     return clampBrightnessLevel(n);

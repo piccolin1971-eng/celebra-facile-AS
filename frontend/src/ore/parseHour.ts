@@ -19,6 +19,7 @@ import {
   stripCeiMarianTail,
 } from "./bundled";
 import { enrichPsalmHeads } from "./psalmHeadings";
+import { JOIN_CROSS_MARK, hasJoinCross } from "./joinCross";
 import { parseLocalDate } from "../dateUtils";
 import type { MediaId, OreBlock, OreHourId, ParsedHour } from "./types";
 
@@ -60,8 +61,13 @@ function tidyLitText(t: string): string {
   );
 }
 
-/** Maiuscola iniziale (è→È) senza toccare V./R./*†. */
+/** Maiuscola iniziale (è→È) senza toccare V./R./*†/croce di congiunzione. */
 function capitalizeLitStart(t: string): string {
+  if (t.startsWith(JOIN_CROSS_MARK)) {
+    const rest = t.slice(JOIN_CROSS_MARK.length);
+    const m = rest.match(/^(\s*)([\s\S]*)$/);
+    return JOIN_CROSS_MARK + (m?.[1] || "") + capitalizeLitStart(m?.[2] || "");
+  }
   const s = tidyLitText(t);
   if (!s || /^(V\.|R\.|\*|†|—)/.test(s)) return s;
   const ch = s[0];
@@ -196,12 +202,20 @@ function isAntiphonLabel(t: string): boolean {
   return /^\d+\s*ant\.$/i.test(s) || /^Ant\.\s*al\s+Ben\.$/i.test(s) || /^Ant\.$/i.test(s);
 }
 
-/** †/* isolati in lo_rosso: sul CEI a volte finiscono nell’antifona e bloccano il parse. */
+/**
+ * `lo_rosso` con solo † = croce di congiunzione (antifona = inizio/fine salmo).
+ * `lo_rosso` con solo * = segno spurio in antifona → togli.
+ */
 function stripDecorativeRosso(inner: string): string {
-  return inner.replace(
-    /<div[^>]*class="[^"]*lo_rosso[^"]*"[^>]*>\s*(?:&dagger;|†|\*|&nbsp;|\s)*<\/div>/gi,
-    "",
-  );
+  return inner
+    .replace(
+      /<div[^>]*class="[^"]*lo_rosso[^"]*"[^>]*>\s*(?:<br\s*\/?>|&nbsp;|\s)*(?:&dagger;|†)(?:&nbsp;|\s|<br\s*\/?>)*<\/div>/gi,
+      JOIN_CROSS_MARK,
+    )
+    .replace(
+      /<div[^>]*class="[^"]*lo_rosso[^"]*"[^>]*>\s*(?:<br\s*\/?>|&nbsp;|\s)*(?:\*)(?:&nbsp;|\s|<br\s*\/?>)*<\/div>/gi,
+      "",
+    );
 }
 
 function consumeSubAfterPsalm(nodes: HtmlNode[], i: number): { sub: string; cite: string; skip: number } {
@@ -322,7 +336,11 @@ function blocksFromAntiphonal(inner: string): OreBlock[] {
   for (const n of nodes) {
     if (n.kind === "el" && (hasClass(n.cls, "lo_antifona") || hasClass(n.cls, "lo_rosso"))) {
       const raw = stripTags(n.inner).replace(/\s+/g, " ").trim();
-      if (!raw || raw === "*" || raw === "†") continue;
+      if (!raw || raw === "*") continue;
+      if (raw === "†" || raw === JOIN_CROSS_MARK) {
+        acc.push(JOIN_CROSS_MARK);
+        continue;
+      }
       if (hasClass(n.cls, "lo_antifona") || isAntiphonLabel(raw) || /^(V\.?|R\.?)$/i.test(raw)) {
         if (lab || acc.length) flush();
         lab = raw;
@@ -337,7 +355,11 @@ function blocksFromAntiphonal(inner: string): OreBlock[] {
     }
     if (n.kind === "el") {
       const t = stripTags(n.inner);
-      if (t && t !== "*" && t !== "†") acc.push(t);
+      if (t === "†" || t === JOIN_CROSS_MARK) {
+        acc.push(JOIN_CROSS_MARK);
+        continue;
+      }
+      if (t && t !== "*") acc.push(t);
     }
   }
   flush();
@@ -347,7 +369,8 @@ function blocksFromAntiphonal(inner: string): OreBlock[] {
 function serializeRosso(inner: string): string {
   return inner.replace(/<div[^>]*class="[^"]*lo_rosso[^"]*"[^>]*>([\s\S]*?)<\/div>/gi, (_m, body) => {
     const t = stripTags(body).replace(/\s+/g, " ").trim();
-    if (t === "*" || t === "†") return ` ${t} `;
+    if (t === "†") return JOIN_CROSS_MARK;
+    if (t === "*") return ` ${t} `;
     if (/^R\.?$/i.test(t)) return "\nR. ";
     if (/^V\.?$/i.test(t)) return "\nV. ";
     if (isAntiphonLabel(t)) return `\n${t}\n`;
@@ -359,15 +382,143 @@ function serializeRosso(inner: string): string {
 function mergeLoneRubricLines(lines: VerseLine[]): VerseLine[] {
   const out: VerseLine[] = [];
   for (let i = 0; i < lines.length; i++) {
-    if (/^(V\.|R\.|\*|†|—)\s*$/.test(lines[i].text) && lines[i + 1]) {
+    const cur = lines[i].text.trim();
+    // Croce di congiunzione sola → inizio della riga successiva (come sul CEI).
+    if (cur === JOIN_CROSS_MARK && lines[i + 1]) {
+      const next = lines[i + 1].text.replace(/^\s+/, "");
       out.push({
-        text: `${lines[i].text.trim()} ${lines[i + 1].text}`,
-        hang: Math.max(lines[i].hang, /^—/.test(lines[i].text) ? 1 : 0),
+        text: `${JOIN_CROSS_MARK} ${next}`,
+        hang: lines[i + 1].hang,
+      });
+      i += 1;
+      continue;
+    }
+    if (/^(V\.|R\.|\*|†|—)\s*$/.test(cur) && lines[i + 1]) {
+      out.push({
+        text: `${cur} ${lines[i + 1].text}`,
+        hang: Math.max(lines[i].hang, /^—/.test(cur) ? 1 : 0),
       });
       i += 1;
     } else {
       out.push(lines[i]);
     }
+  }
+  return out;
+}
+
+/**
+ * Croce di congiunzione sola → inizio della riga/strofa successiva (come sul CEI).
+ * Copre: strofa intera = †; oppure † in coda a una strofa con altre righe.
+ */
+function mergeLoneJoinCrossBlocks(blocks: OreBlock[]): OreBlock[] {
+  const out: OreBlock[] = [];
+  for (let i = 0; i < blocks.length; i++) {
+    let b = blocks[i];
+    const next = blocks[i + 1];
+
+    // † sola come unica riga della strofa → fusione sulla strofa successiva
+    if (
+      b.k === "stanza" &&
+      b.lines.length === 1 &&
+      b.lines[0].trim() === JOIN_CROSS_MARK &&
+      next &&
+      next.k === "stanza" &&
+      next.lines.length > 0
+    ) {
+      const lines = [`${JOIN_CROSS_MARK} ${next.lines[0].replace(/^\s+/, "")}`, ...next.lines.slice(1)];
+      const hang = next.hang ? [next.hang[0] ?? 0, ...next.hang.slice(1)] : undefined;
+      out.push({ k: "stanza", lines, hang });
+      i += 1;
+      continue;
+    }
+
+    // † in coda a una strofa (stesso lo_versetto del CEI) → fusione sulla strofa successiva
+    if (
+      b.k === "stanza" &&
+      b.lines.length > 1 &&
+      b.lines[b.lines.length - 1].trim() === JOIN_CROSS_MARK &&
+      next &&
+      next.k === "stanza" &&
+      next.lines.length > 0
+    ) {
+      const kept = b.lines.slice(0, -1);
+      const keptHang = b.hang?.slice(0, -1);
+      out.push({
+        k: "stanza",
+        lines: kept,
+        hang: keptHang,
+      });
+      const lines = [`${JOIN_CROSS_MARK} ${next.lines[0].replace(/^\s+/, "")}`, ...next.lines.slice(1)];
+      const hang = next.hang ? [next.hang[0] ?? 0, ...next.hang.slice(1)] : undefined;
+      out.push({ k: "stanza", lines, hang });
+      i += 1;
+      continue;
+    }
+
+    if (b.k === "stanza" && b.lines.length > 1) {
+      const merged = mergeLoneRubricLines(b.lines.map((text, j) => ({ text, hang: b.hang?.[j] ?? 0 })));
+      b = {
+        k: "stanza",
+        lines: merged.map((l) => l.text),
+        hang: merged.map((l) => l.hang),
+      };
+    }
+    out.push(b);
+  }
+  return out;
+}
+
+/**
+ * Anomalia CEI ricorrente (Sabato II salterio, Salmo 8 / Lodi):
+ * - manca `*` dopo «su tutta la terra:» prima della croce di congiunzione;
+ * - † spurio prima della ripresa finale («O Signore, nostro Dio, *»).
+ * Forma corretta (libri / liturgiadelleore): terra: * † sopra i cieli… ; ripresa senza †.
+ */
+function repairCeiPsalm8JoinAnomaly(blocks: OreBlock[]): OreBlock[] {
+  const out: OreBlock[] = [];
+  let inPsalm8 = false;
+
+  for (let i = 0; i < blocks.length; i++) {
+    const b = blocks[i];
+
+    if (b.k === "psalmHead" && /^SALMO\s*8\b/i.test(b.num)) {
+      inPsalm8 = true;
+      out.push(b);
+      continue;
+    }
+    if (
+      inPsalm8 &&
+      (b.k === "rubric" ||
+        b.k === "title" ||
+        (b.k === "psalmHead" && !/^SALMO\s*8\b/i.test(b.num)))
+    ) {
+      inPsalm8 = false;
+    }
+
+    if (!inPsalm8 || b.k !== "stanza") {
+      out.push(b);
+      continue;
+    }
+
+    let lines = [...b.lines];
+    let hang = b.hang ? [...b.hang] : undefined;
+
+    // «su tutta la terra:» → «su tutta la terra: *» (asterisco omesso dal CEI)
+    lines = lines.map((l) => {
+      const t = l.trim();
+      if (/^su tutta la terra:\s*$/i.test(t)) return "su tutta la terra: *";
+      return l;
+    });
+
+    // Ripresa finale: togli † di congiunzione spurio davanti a «O Signore, nostro Dio, *»
+    if (
+      lines.length >= 1 &&
+      new RegExp(`^${JOIN_CROSS_MARK}\\s+O Signore, nostro Dio,\\s*\\*\\s*$`).test(lines[0].trim())
+    ) {
+      lines[0] = lines[0].replace(JOIN_CROSS_MARK, "").replace(/^\s+/, "");
+    }
+
+    out.push({ k: "stanza", lines, hang });
   }
   return out;
 }
@@ -753,13 +904,53 @@ function attachOrphanAntiphonText(blocks: OreBlock[]): OreBlock[] {
   return out;
 }
 
+function isLoneJoinCrossBlock(b: OreBlock): boolean {
+  if (b.k === "prose") return b.text.trim() === JOIN_CROSS_MARK;
+  if (b.k === "stanza") {
+    return b.lines.length === 1 && b.lines[0].trim() === JOIN_CROSS_MARK;
+  }
+  return false;
+}
+
+/**
+ * CEI a volte mette il † di congiunzione tra testo ant e titolo SALMO
+ * (es. Sabato II salterio, Salmo 8) invece che dentro l’antifona.
+ * Lo riattacca all’antifona precedente.
+ */
+function attachJoinCrossBeforePsalmHead(blocks: OreBlock[]): OreBlock[] {
+  const out: OreBlock[] = [];
+  for (let i = 0; i < blocks.length; i++) {
+    const b = blocks[i];
+    const join = blocks[i + 1];
+    const head = blocks[i + 2];
+    if (
+      b.k === "rubric" &&
+      /ant/i.test(b.lab) &&
+      b.text &&
+      !hasJoinCross(b.text) &&
+      join &&
+      isLoneJoinCrossBlock(join) &&
+      head &&
+      head.k === "psalmHead"
+    ) {
+      const text = `${b.text.replace(/\s+$/, "")} ${JOIN_CROSS_MARK}`.replace(/\s+/g, " ").trim();
+      out.push({ ...b, text });
+      i += 1; // salta il † orfano; psalmHead al giro successivo
+      continue;
+    }
+    out.push(b);
+  }
+  return out;
+}
+
 function dropOrphanStarLines(blocks: OreBlock[]): OreBlock[] {
   return blocks
     .map((b) => {
       if (b.k !== "stanza") return b;
       const keep: number[] = [];
       b.lines.forEach((l, i) => {
-        if (!/^[*†]\s*$/.test(l)) keep.push(i);
+        // Non scartare la croce di congiunzione (marker interno).
+        if (hasJoinCross(l) || !/^[*†]\s*$/.test(l)) keep.push(i);
       });
       if (!keep.length) return null;
       return {
@@ -940,7 +1131,7 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
       if (rawRows.length) {
         const merged = verseLinesFromRawRows(rawRows);
         const lines = merged.map((l) => tidyLitText(l.text)).filter(Boolean);
-        if (lines.length === 1 && !/[*†]/.test(lines[0]) && !/^(V\.|R\.)/.test(lines[0])) {
+        if (lines.length === 1 && !/[*†]/.test(lines[0]) && lines[0] !== JOIN_CROSS_MARK && !/^(V\.|R\.)/.test(lines[0])) {
           blocks.push({ k: "prose", text: lines[0] });
         } else if (lines.length) {
           const hangs = merged
@@ -1101,7 +1292,10 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
       } else if (t === "—" || t === "–" || t === "-") {
         nodes.splice(i, 1, { kind: "text", text: "—" });
         continue;
-      } else if (t === "*" || t === "†") {
+      } else if (t === "†" || t === JOIN_CROSS_MARK) {
+        nodes.splice(i, 1, { kind: "text", text: JOIN_CROSS_MARK });
+        continue;
+      } else if (t === "*") {
         nodes.splice(i, 1, { kind: "text", text: t });
         continue;
       }
@@ -1147,15 +1341,18 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
     }
   }
 
-  const clean = capitalizePsalmOpenings(
-    applyTonePhrases(
-      coalesceResponsory(
-        dropOrphanStarLines(
-          mergeRubricPrefixLines(
+  const clean = applyTonePhrases(
+    coalesceResponsory(
+      dropOrphanStarLines(
+        mergeRubricPrefixLines(
+          attachJoinCrossBeforePsalmHead(
             attachOrphanAntiphonText(
               scrubLoneParenLines(
                 blocks.filter((b) => {
-                  if (b.k === "prose") return !isChromeText(b.text) && b.text.length > 1;
+                  if (b.k === "prose") {
+                    if (b.text.trim() === JOIN_CROSS_MARK) return true;
+                    return !isChromeText(b.text) && b.text.length > 1;
+                  }
                   if (b.k === "tone") return b.intro.length > 1 && !isChromeText(b.intro);
                   if (b.k === "rubric") return !!(b.lab || b.text);
                   if (b.k === "stanza") return b.lines.length > 0;
@@ -1176,7 +1373,14 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
       error: "Testo non disponibile. Riprova con la connessione, oppure scarica 10 giorni dalla Home.",
     };
   }
-  return { hour, blocks: applyBundledGospelCanticles(enrichPsalmHeads(clean)) };
+  return {
+    hour,
+    blocks: capitalizePsalmOpenings(
+      repairCeiPsalm8JoinAnomaly(
+        mergeLoneJoinCrossBlocks(applyBundledGospelCanticles(enrichPsalmHeads(clean))),
+      ),
+    ),
+  };
 }
 
 function isChromeText(t: string): boolean {

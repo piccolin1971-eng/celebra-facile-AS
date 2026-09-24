@@ -4,6 +4,7 @@ import type { AppFontWeight } from "../fontFamily";
 import type { OreBlock, DayHoursMeta } from "./types";
 import { formatHourHeadLine } from "./dayHead";
 import { enrichPsalmHead } from "./psalmHeadings";
+import { JOIN_CROSS_MARK } from "./joinCross";
 
 const GOLD_TITLE = "#c4b06a";
 const RUBRIC = "#E24B4B";
@@ -79,7 +80,9 @@ function stanzaHangLevel(lines: string[], j: number): number {
   const line = lines[j] || "";
   if (/^—/.test(line)) return 1;
   if (j <= 0) return 0;
-  if (/[*†]\s*$/.test(lines[j - 1])) return 1;
+  const prev = lines[j - 1] || "";
+  // Flessa *† a fine riga; non la croce di congiunzione.
+  if (/[*†]\s*$/.test(prev.replace(new RegExp(JOIN_CROSS_MARK, "g"), ""))) return 1;
   if (lines.length === 2 && j === 1) return 1;
   return 0;
 }
@@ -160,19 +163,29 @@ function rubricStyle(fontSize: number) {
 }
 
 function colorStars(text: string, body: { fontFamily: string; fontSize: number; color: string }) {
-  const parts = text.split(/([*†])/);
+  const parts = text.split(new RegExp(`(${JOIN_CROSS_MARK}|[*†])`));
   if (parts.length === 1) return text;
-  return parts.map((p, i) =>
-    p === "*" || p === "†" ? (
-      <Text key={i} style={rubricStyle(body.fontSize)}>
-        {p}
-      </Text>
-    ) : (
+  return parts.map((p, i) => {
+    if (p === JOIN_CROSS_MARK) {
+      return (
+        <Text key={i} style={{ color: GOLD_TITLE, fontFamily: body.fontFamily, fontSize: body.fontSize, fontWeight: "700" }}>
+          †
+        </Text>
+      );
+    }
+    if (p === "*" || p === "†") {
+      return (
+        <Text key={i} style={rubricStyle(body.fontSize)}>
+          {p}
+        </Text>
+      );
+    }
+    return (
       <Text key={i} style={{ color: body.color, fontFamily: body.fontFamily }}>
         {p}
       </Text>
-    ),
-  );
+    );
+  });
 }
 
 export function OreBlocksView({
@@ -350,7 +363,7 @@ function renderBlock(
     return (
       <Text key={i} style={[body, { marginTop: em(0.45), marginBottom: em(0.35) }]}>
         {b.lab ? <Text style={rubricStyle(fontSize)}>{b.lab} </Text> : null}
-        <Text style={body}>{b.text}</Text>
+        <Text style={body}>{colorStars(b.text, body)}</Text>
       </Text>
     );
   }
