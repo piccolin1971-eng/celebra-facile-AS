@@ -44,6 +44,7 @@ export type Reading = {
   type: string;
   reference: string;
   title: string;
+  subtitle?: string;
   text: string;
 };
 

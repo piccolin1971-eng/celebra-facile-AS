@@ -99,6 +99,12 @@ export function renderSegment(
           {text}
         </Text>
       );
+    case "readingSubtitle":
+      return (
+        <Text key={key} style={styles.segReadingSubtitle}>
+          {text}
+        </Text>
+      );
     case "celebrante":
       return (
         <DialogueLine
@@ -285,15 +291,16 @@ function renderSalmoNative(seg: Segment, key: string, styles: any): React.ReactN
   );
 }
 
-// Preghiera dei fedeli: R/. rosso + ritornello completo dopo ogni intenzione.
+// Preghiera dei fedeli: R/. rosso. Dopo ogni intenzione (chiude con R/.) una riga vuota.
 function renderPreghieraFedeliNative(text: string, key: string, styles: any): React.ReactNode {
+  const gap = /(?:R\/\.?|R\.)/.test(text) ? styles.segNormal?.lineHeight || 0 : 0;
   return (
-    <React.Fragment key={key}>
+    <View key={key} style={gap ? { marginBottom: gap } : undefined}>
       {renderOrazionaleOrFedeliText(text, {
         body: styles.segNormal,
         marker: styles.segRespMarker,
       })}
-    </React.Fragment>
+    </View>
   );
 }
 

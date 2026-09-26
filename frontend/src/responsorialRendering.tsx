@@ -85,8 +85,8 @@ export function buildSalmoBlocks(text: string): SalmoBlock[] {
   const paragraphs = splitSalmoParagraphs(text);
   if (paragraphs.length === 0) return [];
 
-  const firstLine = paragraphs[0].split("\n")[0]?.trim() ?? "";
-  const refrainText = firstLine.replace(STRIP_RESP_PREFIX, "").trim();
+  // Il ritornello può essere su più righe (es. «R. … rifugio / di generazione…»).
+  const refrainText = paragraphs[0].replace(STRIP_RESP_PREFIX, "").trim();
   if (!refrainText) return [{ kind: "stanza", text: normalizeRespText(text) }];
 
   const refrainKey = normalizeRefrainKey(refrainText);

@@ -197,8 +197,11 @@ export const makeStyles = (
       fontFamily: bodyFont.fontFamily,
       fontWeight: bodyFont.fontWeight,
       lineHeight: bodyLh(),
-      marginTop: 4,
-      marginBottom: 8,
+      // Niente margin verticali: le letture/vangelo sono 1 riga = 1 segmento
+      // (preSplit). I margin 4+8 gonfiavano l'interlinea oltre lineHeight
+      // e rendevano inefficace il fattore Impostazioni.
+      marginTop: 0,
+      marginBottom: 0,
     },
     segPeRubric: {
       fontSize: titlePt(0.85),
@@ -221,14 +224,24 @@ export const makeStyles = (
       marginVertical: 6,
     },
     segReadingRef: {
-      fontSize: fontSize,
+      fontSize: Math.round(fontSize * 1.105),
       color: colors.rubrics,
       fontStyle: "italic",
       fontFamily: bodyFont.fontFamily,
       fontWeight: bodyFont.fontWeight,
-      lineHeight: bodyLh(),
+      lineHeight: lh(Math.round(fontSize * 1.105), BODY_LINE_HEIGHT),
       marginTop: 4,
       marginBottom: 8,
+    },
+    segReadingSubtitle: {
+      fontSize: fontSize,
+      color: "#b7c4b0",
+      fontStyle: "italic",
+      fontFamily: bodyFont.fontFamily,
+      fontWeight: bodyFont.fontWeight,
+      lineHeight: bodyLh(),
+      marginTop: 2,
+      marginBottom: 6,
     },
     segCelebrante: {
       fontSize: fontSize,
@@ -255,8 +268,8 @@ export const makeStyles = (
       fontFamily: bodyFont.fontFamily,
       fontWeight: bodyFont.fontWeight,
       lineHeight: lh(titlePt(0.85), BODY_LINE_HEIGHT),
-      marginTop: 4,
-      marginBottom: 8,
+      marginTop: 0,
+      marginBottom: 0,
     },
     segSalmo: {
       fontSize: fontSize,
@@ -264,7 +277,8 @@ export const makeStyles = (
       fontFamily: bodyFont.fontFamily,
       fontWeight: bodyFont.fontWeight,
       lineHeight: bodyLh(),
-      marginVertical: 6,
+      marginTop: 2,
+      marginBottom: 10,
     },
     segPeConsecration: {
       fontSize: fontSize,
@@ -272,8 +286,8 @@ export const makeStyles = (
       color: colors.accentPeConsecration,
       fontFamily: bodyFont.fontFamily,
       fontWeight: bodyFont.fontWeight,
-      marginTop: 4,
-      marginBottom: 8,
+      marginTop: 0,
+      marginBottom: 0,
     },
     segPeDossologia: {
       fontSize: fontSize,
@@ -281,8 +295,8 @@ export const makeStyles = (
       color: colors.accentPeConsecration,
       fontFamily: bodyFont.fontFamily,
       fontWeight: bodyFont.fontWeight,
-      marginTop: 4,
-      marginBottom: 8,
+      marginTop: 0,
+      marginBottom: 0,
     },
     // R/. marker rosso bold (regola globale Preghiera dei Fedeli + salmo)
     segRespMarker: {
@@ -380,7 +394,7 @@ export const makeStyles = (
     },
     peDossologia: {
       fontSize: fontSize,
-      lineHeight: fontSize * 1.7,
+      lineHeight: bodyLh(),
       color: colors.textPrimary,
       fontFamily: bodyFont.fontFamily,
       fontWeight: bodyFont.fontWeight,
@@ -394,16 +408,16 @@ export const makeStyles = (
       fontFamily: bodyFont.fontFamily,
       fontWeight: bodyFont.fontWeight,
       marginVertical: 6,
-      lineHeight: fontSize * 1.55,
+      lineHeight: bodyLh(),
     },
     text: {
       fontSize: fontSize,
-      lineHeight: fontSize * 1.7,
+      lineHeight: bodyLh(),
       color: colors.textPrimary,
       fontFamily: bodyFont.fontFamily,
       fontWeight: bodyFont.fontWeight,
       marginTop: 0,
-      marginBottom: 8,
+      marginBottom: 0,
     },
     rubric: {
       fontSize: Math.round(fontSize * 0.7),
@@ -412,7 +426,7 @@ export const makeStyles = (
       fontFamily: bodyFont.fontFamily,
       fontWeight: bodyFont.fontWeight,
       marginVertical: 4,
-      lineHeight: fontSize * 1.2,
+      lineHeight: lh(Math.round(fontSize * 0.7), RUBRIC_LINE_HEIGHT),
     },
     salmoRit: {
       color: colors.rubrics,
@@ -421,11 +435,11 @@ export const makeStyles = (
     },
     salmoText: {
       fontSize: fontSize,
-      lineHeight: fontSize * 1.55,
+      lineHeight: bodyLh(),
       color: colors.textPrimary,
       fontFamily: bodyFont.fontFamily,
       fontWeight: bodyFont.fontWeight,
-      marginVertical: 4,
+      marginVertical: 0,
     },
     celebrante: {
       fontSize: fontSize,
@@ -433,7 +447,7 @@ export const makeStyles = (
       fontFamily: bodyFont.fontFamily,
       fontWeight: bodyFont.fontWeight,
       marginVertical: 6,
-      lineHeight: fontSize * 1.7,
+      lineHeight: bodyLh(),
     },
     assemblea: {
       fontSize: Math.max(12, fontSize - 1),
@@ -442,7 +456,7 @@ export const makeStyles = (
       fontFamily: bodyFont.fontFamily,
       fontWeight: bodyFont.fontWeight,
       marginVertical: 6,
-      lineHeight: fontSize * 1.7,
+      lineHeight: bodyLh(),
     },
     // ----- Empty state -----
     emptyBox: {

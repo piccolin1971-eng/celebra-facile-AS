@@ -22,6 +22,8 @@ export type Reading = {
   type: string;
   reference: string;
   title: string;
+  /** Sottotitolo CEI (h3), es. «Abbiate in voi…». */
+  subtitle?: string;
   text: string;
 };
 
@@ -147,6 +149,30 @@ function classify(title: string): string | null {
   return null;
 }
 
+/**
+ * Sigla su riga propria: «Lc 9,43b-45», «Fm 7-20», «2Gv 1a.3-9», «1Ts 4,13-14».
+ */
+export function isBibleSiglaLine(line: string): boolean {
+  return /^(?:[1-3]\s*)?[A-ZÈÉ][a-zèéì]{0,6}\.?\s*\d+(?:[,.:;][\dA-Za-z.\-–;,\s]*|[a-zA-Z][,.:][\dA-Za-z.\-–;,\s]*|[-–]\d[\dA-Za-z.\-–;,\s]*)$/.test(
+    line.trim(),
+  );
+}
+
+const GLUED_ABBR =
+  "1Cor|2Cor|1Ts|2Ts|1Tm|2Tm|1Pt|2Pt|1Gv|2Gv|3Gv|1Sam|2Sam|1Re|2Re|1Cr|2Cr|1Mac|2Mac|Mt|Mc|Lc|Gv|At|Rm|Gal|Ef|Fil|Col|Tt|Fm|Eb|Gc|Gd|Ap|Gen|Es|Lv|Nm|Dt|Gs|Gdc|Rt|Esd|Ne|Tb|Gdt|Est|Gb|Sal|Pr|Qo|Ct|Sap|Sir|Is|Ger|Lam|Bar|Ez|Dn|Os|Gl|Am|Abd|Gio|Mi|Na|Ab|Sof|Ag|Zc|Ml";
+
+/** «MatteoMt 25,31-46» o «LucaLc 21,1-4 In quel tempo…»: la sigla è incollata al titolo. */
+function splitGluedSigla(line: string): { intro: string; sigla: string; rest: string } | null {
+  const re = new RegExp(
+    `^(Dal(?:la|l['’])?|Dagli?|Dall['’]?)\\s+(.+?[a-zàèéìòù])((?:[1-3])?(?:${GLUED_ABBR}))\\s*(\\d[\\d,.:a-zA-Z\\-–;]*)(?:\\s+([\\s\\S]+))?$`,
+  );
+  const m = line.trim().match(re);
+  if (!m) return null;
+  const intro = `${m[1]} ${m[2].replace(/\s+/g, " ").trim()}`;
+  const sigla = `${m[3]} ${m[4]}`.replace(/\s+/g, " ").trim();
+  return { intro, sigla, rest: (m[5] || "").trim() };
+}
+
 function extractReference(fullText: string, rtype: string): [string, string] {
   if (!["prima_lettura", "seconda_lettura", "vangelo"].includes(rtype)) {
     return ["", fullText];
@@ -160,6 +186,25 @@ function extractReference(fullText: string, rtype: string): [string, string] {
     const refBody = m[3].trim();
     const body = m[4].trim();
     return [`${intro} (${refBody})`, body];
+  }
+  const lines = fullText.split("\n");
+  const introLine = (lines[0] || "").trim();
+  const glued = splitGluedSigla(introLine);
+  if (glued) {
+    const after = lines.slice(1).join("\n").trim();
+    const body = [glued.rest, after].filter(Boolean).join("\n").trim();
+    return [`${glued.intro} (${glued.sigla})`, body];
+  }
+  // Il CEI mette spesso la sigla a capo, anche con lettere (43b), «;» o senza virgola («Fm 7-20»).
+  if (/^(Dal|Dalla|Dagli|Dall['’])/i.test(introLine)) {
+    let i = 1;
+    while (i < lines.length && !lines[i].trim()) i += 1;
+    const sigla = (lines[i] || "").trim();
+    if (isBibleSiglaLine(sigla)) {
+      i += 1;
+      while (i < lines.length && !lines[i].trim()) i += 1;
+      return [`${introLine} (${sigla})`, lines.slice(i).join("\n").trim()];
+    }
   }
   // Fallback: prima riga se breve
   const firstNl = fullText.indexOf("\n");
@@ -198,6 +243,7 @@ function readingsFromHtmlChunk(chunkHtml: string): Reading[] {
       type: rtype,
       title: TYPE_LABELS[rtype] || sec.title,
       reference,
+      subtitle: sec.subtitle || "",
       text: body,
     });
   }
@@ -314,6 +360,7 @@ export function resolveLiturgyFromCeiHtml(
       type: rtype,
       title: TYPE_LABELS[rtype] || sec.title,
       reference,
+      subtitle: sec.subtitle || "",
       text: body,
     });
   }
@@ -339,21 +386,22 @@ function resolvePrimaryFromMassBlocks(
   return resolveLiturgyFromCeiHtmlInternal(html, targetDate, mode);
 }
 
-function extractSections(html: string): Array<{ title: string; body: string }> {
-  // Trova tutte le coppie: <h2 class="cci-liturgia-giorno-section-title">TITLE</h2> ... <div class="cci-liturgia-giorno-section-content">BODY</div>
-  const sections: Array<{ title: string; body: string }> = [];
-  // Regex globale per h2 con classe target
+function extractSections(html: string): Array<{ title: string; subtitle: string; body: string }> {
+  const sections: Array<{ title: string; subtitle: string; body: string }> = [];
   const re = /<h2[^>]*class="[^"]*cci-liturgia-giorno-section-title[^"]*"[^>]*>([\s\S]*?)<\/h2>([\s\S]*?)(?=<h2[^>]*class="[^"]*cci-liturgia-giorno-section-title|$)/gi;
   let m: RegExpExecArray | null;
   while ((m = re.exec(html)) !== null) {
     const titleHtml = m[1];
     const afterTitle = m[2];
-    // Estrai il primo div.section-content dopo il titolo
     const divMatch = afterTitle.match(/<div[^>]*class="[^"]*cci-liturgia-giorno-section-content[^"]*"[^>]*>([\s\S]*?)<\/div>/i);
     if (!divMatch) continue;
     const title = cleanText(stripTags(titleHtml));
+    const subMatch = afterTitle.match(
+      /<h3[^>]*class="[^"]*cci-liturgia-giorno-section-subtitle[^"]*"[^>]*>([\s\S]*?)<\/h3>/i,
+    );
+    const subtitle = subMatch ? cleanText(stripTags(subMatch[1])) : "";
     const body = cleanText(stripTags(divMatch[1]));
-    if (title && body) sections.push({ title, body });
+    if (title && body) sections.push({ title, subtitle, body });
   }
   return sections;
 }

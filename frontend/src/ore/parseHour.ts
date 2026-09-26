@@ -160,12 +160,21 @@ function verseLinesFromRawRows(rawLines: string[]): VerseLine[] {
  * Spezza un lo_versetto CEI in più strofe se ci sono <br><br> (riga vuota voluta).
  * Un solo <br> (anche seguito da \\n nel HTML) non spezza.
  * Es. cantico Tb: «Convertitevi…» e «e allora egli…» nello stesso div.
+ *
+ * I soli a capo ammessi sono i `<br>` (e i marcatori da serializeRosso per R./V.).
+ * I newline «di markup» tra nodi HTML non spezzano: così il responsorio CEI
+ * «R. … * risposta.» resta su una riga (sul CEI non c’è <br> tra * e risposta),
+ * mentre i salmi restano a due emistichi perché dopo * c’è un <br>.
  */
 function coalesceCeiVerseGroups(inner: string): VerseLine[][] {
-  const withBreaks = inner.replace(/<br\s*\/?>\s*<br\s*\/?>/gi, "{{STANZA_BREAK}}");
-  const text = decodeHtmlEntities(
-    withBreaks.replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, ""),
-  ).replace(/\u00a0/g, " ");
+  const marked = inner
+    .replace(/<br\s*\/?>\s*<br\s*\/?>/gi, "{{STANZA_BREAK}}")
+    .replace(/<br\s*\/?>/gi, "{{LINE_BREAK}}");
+  const text = decodeHtmlEntities(marked.replace(/<[^>]+>/g, ""))
+    .replace(/\u00a0/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/ ?\{\{LINE_BREAK\}\} ?/g, "\n")
+    .replace(/ ?\{\{STANZA_BREAK\}\} ?/g, "{{STANZA_BREAK}}");
   const chunks = text.split("{{STANZA_BREAK}}");
   const groups: VerseLine[][] = [];
   for (const chunk of chunks) {
@@ -372,10 +381,12 @@ function serializeRosso(inner: string): string {
     const t = stripTags(body).replace(/\s+/g, " ").trim();
     if (t === "†") return JOIN_CROSS_MARK;
     if (t === "*") return ` ${t} `;
-    if (/^R\.?$/i.test(t)) return "\nR. ";
-    if (/^V\.?$/i.test(t)) return "\nV. ";
-    if (isAntiphonLabel(t)) return `\n${t}\n`;
-    if (t === "—" || t === "–" || t === "-") return "\n— ";
+    // Marcatori (non \n grezzi): i newline di markup non devono spezzare
+    // «R. … * risposta» del responsorio CEI (lì non c’è <br> tra * e risposta).
+    if (/^R\.?$/i.test(t)) return "{{LINE_BREAK}}R. ";
+    if (/^V\.?$/i.test(t)) return "{{LINE_BREAK}}V. ";
+    if (isAntiphonLabel(t)) return `{{LINE_BREAK}}${t}{{LINE_BREAK}}`;
+    if (t === "—" || t === "–" || t === "-") return "{{LINE_BREAK}}— ";
     return ` ${t} `;
   });
 }
@@ -406,6 +417,19 @@ function mergeLoneRubricLines(lines: VerseLine[]): VerseLine[] {
       prev.text = `${prev.text.replace(/\s+$/, "")} *`;
       continue;
     }
+    // Responsorio CEI: «R. … *» + risposta sullo stesso verso (senza <br>) → una riga.
+    // I salmi restano a due emistichi: lì dopo * c’è un <br>, e la riga non inizia con R.
+    if (
+      out.length > 0 &&
+      /\*\s*$/.test(out[out.length - 1].text) &&
+      /^R\./i.test(out[out.length - 1].text.trim()) &&
+      !/^(V\.|R\.|Ant\.|—|\*)/i.test(cur) &&
+      !hasJoinCross(cur)
+    ) {
+      const prev = out[out.length - 1];
+      prev.text = `${prev.text.replace(/\s+$/, "")} ${cur}`;
+      continue;
+    }
     // «* testo» all’inizio riga → * in coda alla precedente, testo resta qui
     if (
       /^\*\s+\S/.test(cur) &&
@@ -414,6 +438,11 @@ function mergeLoneRubricLines(lines: VerseLine[]): VerseLine[] {
       !hasJoinCross(out[out.length - 1].text)
     ) {
       const prev = out[out.length - 1];
+      // Stesso caso responsorio se la riga precedente è un R.
+      if (/^R\./i.test(prev.text.trim())) {
+        prev.text = `${prev.text.replace(/\s+$/, "")} * ${cur.replace(/^\*\s+/, "")}`;
+        continue;
+      }
       prev.text = `${prev.text.replace(/\s+$/, "")} *`;
       out.push({
         text: cur.replace(/^\*\s+/, ""),
@@ -575,8 +604,12 @@ function blocksFromVerseLines(lines: VerseLine[]): OreBlock[] {
     return [{ k: "rubric", lab, text: "" }, stanzaFromLines(rest)];
   }
   if (kept.some((l) => /^—/.test(l.text))) return splitDashStanzas(kept.map((l) => l.text));
-  if (kept.length === 1 && !/[*†]/.test(kept[0].text) && !/^(V\.|R\.)/.test(kept[0].text)) {
-    return [{ k: "prose", text: kept[0].text }];
+  // Letture / prosa CEI (anche multi-paragrafo via <br>): niente strofa né hang da salmo.
+  const hasLitMarks = kept.some(
+    (l) => /[*†]/.test(l.text) || /^(V\.|R\.|Ant\.)/i.test(l.text) || hasJoinCross(l.text),
+  );
+  if (!hasLitMarks) {
+    return kept.map((l) => ({ k: "prose" as const, text: l.text }));
   }
   // Un lo_versetto CEI è già la strofa (2, 3 o 4 righe): non spezzare a coppie.
   return [stanzaFromLines(kept)];
@@ -1159,7 +1192,20 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
       if (rawRows.length) {
         const merged = verseLinesFromRawRows(rawRows);
         const lines = merged.map((l) => tidyLitText(l.text)).filter(Boolean);
-        if (lines.length === 1 && !/[*†]/.test(lines[0]) && lines[0] !== JOIN_CROSS_MARK && !/^(V\.|R\.)/.test(lines[0])) {
+        const looseProse =
+          lines.length > 0 &&
+          lines.every(
+            (l) =>
+              l.trim().length >= 45 &&
+              !/[*†]/.test(l) &&
+              !hasJoinCross(l) &&
+              l !== JOIN_CROSS_MARK &&
+              !/\s\/\s/.test(l) &&
+              !/^(V\.|R\.|Ant\.|—)/.test(l.trim()),
+          );
+        if (looseProse) {
+          for (const line of lines) blocks.push({ k: "prose", text: line });
+        } else if (lines.length === 1 && !/[*†]/.test(lines[0]) && lines[0] !== JOIN_CROSS_MARK && !/^(V\.|R\.)/.test(lines[0])) {
           blocks.push({ k: "prose", text: lines[0] });
         } else if (lines.length) {
           const hangs = merged

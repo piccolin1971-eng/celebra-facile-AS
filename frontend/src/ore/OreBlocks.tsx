@@ -83,7 +83,6 @@ function stanzaHangLevel(lines: string[], j: number): number {
   const prev = lines[j - 1] || "";
   // Flessa *† a fine riga; non la croce di congiunzione.
   if (/[*†]\s*$/.test(prev.replace(new RegExp(JOIN_CROSS_MARK, "g"), ""))) return 1;
-  if (lines.length === 2 && j === 1) return 1;
   return 0;
 }
 

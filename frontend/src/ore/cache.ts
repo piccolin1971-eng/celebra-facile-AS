@@ -2,7 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { nextDates, loadLiturgy } from "../offlineCache";
 import type { DayHoursCache, MediaId, OreHourId } from "./types";
 
-const PREFIX = "ore_day_v23_";
+const PREFIX = "ore_day_v25_";
 
 function key(date: string): string {
   return `${PREFIX}${date}`;

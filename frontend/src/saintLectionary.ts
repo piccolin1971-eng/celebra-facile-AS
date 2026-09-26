@@ -12,6 +12,7 @@ export type SaintLectionaryReading = {
   reference: string;
   title: string;
   text: string;
+  subtitle?: string;
 };
 
 export type SaintLectionaryEntry = {
@@ -321,7 +322,13 @@ export function fillMissingFeastSecondReading(liturgy: Liturgy): Liturgy {
     }
   }
   if (!second) return liturgy;
-  return { ...liturgy, readings: insertSecondReading(liturgy.readings, second) };
+  // Il CEI a volte lascia la 2ª lettura nel testo della prima, dopo «Parola di Dio. / Oppure:».
+  const readings = (liturgy.readings || []).map((r) => {
+    if (r.type !== "prima_lettura" || !r.text) return r;
+    const m = r.text.match(/^([\s\S]*?Parola di Dio\.)\s*\n+\s*Oppure:\s*\n[\s\S]*$/);
+    return m ? { ...r, text: m[1].trim() } : r;
+  });
+  return { ...liturgy, readings: insertSecondReading(readings, second) };
 }
 
 export function getSaintLectionaryMeta() {

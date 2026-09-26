@@ -14,6 +14,7 @@ import peFullData from "../data/eucharisticPrayersFull.json";
 import { buildPeTextEngineChunks } from "../peEngineSegments";
 import { DEFAULT_CONGEDO_ID } from "../massSession";
 import { buildSalmoBlocks } from "../responsorialRendering";
+import { isBibleSiglaLine } from "../liturgyScraper";
 
 export type SegKind =
   | "sectionTitle"
@@ -25,7 +26,8 @@ export type SegKind =
   | "troparioTitle" // titolo dei tropari Formula C atto penitenziale (arancio brillante)
   | "normal"
   | "rubric"
-  | "readingRef" // riferimento biblico sotto Lettura/Vangelo (rosso, ma più grande della rubric)
+  | "readingRef" // riferimento biblico (rosso, +30% rispetto al corpo)
+  | "readingSubtitle" // sottotitolo CEI, grigio come i salmi delle Lodi
   | "celebrante"
   | "assemblea"
   | "umili"
@@ -176,6 +178,85 @@ export function celebrationDateHeading(
   return "Celebrazione";
 }
 
+/**
+ * Il CEI a volte va a capo a metà frase (colonna stretta). Quei newline,
+ * mostrati come righe separate, spezzano la lettura. I versi brevi restano.
+ */
+export function reflowReadingWraps(text: string): string {
+  return text
+    .split(/\n{2,}/)
+    .map((para) => {
+      const out: string[] = [];
+      for (const raw of para.split("\n")) {
+        const line = raw.trim();
+        if (!line) continue;
+        const prev = out[out.length - 1];
+        const join =
+          !!prev &&
+          prev.length >= 60 &&
+          !/[.!?…:;»"”']$/.test(prev) &&
+          /^[a-zàèéìòù]/.test(line);
+        if (join) out[out.length - 1] = `${prev} ${line}`;
+        else out.push(line);
+      }
+      return out.join("\n");
+    })
+    .filter(Boolean)
+    .join("\n\n");
+}
+
+/** CEI: dopo la forma lunga, titolo «Forma breve» e il testo corto. */
+export function splitFormaBreve(text: string): { long: string; short: string | null } {
+  const m = text.match(/\n\s*Forma breve\s*:?\s*\n/i);
+  if (!m || m.index == null) return { long: text, short: null };
+  const long = text.slice(0, m.index).trim();
+  const short = text.slice(m.index + m[0].length).trim();
+  return { long, short: short || null };
+}
+
+/**
+ * Blocco forma breve CEI: sottotitolo, poi «Dalla lettera…» + sigla, poi il testo.
+ */
+function isDalLine(line: string): boolean {
+  return /^(Dal|Dalla|Dagli|Dall['’])/i.test(line.trim());
+}
+
+export function parseFormaBreveBlock(short: string): {
+  subtitle: string;
+  reference: string;
+  body: string;
+} {
+  const lines = short.split("\n").map((l) => l.trim());
+  let i = 0;
+  while (i < lines.length && !lines[i]) i += 1;
+  const subtitleLines: string[] = [];
+  while (i < lines.length && lines[i] && !isDalLine(lines[i]) && !/^Parola d/i.test(lines[i])) {
+    subtitleLines.push(lines[i]);
+    i += 1;
+    while (i < lines.length && !lines[i]) {
+      let j = i;
+      while (j < lines.length && !lines[j]) j += 1;
+      i = j;
+      break;
+    }
+  }
+  let reference = "";
+  if (i < lines.length && isDalLine(lines[i])) {
+    const intro = lines[i];
+    i += 1;
+    while (i < lines.length && !lines[i]) i += 1;
+    const sigla = i < lines.length && isBibleSiglaLine(lines[i]) ? lines[i] : "";
+    if (sigla) i += 1;
+    reference = sigla ? `${intro} (${sigla})` : intro;
+    while (i < lines.length && !lines[i]) i += 1;
+  }
+  return {
+    subtitle: subtitleLines.join("\n").trim(),
+    reference,
+    body: lines.slice(i).join("\n").trim(),
+  };
+}
+
 export function preSplitSegments(segments: Segment[]): Segment[] {
   const result: Segment[] = [];
   const SPLITTABLE: SegKind[] = [
@@ -200,6 +281,17 @@ export function preSplitSegments(segments: Segment[]): Segment[] {
       continue;
     }
     const text = seg.text;
+    // Preghiera dei fedeli: un'intenzione per segmento. Lo split per riga
+    // buttava via le righe vuote e appiccicava una preghiera all'altra.
+    if (seg.kind === "preghieraFedeli") {
+      const paragraphs = text.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+      if (paragraphs.length > 1) {
+        for (const p of paragraphs) result.push({ ...seg, text: p });
+      } else {
+        result.push(seg);
+      }
+      continue;
+    }
     // Letture/vangelo: una riga per segmento (evita blocchi alti che superano il viewport).
     const lines = text.split("\n").filter((l) => l.length > 0);
     if (lines.length > 1) {
@@ -335,12 +427,24 @@ export function buildSegments(args: BuildArgs): Segment[] {
     const r = liturgy?.readings?.find((rr: any) => rr.type === type);
     if (!r || !r.text) return;
     push(titleKind, titleOverride || r.title);
-    if (r.reference) push("rubric", r.reference);
     if (type === "salmo") {
       for (const block of buildSalmoBlocks(r.text)) {
         out.push({ kind: "salmo", text: block.text, salmoPart: block.kind });
       }
-    } else push("normal", r.text);
+    } else {
+      const { long, short } = splitFormaBreve(r.text);
+      const breve = short ? parseFormaBreveBlock(short) : null;
+      const subtitle = (r.subtitle || breve?.subtitle || "").trim();
+      if (subtitle) push("readingSubtitle", subtitle);
+      if (r.reference) push("readingRef", r.reference);
+      push("normal", reflowReadingWraps(long));
+      if (breve) {
+        push("readingRef", "Forma breve");
+        if (breve.subtitle) push("readingSubtitle", breve.subtitle);
+        if (breve.reference) push("readingRef", breve.reference);
+        if (breve.body) push("normal", reflowReadingWraps(breve.body));
+      }
+    }
     sp();
   };
 

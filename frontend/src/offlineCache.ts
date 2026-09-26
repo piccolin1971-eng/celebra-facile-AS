@@ -3,7 +3,7 @@
  * Salva su AsyncStorage le letture scaricate, così l'app funziona anche senza rete.
  *
  * Struttura in AsyncStorage:
- *   messale_liturgy_<YYYY-MM-DD>       → JSON della liturgia completa
+ *   messale_liturgy_v4_<YYYY-MM-DD>    → JSON della liturgia completa
  *   messale_liturgy_index              → array di date cached + timestamp
  *   messale_static_cache               → { order, fixedParts, prefaces, eucharisticPrayers,
  *                                          mysteryAcclamations, solemnBlessings, votiveMasses, timestamp }
@@ -12,7 +12,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { localDateStr } from "./dateUtils";
 import type { CelebrationMode } from "./massSession";
 
-const LITURGY_PREFIX = "messale_liturgy_";
+const LITURGY_PREFIX = "messale_liturgy_v4_";
 const INDEX_KEY = "messale_liturgy_index";
 const STATIC_KEY = "messale_static_cache";
 
