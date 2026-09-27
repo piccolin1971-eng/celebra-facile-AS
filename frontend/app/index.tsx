@@ -466,6 +466,8 @@ export default function Home() {
   const styles = makeStyles(colors, fontSize, topBarIconBtnSize);
   const heroIconSize = Math.round(scaledFont(40) * 1.45);
   const compactIconSlot = Math.round(heroIconSize * 0.78);
+  /** Stessa colonna icona per «Celebra subito» e «Liturgia delle Ore». */
+  const actionIconSlot = Math.round(heroIconSize * 0.78);
 
   return (
     <SafeAreaView style={styles.container} testID="home-screen">
@@ -496,9 +498,9 @@ export default function Home() {
           >
             <View style={styles.topBarIconSlot} pointerEvents="none">
               <Ionicons
-                name={quickAccessCount > 0 ? "star" : "star-outline"}
+                name="star"
                 size={topBarIconSize}
-                color={quickAccessCount > 0 ? colors.primary : colors.textPrimary}
+                color={QUICK_CELEBRA_GOLD}
                 style={topBarIconStyle}
               />
             </View>
@@ -517,9 +519,9 @@ export default function Home() {
           >
             <View style={styles.topBarIconSlot} pointerEvents="none">
               <Ionicons
-                name="settings-outline"
+                name="settings"
                 size={topBarIconSize}
-                color={colors.textPrimary}
+                color={ORE_BLUE}
                 style={topBarIconStyle}
               />
             </View>
@@ -780,11 +782,13 @@ export default function Home() {
                 {quickStarting ? (
                   <ActivityIndicator color={QUICK_CELEBRA_GOLD} />
                 ) : (
-                  <HomeHeroIcon
-                    variant="celebra"
-                    size={Math.round(heroIconSize * 0.72)}
-                    activeColor={QUICK_CELEBRA_GOLD}
-                  />
+                  <View style={[styles.actionIconSlot, { width: actionIconSlot, height: actionIconSlot }]}>
+                    <HomeHeroIcon
+                      variant="celebra"
+                      size={actionIconSlot}
+                      activeColor={QUICK_CELEBRA_GOLD}
+                    />
+                  </View>
                 )}
                 <Text style={[styles.flagTitle, styles.flagTitleGold]} numberOfLines={2}>
                   {quickStarting ? "Avvio…" : "Celebra subito la Messa"}
@@ -806,11 +810,9 @@ export default function Home() {
                 accessibilityLabel="Liturgia delle Ore"
               >
                 <View style={styles.flagLeft}>
-                  <Ionicons
-                    name="book-outline"
-                    size={Math.round(scaledFont(28))}
-                    color={ORE_BLUE}
-                  />
+                  <View style={[styles.actionIconSlot, { width: actionIconSlot, height: actionIconSlot }]}>
+                    <Ionicons name="book" size={Math.round(actionIconSlot * 0.88)} color={ORE_BLUE} />
+                  </View>
                   <Text style={[styles.flagTitle, styles.flagTitleOre]} numberOfLines={2}>
                     Liturgia delle Ore
                   </Text>
@@ -844,11 +846,13 @@ export default function Home() {
                 {quickStarting ? (
                   <ActivityIndicator color={QUICK_CELEBRA_GOLD} />
                 ) : (
-                  <HomeHeroIcon
-                    variant="celebra"
-                    size={Math.round(heroIconSize * 0.78)}
-                    activeColor={QUICK_CELEBRA_GOLD}
-                  />
+                  <View style={[styles.actionIconSlot, { width: actionIconSlot, height: actionIconSlot }]}>
+                    <HomeHeroIcon
+                      variant="celebra"
+                      size={actionIconSlot}
+                      activeColor={QUICK_CELEBRA_GOLD}
+                    />
+                  </View>
                 )}
                 <Text
                   style={[styles.heroTitle, styles.heroTitleGoldOutline]}
@@ -939,6 +943,9 @@ export default function Home() {
               accessibilityRole="button"
               accessibilityLabel="Liturgia delle Ore"
             >
+              <View style={[styles.actionIconSlot, { width: actionIconSlot, height: actionIconSlot }]}>
+                <Ionicons name="book" size={Math.round(actionIconSlot * 0.88)} color={ORE_BLUE} />
+              </View>
               <Text style={[styles.heroTitle, styles.heroTitleBlueOutline]} numberOfLines={1}>
                 Liturgia delle Ore
               </Text>
@@ -976,31 +983,35 @@ export default function Home() {
           </View>
           <View style={styles.dlSide}>
             {dlRunning ? (
-              <ActivityIndicator color={QUICK_CELEBRA_GOLD} />
+              <>
+                <ActivityIndicator color={QUICK_CELEBRA_GOLD} />
+                <Text style={styles.dlLabel}>Scaricando</Text>
+                <Text style={styles.dlCount}>
+                  {dlProgress ? `${dlProgress.done}/${dlProgress.total}` : "…"}
+                </Text>
+              </>
             ) : (
-              <Text
-                style={[
-                  styles.dlCheck,
-                  dlDaysLeft > 0 ? styles.dlCheckReady : styles.dlCheckEmpty,
-                ]}
-              >
-                ✓
-              </Text>
+              <View style={styles.dlSideRow}>
+                <Text
+                  style={[
+                    styles.dlCheck,
+                    dlDaysLeft > 0 ? styles.dlCheckReady : styles.dlCheckEmpty,
+                  ]}
+                >
+                  ✓
+                </Text>
+                <View style={styles.dlSideText}>
+                  <Text style={styles.dlLabel}>
+                    {dlDaysLeft > 0 ? "Ancora" : "Scarica"}
+                  </Text>
+                  <Text style={styles.dlCount}>
+                    {dlDaysLeft > 0
+                      ? `${dlDaysLeft} ${dlDaysLeft === 1 ? "giorno" : "giorni"}`
+                      : "10 giorni"}
+                  </Text>
+                </View>
+              </View>
             )}
-            <Text style={styles.dlLabel}>
-              {dlRunning
-                ? "Scaricando"
-                : dlDaysLeft > 0
-                  ? "Ancora"
-                  : "Scarica"}
-            </Text>
-            <Text style={styles.dlCount}>
-              {dlRunning && dlProgress
-                ? `${dlProgress.done}/${dlProgress.total}`
-                : dlDaysLeft > 0
-                  ? `${dlDaysLeft} ${dlDaysLeft === 1 ? "giorno" : "giorni"}`
-                  : "10 giorni"}
-            </Text>
           </View>
         </TouchableOpacity>
 
@@ -1198,11 +1209,8 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
       flexDirection: "row",
       alignItems: "center",
       flexShrink: 0,
-      borderWidth: 2,
-      borderColor: colors.border,
-      borderRadius: 10,
-      overflow: "hidden",
-      backgroundColor: colors.surface,
+      gap: 2,
+      backgroundColor: "transparent",
     },
     topBarIconSlot: {
       width: iconBtnSize - 10,
@@ -1217,7 +1225,7 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
       width: iconBtnSize,
       height: iconBtnSize,
       overflow: "hidden",
-      backgroundColor: colors.surface,
+      backgroundColor: "transparent",
     },
     quickAccessBtn: {
       position: "relative",
@@ -1226,9 +1234,7 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
       width: iconBtnSize,
       height: iconBtnSize,
       overflow: "hidden",
-      backgroundColor: colors.surface,
-      borderRightWidth: 2,
-      borderRightColor: colors.border,
+      backgroundColor: "transparent",
     },
     quickAccessBadge: {
       position: "absolute",
@@ -1237,7 +1243,7 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
       minWidth: 15,
       height: 15,
       borderRadius: 8,
-      backgroundColor: colors.primary,
+      backgroundColor: ORE_BLUE,
       alignItems: "center",
       justifyContent: "center",
       paddingHorizontal: 4,
@@ -1245,7 +1251,7 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
     quickAccessBadgeText: {
       fontSize: 9,
       fontWeight: "800",
-      color: colors.onPrimary,
+      color: "#FFFFFF",
     },
     fontBtns: { flexDirection: "row", gap: 6, flexShrink: 0 },
     homeScroll: {
@@ -1544,7 +1550,7 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
       lineHeight: Math.round(fontSize * 1.38),
       fontWeight: ACTION_TITLE_WEIGHT,
       textAlign: "left",
-      letterSpacing: Math.round(fontSize * 0.15),
+      letterSpacing: Math.round(fontSize * 0.108375),
       fontVariant: ["small-caps"],
       includeFontPadding: false,
       ...(Platform.OS === "web"
@@ -1567,12 +1573,18 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
       width: "100%",
       flexDirection: "row",
       alignItems: "center",
-      justifyContent: "center",
+      justifyContent: "flex-start",
       gap: 12,
       paddingVertical: 10,
       paddingHorizontal: 14,
       borderRadius: ACTION_RADIUS,
       minHeight: Math.round(ACTION_MIN_HEIGHT * 0.82 * 1.2),
+    },
+    actionIconSlot: {
+      alignItems: "center",
+      justifyContent: "center",
+      flexShrink: 0,
+      overflow: "hidden",
     },
     quickCelebraBtnOutline: {
       backgroundColor: "transparent",
@@ -1639,9 +1651,11 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
       fontSize: Math.round(fontSize * 1.05),
       lineHeight: Math.round(fontSize * 1.18),
       fontVariant: ["small-caps"],
-      letterSpacing: Math.round(fontSize * 0.15),
+      letterSpacing: Math.round(fontSize * 0.108375),
       flexShrink: 1,
+      flex: 1,
       width: "auto",
+      textAlign: "left",
       textShadowColor: "transparent",
       textShadowRadius: 0,
       ...(Platform.OS === "web"
@@ -1656,9 +1670,11 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
       fontSize: Math.round(fontSize * 1.05),
       lineHeight: Math.round(fontSize * 1.18),
       fontVariant: ["small-caps"],
-      letterSpacing: Math.round(fontSize * 0.15),
+      letterSpacing: Math.round(fontSize * 0.108375),
       flexShrink: 1,
+      flex: 1,
       width: "auto",
+      textAlign: "left",
       textShadowColor: "transparent",
       textShadowRadius: 0,
       ...(Platform.OS === "web"
@@ -1706,8 +1722,8 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
     dlMainLine: {
       color: ORE_BLUE,
       fontWeight: ACTION_TITLE_WEIGHT,
-      fontSize: Math.round(fontSize * 0.72),
-      lineHeight: Math.round(fontSize * 0.92),
+      fontSize: Math.round(fontSize * 0.864),
+      lineHeight: Math.round(fontSize * 1.104),
       letterSpacing: 0.4,
     },
     dlSide: {
@@ -1723,23 +1739,34 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
       gap: 2,
     },
     dlCheck: {
-      fontSize: Math.round(fontSize * 0.85),
+      fontSize: Math.round(fontSize * 1.85),
       fontWeight: "800",
-      lineHeight: Math.round(fontSize * 1),
+      lineHeight: Math.round(fontSize * 1.9),
     },
     dlCheckReady: { color: DL_CHECK_GREEN },
     dlCheckEmpty: { color: "#555555" },
+    dlSideRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 6,
+    },
+    dlSideText: {
+      alignItems: "flex-start",
+      justifyContent: "center",
+      gap: 2,
+    },
     dlLabel: {
       color: "#FFFFFF",
       fontWeight: "800",
-      fontSize: Math.round(fontSize * 0.48),
+      fontSize: Math.round(fontSize * 0.691),
       textTransform: "uppercase",
     },
     dlCount: {
       color: QUICK_CELEBRA_GOLD,
       fontWeight: "800",
-      fontSize: Math.round(fontSize * 0.55),
-      textAlign: "center",
+      fontSize: Math.round(fontSize * 0.792),
+      textAlign: "left",
     },
     compactCard: {
       flex: 1,

@@ -464,16 +464,16 @@ const BIBLE_BOOK =
   "(?:[1-3]\\s*)?(?:Sam|Re|Cr|Mac|Cor|Ts|Tm|Pt|Gv|Tess|Tim|Dan|Dn|Is|Mt|Mc|Lc|At|Rm|Gal|Ef|Fil|Col|Eb|Ap|Ger|Ez|Tb|Gdt|Sap|Sir|Bar|Es|Lv|Nm|Dt|Gs|Gdc|Rt|Esd|Ne|Est|Gb|Pr|Qo|Ct|Lam|Gen|Sal|Os|Gl|Am|Ab|Na|So|Ag|Zc|Ml|Fm|Gc|Gd|Tt|Gio)";
 
 export function splitPsalmTitle(title: string): { num: string; name: string } {
-  const raw = String(title);
+  const raw = String(title).replace(/\u00a0/g, " ");
   const parts = raw
     .split(/\u2003+| {3,}/)
     .map((s) => s.trim())
     .filter(Boolean);
-  if (parts.length >= 2) return { num: parts[0], name: parts.slice(1).join(" ") };
+  if (parts.length >= 2) return attachPsalmPartLetter(parts[0], parts.slice(1).join(" "));
 
   const t = raw.replace(/\s+/g, " ").trim();
   const psalm = t.match(
-    /^(SALMO\s+\d+[a-zA-Z]?(?:\s*,\s*[\d.\-–ab ]+)?(?:\s*\((?:I{1,3}|IV)\))?)\s+([A-ZÀ-Ù«].+)$/,
+    /^(SALMO\s+\d+(?:\s*[AB])?(?:\s*,\s*[\d.\-–ab ]+)?(?:\s*\((?:I{1,3}|IV)\))?)\s+([A-ZÀ-Ù«].+)$/,
   );
   if (psalm) return { num: psalm[1].trim(), name: psalm[2].trim() };
 
@@ -490,4 +490,13 @@ export function splitPsalmTitle(title: string): { num: string; name: string } {
     };
   }
   return { num: t, name: "" };
+}
+
+/** «SALMO 113» + «B Lode…» → «SALMO 113 B» + «Lode…». Non tocca «A te…». */
+function attachPsalmPartLetter(num: string, name: string): { num: string; name: string } {
+  const m = name.match(/^([AB])\s+([A-ZÀ-Ù«].+)$/);
+  if (m && /^SALMO\s+\d+\s*$/i.test(num)) {
+    return { num: `${num.trim()} ${m[1]}`, name: m[2].trim() };
+  }
+  return { num: num.trim(), name: name.trim() };
 }

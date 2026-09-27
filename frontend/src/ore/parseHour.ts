@@ -98,8 +98,9 @@ function capitalizePsalmOpenings(blocks: OreBlock[]): OreBlock[] {
 }
 
 function extractCite(sub: string): { sub: string; cite: string } {
-  const m = sub.match(/^(.*?)(\([^)]+\.?\)\.?)\s*$/);
-  if (!m) return { sub, cite: "" };
+  const flat = sub.replace(/\s+/g, " ").trim();
+  const m = flat.match(/^(.*?)(\([^)]+\)\.?)\s*$/);
+  if (!m) return { sub: flat, cite: "" };
   return { sub: m[1].trim(), cite: m[2].trim() };
 }
 
@@ -259,7 +260,13 @@ function consumeSubAfterPsalm(nodes: HtmlNode[], i: number): { sub: string; cite
         .trim();
       // Se il CEI mette i versetti (e a volte il resto dell'ora) nello stesso lo_versetto,
       // non saltare il nodo: altrimenti si perdono Benedictus, invocazioni, orazione.
-      skip = leftover.length < 40 ? 1 : 0;
+      // Il sottotitolo però è già nel titolo: va tolto, se no la citazione esce due volte.
+      if (leftover.length < 40) {
+        skip = 1;
+      } else {
+        n.inner = removeFirstClassDiv(n.inner, "lo_sottotitolo");
+        skip = 0;
+      }
     } else {
       const t = stripTags(n.inner);
       if (t && t.length < 80 && !/[*†]/.test(t) && !/lo_antifona/.test(n.inner)) {
@@ -580,6 +587,47 @@ function repairCeiPsalm8JoinAnomaly(blocks: OreBlock[]): OreBlock[] {
   return out;
 }
 
+/** Toglie il primo `<div class="lo_…">` bilanciando i div annidati. */
+function removeFirstClassDiv(html: string, className: string): string {
+  const re = new RegExp(`<div[^>]*class="[^"]*${className}[^"]*"[^>]*>`, "i");
+  const m = re.exec(html);
+  if (!m) return html;
+  let i = m.index + m[0].length;
+  let depth = 1;
+  while (i < html.length && depth > 0) {
+    const rest = html.slice(i);
+    const open = rest.search(/<div\b/i);
+    const close = rest.search(/<\/div>/i);
+    if (close < 0) return html;
+    if (open >= 0 && open < close) {
+      depth += 1;
+      const tagEnd = rest.slice(open).indexOf(">");
+      i += open + (tagEnd >= 0 ? tagEnd + 1 : 4);
+    } else {
+      depth -= 1;
+      i += close + "</div>".length;
+    }
+  }
+  return html.slice(0, m.index) + html.slice(i);
+}
+
+/**
+ * Gloria d'apertura: il CEI non mette *†, solo due spazi sul secondo emistichio.
+ * Senza questo diventa quattro paragrafi staccati.
+ */
+function openingGloriaStanza(lines: VerseLine[]): OreBlock | null {
+  const texts = lines.map((l) => l.text);
+  if (texts.some((t) => /[*†]/.test(t))) return null;
+  if (!texts.some((t) => /^Gloria al Padre\b/i.test(t))) return null;
+  if (!texts.some((t) => /^e allo Spirito Santo\b/i.test(t))) return null;
+  if (!texts.some((t) => /^Come era nel principio\b/i.test(t))) return null;
+  if (!texts.some((t) => /^nei secoli dei secoli\b/i.test(t))) return null;
+  const hang = texts.map((t) =>
+    /^(e allo Spirito Santo|nei secoli dei secoli)\b/i.test(t) ? 1 : 0,
+  );
+  return { k: "stanza", lines: texts, hang };
+}
+
 function stanzaFromLines(lines: VerseLine[]): OreBlock {
   return {
     k: "stanza",
@@ -604,6 +652,8 @@ function blocksFromVerseLines(lines: VerseLine[]): OreBlock[] {
     return [{ k: "rubric", lab, text: "" }, stanzaFromLines(rest)];
   }
   if (kept.some((l) => /^—/.test(l.text))) return splitDashStanzas(kept.map((l) => l.text));
+  const gloria = openingGloriaStanza(kept);
+  if (gloria) return [gloria];
   // Letture / prosa CEI (anche multi-paragrafo via <br>): niente strofa né hang da salmo.
   const hasLitMarks = kept.some(
     (l) => /[*†]/.test(l.text) || /^(V\.|R\.|Ant\.)/i.test(l.text) || hasJoinCross(l.text),
@@ -1145,6 +1195,34 @@ function blocksFromVersetto(inner: string): OreBlock[] {
   return out;
 }
 
+function normCaption(s: string): string {
+  return s
+    .replace(/[«»“”"()]/g, "")
+    .replace(/\s+/g, " ")
+    .replace(/[.?!…,\s]+$/g, "")
+    .trim()
+    .toLowerCase();
+}
+
+/** Il CEI ripete, sotto il titolo, la frase-tono già mostrata. Si tiene il testo CEI. */
+function dropRepeatedPsalmCaption(blocks: OreBlock[]): OreBlock[] {
+  const out: OreBlock[] = [];
+  for (let i = 0; i < blocks.length; i++) {
+    const b = blocks[i];
+    const nxt = blocks[i + 1];
+    if (b.k === "psalmHead" && nxt?.k === "sub" && b.sub) {
+      const parsed = extractCite(nxt.text);
+      if (parsed.sub && normCaption(parsed.sub) === normCaption(b.sub)) {
+        out.push({ ...b, sub: parsed.sub, cite: parsed.cite || b.cite });
+        i += 1;
+        continue;
+      }
+    }
+    out.push(b);
+  }
+  return out;
+}
+
 export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?: string): ParsedHour {
   const missing = {
     hour,
@@ -1225,7 +1303,42 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
     }
 
     if (hasClass(node.cls, "lo_nota")) {
-      const t = stripTags(node.inner);
+      let t = stripTags(node.inner).replace(/\s+/g, " ").trim();
+      let j = i + 1;
+      while (j < nodes.length) {
+        const gap = nodes[j];
+        if (gap.kind === "text" && !gap.text.trim()) {
+          j += 1;
+          continue;
+        }
+        break;
+      }
+      const mid = nodes[j];
+      if (mid && mid.kind === "text" && t && !/[.!?…]$/.test(t)) {
+        const midText = tidyLitText(decodeHtmlEntities(mid.text));
+        let k = j + 1;
+        while (
+          k < nodes.length &&
+          (nodes[k].kind === "br" || (nodes[k].kind === "text" && !nodes[k].text.trim()))
+        ) {
+          k += 1;
+        }
+        const nxt = nodes[k];
+        if (
+          midText &&
+          midText.length < 40 &&
+          !/[*†]/.test(midText) &&
+          nxt &&
+          nxt.kind === "el" &&
+          hasClass(nxt.cls, "lo_nota")
+        ) {
+          const tail = stripTags(nxt.inner).replace(/\s+/g, " ").trim();
+          t = [t, midText, tail].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+          i = k + 1;
+          if (t) blocks.push({ k: "omit", text: t });
+          continue;
+        }
+      }
       if (t) blocks.push({ k: "omit", text: t });
       i += 1;
       continue;
@@ -1254,10 +1367,11 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
           .map((p) => stripTags(p).replace(/\s+/g, " ").trim())
           .filter((p) => p && !/^Cfr\.?\s*$/i.test(p));
         if (brLines.length >= 2 && looksLikePsalmTitle(brLines[0])) {
+          const split = splitPsalmTitle(brLines.join("\u2003"));
           blocks.push({
             k: "psalmHead",
-            num: brLines[0],
-            name: brLines.slice(1).join(" "),
+            num: split.num,
+            name: split.name,
             sub: tidyLitText(sub),
             cite: tidyLitText(cite || rif),
           });
@@ -1451,7 +1565,7 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
     hour,
     blocks: capitalizePsalmOpenings(
       repairCeiPsalm8JoinAnomaly(
-        mergeLoneJoinCrossBlocks(applyBundledGospelCanticles(enrichPsalmHeads(clean))),
+        mergeLoneJoinCrossBlocks(applyBundledGospelCanticles(dropRepeatedPsalmCaption(enrichPsalmHeads(clean)))),
       ),
     ),
   };
