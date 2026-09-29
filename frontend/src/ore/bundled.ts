@@ -210,11 +210,12 @@ le sue mani hanno plasmato la terra.
 
 Venite, prostràti adoriamo, *
 in ginocchio davanti al Signore che ci ha creati.
-Egli è nostro Dio, e noi il popolo del suo pascolo, *
+Egli è il nostro Dio, e noi il popolo del suo pascolo, *
 il gregge che egli conduce.
 
-Ascoltate oggi la sua voce: «Non indurite il cuore, *
-come a Merìba, come nel giorno di Massa
+Ascoltate oggi la sua voce: †
+«Non indurite il cuore, *
+† come a Merìba, come nel giorno di Massa
 nel deserto,
 dove mi tentarono i vostri padri: †
 mi misero alla prova, *

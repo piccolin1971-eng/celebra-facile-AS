@@ -162,8 +162,13 @@ function rubricStyle(fontSize: number) {
 }
 
 function colorStars(text: string, body: { fontFamily: string; fontSize: number; color: string }) {
-  const parts = text.split(new RegExp(`(${JOIN_CROSS_MARK}|[*†])`));
-  if (parts.length === 1) return text;
+  // Lo spazio unificatore tiene *† attaccato all’ultima parola: a capo non resta un segno solo.
+  // Il pezzo vuoto dopo lo split, su schermo stretto, diventava una riga bianca sotto l’asterisco.
+  const glued = text
+    .replace(/ ([*†])/g, "\u00A0$1")
+    .replace(new RegExp(` (${JOIN_CROSS_MARK})`, "g"), `\u00A0${JOIN_CROSS_MARK}`);
+  const parts = glued.split(new RegExp(`(${JOIN_CROSS_MARK}|[*†])`)).filter((p) => p.length > 0);
+  if (parts.length === 1) return glued;
   return parts.map((p, i) => {
     if (p === JOIN_CROSS_MARK) {
       return (
