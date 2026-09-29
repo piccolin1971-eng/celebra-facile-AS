@@ -2,14 +2,15 @@ import React from "react";
 import { Text, TouchableOpacity, StyleSheet, View, Platform } from "react-native";
 import { useSettings } from "../SettingsContext";
 import { ACTION_TITLE_WEIGHT } from "../uiActionTokens";
+import { chromeScale } from "../chromeScale";
 
-const FONT_MIN = 12;
-const FONT_MAX = 60;
+export const FONT_MIN = 12;
+export const FONT_MAX = 60;
 const FONT_STEP = 1;
 
-/** Larghezza totale ≤ due tasti storici (62 + 8 + 62). */
+/** Larghezza totale ≤ due tasti storici (62 + 8 + 62), a dimensione testo ≤ 25. */
 export const FONT_SIZE_SEG_WIDTH = 132;
-/** Altezza fissa del segmento (non scala col testo liturgico). */
+/** Altezza del segmento a dimensione testo ≤ 25. Oltre, mezza proporzione. */
 export const FONT_SIZE_SEG_HEIGHT = 40;
 
 /** Più piccolo del testo liturgico: A+/A− devono stare interi nella cella stretta. */
@@ -53,6 +54,12 @@ export function FontSizeButtons({
   increaseTestID,
 }: Props) {
   const { colors, fontSize, setFontSize } = useSettings();
+  const scale = chromeScale(fontSize);
+  const segW = Math.round(FONT_SIZE_SEG_WIDTH * scale);
+  const segH = Math.round(FONT_SIZE_SEG_HEIGHT * scale);
+  const sideSize = Math.round(SIDE_LABEL_SIZE * scale);
+  const midSize = Math.round(MID_LABEL_SIZE * scale);
+  const midW = Math.round(30 * scale);
   const decreaseDisabled = extraDisabled || fontSize <= FONT_MIN;
   const increaseDisabled = extraDisabled || fontSize >= FONT_MAX;
   const midBorder = `${colors.primary}59`;
@@ -65,6 +72,10 @@ export function FontSizeButtons({
         {
           borderColor: colors.primary,
           backgroundColor: fill,
+          width: segW,
+          maxWidth: segW,
+          height: segH,
+          borderRadius: Math.round(8 * scale),
         },
       ]}
       accessibilityRole="adjustable"
@@ -80,12 +91,45 @@ export function FontSizeButtons({
         accessibilityLabel={`Riduci dimensione testo, attuale ${fontSize}`}
         activeOpacity={0.55}
       >
-        <Text style={[styles.sideLabel, { color: colors.textPrimary }]} allowFontScaling={false}>
+        <Text
+          style={[
+            styles.sideLabel,
+            {
+              color: colors.textPrimary,
+              fontSize: sideSize,
+              lineHeight: sideSize + 2,
+              marginTop: Math.round(SIDE_NUDGE_UP * scale),
+            },
+          ]}
+          allowFontScaling={false}
+        >
           A−
         </Text>
       </TouchableOpacity>
-      <View style={[styles.mid, { borderLeftColor: midBorder, borderRightColor: midBorder }]}>
-        <Text style={[styles.midLabel, { color: colors.focus }]} allowFontScaling={false}>
+      <View
+        style={[
+          styles.mid,
+          {
+            borderLeftColor: midBorder,
+            borderRightColor: midBorder,
+            width: midW,
+            maxWidth: midW + 2,
+            minWidth: Math.max(28, midW - 2),
+          },
+        ]}
+      >
+        <Text
+          style={[
+            styles.midLabel,
+            {
+              color: colors.focus,
+              fontSize: midSize,
+              lineHeight: midSize,
+              marginTop: Math.round(MID_NUDGE_UP * scale),
+            },
+          ]}
+          allowFontScaling={false}
+        >
           {fontSize}
         </Text>
       </View>
@@ -98,7 +142,18 @@ export function FontSizeButtons({
         accessibilityLabel={`Aumenta dimensione testo, attuale ${fontSize}`}
         activeOpacity={0.55}
       >
-        <Text style={[styles.sideLabel, { color: colors.textPrimary }]} allowFontScaling={false}>
+        <Text
+          style={[
+            styles.sideLabel,
+            {
+              color: colors.textPrimary,
+              fontSize: sideSize,
+              lineHeight: sideSize + 2,
+              marginTop: Math.round(SIDE_NUDGE_UP * scale),
+            },
+          ]}
+          allowFontScaling={false}
+        >
           A+
         </Text>
       </TouchableOpacity>

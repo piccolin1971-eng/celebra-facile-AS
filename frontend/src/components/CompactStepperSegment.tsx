@@ -2,6 +2,7 @@ import React from "react";
 import { Text, TouchableOpacity, StyleSheet, View, Platform } from "react-native";
 import { useSettings } from "../SettingsContext";
 import { ACTION_TITLE_WEIGHT } from "../uiActionTokens";
+import { chromeScale } from "../chromeScale";
 import {
   FONT_SIZE_SEG_HEIGHT,
   FONT_SIZE_SEG_WIDTH,
@@ -53,7 +54,13 @@ export function CompactStepperSegment({
   increaseTestID,
   accessibilityLabel = "Velocità scorrimento",
 }: Props) {
-  const { colors } = useSettings();
+  const { colors, fontSize } = useSettings();
+  const scale = chromeScale(fontSize);
+  const segW = Math.round(FONT_SIZE_SEG_WIDTH * scale);
+  const segH = Math.round(FONT_SIZE_SEG_HEIGHT * scale);
+  const sideSize = Math.round(SIDE_LABEL_SIZE * scale);
+  const midSize = Math.round(MID_LABEL_SIZE * scale);
+  const midW = Math.round(34 * scale);
   const decreaseDisabled = value <= min;
   const increaseDisabled = value >= max;
   const midBorder = `${colors.primary}59`;
@@ -66,6 +73,10 @@ export function CompactStepperSegment({
         {
           borderColor: colors.primary,
           backgroundColor: fill,
+          width: segW,
+          maxWidth: segW,
+          height: segH,
+          borderRadius: Math.round(8 * scale),
         },
       ]}
       accessibilityRole="adjustable"
@@ -82,10 +93,45 @@ export function CompactStepperSegment({
         activeOpacity={0.55}
         hitSlop={4}
       >
-        <Text style={[styles.sideLabel, { color: colors.textPrimary }]}>-</Text>
+        <Text
+          style={[
+            styles.sideLabel,
+            {
+              color: colors.textPrimary,
+              fontSize: sideSize,
+              lineHeight: sideSize,
+              marginTop: Math.round(SIDE_NUDGE_UP * scale),
+            },
+          ]}
+        >
+          -
+        </Text>
       </TouchableOpacity>
-      <View style={[styles.mid, { borderLeftColor: midBorder, borderRightColor: midBorder }]}>
-        <Text style={[styles.midLabel, { color: colors.focus }]}>{value}</Text>
+      <View
+        style={[
+          styles.mid,
+          {
+            borderLeftColor: midBorder,
+            borderRightColor: midBorder,
+            width: midW,
+            maxWidth: midW + 2,
+            minWidth: Math.max(30, midW - 4),
+          },
+        ]}
+      >
+        <Text
+          style={[
+            styles.midLabel,
+            {
+              color: colors.focus,
+              fontSize: midSize,
+              lineHeight: midSize,
+              marginTop: Math.round(MID_NUDGE_UP * scale),
+            },
+          ]}
+        >
+          {value}
+        </Text>
       </View>
       <TouchableOpacity
         style={[styles.side, increaseDisabled && styles.disabled, webClickable]}
@@ -97,7 +143,19 @@ export function CompactStepperSegment({
         activeOpacity={0.55}
         hitSlop={4}
       >
-        <Text style={[styles.sideLabel, { color: colors.textPrimary }]}>+</Text>
+        <Text
+          style={[
+            styles.sideLabel,
+            {
+              color: colors.textPrimary,
+              fontSize: sideSize,
+              lineHeight: sideSize,
+              marginTop: Math.round(SIDE_NUDGE_UP * scale),
+            },
+          ]}
+        >
+          +
+        </Text>
       </TouchableOpacity>
     </View>
   );

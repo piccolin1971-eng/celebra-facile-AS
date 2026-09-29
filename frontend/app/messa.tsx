@@ -15,6 +15,7 @@ import { LiturgyDayBanner } from "../src/components/LiturgyDayBanner";
 import { BrandScreenTitle } from "../src/components/BrandScreenTitle";
 import { HomeCircleButton } from "../src/components/HomeCircleButton";
 import { FontSizeButtons } from "../src/components/FontSizeButtons";
+import { PinchFontZoom } from "../src/components/PinchFontZoom";
 import { MessaVigilIntroSection } from "../src/components/MessaVigilIntroSection";
 import { getVigilEveContextForISO } from "../src/vigilCatalog";
 import {
@@ -2720,6 +2721,7 @@ export default function MessaScreen() {
         return (
           <>
             <View style={{ flex: 1 }}>
+              <PinchFontZoom>
               <ScrollView
                 ref={scrollRef}
                 style={{ flex: 1 }}
@@ -2746,6 +2748,7 @@ export default function MessaScreen() {
                   </Pressable>
                 )}
               </ScrollView>
+              </PinchFontZoom>
             </View>
 
             {/* Suggerimento navigazione (solo prima pagina) */}

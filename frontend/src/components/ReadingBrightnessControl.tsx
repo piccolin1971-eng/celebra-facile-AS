@@ -4,6 +4,7 @@ import { useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { triggerAppHaptic } from "../appHaptics";
 import { useSettings } from "../SettingsContext";
+import { chromeScale } from "../chromeScale";
 import { PlusMinusGlyph } from "./PlusMinusGlyph";
 import { FONT_SIZE_SEG_HEIGHT } from "./FontSizeButtons";
 import {
@@ -83,8 +84,10 @@ export function ReadingBrightnessRoot({ children }: { children: React.ReactNode 
 
 export function ReadingBrightnessButton() {
   const ctx = useContext(Ctx);
-  const { colors } = useSettings();
+  const { colors, fontSize } = useSettings();
   if (!ctx) return null;
+  const scale = chromeScale(fontSize);
+  const height = Math.round(FONT_SIZE_SEG_HEIGHT * scale);
   // Pillola come «Auto»: sole sempre giallo (anche a riposo).
   const border = ctx.open ? "#E0B429" : colors.primary;
   return (
@@ -93,7 +96,9 @@ export function ReadingBrightnessButton() {
       style={[
         styles.sunBtn,
         {
-          height: FONT_SIZE_SEG_HEIGHT,
+          height,
+          minWidth: Math.round(64 * scale),
+          paddingHorizontal: Math.round(14 * scale),
           borderColor: border,
           backgroundColor: ctx.open ? "rgba(224,180,41,0.22)" : `${colors.primary}14`,
         },
@@ -105,7 +110,7 @@ export function ReadingBrightnessButton() {
       hitSlop={4}
       {...webClickable}
     >
-      <Ionicons name="sunny" size={22} color={SUN_YELLOW} />
+      <Ionicons name="sunny" size={Math.round(22 * scale)} color={SUN_YELLOW} />
     </TouchableOpacity>
   );
 }
@@ -113,21 +118,30 @@ export function ReadingBrightnessButton() {
 /** Riga nera a tutta larghezza: − / sole animato / +, solo contorni colorati. */
 export function ReadingBrightnessRow() {
   const ctx = useContext(Ctx);
+  const { fontSize } = useSettings();
   if (!ctx?.open) return null;
+  const scale = chromeScale(fontSize);
+  const pillH = Math.round(44 * scale);
+  const glyphSize = Math.round(22 * scale);
+  const sunSize = Math.round(28 * scale);
   return (
-    <View style={styles.row} testID="brightness-stepper" accessibilityRole="adjustable">
+    <View
+      style={[styles.row, { minHeight: Math.round(56 * scale), paddingVertical: Math.round(8 * scale) }]}
+      testID="brightness-stepper"
+      accessibilityRole="adjustable"
+    >
       <TouchableOpacity
-        style={[styles.pill, styles.pillMinus]}
+        style={[styles.pill, styles.pillMinus, { minWidth: Math.round(90 * scale), height: pillH, paddingHorizontal: Math.round(25 * scale) }]}
         onPress={() => ctx.bump(-1)}
         accessibilityRole="button"
         accessibilityLabel="Diminuisci luminosità"
         testID="btn-brightness-minus"
         {...webClickable}
       >
-        <PlusMinusGlyph kind="minus" color={ORANGE} size={22} stroke={3.2} />
+        <PlusMinusGlyph kind="minus" color={ORANGE} size={glyphSize} stroke={3.2} />
       </TouchableOpacity>
       <View
-        style={[styles.midShell, Platform.OS === "web" ? styles.midShellWeb : null]}
+        style={[styles.midShell, { height: pillH }, Platform.OS === "web" ? styles.midShellWeb : null]}
         accessible
         accessibilityLabel={`Luminosità ${ctx.level} su ${BRIGHTNESS_MAX}`}
       >
@@ -139,21 +153,21 @@ export function ReadingBrightnessRow() {
           </View>
         )}
         <View style={styles.midInner}>
-          <Text style={styles.glyph}>{brightnessSunGlyph(ctx.level)}</Text>
-          <Text style={styles.midN}>
+          <Text style={[styles.glyph, { fontSize: sunSize, lineHeight: Math.round(32 * scale) }]}>{brightnessSunGlyph(ctx.level)}</Text>
+          <Text style={[styles.midN, { fontSize: Math.round(18 * scale) }]}>
             {ctx.level} / {BRIGHTNESS_MAX}
           </Text>
         </View>
       </View>
       <TouchableOpacity
-        style={[styles.pill, styles.pillPlus]}
+        style={[styles.pill, styles.pillPlus, { minWidth: Math.round(90 * scale), height: pillH, paddingHorizontal: Math.round(25 * scale) }]}
         onPress={() => ctx.bump(1)}
         accessibilityRole="button"
         accessibilityLabel="Aumenta luminosità"
         testID="btn-brightness-plus"
         {...webClickable}
       >
-        <PlusMinusGlyph kind="plus" color={LIME} size={22} stroke={3.2} />
+        <PlusMinusGlyph kind="plus" color={LIME} size={glyphSize} stroke={3.2} />
       </TouchableOpacity>
     </View>
   );

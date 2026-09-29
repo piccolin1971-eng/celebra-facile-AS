@@ -40,10 +40,12 @@ interface SettingsState {
   oreEnabled: boolean;
   /** Feedback tattile (vibrazione) ai tap principali. Default off. */
   hapticFeedbackEnabled: boolean;
+  /** Pinch sul testo di Messa, Ore e Orazionale. Default off. */
+  pinchZoomEnabled: boolean;
   /** Fattore interlinea testo liturgico (0.85 compatto … 1.25 ampio). */
   lineSpacing: number;
   setTheme: (t: ThemeMode) => void;
-  setFontSize: (n: number) => void;
+  setFontSize: (n: number, persistNow?: boolean) => void;
   setHighContrast: (v: boolean) => void;
   setIsBold: (v: boolean) => void;
   setReadingMode: (m: ReadingMode) => void;
@@ -53,6 +55,7 @@ interface SettingsState {
   setPreparaCelebraEnabled: (v: boolean) => void;
   setOreEnabled: (v: boolean) => void;
   setHapticFeedbackEnabled: (v: boolean) => void;
+  setPinchZoomEnabled: (v: boolean) => void;
   setLineSpacing: (n: number) => void;
   colors: ReturnType<typeof getColors>;
   scaledFont: (base: number) => number;
@@ -243,6 +246,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   const [preparaCelebraEnabled, setPreparaCelebraEnabledState] = useState(true);
   const [oreEnabled, setOreEnabledState] = useState(true);
   const [hapticFeedbackEnabled, setHapticFeedbackEnabledState] = useState(false);
+  const [pinchZoomEnabled, setPinchZoomEnabledState] = useState(false);
   const [lineSpacing, setLineSpacingState] = useState(LINE_SPACING_DEFAULT);
   const [loaded, setLoaded] = useState(false);
 
@@ -317,6 +321,9 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
             setHapticFeedbackEnabledState(s.hapticFeedbackEnabled);
             setAppHapticEnabled(s.hapticFeedbackEnabled);
           }
+          if (typeof s.pinchZoomEnabled === "boolean") {
+            setPinchZoomEnabledState(s.pinchZoomEnabled);
+          }
           if (typeof s.lineSpacing === "number") {
             setLineSpacingState(clampLineSpacing(s.lineSpacing));
           }
@@ -358,8 +365,8 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     })();
   }, []);
 
-  const persist = async (patch: Partial<{ theme: ThemeMode; fontSize: number; highContrast: boolean; isBold: boolean; readingMode: ReadingMode; fontFamilyId: FontFamilyId; parchmentTone: number; celebraSubitoEnabled: boolean; preparaCelebraEnabled: boolean; oreEnabled: boolean; hapticFeedbackEnabled: boolean; lineSpacing: number }>) => {
-    const next = { theme, fontSize, highContrast, isBold, readingMode, fontFamilyId, parchmentTone, celebraSubitoEnabled, preparaCelebraEnabled, oreEnabled, hapticFeedbackEnabled, lineSpacing, ...patch };
+  const persist = async (patch: Partial<{ theme: ThemeMode; fontSize: number; highContrast: boolean; isBold: boolean; readingMode: ReadingMode; fontFamilyId: FontFamilyId; parchmentTone: number; celebraSubitoEnabled: boolean; preparaCelebraEnabled: boolean; oreEnabled: boolean; hapticFeedbackEnabled: boolean; pinchZoomEnabled: boolean; lineSpacing: number }>) => {
+    const next = { theme, fontSize, highContrast, isBold, readingMode, fontFamilyId, parchmentTone, celebraSubitoEnabled, preparaCelebraEnabled, oreEnabled, hapticFeedbackEnabled, pinchZoomEnabled, lineSpacing, ...patch };
     await AsyncStorage.setItem("messale_settings", JSON.stringify(next));
   };
 
@@ -368,7 +375,11 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     setThemeState(next);
     persist({ theme: next });
   };
-  const setFontSize = (n: number) => { setFontSizeState(n); persist({ fontSize: n }); };
+  const setFontSize = (n: number, persistNow = true) => {
+    const clamped = clamp(Math.round(n), 12, 60);
+    setFontSizeState(clamped);
+    if (persistNow) persist({ fontSize: clamped });
+  };
   const setHighContrast = (v: boolean) => { setHighContrastState(v); persist({ highContrast: v }); };
   const setIsBold = (v: boolean) => { setIsBoldState(v); persist({ isBold: v }); };
   const setReadingMode = (m: ReadingMode) => { setReadingModeState(m); persist({ readingMode: m }); };
@@ -401,6 +412,10 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     persist({ hapticFeedbackEnabled: v });
     if (v) void triggerAppHaptic("medium");
   };
+  const setPinchZoomEnabled = (v: boolean) => {
+    setPinchZoomEnabledState(v);
+    persist({ pinchZoomEnabled: v });
+  };
   const setLineSpacing = (n: number) => {
     const clamped = clampLineSpacing(n);
     setLineSpacingState(clamped);
@@ -418,7 +433,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   if (!loaded) return null;
 
   return (
-    <SettingsContext.Provider value={{ theme, fontSize, highContrast, isBold, readingMode, fontFamilyId, fontFamily, parchmentTone, celebraSubitoEnabled, preparaCelebraEnabled, oreEnabled, hapticFeedbackEnabled, lineSpacing, setTheme, setFontSize, setHighContrast, setIsBold, setReadingMode, setFontFamilyId, setParchmentTone, setCelebraSubitoEnabled, setPreparaCelebraEnabled, setOreEnabled, setHapticFeedbackEnabled, setLineSpacing, colors, scaledFont }}>
+    <SettingsContext.Provider value={{ theme, fontSize, highContrast, isBold, readingMode, fontFamilyId, fontFamily, parchmentTone, celebraSubitoEnabled, preparaCelebraEnabled, oreEnabled, hapticFeedbackEnabled, pinchZoomEnabled, lineSpacing, setTheme, setFontSize, setHighContrast, setIsBold, setReadingMode, setFontFamilyId, setParchmentTone, setCelebraSubitoEnabled, setPreparaCelebraEnabled, setOreEnabled, setHapticFeedbackEnabled, setPinchZoomEnabled, setLineSpacing, colors, scaledFont }}>
       {children}
     </SettingsContext.Provider>
   );

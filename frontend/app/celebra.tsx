@@ -109,6 +109,7 @@ import { CelebraIndicePanel } from "../src/components/CelebraIndicePanel";
 import { BrandScreenTitle } from "../src/components/BrandScreenTitle";
 import { HomeCircleButton } from "../src/components/HomeCircleButton";
 import { FontSizeButtons } from "../src/components/FontSizeButtons";
+import { PinchFontZoom } from "../src/components/PinchFontZoom";
 import { triggerAppHaptic } from "../src/appHaptics";
 import { loadSession, saveSession, loadVotiveSession, saveVotiveSession, loadSessionForTarget, saveSessionForTarget, type MassSession, parseCelebrationMode, messaRouteDateParam, messaRouteModeParam, messaRouteVotiveParam, routeParamStr, type CelebrationMode, type SessionTarget } from "../src/massSession";
 import { coerceCelebrationMode } from "../src/celebrationModeLabels";
@@ -852,6 +853,7 @@ function CelebraScreenInner() {
           Sostituisce la WebView (che crashava su Android+newArch). Ogni
           pagina è un View con i segmenti renderizzati nativamente con Text.
           Tap a sinistra = pagina precedente, tap a destra = pagina successiva. */}
+      <PinchFontZoom>
       <View
         style={styles.pageArea}
         testID="celebra-tap-area"
@@ -935,6 +937,7 @@ function CelebraScreenInner() {
           </>
         )}
       </View>
+      </PinchFontZoom>
 
       {fromIndice ? (
         <Modal

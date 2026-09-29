@@ -20,6 +20,8 @@ import { ReadingBrightnessButton, ReadingBrightnessRoot, ReadingBrightnessRow } 
 import { localDateStr, parseLocalDate } from "../src/dateUtils";
 import { oreBodyLineHeight } from "../src/liturgyTypography";
 import { ACTION_TITLE_WEIGHT } from "../src/uiActionTokens";
+import { chromeScale } from "../src/chromeScale";
+import { PinchFontZoom } from "../src/components/PinchFontZoom";
 import { invitatoryBlocks } from "../src/ore/assemble";
 import { DEFAULT_INVIT_ANT, INVIT_PSALM_IDS } from "../src/ore/bundled";
 import { hourHeadMeta } from "../src/ore/dayHead";
@@ -370,6 +372,7 @@ export default function OreLeggi() {
           <ActivityIndicator color={ORE_BLUE} size="large" />
         </View>
       ) : (
+        <PinchFontZoom>
         <ScrollView
           ref={scrollRef}
           style={styles.scroll}
@@ -478,14 +481,16 @@ export default function OreLeggi() {
             </View>
           ) : null}
         </ScrollView>
+        </PinchFontZoom>
       )}
     </SafeAreaView>
     </ReadingBrightnessRoot>
   );
 }
 
-const makeStyles = (colors: any, fontSize: number) =>
-  StyleSheet.create({
+const makeStyles = (colors: any, fontSize: number) => {
+  const scale = chromeScale(fontSize);
+  return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
     topBar: {
       paddingHorizontal: 10,
@@ -503,6 +508,7 @@ const makeStyles = (colors: any, fontSize: number) =>
     scrollRow: {
       flexDirection: "row",
       alignItems: "center",
+      flexWrap: "wrap",
       gap: 10,
       paddingLeft: 4,
       marginTop: 2,
@@ -523,15 +529,15 @@ const makeStyles = (colors: any, fontSize: number) =>
       borderWidth: 1.5,
       borderColor: ORE_BLUE,
       borderRadius: 999,
-      minWidth: 64,
-      height: FONT_SIZE_SEG_HEIGHT,
-      paddingHorizontal: 14,
+      minWidth: Math.round(64 * scale),
+      height: Math.round(FONT_SIZE_SEG_HEIGHT * scale),
+      paddingHorizontal: Math.round(14 * scale),
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: "rgba(77,168,218,0.08)",
     },
     autoOn: { backgroundColor: AUTO_ON_BG, borderColor: ORE_BLUE },
-    autoLab: { color: ORE_BLUE, fontWeight: "800", fontSize: 14 },
+    autoLab: { color: ORE_BLUE, fontWeight: "800", fontSize: Math.round(14 * scale) },
     autoLabOn: { color: AUTO_ON_TEXT },
     chips: {
       flexDirection: "row",
@@ -609,3 +615,4 @@ const makeStyles = (colors: any, fontSize: number) =>
     },
     err: { color: colors.textSecondary, marginBottom: 12, fontSize: Math.round(fontSize * 0.7) },
   });
+};

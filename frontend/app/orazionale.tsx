@@ -19,6 +19,7 @@ import { FontFamilyId, resolveBodyFont, resolveHeadingFont } from "../src/fontFa
 import { renderOrazionaleOrFedeliText } from "../src/responsorialRendering";
 import { useKindleScrollPaging } from "../src/useKindleScrollPaging";
 import { triggerAppHaptic } from "../src/appHaptics";
+import { PinchFontZoom } from "../src/components/PinchFontZoom";
 
 type ViewMode = "list" | "section" | "prayer";
 
@@ -230,6 +231,7 @@ export default function OrazionaleScreen() {
           </View>
         ) : null}
         <View style={{ flex: 1 }} testID="orazionale-kindle-area">
+          <PinchFontZoom>
           <ScrollView
             ref={kindle.scrollRef}
             style={{ flex: 1 }}
@@ -255,6 +257,7 @@ export default function OrazionaleScreen() {
               Body
             )}
           </ScrollView>
+          </PinchFontZoom>
           {isTap && kindle.maskH > 2 ? (
             <View
               pointerEvents="none"

@@ -19,7 +19,7 @@ import {
 
 export default function Impostazioni() {
   const router = useRouter();
-  const { theme, setTheme, fontSize, highContrast, setHighContrast, isBold, setIsBold, lineSpacing, setLineSpacing, fontFamilyId, setFontFamilyId, parchmentTone, setParchmentTone, celebraSubitoEnabled, setCelebraSubitoEnabled, preparaCelebraEnabled, setPreparaCelebraEnabled, oreEnabled, setOreEnabled, hapticFeedbackEnabled, setHapticFeedbackEnabled, colors, scaledFont } = useSettings();
+  const { theme, setTheme, fontSize, highContrast, setHighContrast, isBold, setIsBold, lineSpacing, setLineSpacing, fontFamilyId, setFontFamilyId, parchmentTone, setParchmentTone, celebraSubitoEnabled, setCelebraSubitoEnabled, preparaCelebraEnabled, setPreparaCelebraEnabled, oreEnabled, setOreEnabled, hapticFeedbackEnabled, setHapticFeedbackEnabled, pinchZoomEnabled, setPinchZoomEnabled, colors, scaledFont } = useSettings();
   const styles = makeStyles(colors, fontSize);
   const appVersion = Constants.expoConfig?.version ?? "—";
   const apkDate = (Constants.expoConfig?.extra as { apkDate?: string } | undefined)?.apkDate?.trim();
@@ -126,6 +126,27 @@ export default function Impostazioni() {
               thumbColor="#FFFFFF"
               style={{ transform: [{ scaleX: 1.3 }, { scaleY: 1.3 }] }}
               testID="switch-haptic-feedback"
+            />
+          </View>
+        </View>
+
+        <View style={styles.section} testID="section-pinch-zoom">
+          <View style={styles.switchRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.sectionTitle}>Ingrandisci il testo con le dita</Text>
+              <Text style={styles.sectionDesc}>
+                {pinchZoomEnabled
+                  ? "Attivo: su Messa, Liturgia delle Ore e Orazionale il testo si allarga e si stringe con due dita, a passi piccoli, e si ferma quando le dita si fermano. La Home non ha questo gesto."
+                  : "Disattivo (predefinito): il testo si cambia con A− e A+. Attiva per usare anche due dita sulle pagine di lettura."}
+              </Text>
+            </View>
+            <Switch
+              value={pinchZoomEnabled}
+              onValueChange={setPinchZoomEnabled}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor="#FFFFFF"
+              style={{ transform: [{ scaleX: 1.3 }, { scaleY: 1.3 }] }}
+              testID="switch-pinch-zoom"
             />
           </View>
         </View>
