@@ -1,6 +1,7 @@
 /**
  * Compieta dal salterio settimanale, già nell'APK.
- * Feste/solennità (e sabato/domenica) usano lo schema domenicale.
+ * Solennità (e sabato/domenica) usano lo schema domenicale.
+ * Le feste restano sulla feria del giorno.
  * Triduo e ottava di Pasqua/Natale restano al CEI.
  */
 import { addDays, localDateStr, parseLocalDate } from "../dateUtils";
@@ -19,7 +20,7 @@ type SchemaPack = { sourceDate: string; blocks: OreBlock[] };
 
 const SCHEMAS = schemasData as Record<ComplineSchemaId, SchemaPack>;
 
-const FEAST_RANKS = new Set(["festa", "solennita"]);
+const SOLEMNITY_RANKS = new Set(["solennita"]);
 
 function normalizeRank(rank: string): string {
   return rank
@@ -31,11 +32,11 @@ function normalizeRank(rank: string): string {
 
 export function dateUsesSundayCompline(date: Date): boolean {
   if (date.getDay() === 0) return true;
-  if (getObservedSaintsForDate(date).some((s) => FEAST_RANKS.has(normalizeRank(s.rank)))) return true;
+  if (getObservedSaintsForDate(date).some((s) => SOLEMNITY_RANKS.has(normalizeRank(s.rank)))) return true;
   const mov = getMoveableFeastsForYear(date.getFullYear()).get(localDateStr(date));
   if (!mov) return false;
   if (/ceneri/i.test(mov.title)) return false;
-  return FEAST_RANKS.has(normalizeRank(mov.rank));
+  return SOLEMNITY_RANKS.has(normalizeRank(mov.rank));
 }
 
 export function complineSchemaId(date: Date): ComplineSchemaId {

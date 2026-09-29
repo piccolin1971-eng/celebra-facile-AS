@@ -15,6 +15,7 @@ import { LiturgyDayBanner } from "../src/components/LiturgyDayBanner";
 import { BrandScreenTitle } from "../src/components/BrandScreenTitle";
 import { HomeCircleButton } from "../src/components/HomeCircleButton";
 import { FontSizeButtons } from "../src/components/FontSizeButtons";
+import { SettingsTopBarButton } from "../src/components/SettingsTopBarButton";
 import { PinchFontZoom } from "../src/components/PinchFontZoom";
 import { MessaVigilIntroSection } from "../src/components/MessaVigilIntroSection";
 import { getVigilEveContextForISO } from "../src/vigilCatalog";
@@ -1872,9 +1873,10 @@ export default function MessaScreen() {
             increaseTestID="btn-font-increase-messa"
           />
         </View>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.push("/impostazioni")} testID="btn-settings-mass">
-          <Ionicons name="settings-outline" size={scaledFont(36)} color={colors.textPrimary} />
-        </TouchableOpacity>
+        <SettingsTopBarButton
+          onPress={() => router.push("/impostazioni")}
+          testID="btn-settings-mass"
+        />
       </View>
 
       {/* Definizione delle pagine della messa */}

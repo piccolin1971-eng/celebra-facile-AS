@@ -2,11 +2,11 @@ import React, { useCallback, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSettings } from "../src/SettingsContext";
 import { resolveBodyFont } from "../src/fontFamily";
 import { HomeCircleButton } from "../src/components/HomeCircleButton";
+import { SettingsTopBarButton } from "../src/components/SettingsTopBarButton";
 import { BrandScreenTitle } from "../src/components/BrandScreenTitle";
 import { italianDateLabel, parseLocalDate, localDateStr } from "../src/dateUtils";
 import { loadDayHours } from "../src/ore/cache";
@@ -27,7 +27,7 @@ const LAST_KEY = "ore_last_hour";
 export default function OreIndex() {
   const router = useRouter();
   const params = useLocalSearchParams<{ date?: string }>();
-  const { colors, fontSize, scaledFont, fontFamilyId, isBold } = useSettings();
+  const { colors, fontSize, fontFamilyId, isBold } = useSettings();
   const headFont = resolveBodyFont(fontFamilyId, isBold);
   const dateISO =
     typeof params.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(params.date)
@@ -83,15 +83,10 @@ export default function OreIndex() {
           numberOfLines={1}
           markSize={Math.max(28, Math.round(fontSize * 0.85))}
         />
-        <TouchableOpacity
+        <SettingsTopBarButton
           onPress={() => router.push("/impostazioni")}
-          accessibilityRole="button"
-          accessibilityLabel="Impostazioni"
-          style={styles.gear}
           testID="btn-ore-settings"
-        >
-          <Ionicons name="settings-outline" size={scaledFont(32)} color={colors.textPrimary} />
-        </TouchableOpacity>
+        />
       </View>
 
       <ScrollView contentContainerStyle={styles.body}>
@@ -148,13 +143,6 @@ const makeStyles = (colors: any, fontSize: number) =>
       color: colors.textPrimary,
       fontWeight: ACTION_TITLE_WEIGHT,
       fontSize: Math.round(fontSize * 0.72),
-    },
-    gear: {
-      width: 52,
-      height: 52,
-      alignItems: "center",
-      justifyContent: "center",
-      flexShrink: 0,
     },
     body: { padding: 16, gap: 12, paddingBottom: 40 },
     item: {

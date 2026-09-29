@@ -236,10 +236,7 @@ export function CelebraIndicePanel({
           />
           <SettingsTopBarButton
             onPress={() => router.push("/impostazioni")}
-            color={colors.textPrimary}
-            size={scaledFont(32)}
             testID="btn-settings-indice"
-            style={styles.settingsBtn}
           />
         </View>
       </View>

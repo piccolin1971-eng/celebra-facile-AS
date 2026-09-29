@@ -10,6 +10,7 @@ import { LiturgyDayBanner } from "../src/components/LiturgyDayBanner";
 import { HomeSessionSummary } from "../src/components/HomeSessionSummary";
 import { HomeHeroIcon } from "../src/components/HomeHeroIcon";
 import { FontSizeButtons } from "../src/components/FontSizeButtons";
+import { topBarGlyphBox, topBarGlyphSize } from "../src/chromeScale";
 import {
   loadSessionsForDate,
   clearSession,
@@ -450,19 +451,8 @@ export default function Home() {
       : null;
 
   const { width: windowWidth } = useWindowDimensions();
-  const topBarIconSize = Math.round(scaledFont(windowWidth < 380 ? 36 : 40));
-  // Su native la width fissa a 42px non cresce con il font: l'ingranaggio esce
-  // dalla cella. La cornice deve essere un quadrato almeno quanto l'icona.
-  const topBarIconBtnSize = Math.max(42, topBarIconSize + 10);
-  const topBarIconStyle =
-    Platform.OS === "android"
-      ? {
-          width: topBarIconSize,
-          height: topBarIconSize,
-          includeFontPadding: false,
-          textAlign: "center" as const,
-        }
-      : { width: topBarIconSize, height: topBarIconSize };
+  const topBarIconSize = topBarGlyphSize(fontSize, windowWidth < 380 ? 36 : 40);
+  const topBarIconBtnSize = topBarGlyphBox(topBarIconSize);
   const styles = makeStyles(colors, fontSize, topBarIconBtnSize);
   const heroIconSize = Math.round(scaledFont(40) * 1.45);
   const compactIconSlot = Math.round(heroIconSize * 0.78);
@@ -501,7 +491,6 @@ export default function Home() {
                 name="star"
                 size={topBarIconSize}
                 color={QUICK_CELEBRA_GOLD}
-                style={topBarIconStyle}
               />
             </View>
             {quickAccessCount > 0 ? (
@@ -522,7 +511,6 @@ export default function Home() {
                 name="settings"
                 size={topBarIconSize}
                 color={ORE_BLUE}
-                style={topBarIconStyle}
               />
             </View>
           </TouchableOpacity>
@@ -1167,7 +1155,7 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      paddingHorizontal: 8,
+      paddingHorizontal: 12,
       paddingVertical: 12,
       borderBottomWidth: 2,
       borderBottomColor: colors.border,
@@ -1213,18 +1201,19 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
       backgroundColor: "transparent",
     },
     topBarIconSlot: {
-      width: iconBtnSize - 10,
-      height: iconBtnSize - 10,
+      width: iconBtnSize,
+      height: iconBtnSize,
       alignItems: "center",
       justifyContent: "center",
-      overflow: "hidden",
+      overflow: "visible",
     },
     settingsBtn: {
       alignItems: "center",
       justifyContent: "center",
       width: iconBtnSize,
       height: iconBtnSize,
-      overflow: "hidden",
+      overflow: "visible",
+      flexShrink: 0,
       backgroundColor: "transparent",
     },
     quickAccessBtn: {
@@ -1233,7 +1222,8 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
       justifyContent: "center",
       width: iconBtnSize,
       height: iconBtnSize,
-      overflow: "hidden",
+      overflow: "visible",
+      flexShrink: 0,
       backgroundColor: "transparent",
     },
     quickAccessBadge: {
