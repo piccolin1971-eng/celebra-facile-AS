@@ -242,6 +242,24 @@ function stripDecorativeRosso(inner: string): string {
     );
 }
 
+/**
+ * Il CEI a volte mette la R. dentro il titolo («RESPONSORIO BREVE<br>R.»).
+ * La stacca e la antepone alla risposta, come quando è un lo_rosso a parte.
+ */
+function peelEmbeddedResponsoryR(nodes: HtmlNode[], i: number, title: string): string {
+  const m = title.match(/^(RESPONSORIO(?:\s+BREVE)?)\s+R\.?\s*$/i);
+  if (!m) return title;
+  const at = gapUntilContent(nodes, i + 1);
+  const nxt = nodes[at];
+  if (nxt && nxt.kind === "text") {
+    const body = nxt.text.replace(/^\s+/, "");
+    if (!/^R\./i.test(body.trim())) nxt.text = `R. ${body}`;
+  } else {
+    nodes.splice(at, 0, { kind: "text", text: "R." });
+  }
+  return m[1].replace(/\s+/g, " ").trim();
+}
+
 function gapUntilContent(nodes: HtmlNode[], i: number): number {
   let j = i;
   while (j < nodes.length) {
@@ -509,6 +527,20 @@ function mergeLoneRubricLines(lines: VerseLine[]): VerseLine[] {
       const prev = out[out.length - 1];
       prev.text = `${prev.text.replace(/\s+$/, "")} ${cur}`;
       continue;
+    }
+    // Trattino di flessione del cantico (es. Anna: «…mio Dio.» + «—»), non l’invocazione.
+    // L’invocazione ha il trattino come inizio della risposta; qui il verso precedente
+    // è un emistichio (la riga prima chiude con *†, oppure questa stessa riga).
+    if (/^—\s*$/.test(cur) && out.length > 0) {
+      const prev = out[out.length - 1];
+      const before = out.length >= 2 ? out[out.length - 2] : null;
+      const flexOnHemistich =
+        !/^—/.test(prev.text) &&
+        ((before != null && /[*†]\s*$/.test(before.text)) || /[*†]\s*$/.test(prev.text));
+      if (flexOnHemistich) {
+        prev.text = `${prev.text.replace(/\s+$/, "")} —`;
+        continue;
+      }
     }
     // «* testo» all’inizio riga → * in coda alla precedente, testo resta qui
     if (
@@ -1496,7 +1528,7 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
         i += 1;
         continue;
       }
-      blocks.push({ k: "title", text: t });
+      blocks.push({ k: "title", text: peelEmbeddedResponsoryR(nodes, i, t) });
       if (rif) blocks.push({ k: "sub", text: rif });
       i += 1;
       continue;
@@ -1598,7 +1630,7 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
           t,
         )
       ) {
-        blocks.push({ k: "title", text: t.replace(/\s+/g, " ") });
+        blocks.push({ k: "title", text: peelEmbeddedResponsoryR(nodes, i, t.replace(/\s+/g, " ").trim()) });
       } else if (/^(R\.?|V\.?)$/i.test(t)) {
         nodes.splice(i, 1, { kind: "text", text: normalizeLab(t) });
         continue;

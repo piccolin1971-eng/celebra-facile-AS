@@ -347,6 +347,10 @@ function renderBlock(
     );
   }
   if (b.k === "sub") {
+    // Riferimento di edizione (es. «(Nn. 1. 2; CCL 73, 1-3)»): sul CEI è rosso, non il titolo in oro.
+    const editionRef = /^\([^)]*(?:\bNn\.|\bCCL\b|\bCSEL\b|\bSCh\b|\bPG\b|\bPL\b)[^)]*\)$/.test(
+      b.text.trim(),
+    );
     return (
       <Text
         key={i}
@@ -354,7 +358,7 @@ function renderBlock(
           fontFamily: FONT_IT,
           fontSize: Math.round(fontSize * 0.78),
           lineHeight: Math.round(fontSize * 1.4 * 1.1),
-          color: SUB,
+          color: editionRef ? RUBRIC : SUB,
           textAlign: "center",
           marginBottom: em(0.5),
         }}
