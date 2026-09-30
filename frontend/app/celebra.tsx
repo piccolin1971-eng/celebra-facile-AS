@@ -116,7 +116,12 @@ import { coerceCelebrationMode } from "../src/celebrationModeLabels";
 import { getVigilEveContextForISO } from "../src/vigilCatalog";
 import { reconcileLiturgyColors } from "../src/localLiturgy";
 import { mergeSaintReadingsIntoLiturgy } from "../src/saintLectionary";
-import { applyVotiveMassToLiturgy, type VotiveMassFull } from "../src/votiveLiturgy";
+import { applyVotiveMassToLiturgy, hasVotiveProperReadings, type VotiveMassFull } from "../src/votiveLiturgy";
+import {
+  applyRitualMassToLiturgy,
+  ensureRitualCelebrateSession,
+  getQuickMass,
+} from "../src/ritualMasses";
 import { getLiturgicalSeasonKey } from "../src/prefaceUtils";
 import { todayStr } from "../src/dateUtils";
 import { buildSegments, preSplitSegments, type Segment } from "../src/liturgy/celebraSegments";
@@ -226,9 +231,17 @@ function CelebraScreenInner() {
 
   // Sessione subito (AsyncStorage) così l'indice compare senza aspettare le API.
   useEffect(() => {
-    if (!fromIndice || routeVotiveParam) return;
+    if (!fromIndice) return;
     let cancelled = false;
     (async () => {
+      if (routeVotiveParam) {
+        const saved = await loadVotiveSession(routeVotiveParam);
+        if (cancelled || !saved) return;
+        setActiveVotiveId(routeVotiveParam);
+        setSession((prev) => prev ?? saved);
+        setHasSession(true);
+        return;
+      }
       const dateKey = routeDateParam || todayStr();
       const mode = coerceCelebrationMode(
         parseCelebrationMode(routeModeParam),
@@ -259,11 +272,9 @@ function CelebraScreenInner() {
         return;
       }
       const reconciled = reconcileLiturgyColors({ ...base, celebrationMode: mode });
-      setLiturgy(
-        saved?.useSaintProperReadings === true
-          ? mergeSaintReadingsIntoLiturgy(reconciled, true)
-          : reconciled,
-      );
+      const allowSaint =
+        !hasVotiveProperReadings(saved?.votiveId) && saved?.useSaintProperReadings === true;
+      setLiturgy(allowSaint ? mergeSaintReadingsIntoLiturgy(reconciled, true) : reconciled);
     },
     [],
   );
@@ -271,6 +282,25 @@ function CelebraScreenInner() {
   const reloadCelebrationData = useCallback(async () => {
     if (!currentSessionTarget) return;
     if (currentSessionTarget.kind === "votive") {
+      const ritual = getQuickMass(currentSessionTarget.votiveId);
+      if (ritual) {
+        const lit = await api.liturgyToday("calendar_day");
+        const reconciled = applyRitualMassToLiturgy(
+          reconcileLiturgyColors({ ...lit, celebrationMode: "calendar_day" }),
+          ritual,
+        );
+        baseLiturgyRef.current = reconciled;
+        const saved = await ensureRitualCelebrateSession(currentSessionTarget.votiveId);
+        if (saved) {
+          setSession(saved);
+          setHasSession(true);
+        } else {
+          setSession(null);
+          setHasSession(false);
+        }
+        applyLiturgyForSession(reconciled, saved, "calendar_day");
+        return;
+      }
       const [lit, vm] = await Promise.all([api.liturgyToday("calendar_day"), api.votiveMasses()]);
       const mass = (vm.masses as VotiveMassFull[]).find(
         (m) => m.id === currentSessionTarget.votiveId,
@@ -372,6 +402,7 @@ function CelebraScreenInner() {
       setLoading(true);
       try {
         if (routeVotiveParam) {
+          const ritual = getQuickMass(routeVotiveParam);
           const [lit, parts, pr, pe, acc, bless, vm] = await Promise.all([
             api.liturgyToday("calendar_day"),
             api.fixedParts(),
@@ -379,22 +410,31 @@ function CelebraScreenInner() {
             api.eucharisticPrayers(),
             api.mysteryAcclamations(),
             api.solemnBlessings(),
-            api.votiveMasses(),
+            ritual ? Promise.resolve({ masses: [] as VotiveMassFull[] }) : api.votiveMasses(),
           ]);
           if (cancelled) return;
-          const mass = (vm.masses as VotiveMassFull[]).find((m) => m.id === routeVotiveParam);
+          const mass =
+            ritual ||
+            (vm.masses as VotiveMassFull[]).find((m) => m.id === routeVotiveParam);
           if (!mass) {
             setHasSession(false);
             return;
           }
           setActiveVotiveId(routeVotiveParam);
-          const reconciled = applyVotiveMassToLiturgy(
-            reconcileLiturgyColors({ ...lit, celebrationMode: "calendar_day" }),
-            mass,
-          );
+          const reconciled = ritual
+            ? applyRitualMassToLiturgy(
+                reconcileLiturgyColors({ ...lit, celebrationMode: "calendar_day" }),
+                ritual,
+              )
+            : applyVotiveMassToLiturgy(
+                reconcileLiturgyColors({ ...lit, celebrationMode: "calendar_day" }),
+                mass,
+              );
           setSessionDate(lit?.date || todayStr());
           setCelebrationMode("calendar_day");
-          const saved = await loadVotiveSession(routeVotiveParam);
+          const saved = ritual
+            ? await ensureRitualCelebrateSession(routeVotiveParam)
+            : await loadVotiveSession(routeVotiveParam);
           if (cancelled) return;
           baseLiturgyRef.current = reconciled;
           applyLiturgyForSession(reconciled, saved, "calendar_day");
@@ -407,7 +447,12 @@ function CelebraScreenInner() {
           if (Array.isArray((bless as any).prayersOverPeople)) {
             setPrayersOverPeople((bless as any).prayersOverPeople);
           }
-          const seasonKey = getLiturgicalSeasonKey(reconciled?.season?.season || "");
+          const seasonKey =
+            ritual?.peKind === "defunti"
+              ? "defunti"
+              : ritual?.peKind === "matrimonio"
+                ? "sacramenti"
+                : getLiturgicalSeasonKey(reconciled?.season?.season || "");
           setCurrentSeasonKey(seasonKey);
           if (saved) {
             setSession(saved);

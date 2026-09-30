@@ -46,6 +46,13 @@ import {
   type VotiveMassFull,
 } from "../src/votiveLiturgy";
 import {
+  applyRitualMassToLiturgy,
+  getQuickMass,
+  ritualPeSelections,
+  filterPrefacesForRitualPeKind,
+  ritualPrefaceRestrictLabel,
+} from "../src/ritualMasses";
+import {
   BODY_LINE_HEIGHT,
   liturgyLineHeight,
 } from "../src/liturgyTypography";
@@ -412,7 +419,10 @@ export default function MessaScreen() {
             setFixedParts(null);
             return;
           }
-          const mass = (vm.masses as VotiveMassFull[]).find((m) => m.id === routeVotiveParam);
+          const ritual = getQuickMass(routeVotiveParam);
+          const mass =
+            ritual ||
+            (vm.masses as VotiveMassFull[]).find((m) => m.id === routeVotiveParam);
           if (!mass) {
             setLoadError("Messa votiva non trovata.");
             setFixedParts(null);
@@ -423,13 +433,21 @@ export default function MessaScreen() {
           setActiveVotiveMeta({ title: mass.title, color: mass.color });
           setCalendarDayLiturgy(null);
           setVigilModeLiturgy(null);
-          const reconciled = applyVotiveMassToLiturgy(
-            reconcileLiturgyColors({
-              ...lit,
-              celebrationMode: "calendar_day",
-            }),
-            mass,
-          );
+          const reconciled = ritual
+            ? applyRitualMassToLiturgy(
+                reconcileLiturgyColors({
+                  ...lit,
+                  celebrationMode: "calendar_day",
+                }),
+                ritual,
+              )
+            : applyVotiveMassToLiturgy(
+                reconcileLiturgyColors({
+                  ...lit,
+                  celebrationMode: "calendar_day",
+                }),
+                mass,
+              );
           setLiturgy(reconciled);
           setFixedParts(parts.parts);
           setPrefaces(pr.prefaces);
@@ -454,8 +472,23 @@ export default function MessaScreen() {
           if (cancelled || gen !== liturgyLoadGenRef.current) return;
           if (saved) {
             applySessionFromStorageRef.current(saved);
-            if (votiveSessionNeedsDefaultRepair(mass, saved.selectedPrefaceId)) {
+            if (
+              !ritual &&
+              votiveSessionNeedsDefaultRepair(mass, saved.selectedPrefaceId)
+            ) {
               applyVotiveChoicesFor(mass, lit?.season?.season || "");
+            }
+          } else if (ritual) {
+            if (ritual.peKind === "generico") {
+              applyVotiveChoicesFor(mass, lit?.season?.season || "");
+            } else {
+              setSelectedPrefaceId(ritual.preface_id || "");
+              setSelectedPrayerId("pe2");
+              setPeSelections(ritualPeSelections(ritual.peKind, "pe2"));
+              setShowGloria(ritual.showGloria === true);
+              setShowCredo(false);
+              setShowOrazionalePray(true);
+              if (ritual.orazionale_id) setSelectedOrazionaleId(ritual.orazionale_id);
             }
           } else {
             applyVotiveChoicesFor(mass, lit?.season?.season || "");
@@ -1596,10 +1629,6 @@ export default function MessaScreen() {
       { label: "Atto penitenziale", value: `Formula ${penitentialForm}` },
       ...(preface ? [{ label: "Prefazio", value: preface.title }] : []),
       ...(prayer ? [{ label: "Preghiera eucaristica", value: prayer.title }] : []),
-      ...peSelectorEntries.map((sel) => {
-        const opt = sel.options.find((o: { id: string; label: string }) => o.id === sel.current);
-        return { label: sel.label, value: opt?.label ?? "—" };
-      }),
       ...(useOrazionePopolo && orazionePopolo
         ? [{ label: "Orazione sul popolo", value: `N. ${orazionePopolo.num}` }]
         : []),
@@ -1842,7 +1871,7 @@ export default function MessaScreen() {
             <Ionicons
               name={isStarred ? "star" : "star-outline"}
               size={scaledFont(34)}
-              color={isStarred ? colors.onPrimary : colors.primary}
+              color={isStarred ? "#E0B429" : "#E0B429"}
             />
           </TouchableOpacity>
         </View>
@@ -2344,31 +2373,7 @@ export default function MessaScreen() {
         const renderPeAcclamationBlock = () =>
           acclamations.length > 0 ? renderMysteryAcclamationsAll() : null;
 
-        const renderPeSelectorRow = () =>
-          peSelectorEntries.length > 0 ? (
-            <View style={styles.peSelectorsRow} data-tap-stop="true">
-              {peSelectorEntries.map((sel) => {
-                const opt = sel.options.find((o: { id: string; label: string }) => o.id === sel.current);
-                return (
-                  <TouchableOpacity
-                    key={sel.key}
-                    style={styles.peSelectorBtn}
-                    onPress={() => setPePickerKey(sel.key)}
-                    testID={`btn-pe-selector-${sel.key}`}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.peSelectorLabel}>{sel.label}</Text>
-                    <View style={styles.peSelectorValueRow}>
-                      <Text style={styles.peSelectorValue} numberOfLines={2}>
-                        {opt?.label || "—"}
-                      </Text>
-                      <Ionicons name="chevron-down" size={scaledFont(14)} color={colors.accentPeSelectorLabel} />
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          ) : null;
+        const renderPeSelectorRow = () => null;
 
         if (selectedPreface) {
           const prefChunks = splitTextIntoChunks(prefBodyText);
@@ -2778,6 +2783,13 @@ export default function MessaScreen() {
         isBold={isBold}
         expandedSeason={expandedPrefaceSeason}
         setExpandedSeason={setExpandedPrefaceSeason}
+        restrictToPrefaces={filterPrefacesForRitualPeKind(
+          prefaces,
+          activeVotiveId ? getQuickMass(activeVotiveId)?.peKind : undefined,
+        )}
+        restrictLabel={ritualPrefaceRestrictLabel(
+          activeVotiveId ? getQuickMass(activeVotiveId)?.peKind : undefined,
+        )}
       />
 
       {/* Modal Preghiere Eucaristiche */}
@@ -2864,57 +2876,7 @@ export default function MessaScreen() {
         </SafeAreaView>
       </Modal>
 
-      {/* Modal selettore Tempo Liturgico / Rito Particolare per la PE */}
-      <Modal
-        visible={pePickerKey !== null}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setPePickerKey(null)}
-      >
-        <Pressable style={styles.peModalBackdrop} onPress={() => setPePickerKey(null)}>
-          <Pressable style={styles.peModalCard} onPress={() => { /* prevent close */ }}>
-            {(() => {
-              const def = pePickerKey && peFull?.selectors?.[pePickerKey];
-              if (!def) return null;
-              const friendly =
-                pePickerKey === "communicantes" ? "Tempo Liturgico"
-                : pePickerKey === "hanc_igitur" ? "Rito Particolare"
-                : pePickerKey === "rito" ? "Rito Particolare"
-                : (def.label || pePickerKey || "");
-              const currentId = peSelections[pePickerKey!] || def.options?.[0]?.id;
-              return (
-                <>
-                  <Text style={styles.peModalTitle}>{friendly}</Text>
-                  <ScrollView style={{ maxHeight: 460 }}>
-                    {def.options?.map((o: any) => {
-                      const isSel = currentId === o.id;
-                      return (
-                        <TouchableOpacity
-                          key={o.id}
-                          style={[styles.peModalOption, isSel && styles.peModalOptionActive]}
-                          onPress={() => {
-                            setPeSelections((prev) => ({ ...prev, [pePickerKey!]: o.id }));
-                            setPePickerKey(null);
-                          }}
-                          testID={`pe-picker-option-${o.id}`}
-                        >
-                          <Text style={[styles.peModalOptionText, isSel && { color: colors.accentPeModalActiveText, fontWeight: "800" }]}>
-                            {o.label}
-                          </Text>
-                          {isSel ? <Ionicons name="checkmark" size={scaledFont(28)} color={colors.accentPeModalActiveText} /> : null}
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </ScrollView>
-                  <TouchableOpacity style={styles.peModalClose} onPress={() => setPePickerKey(null)}>
-                    <Text style={styles.peModalCloseText}>Chiudi</Text>
-                  </TouchableOpacity>
-                </>
-              );
-            })()}
-          </Pressable>
-        </Pressable>
-      </Modal>
+      {/* Selettori Tempo liturgico / Rito particolare rimossi (messe rituali). */}
     </SafeAreaView>
   );
 }

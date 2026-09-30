@@ -19,7 +19,7 @@ import {
 
 export default function Impostazioni() {
   const router = useRouter();
-  const { theme, setTheme, fontSize, highContrast, setHighContrast, isBold, setIsBold, lineSpacing, setLineSpacing, fontFamilyId, setFontFamilyId, parchmentTone, setParchmentTone, celebraSubitoEnabled, setCelebraSubitoEnabled, preparaCelebraEnabled, setPreparaCelebraEnabled, oreEnabled, setOreEnabled, hapticFeedbackEnabled, setHapticFeedbackEnabled, pinchZoomEnabled, setPinchZoomEnabled, colors, scaledFont } = useSettings();
+  const { theme, setTheme, fontSize, highContrast, setHighContrast, isBold, setIsBold, lineSpacing, setLineSpacing, fontFamilyId, setFontFamilyId, parchmentTone, setParchmentTone, celebraSubitoEnabled, setCelebraSubitoEnabled, preparaCelebraEnabled, setPreparaCelebraEnabled, oreEnabled, setOreEnabled, messeRitualiEnabled, setMesseRitualiEnabled, hapticFeedbackEnabled, setHapticFeedbackEnabled, pinchZoomEnabled, setPinchZoomEnabled, colors, scaledFont } = useSettings();
   const styles = makeStyles(colors, fontSize);
   const appVersion = Constants.expoConfig?.version ?? "—";
   const apkDate = (Constants.expoConfig?.extra as { apkDate?: string } | undefined)?.apkDate?.trim();
@@ -107,6 +107,27 @@ export default function Impostazioni() {
               thumbColor="#FFFFFF"
               style={{ transform: [{ scaleX: 1.3 }, { scaleY: 1.3 }] }}
               testID="switch-ore-home"
+            />
+          </View>
+        </View>
+
+        <View style={styles.section} testID="section-messe-rituali">
+          <View style={styles.switchRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.sectionTitle}>Messe votive e rituali in Home</Text>
+              <Text style={styles.sectionDesc}>
+                {messeRitualiEnabled
+                  ? "Attivo (predefinito): in Home compare il tasto «Messe votive e rituali» (votive, defunti A–D, anniversario di matrimonio). Disattiva per nasconderlo."
+                  : "Disattivo: il tasto «Messe votive e rituali» non compare in Home."}
+              </Text>
+            </View>
+            <Switch
+              value={messeRitualiEnabled}
+              onValueChange={setMesseRitualiEnabled}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor="#FFFFFF"
+              style={{ transform: [{ scaleX: 1.3 }, { scaleY: 1.3 }] }}
+              testID="switch-messe-rituali"
             />
           </View>
         </View>

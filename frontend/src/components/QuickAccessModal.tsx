@@ -113,7 +113,11 @@ export function QuickAccessModal({
       <View style={styles.overlay}>
         <View style={styles.card} testID="quick-access-modal">
           <View style={styles.header}>
-            <Ionicons name="star" size={scaledFont(28)} color={colors.primary} />
+            <Ionicons
+              name={isStarred ? "star" : "star-outline"}
+              size={scaledFont(28)}
+              color="#E0B429"
+            />
             <Text style={styles.title}>Accesso rapido</Text>
             <TouchableOpacity
               onPress={onClose}

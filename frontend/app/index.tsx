@@ -80,6 +80,7 @@ const STRIP_OFFSETS = [0, 1, 2, 3, 4, 5, 6, 7] as const;
 /** Tasto «Celebra subito»: oro, distinto dal verde di «Celebra la Messa». */
 const QUICK_CELEBRA_GOLD = "#E0B429";
 const ORE_BLUE = "#4DA8DA";
+const RITUALI_ORANGE = "#E2A16A";
 const DL_CHECK_GREEN = "#4CAF50";
 
 /** Scurisce un riempimento restando sullo stesso colore, così il testo resta più leggibile. */
@@ -101,7 +102,7 @@ function dayLabelFor(offset: number, date: Date): string {
 export default function Home() {
   const router = useRouter();
   const params = useLocalSearchParams<{ date?: string }>();
-  const { colors, scaledFont, fontSize, celebraSubitoEnabled, preparaCelebraEnabled, oreEnabled, theme } = useSettings();
+  const { colors, scaledFont, fontSize, celebraSubitoEnabled, preparaCelebraEnabled, oreEnabled, messeRitualiEnabled, theme } = useSettings();
   const [selectedDateISO, setSelectedDateISO] = useState(() => localDateStr(new Date()));
   const [sessions, setSessions] = useState<MassSession[]>([]);
   const [selectedCelebrateMode, setSelectedCelebrateMode] = useState<CelebrationMode | null>(null);
@@ -566,7 +567,11 @@ export default function Home() {
               const dateSpoken = isToday ? `${dayNum} ${monthLabel}` : `${label} ${dayNum} ${monthLabel}`;
               const stripMeta = homeStripDayMeta(d, stripCeiTitles[dateStr]);
               const borderHex = liturgicalColorHex(stripMeta.liturgicalColor, colors);
-              const prepCount = preparedCounts[dateStr] ?? 0;
+              // Pallini verdi solo se «Scegli la liturgia» è attivo (altrimenti
+              // resterebbero verdi senza riquadro sessione).
+              const prepCount = preparaCelebraEnabled
+                ? (preparedCounts[dateStr] ?? 0)
+                : 0;
               const isPrepared = prepCount > 0;
               const prepLabel =
                 prepCount >= 2
@@ -813,6 +818,37 @@ export default function Home() {
                 />
               </TouchableOpacity>
             ) : null}
+            {messeRitualiEnabled ? (
+              <TouchableOpacity
+                style={[styles.flagBtn, styles.flagBtnRitual, webClickable]}
+                onPress={() => {
+                  void triggerAppHaptic("light");
+                  router.push("/messe-rituali" as any);
+                }}
+                testID="btn-messe-rituali"
+                accessibilityRole="button"
+                accessibilityLabel="Messe votive e rituali"
+              >
+                <View style={styles.flagLeft}>
+                  <View style={[styles.actionIconSlot, { width: actionIconSlot, height: actionIconSlot }]}>
+                    <Ionicons
+                      name="heart"
+                      size={Math.round(actionIconSlot * 0.88)}
+                      color={RITUALI_ORANGE}
+                    />
+                  </View>
+                  <Text style={[styles.flagTitle, styles.flagTitleRitual]} numberOfLines={2}>
+                    Messe votive e rituali
+                  </Text>
+                </View>
+                <Ionicons
+                  name="chevron-forward"
+                  size={Math.round(scaledFont(26))}
+                  color={RITUALI_ORANGE}
+                  style={styles.flagChevron}
+                />
+              </TouchableOpacity>
+            ) : null}
           </View>
         ) : (
           <>
@@ -938,6 +974,30 @@ export default function Home() {
                 Liturgia delle Ore
               </Text>
             </TouchableOpacity>
+            ) : null}
+
+            {messeRitualiEnabled ? (
+              <TouchableOpacity
+                style={[styles.quickCelebraBtn, styles.ritualiBtnOutline, webClickable]}
+                onPress={() => {
+                  void triggerAppHaptic("light");
+                  router.push("/messe-rituali" as any);
+                }}
+                testID="btn-messe-rituali"
+                accessibilityRole="button"
+                accessibilityLabel="Messe votive e rituali"
+              >
+                <View style={[styles.actionIconSlot, { width: actionIconSlot, height: actionIconSlot }]}>
+                  <Ionicons
+                    name="heart"
+                    size={Math.round(actionIconSlot * 0.88)}
+                    color={RITUALI_ORANGE}
+                  />
+                </View>
+                <Text style={[styles.heroTitle, styles.heroTitleRitualOutline]} numberOfLines={1}>
+                  Messe votive e rituali
+                </Text>
+              </TouchableOpacity>
             ) : null}
           </>
         )}
@@ -1526,6 +1586,10 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
       borderLeftColor: ORE_BLUE,
       borderColor: "rgba(77, 168, 218, 0.35)",
     },
+    flagBtnRitual: {
+      borderLeftColor: RITUALI_ORANGE,
+      borderColor: "rgba(226, 161, 106, 0.4)",
+    },
     flagLeft: {
       flex: 1,
       flexDirection: "row",
@@ -1554,6 +1618,9 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
     },
     flagTitleOre: {
       color: ORE_BLUE,
+    },
+    flagTitleRitual: {
+      color: RITUALI_ORANGE,
     },
     flagChevron: {
       opacity: 0.7,
@@ -1585,6 +1652,11 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
       backgroundColor: "transparent",
       borderWidth: 4,
       borderColor: ORE_BLUE,
+    },
+    ritualiBtnOutline: {
+      backgroundColor: "transparent",
+      borderWidth: 4,
+      borderColor: RITUALI_ORANGE,
     },
     heroCard: {
       flex: 1,
@@ -1657,6 +1729,25 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
     },
     heroTitleBlueOutline: {
       color: ORE_BLUE,
+      fontSize: Math.round(fontSize * 1.05),
+      lineHeight: Math.round(fontSize * 1.18),
+      fontVariant: ["small-caps"],
+      letterSpacing: Math.round(fontSize * 0.108375),
+      flexShrink: 1,
+      flex: 1,
+      width: "auto",
+      textAlign: "left",
+      textShadowColor: "transparent",
+      textShadowRadius: 0,
+      ...(Platform.OS === "web"
+        ? ({
+            textShadow: "none",
+            fontVariant: "small-caps",
+          } as const)
+        : {}),
+    },
+    heroTitleRitualOutline: {
+      color: RITUALI_ORANGE,
       fontSize: Math.round(fontSize * 1.05),
       lineHeight: Math.round(fontSize * 1.18),
       fontVariant: ["small-caps"],

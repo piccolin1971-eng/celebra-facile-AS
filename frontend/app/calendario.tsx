@@ -11,10 +11,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { useSettings } from "../src/SettingsContext";
 import { SectionScreenTopBar } from "../src/components/SectionScreenTopBar";
-import { api, VotiveMass } from "../src/api";
 import { loadLiturgy } from "../src/offlineCache";
 import { localDateStr } from "../src/dateUtils";
 import {
@@ -145,13 +143,10 @@ function dayCardBorderColor(
 
 export default function CalendarioScreen() {
   const router = useRouter();
-  const { colors, fontSize, scaledFont, theme, highContrast } = useSettings();
-  const [votive, setVotive] = useState<VotiveMass[]>([]);
+  const { colors, fontSize, theme, highContrast } = useSettings();
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [monthDays, setMonthDays] = useState<CalendarDayEntry[]>([]);
-  const [loadingVotive, setLoadingVotive] = useState(true);
   const [loadingMonth, setLoadingMonth] = useState(true);
-  const [tab, setTab] = useState<"santi" | "votive">("santi");
   const styles = makeStyles(colors, fontSize, dayCardBorderColor(theme, highContrast, colors));
   const todayISO = useMemo(() => localDateStr(new Date()), []);
   const openingMonth = useMemo(() => new Date().getMonth() + 1, []);
@@ -166,19 +161,6 @@ export default function CalendarioScreen() {
   const didScrollToTodayRef = useRef(false);
 
   const viewYear = useMemo(() => yearForMonthView(selectedMonth), [selectedMonth]);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const v = await api.votiveMasses();
-        setVotive(v.masses);
-      } catch (e) {
-        if (__DEV__) console.log("Errore votive:", e);
-      } finally {
-        setLoadingVotive(false);
-      }
-    })();
-  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -264,8 +246,6 @@ export default function CalendarioScreen() {
     }
   };
 
-  const loading = tab === "santi" ? loadingMonth : loadingVotive;
-
   return (
     <SafeAreaView style={styles.container} testID="calendar-screen">
       <SectionScreenTopBar
@@ -277,30 +257,9 @@ export default function CalendarioScreen() {
         homeTestID="btn-back"
       />
 
-      <View style={styles.tabRow}>
-        <TouchableOpacity
-          style={[styles.tabBtn, tab === "santi" && styles.tabBtnActive]}
-          onPress={() => setTab("santi")}
-          testID="tab-santi"
-        >
-          <Text style={[styles.tabBtnText, tab === "santi" && { color: colors.onPrimary }]}>
-            Santi e Feste
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tabBtn, tab === "votive" && styles.tabBtnActive]}
-          onPress={() => setTab("votive")}
-          testID="tab-votive"
-        >
-          <Text style={[styles.tabBtnText, tab === "votive" && { color: colors.onPrimary }]}>
-            Messe Votive
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {loading ? (
+      {loadingMonth ? (
         <ActivityIndicator size="large" color={colors.primary} style={{ flex: 1 }} />
-      ) : tab === "santi" ? (
+      ) : (
         <View style={styles.saintsBody}>
           <ScrollView
             horizontal
@@ -357,29 +316,6 @@ export default function CalendarioScreen() {
             })}
           </ScrollView>
         </View>
-      ) : (
-        <ScrollView style={styles.listScroll} contentContainerStyle={styles.content}>
-          <Text style={styles.sectionIntro}>
-            Tocca una messa votiva per vedere il dettaglio e celebrarla con il prefazio adeguato.
-          </Text>
-          {votive.map((v) => (
-            <TouchableOpacity
-              key={v.id}
-              style={styles.votiveCard}
-              testID={`votive-${v.id}`}
-              onPress={() => router.push(`/messa-votiva/${v.id}`)}
-              accessibilityRole="button"
-              accessibilityLabel={`Apri messa votiva ${v.title}`}
-            >
-              <View style={[styles.votiveColorPill, { backgroundColor: colorHex(v.color) }]} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.votiveTitle}>{v.title}</Text>
-                <Text style={styles.votiveColor}>Colore: {v.color}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={scaledFont(36)} color={colors.textSecondary} />
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
       )}
     </SafeAreaView>
   );
@@ -397,24 +333,6 @@ const makeStyles = (colors: any, fontSize: number, dayCardBorder: string) =>
       fontWeight: "700",
       color: colors.textPrimary,
       textAlign: "left",
-    },
-    tabRow: { flexDirection: "row", padding: 16, gap: 12 },
-    tabBtn: {
-      flex: 1,
-      padding: 18,
-      borderWidth: 2,
-      borderColor: colors.border,
-      borderRadius: ACTION_RADIUS,
-      alignItems: "center",
-      minHeight: ACTION_MIN_HEIGHT,
-      justifyContent: "center",
-      backgroundColor: colors.surface,
-    },
-    tabBtnActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-    tabBtnText: {
-      fontSize: Math.round(fontSize * 0.75),
-      fontWeight: ACTION_TITLE_WEIGHT,
-      color: colors.textPrimary,
     },
     saintsBody: { flex: 1, minHeight: 0 },
     monthScroll: {
@@ -514,25 +432,4 @@ const makeStyles = (colors: any, fontSize: number, dayCardBorder: string) =>
       fontWeight: ACTION_LABEL_WEIGHT,
       lineHeight: Math.round(fontSize * 0.95),
     },
-    sectionIntro: { fontSize: Math.round(fontSize * 0.7), color: colors.textSecondary, marginBottom: 16 },
-    votiveCard: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 16,
-      padding: 20,
-      backgroundColor: colors.surface,
-      borderWidth: 2,
-      borderColor: colors.border,
-      borderRadius: ACTION_RADIUS,
-      marginBottom: 12,
-      minHeight: ACTION_MIN_HEIGHT,
-    },
-    votiveColorPill: { width: 16, height: 44, borderRadius: 999 },
-    votiveTitle: {
-      flex: 1,
-      fontSize: Math.round(fontSize * 0.75),
-      fontWeight: ACTION_TITLE_WEIGHT,
-      color: colors.textPrimary,
-    },
-    votiveColor: { fontSize: Math.round(fontSize * 0.55), color: colors.textSecondary },
   });

@@ -38,6 +38,8 @@ interface SettingsState {
   preparaCelebraEnabled: boolean;
   /** Tasto «Liturgia delle Ore» in Home. Default on. */
   oreEnabled: boolean;
+  /** Tasto «Messe votive e rituali» in Home. Default on. */
+  messeRitualiEnabled: boolean;
   /** Feedback tattile (vibrazione) ai tap principali. Default off. */
   hapticFeedbackEnabled: boolean;
   /** Pinch sul testo di Messa, Ore e Orazionale. Default off. */
@@ -54,6 +56,7 @@ interface SettingsState {
   setCelebraSubitoEnabled: (v: boolean) => void;
   setPreparaCelebraEnabled: (v: boolean) => void;
   setOreEnabled: (v: boolean) => void;
+  setMesseRitualiEnabled: (v: boolean) => void;
   setHapticFeedbackEnabled: (v: boolean) => void;
   setPinchZoomEnabled: (v: boolean) => void;
   setLineSpacing: (n: number) => void;
@@ -245,6 +248,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   const [celebraSubitoEnabled, setCelebraSubitoEnabledState] = useState(true);
   const [preparaCelebraEnabled, setPreparaCelebraEnabledState] = useState(true);
   const [oreEnabled, setOreEnabledState] = useState(true);
+  const [messeRitualiEnabled, setMesseRitualiEnabledState] = useState(true);
   const [hapticFeedbackEnabled, setHapticFeedbackEnabledState] = useState(false);
   const [pinchZoomEnabled, setPinchZoomEnabledState] = useState(false);
   const [lineSpacing, setLineSpacingState] = useState(LINE_SPACING_DEFAULT);
@@ -317,6 +321,9 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
           if (typeof s.oreEnabled === "boolean") {
             setOreEnabledState(s.oreEnabled);
           }
+          if (typeof s.messeRitualiEnabled === "boolean") {
+            setMesseRitualiEnabledState(s.messeRitualiEnabled);
+          }
           if (typeof s.hapticFeedbackEnabled === "boolean") {
             setHapticFeedbackEnabledState(s.hapticFeedbackEnabled);
             setAppHapticEnabled(s.hapticFeedbackEnabled);
@@ -365,8 +372,8 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     })();
   }, []);
 
-  const persist = async (patch: Partial<{ theme: ThemeMode; fontSize: number; highContrast: boolean; isBold: boolean; readingMode: ReadingMode; fontFamilyId: FontFamilyId; parchmentTone: number; celebraSubitoEnabled: boolean; preparaCelebraEnabled: boolean; oreEnabled: boolean; hapticFeedbackEnabled: boolean; pinchZoomEnabled: boolean; lineSpacing: number }>) => {
-    const next = { theme, fontSize, highContrast, isBold, readingMode, fontFamilyId, parchmentTone, celebraSubitoEnabled, preparaCelebraEnabled, oreEnabled, hapticFeedbackEnabled, pinchZoomEnabled, lineSpacing, ...patch };
+  const persist = async (patch: Partial<{ theme: ThemeMode; fontSize: number; highContrast: boolean; isBold: boolean; readingMode: ReadingMode; fontFamilyId: FontFamilyId; parchmentTone: number; celebraSubitoEnabled: boolean; preparaCelebraEnabled: boolean; oreEnabled: boolean; messeRitualiEnabled: boolean; hapticFeedbackEnabled: boolean; pinchZoomEnabled: boolean; lineSpacing: number }>) => {
+    const next = { theme, fontSize, highContrast, isBold, readingMode, fontFamilyId, parchmentTone, celebraSubitoEnabled, preparaCelebraEnabled, oreEnabled, messeRitualiEnabled, hapticFeedbackEnabled, pinchZoomEnabled, lineSpacing, ...patch };
     await AsyncStorage.setItem("messale_settings", JSON.stringify(next));
   };
 
@@ -406,6 +413,10 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     setOreEnabledState(v);
     persist({ oreEnabled: v });
   };
+  const setMesseRitualiEnabled = (v: boolean) => {
+    setMesseRitualiEnabledState(v);
+    persist({ messeRitualiEnabled: v });
+  };
   const setHapticFeedbackEnabled = (v: boolean) => {
     setHapticFeedbackEnabledState(v);
     setAppHapticEnabled(v);
@@ -433,7 +444,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   if (!loaded) return null;
 
   return (
-    <SettingsContext.Provider value={{ theme, fontSize, highContrast, isBold, readingMode, fontFamilyId, fontFamily, parchmentTone, celebraSubitoEnabled, preparaCelebraEnabled, oreEnabled, hapticFeedbackEnabled, pinchZoomEnabled, lineSpacing, setTheme, setFontSize, setHighContrast, setIsBold, setReadingMode, setFontFamilyId, setParchmentTone, setCelebraSubitoEnabled, setPreparaCelebraEnabled, setOreEnabled, setHapticFeedbackEnabled, setPinchZoomEnabled, setLineSpacing, colors, scaledFont }}>
+    <SettingsContext.Provider value={{ theme, fontSize, highContrast, isBold, readingMode, fontFamilyId, fontFamily, parchmentTone, celebraSubitoEnabled, preparaCelebraEnabled, oreEnabled, messeRitualiEnabled, hapticFeedbackEnabled, pinchZoomEnabled, lineSpacing, setTheme, setFontSize, setHighContrast, setIsBold, setReadingMode, setFontFamilyId, setParchmentTone, setCelebraSubitoEnabled, setPreparaCelebraEnabled, setOreEnabled, setMesseRitualiEnabled, setHapticFeedbackEnabled, setPinchZoomEnabled, setLineSpacing, colors, scaledFont }}>
       {children}
     </SettingsContext.Provider>
   );

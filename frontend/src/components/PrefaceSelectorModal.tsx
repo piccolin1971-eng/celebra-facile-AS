@@ -19,6 +19,9 @@ interface Props {
   isBold: boolean;
   expandedSeason: string | null;
   setExpandedSeason: (key: string | null) => void;
+  /** Se impostato, mostra solo questi prefazi (messe rituali defunti/matrimonio). */
+  restrictToPrefaces?: Preface[] | null;
+  restrictLabel?: string | null;
 }
 
 export const PrefaceSelectorModal: React.FC<Props> = ({
@@ -27,7 +30,7 @@ export const PrefaceSelectorModal: React.FC<Props> = ({
   prefaces,
   selectedId,
   onSelect,
-  currentSeasonKey,
+  currentSeasonKey: _currentSeasonKey,
   liturgy,
   colors,
   scaledFont,
@@ -35,6 +38,8 @@ export const PrefaceSelectorModal: React.FC<Props> = ({
   isBold,
   expandedSeason,
   setExpandedSeason,
+  restrictToPrefaces = null,
+  restrictLabel = null,
 }) => {
   const [search, setSearch] = useState("");
   const bodyFont = resolveBodyFont(fontFamilyId, isBold);
@@ -42,6 +47,8 @@ export const PrefaceSelectorModal: React.FC<Props> = ({
 
   const query = search.toLowerCase().trim();
   const isSearching = query.length >= 2;
+  const isRestricted = !!(restrictToPrefaces && restrictToPrefaces.length > 0);
+  const pool = isRestricted ? restrictToPrefaces! : prefaces;
 
   const categories = [
     { key: "suggeriti", label: "Suggeriti per oggi" },
@@ -61,7 +68,7 @@ export const PrefaceSelectorModal: React.FC<Props> = ({
   ];
 
   const sortPrefaces = (items: Preface[], categoryKey: string) => {
-    if (categoryKey === 'pasqua' || categoryKey === 'ordinario') {
+    if (categoryKey === "pasqua" || categoryKey === "ordinario") {
       return [...items].sort((a, b) => (a.sortOrder ?? 999) - (b.sortOrder ?? 999));
     }
     return items;
@@ -72,6 +79,18 @@ export const PrefaceSelectorModal: React.FC<Props> = ({
     setSearch("");
     onClose();
   };
+
+  const renderPrefaceRow = (p: Preface) => (
+    <TouchableOpacity
+      key={p.id}
+      style={[styles.listItem, selectedId === p.id && styles.listItemActive]}
+      onPress={() => handleSelect(p.id)}
+    >
+      <Text style={[styles.listItemText, selectedId === p.id && styles.listItemTextActive]}>
+        {p.title}
+      </Text>
+    </TouchableOpacity>
+  );
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
@@ -107,37 +126,41 @@ export const PrefaceSelectorModal: React.FC<Props> = ({
         <ScrollView contentContainerStyle={styles.content}>
           {isSearching ? (
             (() => {
-              const results = prefaces.filter(p =>
-                p.title.toLowerCase().includes(query) ||
-                p.text.toLowerCase().includes(query)
+              const results = pool.filter(
+                (p) =>
+                  p.title.toLowerCase().includes(query) ||
+                  p.text.toLowerCase().includes(query),
               );
 
               if (results.length === 0) {
-                return <Text style={styles.empty}>Nessun prefazio trovato per "{search}"</Text>;
+                return (
+                  <Text style={styles.empty}>Nessun prefazio trovato per &quot;{search}&quot;</Text>
+                );
               }
 
-              return (
-                <View style={styles.resultsList}>
-                  {results.map(p => (
-                    <TouchableOpacity
-                      key={p.id}
-                      style={[styles.listItem, selectedId === p.id && styles.listItemActive]}
-                      onPress={() => handleSelect(p.id)}
-                    >
-                      <Text style={[styles.listItemText, selectedId === p.id && styles.listItemTextActive]}>{p.title}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              );
+              return <View style={styles.resultsList}>{results.map(renderPrefaceRow)}</View>;
             })()
+          ) : isRestricted ? (
+            <View style={{ marginBottom: 12 }}>
+              <View style={[styles.sectionHeader, styles.sectionHeaderExpanded]}>
+                <View style={styles.sectionTitleWrap}>
+                  <Text style={styles.sectionTitle}>
+                    {restrictLabel || "Prefazi di questa celebrazione"}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.expandedList}>{pool.map(renderPrefaceRow)}</View>
+            </View>
           ) : (
-            categories.map(cat => {
-              let filtered = [];
-              if (cat.key === 'suggeriti') {
+            categories.map((cat) => {
+              let filtered: Preface[] = [];
+              if (cat.key === "suggeriti") {
                 filtered = getSuggestedPrefacesForLiturgy(prefaces, liturgy);
                 if (filtered.length === 0) return null;
               } else {
-                filtered = prefaces.filter(p => (p.season === cat.key || p.category === cat.key));
+                filtered = prefaces.filter(
+                  (p) => p.season === cat.key || p.category === cat.key,
+                );
               }
 
               if (filtered.length === 0) return null;
@@ -163,17 +186,7 @@ export const PrefaceSelectorModal: React.FC<Props> = ({
                   </TouchableOpacity>
 
                   {isExpanded && (
-                    <View style={styles.expandedList}>
-                      {sorted.map(p => (
-                        <TouchableOpacity
-                          key={p.id}
-                          style={[styles.listItem, selectedId === p.id && styles.listItemActive]}
-                          onPress={() => handleSelect(p.id)}
-                        >
-                          <Text style={[styles.listItemText, selectedId === p.id && styles.listItemTextActive]}>{p.title}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
+                    <View style={styles.expandedList}>{sorted.map(renderPrefaceRow)}</View>
                   )}
                 </View>
               );
@@ -201,12 +214,12 @@ const makeStyles = (colors: any, scaledFont: any, bodyFont: ResolvedAppFont) => 
   title: { fontSize: scaledFont(28), fontWeight: "700", color: colors.textPrimary },
   searchBox: { paddingHorizontal: 24, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border },
   searchInputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: colors.bgSecondary,
     borderRadius: 12,
     paddingHorizontal: 16,
-    height: 56
+    height: 56,
   },
   searchInput: {
     flex: 1,
@@ -217,8 +230,8 @@ const makeStyles = (colors: any, scaledFont: any, bodyFont: ResolvedAppFont) => 
     fontWeight: bodyFont.fontWeight,
   },
   content: { padding: 20 },
-  resultsList: { backgroundColor: colors.bgSecondary, borderRadius: 12, overflow: 'hidden' },
-  empty: { textAlign: 'center', marginTop: 40, fontSize: scaledFont(20), color: colors.textSecondary, fontStyle: 'italic' },
+  resultsList: { backgroundColor: colors.bgSecondary, borderRadius: 12, overflow: "hidden" },
+  empty: { textAlign: "center", marginTop: 40, fontSize: scaledFont(20), color: colors.textSecondary, fontStyle: "italic" },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -233,7 +246,7 @@ const makeStyles = (colors: any, scaledFont: any, bodyFont: ResolvedAppFont) => 
   sectionTitleWrap: { flex: 1, flexShrink: 1, marginRight: 12 },
   sectionTitle: { fontSize: scaledFont(24), fontWeight: "700", color: colors.textPrimary },
   sectionChevron: { flexShrink: 0 },
-  expandedList: { backgroundColor: colors.bgSecondary, borderBottomLeftRadius: 12, borderBottomRightRadius: 12, overflow: 'hidden' },
+  expandedList: { backgroundColor: colors.bgSecondary, borderBottomLeftRadius: 12, borderBottomRightRadius: 12, overflow: "hidden" },
   listItem: { padding: 18, borderBottomWidth: 1, borderBottomColor: colors.border },
   listItemActive: { backgroundColor: colors.primary + "20", borderLeftWidth: 4, borderLeftColor: colors.accentPe },
   listItemText: { fontSize: scaledFont(26), color: colors.textPrimary, lineHeight: scaledFont(34) },

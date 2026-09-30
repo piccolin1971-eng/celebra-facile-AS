@@ -48,7 +48,8 @@ const VOTIVE_ORAZIONALE_IDS: Record<string, string> = {
   ss_apostoli: "st_10",
   tutti_santi: "st_22",
   defunti: "df_1",
-  sposi: "st_22",
+  /** Santa Famiglia: miglior proximo nell'Orazionale CEI (non esiste «Per gli sposi»). */
+  sposi: "pt_11",
   malati: "st_44",
   pace: "pt_56",
 };
@@ -154,6 +155,12 @@ function lectionaryReadingsForVotive(massId: string): Reading[] | null {
   if (!entries) return null;
   const key = Object.keys(entries).find((k) => k.includes(spec.keyIncludes));
   return key ? entries[key].readings : null;
+}
+
+/** True se il formulario ha letture proprie in votiveReadings / lezionario votivo. */
+export function hasVotiveProperReadings(massId: string | null | undefined): boolean {
+  if (!massId) return false;
+  return !!lectionaryReadingsForVotive(massId)?.length;
 }
 
 export function applyVotiveMassToLiturgy(base: Liturgy, mass: VotiveMassFull): Liturgy {

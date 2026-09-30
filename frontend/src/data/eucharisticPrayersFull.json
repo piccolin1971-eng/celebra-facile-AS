@@ -980,6 +980,10 @@
           {
             "id": "matrimonio",
             "label": "Matrimonio"
+          },
+          {
+            "id": "defunti",
+            "label": "Messa per i defunti"
           }
         ],
         "variants": {
@@ -1032,6 +1036,50 @@
             {
               "type": "t",
               "text": "Sostieni nella grazia del Matrimonio N. e N.,\nche hai condotto felicemente al giorno delle nozze:\ncon il tuo aiuto custodiscano per tutta la vita\nl'alleanza sponsale che hanno stretto davanti a te."
+            }
+          ],
+          "defunti": []
+        }
+      },
+      "memoria_defunti": {
+        "label": "Memoria dei defunti",
+        "options": [
+          {
+            "id": "ordinario",
+            "label": "Ordinaria"
+          },
+          {
+            "id": "defunti",
+            "label": "Messa per i defunti"
+          }
+        ],
+        "variants": {
+          "ordinario": [
+            {
+              "type": "title",
+              "text": "Memoria dei defunti"
+            },
+            {
+              "type": "t",
+              "text": "Ricongiungi a te, Padre misericordioso,\ntutti i tuoi figli ovunque dispersi."
+            },
+            {
+              "type": "t",
+              "text": "Accogli nel tuo regno\ni nostri fratelli e sorelle defunti,\ne tutti coloro che, in pace con te,\nhanno lasciato questo mondo;\nconcedi anche a noi di ritrovarci insieme\na godere per sempre della tua gloria,\nin Cristo, nostro Signore,\nper mezzo del quale tu, o Dio, doni al mondo ogni bene."
+            }
+          ],
+          "defunti": [
+            {
+              "type": "title",
+              "text": "Messa per i defunti"
+            },
+            {
+              "type": "t",
+              "text": "Ricordati del nostro fratello [della nostra sorella] N.,\nche [oggi] hai chiamato a te da questa vita,\ne come per il Battesimo\nl'hai unito[a] alla morte di Cristo, tuo Figlio,\ncosì rendilo[a] partecipe della sua risurrezione,\nquando egli farà sorgere i morti dalla terra\ne trasfigurerà il nostro corpo mortale\nper conformarlo al suo corpo glorioso."
+            },
+            {
+              "type": "t",
+              "text": "Accogli nel tuo regno\ni nostri fratelli e sorelle defunti,\ne tutti coloro che, in pace con te,\nhanno lasciato questo mondo;\nconcedi anche a noi di ritrovarci insieme\na godere della tua gloria\nquando, asciugata ogni lacrima,\ni nostri occhi vedranno il tuo volto\ne noi saremo simili a te,\ne canteremo per sempre la tua lode,\nin Cristo, nostro Signore,\nper mezzo del quale tu, o Dio,\ndoni al mondo ogni bene."
             }
           ]
         }
@@ -1181,16 +1229,9 @@
         "title": "Intercessione particolare"
       },
       {
-        "type": "title",
-        "text": "Memoria dei defunti"
-      },
-      {
-        "type": "t",
-        "text": "Ricongiungi a te, Padre misericordioso,\ntutti i tuoi figli ovunque dispersi."
-      },
-      {
-        "type": "t",
-        "text": "Accogli nel tuo regno\ni nostri fratelli e sorelle defunti,\ne tutti coloro che, in pace con te,\nhanno lasciato questo mondo;\nconcedi anche a noi di ritrovarci insieme\na godere per sempre della tua gloria,\nin Cristo, nostro Signore,\nper mezzo del quale tu, o Dio, doni al mondo ogni bene."
+        "type": "var",
+        "selector": "memoria_defunti",
+        "title": "Memoria dei defunti"
       },
       {
         "type": "r",

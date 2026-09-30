@@ -31,6 +31,7 @@ import { HomeCircleButton } from "./HomeCircleButton";
 import { SettingsTopBarButton } from "./SettingsTopBarButton";
 import { FontSizeButtons } from "./FontSizeButtons";
 import { shouldOfferSaintProperToggle } from "../saintLectionary";
+import { hasVotiveProperReadings } from "../votiveLiturgy";
 import {
   ACTION_MIN_HEIGHT,
   ACTION_TITLE_WEIGHT,
@@ -48,6 +49,14 @@ import {
   eucharisticPrayerAccentColor,
   eucharisticPrayerFamilyLabel,
 } from "../eucharisticPrayerUi";
+import {
+  getQuickMass,
+  ritualAllowedPrayerIds,
+  ritualPeSelections,
+  filterPrefacesForRitualPeKind,
+  ritualPrefaceRestrictLabel,
+} from "../ritualMasses";
+import { getPrayerById } from "../orazionale";
 import { triggerAppHaptic } from "../appHaptics";
 import fixedPartsData from "../data/fixedParts.json";
 
@@ -136,6 +145,12 @@ export function CelebraIndicePanel({
   );
   const viewportHeightRef = useRef(0);
 
+  const ritualMass = session?.votiveId ? getQuickMass(session.votiveId) : undefined;
+  const votiveProper = hasVotiveProperReadings(session?.votiveId);
+  const selectedOrazionale = session?.selectedOrazionaleId
+    ? getPrayerById(session.selectedOrazionaleId)
+    : undefined;
+
   const dayFrame = useMemo(() => {
     const iso = typeof liturgy?.date === "string" ? liturgy.date : "";
     const date = iso ? parseLocalDate(iso) : new Date();
@@ -145,6 +160,20 @@ export function CelebraIndicePanel({
         ? liturgy.date_label.trim()
         : "") ||
       italianDateLabel(date);
+
+    // Formulario votivo/rituale: titolo e colore del formulario, non del santo del giorno.
+    if (ritualMass) {
+      const ritualColor =
+        (typeof liturgy?.liturgical_color === "string" && liturgy.liturgical_color.trim()) ||
+        ritualMass.color ||
+        "bianco";
+      return {
+        dateLabel,
+        saintLine: (session?.liturgyTitle || ritualMass.title || "").trim() || null,
+        colorHex: liturgicalColorHex(ritualColor, colors),
+      };
+    }
+
     const ceiTitle =
       (typeof liturgy?.title === "string" ? liturgy.title.trim() : "") ||
       (session?.liturgyTitle || "").trim();
@@ -185,9 +214,16 @@ export function CelebraIndicePanel({
       saintLine,
       colorHex: liturgicalColorHex(liturgicalColor, colors),
     };
-  }, [liturgy, session?.liturgyTitle, colors]);
+  }, [liturgy, session?.liturgyTitle, colors, ritualMass]);
 
   const items = useMemo(() => buildCelebraIndexItems(session), [session]);
+  const prayersForPicker = useMemo(() => {
+    if (!ritualMass) return prayers;
+    const allowedIds = ritualAllowedPrayerIds(ritualMass.peKind);
+    if (!allowedIds) return prayers;
+    const allowed = new Set(allowedIds);
+    return prayers.filter((p) => allowed.has(p.id));
+  }, [prayers, ritualMass]);
   const selectedPreface = prefaces.find((p) => p.id === session?.selectedPrefaceId);
   const selectedPrayer = prayers.find((p) => p.id === session?.selectedPrayerId);
   const penForm = session?.penitentialForm || "A";
@@ -197,8 +233,18 @@ export function CelebraIndicePanel({
     penForm === "C"
       ? penFormulaOpt?.season_variants?.[penSeason]?.label || "Tempo liturgico"
       : null;
-  const offerSaintReadings = shouldOfferSaintProperToggle(baseLiturgy || liturgy);
-  const useSaintProper = session?.useSaintProperReadings === true;
+  /** Nelle messe votive/rituali con letture proprie non si offre il toggle del santo del giorno. */
+  const offerSaintReadings =
+    !votiveProper && shouldOfferSaintProperToggle(baseLiturgy || liturgy);
+  const useSaintProper = !votiveProper && session?.useSaintProperReadings === true;
+  const lettureProperSub = useMemo(() => {
+    if (!votiveProper) return null;
+    const prima = (liturgy || baseLiturgy)?.readings?.find((r) => r.type === "prima_lettura");
+    const ref = (prima?.reference || "").trim();
+    if (!ref) return "Letture proprie";
+    const short = ref.replace(/^Dal[^\(]*\(/, "").replace(/\)$/, "").trim();
+    return short ? `Proprie · ${short}` : "Letture proprie";
+  }, [votiveProper, liturgy, baseLiturgy]);
 
   const scrollLastSectionToCenter = () => {
     if (!lastOpenedSection) return;
@@ -224,7 +270,13 @@ export function CelebraIndicePanel({
       <View style={styles.topBar}>
         <HomeCircleButton onPress={onHome} testID="btn-indice-home" />
         <BrandScreenTitle
-          title="Celebra subito la Messa"
+          title={
+            ritualMass
+              ? ritualMass.family === "votive"
+                ? "Messa votiva"
+                : "Messa rituale"
+              : "Celebra subito la Messa"
+          }
           textStyle={styles.title}
           numberOfLines={2}
           markSize={Math.max(30, Math.round(fontSize * 0.95))}
@@ -270,6 +322,7 @@ export function CelebraIndicePanel({
             const isPe = item.kind === "pe";
             const isLetture = item.id === "letture";
             const isPenitential = item.id === "atto_penitenziale";
+            const isFedeli = item.id === "fedeli";
             const showChange =
               isPreface || isPe || isPenitential || (isLetture && offerSaintReadings);
             const sub =
@@ -283,11 +336,15 @@ export function CelebraIndicePanel({
                       ? `Formula C · ${penSeasonLabel}`
                       : penFormulaOpt?.label?.replace(/^Formula [ABC] - /, "Formula ") ||
                         `Formula ${penForm}`
-                    : isLetture && offerSaintReadings
+                    : isLetture && votiveProper
+                      ? lettureProperSub
+                      : isLetture && offerSaintReadings
                       ? useSaintProper
                         ? "Letture del Santo"
                         : "Letture del giorno (CEI)"
-                      : null;
+                      : isFedeli
+                        ? selectedOrazionale?.title || null
+                        : null;
             const accent = celebraIndexAccentByOrder(index);
             const isLast = lastOpenedSection === item.id;
 
@@ -388,7 +445,13 @@ export function CelebraIndicePanel({
           onPatchSession({ selectedPrefaceId: id });
           setShowPrefaces(false);
         }}
-        currentSeasonKey={currentSeasonKey}
+        currentSeasonKey={
+          ritualMass?.peKind === "defunti"
+            ? "defunti"
+            : ritualMass?.peKind === "matrimonio"
+              ? "sacramenti"
+              : currentSeasonKey
+        }
         liturgy={liturgy}
         colors={colors}
         scaledFont={scaledFont}
@@ -396,6 +459,8 @@ export function CelebraIndicePanel({
         isBold={isBold}
         expandedSeason={expandedPrefaceSeason}
         setExpandedSeason={setExpandedPrefaceSeason}
+        restrictToPrefaces={filterPrefacesForRitualPeKind(prefaces, ritualMass?.peKind)}
+        restrictLabel={ritualPrefaceRestrictLabel(ritualMass?.peKind)}
       />
 
       <Modal
@@ -497,7 +562,7 @@ export function CelebraIndicePanel({
             <View style={{ width: 56 }} />
           </View>
           <ScrollView contentContainerStyle={styles.list}>
-            {prayers.map((p) => {
+            {prayersForPicker.map((p) => {
               const active = p.id === session?.selectedPrayerId;
               const accent = eucharisticPrayerAccentColor(p.id);
               const familyLabel = eucharisticPrayerFamilyLabel(p.id);
@@ -514,7 +579,10 @@ export function CelebraIndicePanel({
                     webClickable,
                   ]}
                   onPress={() => {
-                    onPatchSession({ selectedPrayerId: p.id, peSelections: {} });
+                    const peSel = ritualMass
+                      ? ritualPeSelections(ritualMass.peKind, p.id)
+                      : {};
+                    onPatchSession({ selectedPrayerId: p.id, peSelections: peSel });
                     setShowPrayers(false);
                   }}
                   testID={`indice-pick-pe-${p.id}`}
