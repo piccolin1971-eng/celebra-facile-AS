@@ -148,7 +148,7 @@ function makeStyles(colors: Props["colors"]) {
     },
     primaryLab: {
       color: "#fff",
-      fontSize: 16,
+      fontSize: 19,
       fontWeight: "800",
     },
     secondaryBtn: {
@@ -157,7 +157,7 @@ function makeStyles(colors: Props["colors"]) {
     },
     secondaryLab: {
       color: colors.textSecondary,
-      fontSize: 15,
+      fontSize: 18,
       fontWeight: "600",
     },
   });

@@ -918,7 +918,7 @@
       {
         "k": "rubric",
         "lab": "2 ant.",
-        "text": "Dal profondo a te grido, o Signore!"
+        "text": "Dal profondo a te grido, o Signore! \uFFF0"
       },
       {
         "k": "psalmHead",
@@ -930,8 +930,8 @@
       {
         "k": "stanza",
         "lines": [
-          "Dal profondo a te grido, o Signore; *",
-          "† Signore, ascolta la mia voce.",
+          "\uFFF0 Dal profondo a te grido, o Signore; *",
+          "Signore, ascolta la mia voce.",
           "Siano i tuoi orecchi attenti *",
           "alla voce della mia preghiera."
         ],

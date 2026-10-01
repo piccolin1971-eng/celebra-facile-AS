@@ -29,8 +29,14 @@ export async function prefetchMassAndHours(
       }
       if (includeHours) {
         const title = typeof data?.title === "string" ? data.title : "";
-        const hours = await fetchDayHours(d, title);
+        let hours = await fetchDayHours(d, title);
         hoursOk = hoursLookComplete(hours);
+        // Secondo passaggio solo sulle ore mancanti (CEI a volte falla l'Ufficio).
+        if (!hoursOk) {
+          await new Promise((r) => setTimeout(r, 600));
+          hours = await fetchDayHours(d, title);
+          hoursOk = hoursLookComplete(hours);
+        }
       }
     } catch (e) {
       console.log(`prefetch mass+hours ${d}:`, e);

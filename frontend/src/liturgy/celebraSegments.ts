@@ -20,6 +20,7 @@ export type SegKind =
   | "sectionTitle"
   | "sectionTitleBreak" // identico a sectionTitle ma forza salto pagina (CSS column-break)
   | "antifonaTitle"
+  | "antifona" // corpo antifona: corsivo, colore ordinario, un filo più grande
   | "readingTitle"
   | "orazioneTitle"
   | "subtitle"
@@ -261,6 +262,7 @@ export function preSplitSegments(segments: Segment[]): Segment[] {
   const result: Segment[] = [];
   const SPLITTABLE: SegKind[] = [
     "normal",
+    "antifona",
     "preghieraFedeli",
     "umili",
     "peText",
@@ -437,7 +439,11 @@ export function buildSegments(args: BuildArgs): Segment[] {
       const subtitle = (r.subtitle || breve?.subtitle || "").trim();
       if (subtitle) push("readingSubtitle", subtitle);
       if (r.reference) push("readingRef", r.reference);
-      push("normal", reflowReadingWraps(long));
+      const bodyKind: SegKind =
+        type === "antifona_ingresso" || type === "antifona_comunione"
+          ? "antifona"
+          : "normal";
+      push(bodyKind, reflowReadingWraps(long));
       if (breve) {
         push("readingRef", "Forma breve");
         if (breve.subtitle) push("readingSubtitle", breve.subtitle);
@@ -462,13 +468,16 @@ export function buildSegments(args: BuildArgs): Segment[] {
   }
   sp();
 
-  // ===== ANTIFONA D'INGRESSO =====
-  if (session.showAntifone === true) {
-    addReading("antifona_ingresso", "antifonaTitle", "Antifona d'ingresso");
-  }
-
   // ===== RITI DI INTRODUZIONE =====
   push("sectionTitleBreak", "Riti di Introduzione");
+  // Antifona d'ingresso: subito all'inizio della sezione (prima del segno di croce),
+  // così compare anche aprendo «Riti di Introduzione» dall'indice.
+  if (session.showAntifone === true) {
+    addReading("antifona_ingresso", "antifonaTitle", "Antifona d'ingresso");
+    // Un filo più di aria prima di «Nel nome del Padre…» (la comunione resta com’è).
+    sp();
+    sp();
+  }
   for (const s of fixedParts["riti_iniziali"]?.sections || []) {
     addSection(s, { skipRubric: true });
   }

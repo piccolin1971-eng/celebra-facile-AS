@@ -205,6 +205,7 @@ export async function ensureRitualCelebrateSession(ritualId: string): Promise<Ma
       showGloria: fresh.showGloria,
       showCredo: fresh.showCredo,
       showOrazionalePray: fresh.showOrazionalePray,
+      showAntifone: true,
       useSaintProperReadings: false,
       selectedPrayerId: peId,
       peSelections:
@@ -218,6 +219,7 @@ export async function ensureRitualCelebrateSession(ritualId: string): Promise<Ma
       repaired.showGloria !== existing.showGloria ||
       repaired.showCredo !== existing.showCredo ||
       repaired.showOrazionalePray !== existing.showOrazionalePray ||
+      repaired.showAntifone !== existing.showAntifone ||
       repaired.useSaintProperReadings !== existing.useSaintProperReadings ||
       repaired.selectedPrayerId !== existing.selectedPrayerId ||
       JSON.stringify(repaired.peSelections || {}) !== JSON.stringify(existing.peSelections || {}) ||

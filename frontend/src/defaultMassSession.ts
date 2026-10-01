@@ -44,7 +44,7 @@ export function buildDefaultMassSession(args: {
     prepSource: "subito",
     showGloria: toggleDefaults.showGloria,
     showCredo: toggleDefaults.showCredo,
-    showAntifone: false,
+    showAntifone: true,
     showOrazionalePray: toggleDefaults.showOrazionalePray,
     selectedOrazionaleId: suggestedOrId,
     selectedPrefaceId: preface?.id,

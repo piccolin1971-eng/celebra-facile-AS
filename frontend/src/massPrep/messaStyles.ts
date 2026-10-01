@@ -182,15 +182,26 @@ export const makeStyles = (colors: any, fontSize: number, fontFamilyId: FontFami
     textTransform: "uppercase",
     letterSpacing: 1,
   },
-  // Titolo per antifone d'ingresso/comunione, sequenza, acclamazione al Vangelo
+  // Titolo antifona: stessa grandezza dei titoli sezione, colore proprio.
   antifonaTitle: {
-    fontSize: Math.round(fontSize * 0.85),
+    fontSize: Math.round(fontSize * 1.05),
     fontFamily: headingFont.fontFamily,
     fontWeight: headingFont.fontWeight,
     color: colors.accentAntifona,
     marginTop: 0,
     marginBottom: 6,
-    lineHeight: Math.round(fontSize * 0.85),
+    lineHeight: Math.round(fontSize * 1.05),
+  },
+  // Corpo antifona: colore ordinario, corsivo, un filo più grande del corpo.
+  antifona: {
+    fontSize: Math.round(fontSize * 1.12) - 1,
+    color: colors.textPrimary,
+    fontFamily: bodyFont.fontFamily,
+    fontWeight: bodyFont.fontWeight,
+    fontStyle: "italic" as const,
+    lineHeight: lh(Math.round(fontSize * 1.12) - 1, BODY_LINE_HEIGHT),
+    marginTop: 0,
+    marginBottom: 0,
   },
   // Titolo per le letture (Prima, Salmo, Seconda, Vangelo)
   readingTitle: {

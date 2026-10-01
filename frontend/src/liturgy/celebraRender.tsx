@@ -57,6 +57,12 @@ export function renderSegment(
           {text}
         </Text>
       );
+    case "antifona":
+      return (
+        <Text key={key} style={styles.segAntifona}>
+          {text}
+        </Text>
+      );
     case "readingTitle":
       return (
         <Text key={key} style={styles.segReadingTitle}>

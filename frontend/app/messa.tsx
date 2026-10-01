@@ -142,7 +142,7 @@ export default function MessaScreen() {
   const [prayersOverPeople, setPrayersOverPeople] = useState<{ id: string; num: number; text: string }[]>([]);
   const [showGloria, setShowGloria] = useState<boolean>(false);
   const [showCredo, setShowCredo] = useState<boolean>(false);
-  const [showAntifone, setShowAntifone] = useState<boolean>(false);
+  const [showAntifone, setShowAntifone] = useState<boolean>(true);
   const [congedoId, setCongedoId] = useState(DEFAULT_CONGEDO_ID);
   const [benedizioneId, setBenedizioneId] = useState("A");
 
@@ -239,7 +239,7 @@ export default function MessaScreen() {
     setOrazionePopoloId("");
     setShowGloria(false);
     setShowCredo(false);
-    setShowAntifone(false);
+    setShowAntifone(true);
     setCongedoId(DEFAULT_CONGEDO_ID);
     setBenedizioneId("A");
     setSelectedOrazionaleId("");
@@ -976,13 +976,14 @@ export default function MessaScreen() {
   const getReading = (type: ReadingType) => effectiveLiturgy?.readings?.find(r => r.type === type);
 
   // Basic text renderers
-  const R = ({ children, kind = "normal" }: { children: React.ReactNode; kind?: "normal" | "rubric" | "celebrante" | "assemblea" | "title" | "subtitle" | "antifonaTitle" | "readingTitle" | "orazioneTitle" | "ritoTitle" | "umili" | "peTitle" | "prefaceTitle" | "troparioTitle" }) => {
+  const R = ({ children, kind = "normal" }: { children: React.ReactNode; kind?: "normal" | "rubric" | "celebrante" | "assemblea" | "title" | "subtitle" | "antifonaTitle" | "antifona" | "readingTitle" | "orazioneTitle" | "ritoTitle" | "umili" | "peTitle" | "prefaceTitle" | "troparioTitle" }) => {
     const s = kind === "rubric" ? styles.rubric
       : kind === "celebrante" ? styles.celebrante
       : kind === "assemblea" ? styles.assemblea
       : kind === "title" ? styles.sectionTitle
       : kind === "subtitle" ? styles.subtitle
       : kind === "antifonaTitle" ? styles.antifonaTitle
+      : kind === "antifona" ? styles.antifona
       : kind === "readingTitle" ? styles.readingTitle
       : kind === "orazioneTitle" ? styles.orazioneTitle
       : kind === "ritoTitle" ? styles.ritoTitle
@@ -1364,11 +1365,13 @@ export default function MessaScreen() {
     const r = getReading(type);
     if (!r || !r.text) return null;
     const titleKind = readingTitleKind(type);
+    const bodyKind =
+      type === "antifona_ingresso" || type === "antifona_comunione" ? "antifona" : "normal";
     return (
       <View style={styles.readingBlock} testID={`reading-${type}`}>
         <R kind={titleKind}>{titleOverride || r.title}</R>
         {r.reference ? <R kind="rubric">{r.reference}</R> : null}
-        {type === "salmo" ? renderSalmoText(r.text) : <R>{r.text}</R>}
+        {type === "salmo" ? renderSalmoText(r.text) : <R kind={bodyKind}>{r.text}</R>}
       </View>
     );
   };
@@ -2034,8 +2037,15 @@ export default function MessaScreen() {
           title: "Riti di Introduzione",
           render: () => (
             <View style={styles.partBox}>
-              {showAntifone && renderReading("antifona_ingresso", "Antifona d'ingresso")}
               <R kind="title">Riti di Introduzione</R>
+              {showAntifone && renderReading("antifona_ingresso", "Antifona d'ingresso")}
+              {showAntifone && !!getReading("antifona_ingresso")?.text ? (
+                <View
+                  style={{ height: Math.round(lineHeightPx * 1.6) }}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no"
+                />
+              ) : null}
               {fixedParts["riti_iniziali"].sections.map(renderSectionNoRubric)}
               {/* 5 formule di saluto: il celebrante sceglie a vista. */}
               {SALUTI_INIZIALI.map((s, i) => (

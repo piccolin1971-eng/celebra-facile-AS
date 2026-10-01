@@ -5,6 +5,7 @@ import { extractHoursBanner } from "./html";
 import { hymnNeedsItalianAlternate, prependItalianHymn } from "./hymnLang";
 import { fetchLdoDayHtml, ldoHymnForHour } from "./ldo";
 import { extractInvitatoryAntiphon, parseHourHtml, splitOraMediaHtml } from "./parseHour";
+import { ldoFallbackPatch } from "./parseLdo";
 import { loadDayHours, saveDayHours } from "./cache";
 import { ceiHourSlug } from "./titles";
 import { getBundledCompline } from "./complineBundled";
@@ -83,6 +84,43 @@ type HourPatch = Partial<Record<OreHourId | MediaId, ParsedHour>> & {
   invitFetched?: boolean;
   hoursBanner?: string;
 };
+
+function hourHasContent(parsed: ParsedHour | undefined | null): boolean {
+  return !!(parsed && parsed.blocks && parsed.blocks.length > 0);
+}
+
+/** Non sovrascrivere un'ora già buona con un fetch fallito (blocks vuoti). */
+function mergeHourMaps(
+  prev: DayHoursCache["hours"],
+  patch: Partial<Record<OreHourId | MediaId, ParsedHour>>,
+): DayHoursCache["hours"] {
+  const next: DayHoursCache["hours"] = { ...prev };
+  for (const [id, parsed] of Object.entries(patch) as Array<
+    [OreHourId | MediaId, ParsedHour | undefined]
+  >) {
+    if (!parsed) continue;
+    if (hourHasContent(parsed) || !hourHasContent(next[id])) {
+      next[id] = parsed;
+    }
+  }
+  return next;
+}
+
+async function fetchHourHtmlWithRetry(
+  dateISO: string,
+  slug: string,
+  attempts = 3,
+): Promise<string | null> {
+  let last: string | null = null;
+  for (let i = 0; i < attempts; i++) {
+    last = await fetchHourHtml(dateISO, slug);
+    if (last && last.length > 500) return last;
+    if (i < attempts - 1) {
+      await new Promise((r) => setTimeout(r, 400 * (i + 1)));
+    }
+  }
+  return last;
+}
 
 async function ingestHtml(
   hour: OreHourId,
@@ -172,6 +210,36 @@ async function enrichLatinHymns(patch: HourPatch, dateISO: string): Promise<Hour
   return next;
 }
 
+function patchHourComplete(patch: HourPatch, hour: OreHourId): boolean {
+  if (hour === "invitatorio") return !!(patch.invitFetched && (patch.invitAnt || "").trim());
+  if (hour === "ora-media") {
+    return (["terza", "sesta", "nona"] as MediaId[]).every((id) => hourHasContent(patch[id]));
+  }
+  return hourHasContent(patch[hour]);
+}
+
+/** Se il CEI non ha dato contenuto, completa da liturgiadelleore.it. */
+async function withLdoFallback(hour: OreHourId, patch: HourPatch, dateISO: string): Promise<HourPatch> {
+  if (patchHourComplete(patch, hour)) return patch;
+  const ldo = await fetchLdoDayHtml(dateISO);
+  if (!ldo) return patch;
+  const existing: Partial<Record<OreHourId | MediaId, ParsedHour>> & {
+    invitAnt?: string;
+    invitFetched?: boolean;
+  } = { ...patch };
+  const fill = ldoFallbackPatch(ldo, hour, dateISO, existing);
+  if (!Object.keys(fill).length) return patch;
+  const next: HourPatch = { ...patch, ...fill };
+  // Ora-media: merge pezzo per pezzo (CEI può averne già alcune).
+  if (hour === "ora-media") {
+    for (const id of ["terza", "sesta", "nona"] as MediaId[]) {
+      if (!hourHasContent(patch[id]) && hourHasContent(fill[id])) next[id] = fill[id];
+      else if (hourHasContent(patch[id])) next[id] = patch[id];
+    }
+  }
+  return next;
+}
+
 const FETCH_HOURS: OreHourId[] = [
   "invitatorio",
   "ufficio",
@@ -183,15 +251,20 @@ const FETCH_HOURS: OreHourId[] = [
 
 export async function fetchDayHours(dateISO: string, ceiTitle = ""): Promise<DayHoursCache> {
   const date = parseLocalDate(dateISO);
+  const prev = (await loadDayHours(dateISO)) || emptyDay(dateISO, ceiTitle);
   const results = await mapPool(FETCH_HOURS, CEI_FETCH_CONCURRENCY, async (hour) => {
     if (hour === "compieta") {
       const bundled = getBundledCompline(dateISO);
       if (bundled?.blocks?.length) return { compieta: bundled };
     }
-    const html = await fetchHourHtml(dateISO, ceiHourSlug(hour, date));
-    return enrichLatinHymns(await ingestHtml(hour, html, dateISO), dateISO);
+    // Se l'ora è già in cache, non rischiare di rovinarla con un CEI ballerino.
+    const cached = cachedHoursPatch(prev, hour);
+    if (cached && !hourPatchNeedsItalian(cached)) return cached;
+    const html = await fetchHourHtmlWithRetry(dateISO, ceiHourSlug(hour, date));
+    const fromCei = await enrichLatinHymns(await ingestHtml(hour, html, dateISO), dateISO);
+    return withLdoFallback(hour, fromCei, dateISO);
   });
-  let hours: DayHoursCache["hours"] = {};
+  let hours: DayHoursCache["hours"] = { ...prev.hours };
   let invitAnt: string | undefined;
   let invitFetched = false;
   let hoursBanner = "";
@@ -200,14 +273,14 @@ export async function fetchDayHours(dateISO: string, ceiTitle = ""): Promise<Day
     if (p.invitAnt) invitAnt = p.invitAnt;
     if (p.hoursBanner && !hoursBanner) hoursBanner = p.hoursBanner;
     const { invitAnt: _a, invitFetched: _f, hoursBanner: _b, ...rest } = p;
-    hours = { ...hours, ...rest };
+    hours = mergeHourMaps(hours, rest as Partial<Record<OreHourId | MediaId, ParsedHour>>);
   }
   return mergeDayHours(
     dateISO,
     {
       hours,
       ...(invitAnt !== undefined ? { invitAnt } : {}),
-      invitFetched,
+      invitFetched: invitFetched || prev.invitFetched,
       meta: hourHeadMeta(dateISO, ceiTitle, hoursBanner),
     },
     ceiTitle,
@@ -239,13 +312,21 @@ export async function ensureHour(
     }
   }
   const date = parseLocalDate(dateISO);
-  const html = await fetchHourHtml(dateISO, ceiHourSlug(hour, date));
-  const patch = await enrichLatinHymns(await ingestHtml(hour, html, dateISO), dateISO);
+  const html = await fetchHourHtmlWithRetry(dateISO, ceiHourSlug(hour, date));
+  const patch = await withLdoFallback(
+    hour,
+    await enrichLatinHymns(await ingestHtml(hour, html, dateISO), dateISO),
+    dateISO,
+  );
   const { invitAnt, invitFetched, hoursBanner, ...hourMap } = patch;
+  const prevHours = existing?.hours || {};
   return mergeDayHours(
     dateISO,
     {
-      hours: hourMap,
+      hours: mergeHourMaps(
+        prevHours,
+        hourMap as Partial<Record<OreHourId | MediaId, ParsedHour>>,
+      ),
       ...(invitAnt !== undefined ? { invitAnt } : {}),
       ...(invitFetched ? { invitFetched: true } : {}),
       meta: hourHeadMeta(dateISO, ceiTitle, hoursBanner || ""),
