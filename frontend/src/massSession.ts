@@ -94,8 +94,6 @@ export type MassSession = {
 
   showCredo?: boolean;
 
-  showAntifone?: boolean;
-
   showOrazionalePray?: boolean;
 
   selectedOrazionaleId?: string;

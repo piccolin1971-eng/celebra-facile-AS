@@ -120,7 +120,6 @@ export default function AnteprimaHomeScreen() {
             </View>
             <View style={styles.summaryRow}>
               <ChoiceChip label="Congedo A" on={false} colors={colors} fontSize={fontSize} />
-              <ChoiceChip label="Antifone" on={false} colors={colors} fontSize={fontSize} />
             </View>
           </View>
         ) : (

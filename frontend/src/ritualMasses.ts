@@ -160,7 +160,6 @@ export function buildRitualMassSession(mass: RitualMass): MassSession {
     prepSource: "subito",
     showGloria: choices.showGloria,
     showCredo: choices.showCredo ?? false,
-    showAntifone: true,
     showOrazionalePray: choices.showOrazionalePray ?? true,
     selectedOrazionaleId: choices.orazionaleId || mass.orazionale_id,
     selectedPrefaceId: prefaceId,
@@ -205,7 +204,6 @@ export async function ensureRitualCelebrateSession(ritualId: string): Promise<Ma
       showGloria: fresh.showGloria,
       showCredo: fresh.showCredo,
       showOrazionalePray: fresh.showOrazionalePray,
-      showAntifone: true,
       useSaintProperReadings: false,
       selectedPrayerId: peId,
       peSelections:
@@ -219,7 +217,6 @@ export async function ensureRitualCelebrateSession(ritualId: string): Promise<Ma
       repaired.showGloria !== existing.showGloria ||
       repaired.showCredo !== existing.showCredo ||
       repaired.showOrazionalePray !== existing.showOrazionalePray ||
-      repaired.showAntifone !== existing.showAntifone ||
       repaired.useSaintProperReadings !== existing.useSaintProperReadings ||
       repaired.selectedPrayerId !== existing.selectedPrayerId ||
       JSON.stringify(repaired.peSelections || {}) !== JSON.stringify(existing.peSelections || {}) ||

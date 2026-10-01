@@ -470,13 +470,15 @@ export function buildSegments(args: BuildArgs): Segment[] {
 
   // ===== RITI DI INTRODUZIONE =====
   push("sectionTitleBreak", "Riti di Introduzione");
-  // Antifona d'ingresso: subito all'inizio della sezione (prima del segno di croce),
-  // così compare anche aprendo «Riti di Introduzione» dall'indice.
-  if (session.showAntifone === true) {
+  // Antifona d'ingresso: sempre (prima del segno di croce), anche da indice.
+  {
+    const before = out.length;
     addReading("antifona_ingresso", "antifonaTitle", "Antifona d'ingresso");
-    // Un filo più di aria prima di «Nel nome del Padre…» (la comunione resta com’è).
-    sp();
-    sp();
+    if (out.length > before) {
+      // Aria prima di «Nel nome del Padre…» (la comunione resta com’è).
+      sp();
+      sp();
+    }
   }
   for (const s of fixedParts["riti_iniziali"]?.sections || []) {
     addSection(s, { skipRubric: true });
@@ -830,6 +832,7 @@ export function buildSegments(args: BuildArgs): Segment[] {
       push("celebrante", introOpts[i].text);
     }
     push("normal", "Padre nostro, che sei nei cieli, sia santificato il tuo nome, venga il tuo regno, sia fatta la tua volontà, come in cielo così in terra. Dacci oggi il nostro pane quotidiano, e rimetti a noi i nostri debiti come anche noi li rimettiamo ai nostri debitori, e non abbandonarci alla tentazione, ma liberaci dal male.");
+    sp();
     // Embolismo (sezioni 1: monizione+pater | 2: embolismo)
     const pnSections = pn.sections.filter((s: any) => s.type !== "choice_intro");
     // Embolismo è normalmente in pnSections[1] (dopo pater)
@@ -858,9 +861,7 @@ export function buildSegments(args: BuildArgs): Segment[] {
   if (com) {
     for (const s of com.sections.slice(2)) addSection(s, { skipRubric: true });
   }
-  if (session.showAntifone === true) {
-    addReading("antifona_comunione", "antifonaTitle", "Antifona alla Comunione");
-  }
+  addReading("antifona_comunione", "antifonaTitle", "Antifona alla Comunione");
 
   // ===== DOPO LA COMUNIONE =====
   {

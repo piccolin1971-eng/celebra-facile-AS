@@ -142,7 +142,6 @@ export default function MessaScreen() {
   const [prayersOverPeople, setPrayersOverPeople] = useState<{ id: string; num: number; text: string }[]>([]);
   const [showGloria, setShowGloria] = useState<boolean>(false);
   const [showCredo, setShowCredo] = useState<boolean>(false);
-  const [showAntifone, setShowAntifone] = useState<boolean>(true);
   const [congedoId, setCongedoId] = useState(DEFAULT_CONGEDO_ID);
   const [benedizioneId, setBenedizioneId] = useState("A");
 
@@ -239,7 +238,6 @@ export default function MessaScreen() {
     setOrazionePopoloId("");
     setShowGloria(false);
     setShowCredo(false);
-    setShowAntifone(true);
     setCongedoId(DEFAULT_CONGEDO_ID);
     setBenedizioneId("A");
     setSelectedOrazionaleId("");
@@ -251,7 +249,6 @@ export default function MessaScreen() {
     (saved: MassSession) => {
       if (typeof saved.showGloria === "boolean") setShowGloria(saved.showGloria);
       if (typeof saved.showCredo === "boolean") setShowCredo(saved.showCredo);
-      if (typeof saved.showAntifone === "boolean") setShowAntifone(saved.showAntifone);
       if (typeof saved.showOrazionalePray === "boolean") setShowOrazionalePray(saved.showOrazionalePray);
       if (typeof saved.useSaintProperReadings === "boolean") {
         setUseSaintProperReadings(saved.useSaintProperReadings);
@@ -717,7 +714,7 @@ export default function MessaScreen() {
       votiveId: activeVotiveId ?? undefined,
       liturgyTitle,
       prepSource: "prepara",
-      showGloria, showCredo, showAntifone, showOrazionalePray,
+      showGloria, showCredo, showOrazionalePray,
       useSaintProperReadings,
       selectedOrazionaleId, selectedPrefaceId, selectedPrayerId,
       benedizioneId, congedoId, acclamationId, padreNostroIntroId,
@@ -727,7 +724,7 @@ export default function MessaScreen() {
       useOrazionePopolo, orazionePopoloId,
     };
     void saveSessionForTarget(currentSessionTarget, session);
-  }, [sessionLoaded, currentSessionTarget, celebrationMode, activeVotiveId, activeVotiveMeta, liturgy?.title, vigilEve, showGloria, showCredo, showAntifone, showOrazionalePray,
+  }, [sessionLoaded, currentSessionTarget, celebrationMode, activeVotiveId, activeVotiveMeta, liturgy?.title, vigilEve, showGloria, showCredo, showOrazionalePray,
       useSaintProperReadings,
       selectedOrazionaleId, selectedPrefaceId, selectedPrayerId,
       benedizioneId, congedoId, acclamationId, padreNostroIntroId,
@@ -1628,7 +1625,6 @@ export default function MessaScreen() {
         label: "Preghiera dei fedeli",
         value: showOrazionalePray ? orazionale?.title ?? "Sì (da scegliere)" : "No",
       },
-      { label: "Antifone", value: showAntifone ? "Sì" : "No" },
       { label: "Atto penitenziale", value: `Formula ${penitentialForm}` },
       ...(preface ? [{ label: "Prefazio", value: preface.title }] : []),
       ...(prayer ? [{ label: "Preghiera eucaristica", value: prayer.title }] : []),
@@ -1982,10 +1978,6 @@ export default function MessaScreen() {
                   </View>
                   <Switch value={showOrazionalePray} onValueChange={setShowOrazionalePray} trackColor={{ false: colors.border, true: colors.primary }} thumbColor="#FFFFFF" style={{ transform: [{ scaleX: 1.4 }, { scaleY: 1.4 }], marginLeft: 16 }} />
                 </View>
-                <View style={styles.toggleRow}>
-                  <Text style={styles.toggleLabel}>Antifone</Text>
-                  <Switch value={showAntifone} onValueChange={setShowAntifone} trackColor={{ false: colors.border, true: colors.primary }} thumbColor="#FFFFFF" style={{ transform: [{ scaleX: 1.4 }, { scaleY: 1.4 }], marginLeft: 16 }} />
-                </View>
               </View>
               <TouchableOpacity
                 style={styles.startCelebrationBtn}
@@ -2038,8 +2030,8 @@ export default function MessaScreen() {
           render: () => (
             <View style={styles.partBox}>
               <R kind="title">Riti di Introduzione</R>
-              {showAntifone && renderReading("antifona_ingresso", "Antifona d'ingresso")}
-              {showAntifone && !!getReading("antifona_ingresso")?.text ? (
+              {renderReading("antifona_ingresso", "Antifona d'ingresso")}
+              {!!getReading("antifona_ingresso")?.text ? (
                 <View
                   style={{ height: Math.round(lineHeightPx * 1.6) }}
                   accessibilityElementsHidden
@@ -2574,6 +2566,11 @@ export default function MessaScreen() {
                 <View style={styles.block}>
                   <R>Padre nostro...</R>
                 </View>
+                <View
+                  style={{ height: Math.round(lineHeightPx * 0.9) }}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no"
+                />
                 {padreSections.slice(1).map((s: any, i: number) => renderSection(s, i + 1))}
               </View>
             );
@@ -2623,7 +2620,7 @@ export default function MessaScreen() {
               <View testID="part-comunione">
                 <R kind="title">Comunione</R>
                 {com.sections.slice(2).map((s: any, i: number) => renderSectionNoRubric(s, i + 2))}
-                {showAntifone && renderReading("antifona_comunione", "Antifona alla Comunione")}
+                {renderReading("antifona_comunione", "Antifona alla Comunione")}
               </View>
             );
           },
