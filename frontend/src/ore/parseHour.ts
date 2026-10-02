@@ -246,6 +246,26 @@ function stripDecorativeRosso(inner: string): string {
  * Il CEI a volte mette la R. dentro il titolo («RESPONSORIO BREVE<br>R.»).
  * La stacca e la antepone alla risposta, come quando è un lo_rosso a parte.
  */
+function isEditionCiteTitle(t: string): boolean {
+  const s = t.replace(/\s+/g, " ").trim();
+  // Citazioni di edizione CEI spesso in lo_titolo centrato: (Disc. …), (Nn. …; CCL …)
+  if (!/^\(/.test(s) || !/\)$/.test(s)) return false;
+  return /\b(?:Disc\.|Nn\.|CCL|CSEL|SCh|PG|PL|Opera omnia|Cisterc|ed\.\s*Cisterc)\b/i.test(s);
+}
+
+function isReadingSourceLine(t: string): boolean {
+  return /^(?:Dal|Dalla|Dallo|Dai|Dalle|Dall['’])\s/i.test(t.replace(/\s+/g, " ").trim());
+}
+
+function lastMeaningful(blocks: OreBlock[]): OreBlock | undefined {
+  for (let i = blocks.length - 1; i >= 0; i--) {
+    const b = blocks[i];
+    if (b.k === "omit") continue;
+    return b;
+  }
+  return undefined;
+}
+
 function peelEmbeddedResponsoryR(nodes: HtmlNode[], i: number, title: string): string {
   const m = title.match(/^(RESPONSORIO(?:\s+BREVE)?)\s+R\.?\s*$/i);
   if (!m) return title;
@@ -303,7 +323,12 @@ function consumeSubAfterPsalm(
     cite = parsed.cite;
     if (verseBlock) verse = verseBlock;
   };
-  if (hasClassPrefix(n.cls, "lo_sottotitolo") && !hasClass(n.cls, "lo_sottotitolorosso")) {
+  // lo_sottotitolonoi = nome tematico (come lo_sottotitolorosso), non la frase-tono.
+  if (
+    hasClassPrefix(n.cls, "lo_sottotitolo") &&
+    !hasClass(n.cls, "lo_sottotitolorosso") &&
+    !hasClass(n.cls, "lo_sottotitolonoi")
+  ) {
     const split = splitCaptionVerse(n.inner);
     if (split.verse) takeCaption(split.caption, split.verse);
     else {
@@ -396,17 +421,22 @@ function expandIfNestedLiturgy(node: HtmlNode): HtmlNode[] | null {
   const inner = topLevelNodes(node.inner);
   const lit = inner.filter((n) => n.kind === "el" && isLo(n.cls));
   if (lit.length === 0) return null;
+  // Non aprire titolo/sottotitolo: restano un blocco unico.
   if (hasClass(node.cls, "lo_titolo") || hasClassPrefix(node.cls, "lo_sottotitolo")) return null;
-  if (hasClass(node.cls, "lo_versetto") || hasClass(node.cls, "lo_strofa")) {
-    const nestedHours = lit.filter(
-      (n) =>
-        n.kind === "el" &&
-        (hasClass(n.cls, "lo_titolo") ||
-          hasClass(n.cls, "lo_versetto") ||
-          hasClass(n.cls, "lo_strofa") ||
-          hasClassPrefix(n.cls, "lo_sottotitolo")),
-    );
-    if (nestedHours.length) return flattenKeepText(inner);
+  const nestedHours = lit.filter(
+    (n) =>
+      n.kind === "el" &&
+      (hasClass(n.cls, "lo_titolo") ||
+        hasClass(n.cls, "lo_versetto") ||
+        hasClass(n.cls, "lo_strofa") ||
+        hasClass(n.cls, "lo_antifona") ||
+        hasClassPrefix(n.cls, "lo_sottotitolo")),
+  );
+  if (!nestedHours.length) return null;
+  // lo_versetto con titoli/sottotitoli annidati, oppure wrapper neutri (es. class=center
+  // intorno a lo_sottotitolorosso della lettura dell'Ufficio).
+  if (hasClass(node.cls, "lo_versetto") || hasClass(node.cls, "lo_strofa") || !isLo(node.cls)) {
+    return flattenKeepText(inner);
   }
   return null;
 }
@@ -1225,7 +1255,15 @@ function blocksFromVersetto(inner: string): OreBlock[] {
     const out: OreBlock[] = [];
     for (const n of nodes) {
       if (n.kind === "el" && hasClass(n.cls, "lo_versetto")) out.push(...blocksFromVersetto(n.inner));
-      else if (n.kind === "el" && hasClass(n.cls, "lo_antifona")) {
+      else if (n.kind === "el" && hasClass(n.cls, "lo_titolo")) {
+        const { title, rif } = extractRif(n.inner);
+        const t = title.replace(/\s+/g, " ").trim();
+        if (t) {
+          if (isEditionCiteTitle(t)) out.push({ k: "sub", text: t });
+          else out.push({ k: "title", text: t });
+        }
+        if (rif) out.push({ k: "sub", text: rif });
+      } else if (n.kind === "el" && hasClass(n.cls, "lo_antifona")) {
         out.push({ k: "rubric", lab: normalizeLab(stripTags(n.inner)), text: "" });
       } else if (n.kind === "el" && hasClassPrefix(n.cls, "lo_sottotitolo")) {
         const t = stripTags(n.inner).replace(/\s+/g, " ").trim();
@@ -1236,6 +1274,9 @@ function blocksFromVersetto(inner: string): OreBlock[] {
       } else if (n.kind === "text" && n.text.trim()) {
         const t = stripTags(n.text);
         if (t) out.push({ k: "prose", text: t });
+      } else if (n.kind === "el" && !isLo(n.cls)) {
+        // Wrapper neutri (center): scendi nei figli liturgici.
+        out.push(...blocksFromVersetto(n.inner));
       }
     }
     return out;
@@ -1253,6 +1294,17 @@ function blocksFromVersetto(inner: string): OreBlock[] {
       acc = "";
     };
     for (const n of nodes) {
+      if (n.kind === "el" && hasClass(n.cls, "lo_titolo")) {
+        flushAcc();
+        const { title, rif } = extractRif(n.inner);
+        const t = title.replace(/\s+/g, " ").trim();
+        if (t) {
+          if (isEditionCiteTitle(t)) out.push({ k: "sub", text: t });
+          else out.push({ k: "title", text: t });
+        }
+        if (rif) out.push({ k: "sub", text: rif });
+        continue;
+      }
       if (n.kind === "el" && hasClassPrefix(n.cls, "lo_sottotitolo")) {
         flushAcc();
         const t = stripTags(n.inner).replace(/\s+/g, " ").trim();
@@ -1265,6 +1317,11 @@ function blocksFromVersetto(inner: string): OreBlock[] {
           flushAcc();
           out.push({ k: "sub", text: t });
         }
+        continue;
+      }
+      if (n.kind === "el" && !isLo(n.cls) && /lo_/i.test(n.inner)) {
+        flushAcc();
+        out.push(...blocksFromVersetto(n.inner));
         continue;
       }
       if (n.kind === "br") {
@@ -1358,6 +1415,88 @@ export function peelGluedCanticleCites(blocks: OreBlock[]): OreBlock[] {
   });
 }
 
+/** Intro «V. O Dio… / R. Signore…» a volte arriva come stanza: diventa rubric. */
+function normalizeIntroVrStanzas(blocks: OreBlock[]): OreBlock[] {
+  if (blocks.length < 1) return blocks;
+  const out: OreBlock[] = [];
+  let i = 0;
+  // Salta eventuali omit iniziali
+  while (i < blocks.length && blocks[i].k === "omit") {
+    out.push(blocks[i]);
+    i += 1;
+  }
+  const b = blocks[i];
+  if (b?.k === "stanza" && b.lines.length >= 1 && /^V\./i.test(b.lines[0].trim())) {
+    const lines = b.lines.map((l) => l.trim());
+    const vLine = lines[0].replace(/^V\.\s*/i, "").trim();
+    const rIdx = lines.findIndex((l, idx) => idx > 0 && /^R\./i.test(l));
+    if (rIdx >= 0) {
+      out.push({ k: "rubric", lab: "V.", text: vLine });
+      out.push({
+        k: "rubric",
+        lab: "R.",
+        text: lines[rIdx].replace(/^R\.\s*/i, "").trim(),
+      });
+      const rest = lines.filter((_, idx) => idx !== 0 && idx !== rIdx);
+      if (rest.length) out.push({ k: "stanza", lines: rest, hang: b.hang });
+      i += 1;
+    } else if (lines.length === 1 || (lines.length === 2 && !/^R\./i.test(lines[1]))) {
+      // «V. O Dio…» e «R. Signore…» spesso su due strofe consecutive
+      out.push({ k: "rubric", lab: "V.", text: vLine });
+      i += 1;
+      const nxt = blocks[i];
+      if (nxt?.k === "stanza" && nxt.lines[0] && /^R\./i.test(nxt.lines[0].trim())) {
+        out.push({
+          k: "rubric",
+          lab: "R.",
+          text: nxt.lines[0].replace(/^R\.\s*/i, "").trim(),
+        });
+        const rest = nxt.lines.slice(1);
+        if (rest.length) out.push({ k: "stanza", lines: rest, hang: nxt.hang });
+        i += 1;
+      } else if (nxt?.k === "stanza" && nxt.lines[0] && !/^Gloria/i.test(nxt.lines[0])) {
+        // Seconda riga senza R. esplicita ma tipica risposta
+        const rt = nxt.lines.join(" ").trim();
+        if (/^Signore,/i.test(rt) && rt.length < 80) {
+          out.push({ k: "rubric", lab: "R.", text: rt });
+          i += 1;
+        }
+      }
+    }
+  }
+  while (i < blocks.length) {
+    out.push(blocks[i]);
+    i += 1;
+  }
+  return out;
+}
+
+/** Fonte lettura finita come prosa → sub; togli punti orfani. */
+function normalizeReadingHeads(blocks: OreBlock[]): OreBlock[] {
+  const out: OreBlock[] = [];
+  for (let i = 0; i < blocks.length; i++) {
+    const b = blocks[i];
+    if (b.k === "prose" && /^[.\s·•…]+$/.test(b.text)) continue;
+    if (
+      b.k === "prose" &&
+      isReadingSourceLine(b.text) &&
+      out.length &&
+      out[out.length - 1].k === "title" &&
+      /LETTURA/i.test((out[out.length - 1] as Extract<OreBlock, { k: "title" }>).text)
+    ) {
+      out.push({ k: "sub", text: b.text });
+      continue;
+    }
+    // Titolo edizione ancora come title (path già coperto, cintura)
+    if (b.k === "title" && isEditionCiteTitle(b.text)) {
+      out.push({ k: "sub", text: b.text });
+      continue;
+    }
+    out.push(b);
+  }
+  return out;
+}
+
 export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?: string): ParsedHour {
   const missing = {
     hour,
@@ -1405,6 +1544,18 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
       if (rawRows.length) {
         const merged = verseLinesFromRawRows(rawRows);
         const lines = merged.map((l) => tidyLitText(l.text)).filter(Boolean);
+        // Fonte della lettura (Dalla lettera… / Dai «Discorsi»…) dopo PRIMA/SECONDA LETTURA.
+        const prev = lastMeaningful(blocks);
+        if (
+          lines.length === 1 &&
+          prev?.k === "title" &&
+          /LETTURA/i.test(prev.text) &&
+          isReadingSourceLine(lines[0])
+        ) {
+          blocks.push({ k: "sub", text: lines[0] });
+          i = j;
+          continue;
+        }
         const looseProse =
           lines.length > 0 &&
           lines.every(
@@ -1496,13 +1647,17 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
         continue;
       }
       if (looksLikePsalmTitle(t)) {
-        // «lo_sottotitolorosso» è il titolo del salmo (oro), non la frase-tono.
+        // «lo_sottotitolorosso» / «lo_sottotitolonoi» = nome tematico (oro), non la frase-tono.
         let nameFromRed = "";
-        let from = i + 1;
+        let from = gapUntilContent(nodes, i + 1);
         const red = nodes[from];
-        if (red && red.kind === "el" && hasClass(red.cls, "lo_sottotitolorosso")) {
+        if (
+          red &&
+          red.kind === "el" &&
+          (hasClass(red.cls, "lo_sottotitolorosso") || hasClass(red.cls, "lo_sottotitolonoi"))
+        ) {
           nameFromRed = tidyLitText(stripTags(red.inner));
-          from += 1;
+          from = gapUntilContent(nodes, from + 1);
         }
         const consumed = consumeSubAfterPsalm(nodes, from);
         const { sub, cite, skip } = consumed;
@@ -1528,8 +1683,34 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
         i += 1;
         continue;
       }
+      // Citazione di edizione in lo_titolo (es. Seconda lettura patristica).
+      if (isEditionCiteTitle(t)) {
+        blocks.push({ k: "sub", text: t });
+        if (rif) blocks.push({ k: "sub", text: rif });
+        i += 1;
+        continue;
+      }
       blocks.push({ k: "title", text: peelEmbeddedResponsoryR(nodes, i, t) });
       if (rif) blocks.push({ k: "sub", text: rif });
+      i += 1;
+      continue;
+    }
+
+    if (hasClass(node.cls, "lo_sottotitolonoi")) {
+      // Nome tematico del salmo, oppure fonte lettura (Dalla lettera… / Dai «Discorsi»…).
+      const text = tidyLitText(stripTags(node.inner));
+      const prev = blocks[blocks.length - 1];
+      if (
+        prev?.k === "psalmHead" &&
+        text &&
+        !prev.name &&
+        !isReadingSourceLine(text) &&
+        !isEditionCiteTitle(text)
+      ) {
+        prev.name = text;
+      } else if (text) {
+        blocks.push({ k: "sub", text });
+      }
       i += 1;
       continue;
     }
@@ -1558,8 +1739,14 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
         continue;
       }
       const parsed = extractCite(raw);
-      const text = [parsed.sub, parsed.cite].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
-      if (text) blocks.push({ k: "sub", text });
+      const prev = blocks[blocks.length - 1];
+      if (prev?.k === "psalmHead" && !prev.sub && (parsed.sub || parsed.cite)) {
+        prev.sub = parsed.sub;
+        prev.cite = parsed.cite || prev.cite;
+      } else {
+        const text = [parsed.sub, parsed.cite].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+        if (text) blocks.push({ k: "sub", text });
+      }
       i += 1;
       continue;
     }
@@ -1696,6 +1883,7 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
                 blocks.filter((b) => {
                   if (b.k === "prose") {
                     if (b.text.trim() === JOIN_CROSS_MARK) return true;
+                    if (/^[.\s·•…]+$/.test(b.text)) return false;
                     return !isChromeText(b.text) && b.text.length > 1;
                   }
                   if (b.k === "tone") return b.intro.length > 1 && !isChromeText(b.intro);
@@ -1723,7 +1911,13 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
     blocks: peelGluedCanticleCites(
       capitalizePsalmOpenings(
         repairCeiPsalm8JoinAnomaly(
-          mergeLoneJoinCrossBlocks(applyBundledGospelCanticles(dropRepeatedPsalmCaption(enrichPsalmHeads(clean)))),
+          mergeLoneJoinCrossBlocks(
+            applyBundledGospelCanticles(
+              dropRepeatedPsalmCaption(
+                enrichPsalmHeads(normalizeIntroVrStanzas(normalizeReadingHeads(clean))),
+              ),
+            ),
+          ),
         ),
       ),
     ),

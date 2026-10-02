@@ -348,7 +348,7 @@ function renderBlock(
   }
   if (b.k === "sub") {
     // Riferimento di edizione (es. «(Nn. 1. 2; CCL 73, 1-3)»): sul CEI è rosso, non il titolo in oro.
-    const editionRef = /^\([^)]*(?:\bNn\.|\bCCL\b|\bCSEL\b|\bSCh\b|\bPG\b|\bPL\b)[^)]*\)$/.test(
+    const editionRef = /^\([^)]*(?:\bNn\.|\bCCL\b|\bCSEL\b|\bSCh\b|\bPG\b|\bPL\b|\bDisc\.|\bOpera omnia\b|\bCisterc)[^)]*\)$/i.test(
       b.text.trim(),
     );
     return (

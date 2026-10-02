@@ -34,8 +34,17 @@ export function enrichPsalmHead(b: Extract<OreBlock, { k: "psalmHead" }>): Extra
   if (b.name && b.sub) return b;
   const hit = lookupPsalmHeading(b.num);
   if (!hit) return b;
-  const sameCaption = (a: string, b: string) =>
-    a.replace(/['’]/g, "'").trim() === b.replace(/['’]/g, "'").trim();
+  const sameCaption = (a: string, c: string) =>
+    a.replace(/['’]/g, "'").trim() === c.replace(/['’]/g, "'").trim();
+  // Nome tematico a volte finisce in `sub` (lo_sottotitolonoi trattato come frase-tono).
+  if (!b.name && hit.name && b.sub && sameCaption(b.sub, hit.name)) {
+    return {
+      ...b,
+      name: hit.name,
+      sub: hit.sub || "",
+      cite: b.cite || hit.cite,
+    };
+  }
   const name = b.name || (hit.name && !sameCaption(hit.name, b.sub) ? hit.name : b.name);
   const sub = b.sub || hit.sub;
   const cite = b.cite || hit.cite;
