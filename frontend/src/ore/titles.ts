@@ -1,3 +1,4 @@
+import { addDays, localDateStr, parseLocalDate } from "../dateUtils";
 import { getVigilEveContext } from "../vigilCatalog";
 import type { OreHourId } from "./types";
 
@@ -22,11 +23,14 @@ export function isSolemnityVigilEvening(date: Date): boolean {
   return getVigilEveContext(date) != null;
 }
 
+/** Sera di sabato o vigilia di solennità: i Primi vespri appartengono al giorno dopo. */
+export function isFirstVespersEve(date: Date, solemnityVigil = isSolemnityVigilEvening(date)): boolean {
+  return solemnityVigil || date.getDay() === 6;
+}
+
 export function vespersTitle(date: Date, solemnityVigil = isSolemnityVigilEvening(date)): string {
-  if (solemnityVigil) return "Primi vespri";
-  const d = date.getDay();
-  if (d === 6) return "Primi vespri";
-  if (d === 0) return "Secondi vespri";
+  if (isFirstVespersEve(date, solemnityVigil)) return "Primi vespri";
+  if (date.getDay() === 0) return "Secondi vespri";
   return "Vespri";
 }
 
@@ -41,13 +45,13 @@ export function hourTitle(
 
 /** Slug CEI: sabato/vigilia → primi vespri; domenica → secondi. */
 export function vespersCeiSlug(date: Date, solemnityVigil = isSolemnityVigilEvening(date)): string {
-  if (solemnityVigil || date.getDay() === 6) return "primi-vespri";
+  if (isFirstVespersEve(date, solemnityVigil)) return "primi-vespri";
   if (date.getDay() === 0) return "secondi-vespri";
   return "vespri";
 }
 
 export function complineCeiSlug(date: Date, solemnityVigil = isSolemnityVigilEvening(date)): string {
-  if (solemnityVigil || date.getDay() === 6) return "compieta-dopo-i-primi-vespri";
+  if (isFirstVespersEve(date, solemnityVigil)) return "compieta-dopo-i-primi-vespri";
   if (date.getDay() === 0) return "compieta-dopo-i-secondi-vespri";
   return "compieta";
 }
@@ -59,4 +63,16 @@ export function ceiHourSlug(hour: OreHourId, date: Date): string {
   if (hour === "ora-media") return "ora-media";
   if (hour === "vespri") return vespersCeiSlug(date);
   return complineCeiSlug(date);
+}
+
+/**
+ * Il CEI pubblica Primi vespri (e Compieta dopo i primi) sulla data del giorno
+ * festivo (domenica/solennità), non sulla sera di calendario. Per sabato e
+ * vigilia di solennità il fetch usa quindi il giorno successivo.
+ */
+export function ceiFetchDateISO(dateISO: string, hour: OreHourId): string {
+  if (hour !== "vespri" && hour !== "compieta") return dateISO;
+  const date = parseLocalDate(dateISO);
+  if (!isFirstVespersEve(date)) return dateISO;
+  return localDateStr(addDays(date, 1));
 }

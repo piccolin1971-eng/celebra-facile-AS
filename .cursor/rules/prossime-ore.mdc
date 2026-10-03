@@ -1,0 +1,13 @@
+---
+description: Feature Ore già implementate — titoli Vespri, toggle Home, Compieta bundled
+alwaysApply: true
+---
+
+# Ore (già in app)
+
+Non reimplementare. App Android-only.
+
+- **Vespri feste:** se il CEI omette titolo e frase-tono del salmo, si completano da `src/ore/data/psalmHeadings.json`.
+- **Primi vespri CEI:** sabato/vigilia → slug `primi-vespri` ma fetch sulla data del giorno dopo (domenica/solennità); domenica → `secondi-vespri` sulla stessa data. Vedi `ceiFetchDateISO` in `titles.ts`.
+- **Toggle Home:** `oreEnabled` in Impostazioni, default acceso. Disattivo: nasconde il tasto Ore e il download 10 giorni è solo Messa.
+- **Compieta bundled:** schemi settimanali in `complineSchemas.json`. Le feste restano sulla feria del giorno. Solennità → schema domenicale (sera prima: dopo i primi vespri; il giorno: dopo i secondi). Triduo e ottava Pasqua/Natale restano al CEI.

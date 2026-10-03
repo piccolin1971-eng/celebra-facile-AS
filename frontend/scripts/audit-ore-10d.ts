@@ -8,7 +8,7 @@ import {
   packSegmentIndicesIntoPages,
 } from "../src/liturgyPaginationEngine";
 import { hourHeadMeta } from "../src/ore/dayHead";
-import { ceiHourSlug, hourTitle } from "../src/ore/titles";
+import { ceiFetchDateISO, ceiHourSlug, hourTitle } from "../src/ore/titles";
 import { parseLocalDate } from "../src/dateUtils";
 import type { OreBlock, OreHourId } from "../src/ore/types";
 
@@ -324,6 +324,11 @@ Come era nel principio, e ora e sempre<br />
   if (ceiHourSlug("compieta", sat) !== "compieta-dopo-i-primi-vespri") fails.push("slug sab compieta");
   if (ceiHourSlug("vespri", sun) !== "secondi-vespri") fails.push("slug dom vespri");
   if (ceiHourSlug("compieta", sun) !== "compieta-dopo-i-secondi-vespri") fails.push("slug dom compieta");
+  if (ceiFetchDateISO("2026-09-12", "vespri") !== "2026-09-13") fails.push("fetch date sab→dom vespri");
+  if (ceiFetchDateISO("2026-09-12", "compieta") !== "2026-09-13") fails.push("fetch date sab→dom compieta");
+  if (ceiFetchDateISO("2026-09-13", "vespri") !== "2026-09-13") fails.push("fetch date dom secondi");
+  if (ceiFetchDateISO("2026-09-11", "vespri") !== "2026-09-11") fails.push("fetch date feria vespri");
+  if (ceiFetchDateISO("2026-09-12", "lodi") !== "2026-09-12") fails.push("fetch date sab lodi");
 
   const rossoOra = wrap(`
     <div class="lo_titolo">INVOCAZIONI</div>

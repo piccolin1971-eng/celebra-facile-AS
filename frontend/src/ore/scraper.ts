@@ -7,7 +7,7 @@ import { fetchLdoDayHtml, ldoHymnForHour } from "./ldo";
 import { extractInvitatoryAntiphon, parseHourHtml, splitOraMediaHtml } from "./parseHour";
 import { ldoFallbackPatch } from "./parseLdo";
 import { loadDayHours, saveDayHours } from "./cache";
-import { ceiHourSlug } from "./titles";
+import { ceiFetchDateISO, ceiHourSlug } from "./titles";
 import { getBundledCompline } from "./complineBundled";
 import type { DayHoursCache, MediaId, OreHourId, ParsedHour } from "./types";
 import { parseLocalDate } from "../dateUtils";
@@ -114,12 +114,38 @@ async function fetchHourHtmlWithRetry(
   let last: string | null = null;
   for (let i = 0; i < attempts; i++) {
     last = await fetchHourHtml(dateISO, slug);
-    if (last && last.length > 500) return last;
+    if (last && last.length > 500 && ceiHtmlMatchesSlug(last, slug)) return last;
+    // HTML di un'altra ora (es. invitatorio al posto dei vespri): scarta.
+    if (last && last.length > 500 && !ceiHtmlMatchesSlug(last, slug)) last = null;
     if (i < attempts - 1) {
       await new Promise((r) => setTimeout(r, 400 * (i + 1)));
     }
   }
   return last;
+}
+
+/** True se la pagina CEI è davvero l'ora richiesta (non un fallback invitatorio). */
+function ceiHtmlMatchesSlug(html: string, slug: string): boolean {
+  const selected = html.match(/data-selected_ora=["']([^"']+)["']/i)?.[1]?.trim().toLowerCase();
+  if (selected && selected !== slug.toLowerCase()) return false;
+  const title = html.match(/<title[^>]*>([^<]*)<\/title>/i)?.[1] || "";
+  // Titolo «… - Invitatorio - …» mentre chiediamo vespri/compieta.
+  if (/invitatorio/i.test(title) && !/^invitatorio$/i.test(slug)) return false;
+  return true;
+}
+
+async function fetchHourPatch(dateISO: string, hour: OreHourId): Promise<HourPatch> {
+  const date = parseLocalDate(dateISO);
+  const slug = ceiHourSlug(hour, date);
+  const fetchISO = ceiFetchDateISO(dateISO, hour);
+  const html = await fetchHourHtmlWithRetry(fetchISO, slug);
+  const patch = await enrichLatinHymns(await ingestHtml(hour, html, dateISO), dateISO);
+  // Banner del giorno festivo non deve sovrascrivere il meta della sera di calendario.
+  if (fetchISO !== dateISO) {
+    const { hoursBanner: _b, ...rest } = patch;
+    return rest;
+  }
+  return patch;
 }
 
 async function ingestHtml(
@@ -250,7 +276,6 @@ const FETCH_HOURS: OreHourId[] = [
 ];
 
 export async function fetchDayHours(dateISO: string, ceiTitle = ""): Promise<DayHoursCache> {
-  const date = parseLocalDate(dateISO);
   const prev = (await loadDayHours(dateISO)) || emptyDay(dateISO, ceiTitle);
   const results = await mapPool(FETCH_HOURS, CEI_FETCH_CONCURRENCY, async (hour) => {
     if (hour === "compieta") {
@@ -260,9 +285,7 @@ export async function fetchDayHours(dateISO: string, ceiTitle = ""): Promise<Day
     // Se l'ora è già in cache, non rischiare di rovinarla con un CEI ballerino.
     const cached = cachedHoursPatch(prev, hour);
     if (cached && !hourPatchNeedsItalian(cached)) return cached;
-    const html = await fetchHourHtmlWithRetry(dateISO, ceiHourSlug(hour, date));
-    const fromCei = await enrichLatinHymns(await ingestHtml(hour, html, dateISO), dateISO);
-    return withLdoFallback(hour, fromCei, dateISO);
+    return withLdoFallback(hour, await fetchHourPatch(dateISO, hour), dateISO);
   });
   let hours: DayHoursCache["hours"] = { ...prev.hours };
   let invitAnt: string | undefined;
@@ -311,13 +334,7 @@ export async function ensureHour(
       return mergeDayHours(dateISO, { hours: hourMap }, ceiTitle);
     }
   }
-  const date = parseLocalDate(dateISO);
-  const html = await fetchHourHtmlWithRetry(dateISO, ceiHourSlug(hour, date));
-  const patch = await withLdoFallback(
-    hour,
-    await enrichLatinHymns(await ingestHtml(hour, html, dateISO), dateISO),
-    dateISO,
-  );
+  const patch = await withLdoFallback(hour, await fetchHourPatch(dateISO, hour), dateISO);
   const { invitAnt, invitFetched, hoursBanner, ...hourMap } = patch;
   const prevHours = existing?.hours || {};
   return mergeDayHours(
