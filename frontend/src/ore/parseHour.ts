@@ -222,7 +222,54 @@ function normalizeLab(raw: string): string {
 
 function isAntiphonLabel(t: string): boolean {
   const s = t.replace(/\s+/g, " ").trim();
-  return /^\d+\s*ant\.$/i.test(s) || /^Ant\.\s*al\s+Ben\.$/i.test(s) || /^Ant\.$/i.test(s);
+  return (
+    /^\d+\s*ant\.$/i.test(s) ||
+    /^Ant\.\s*al\s+(Ben|Magn)\.$/i.test(s) ||
+    /^Ant\.$/i.test(s)
+  );
+}
+
+function gospelCanticleKindFromBlock(b: OreBlock): "mag" | "ben" | null {
+  const t =
+    b.k === "title" ? b.text : b.k === "psalmHead" ? `${b.num} ${b.name}` : "";
+  if (!t) return null;
+  if (/CANTICO DELLA BEATA|CANTICO DI MARIA|\bMAGNIFICAT\b/i.test(t)) return "mag";
+  if (/CANTICO DI ZACCARIA|\bBENEDICTUS\b/i.test(t)) return "ben";
+  return null;
+}
+
+/** Il CEI a volte abbrevia «Ant. al Ben.» anche ai vespri (Magnificat). */
+function normalizeGospelCanticleAntLabels(blocks: OreBlock[]): OreBlock[] {
+  const window = 48;
+  return blocks.map((b, i) => {
+    if (b.k !== "rubric" || !/^Ant\.\s*al\s+(Ben|Magn)\.?$/i.test(b.lab)) return b;
+    let kind: "mag" | "ben" | null = null;
+    for (let j = i + 1; j < Math.min(blocks.length, i + window); j++) {
+      const g = gospelCanticleKindFromBlock(blocks[j]);
+      if (g) {
+        kind = g;
+        break;
+      }
+      if (
+        blocks[j].k === "title" &&
+        /^(INTERCESSIONI|ORAZIONE|INVOCAZIONI|PREGHIERA)\b/i.test(blocks[j].text)
+      ) {
+        break;
+      }
+    }
+    if (!kind) {
+      for (let j = i - 1; j >= Math.max(0, i - window); j--) {
+        const g = gospelCanticleKindFromBlock(blocks[j]);
+        if (g) {
+          kind = g;
+          break;
+        }
+      }
+    }
+    if (kind === "mag" && /^Ant\.\s*al\s+Ben\.?$/i.test(b.lab)) return { ...b, lab: "Ant. al Magn." };
+    if (kind === "ben" && /^Ant\.\s*al\s+Magn\.?$/i.test(b.lab)) return { ...b, lab: "Ant. al Ben." };
+    return b;
+  });
 }
 
 /**
@@ -2068,15 +2115,17 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
   }
   return {
     hour,
-    blocks: peelGluedCanticleCites(
-      capitalizePsalmOpenings(
-        repairCeiPsalm8JoinAnomaly(
-          stripAntiphonEchoFromPsalmVerses(
-            mergeLoneJoinCrossBlocks(
-              applyBundledGospelCanticles(
-                dropRepeatedPsalmCaption(
-                  enrichPsalmHeads(
-                    normalizeIntroVrStanzas(normalizeReadingHeads(repositionPatristicThemeSub(clean))),
+    blocks: normalizeGospelCanticleAntLabels(
+      peelGluedCanticleCites(
+        capitalizePsalmOpenings(
+          repairCeiPsalm8JoinAnomaly(
+            stripAntiphonEchoFromPsalmVerses(
+              mergeLoneJoinCrossBlocks(
+                applyBundledGospelCanticles(
+                  dropRepeatedPsalmCaption(
+                    enrichPsalmHeads(
+                      normalizeIntroVrStanzas(normalizeReadingHeads(repositionPatristicThemeSub(clean))),
+                    ),
                   ),
                 ),
               ),

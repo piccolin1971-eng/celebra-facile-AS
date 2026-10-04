@@ -25,7 +25,7 @@ type Props = {
   afterFirstAnt?: React.ReactNode;
 };
 
-const LAB_RE = /^(V\.|R\.|Ant\.|Ant\. al Ben\.|\d+\s*ant\.|—)\s*/i;
+const LAB_RE = /^(V\.|R\.|Ant\.|Ant\. al (?:Ben|Magn)\.|\d+\s*ant\.|—)\s*/i;
 
 /** Box giorno Ore: +20% sul vecchio indice (data 0.78, sotto 0.62, padV 10). */
 const ORE_DAY_DATE = 0.94;
