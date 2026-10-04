@@ -11,6 +11,7 @@ import { localDateStr, parseLocalDate } from "../src/dateUtils";
 import { hasClass, liturgicalFragment, stripTags, topLevelNodes, type HtmlNode } from "../src/ore/html";
 import { looksLatinText } from "../src/ore/hymnLang";
 import { parseHourHtml, splitOraMediaHtml } from "../src/ore/parseHour";
+import { hoursUrlForHour } from "../src/ore/scraper";
 import { ceiHourSlug } from "../src/ore/titles";
 import type { MediaId, OreBlock, OreHourId, ParsedHour } from "../src/ore/types";
 
@@ -29,10 +30,11 @@ function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-async function fetchHtml(dateISO: string, slug: string): Promise<string> {
-  const data = dateISO.replace(/-/g, "");
+async function fetchHtml(dateISO: string, hour: OreHourId): Promise<string> {
+  const direct = hoursUrlForHour(dateISO, hour);
+  const data = direct.match(/data-liturgia=([^&]+)/)?.[1] || dateISO.replace(/-/g, "");
+  const slug = decodeURIComponent(direct.match(/ora=([^&]+)/)?.[1] || "");
   const local = `http://localhost:8081/cei-ore?data-liturgia=${data}&ora=${encodeURIComponent(slug)}`;
-  const direct = `https://www.chiesacattolica.it/la-liturgia-delle-ore/?data-liturgia=${data}&ora=${encodeURIComponent(slug)}`;
   try {
     const res = await fetch(local);
     if (res.ok) {
@@ -43,7 +45,7 @@ async function fetchHtml(dateISO: string, slug: string): Promise<string> {
     /* proxy spento */
   }
   const html = await fetchCeiUrl(direct);
-  if (!html || html.length < 800) throw new Error(`HTML corto ${slug}`);
+  if (!html || html.length < 800) throw new Error(`HTML corto ${hour}`);
   return html;
 }
 
@@ -357,10 +359,9 @@ async function main() {
     const date = parseLocalDate(iso);
     const wd = ["dom", "lun", "mar", "mer", "gio", "ven", "sab"][date.getDay()];
     for (const hour of HOURS) {
-      const slug = ceiHourSlug(hour, date);
       let html = "";
       try {
-        html = await fetchHtml(iso, slug);
+        html = await fetchHtml(iso, hour);
       } catch (e) {
         const issues = [`FETCH:${(e as Error).message}`];
         rows.push({ iso, hour, issues });

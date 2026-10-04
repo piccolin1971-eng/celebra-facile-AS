@@ -24,6 +24,14 @@ export function hoursUrl(dateISO: string, slug: string): string {
   return `${CEI_ORE}?data-liturgia=${ceiDateParam(dateISO)}&ora=${encodeURIComponent(slug)}`;
 }
 
+/** URL CEI come in fetch giornata (slug sul giorno liturgico, data fetch per primi vespri/compieta). */
+export function hoursUrlForHour(dateISO: string, hour: OreHourId): string {
+  const date = parseLocalDate(dateISO);
+  const slug = ceiHourSlug(hour, date);
+  const fetchISO = ceiFetchDateISO(dateISO, hour);
+  return hoursUrl(fetchISO, slug);
+}
+
 async function fetchHourHtml(dateISO: string, slug: string): Promise<string | null> {
   if (typeof document !== "undefined") {
     try {

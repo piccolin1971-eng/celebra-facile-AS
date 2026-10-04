@@ -1198,6 +1198,118 @@ function isLoneJoinCrossBlock(b: OreBlock): boolean {
  * (es. Sabato II salterio, Salmo 8) invece che dentro l’antifona.
  * Lo riattacca all’antifona precedente.
  */
+function isReadingThemeLine(t: string): boolean {
+  const s = t.replace(/\s+/g, " ").trim();
+  if (!s || s.length > 200) return false;
+  if (isReadingSourceLine(s) || isEditionCiteTitle(s)) return false;
+  if (/^\(/.test(s)) return false;
+  return s.length >= 8;
+}
+
+/** Tema patristico a fine lettura (CEI) → sub dopo la fonte, prima del corpo. */
+function repositionPatristicThemeSub(blocks: OreBlock[]): OreBlock[] {
+  const out = blocks.slice();
+  for (let i = 0; i < out.length; i++) {
+    if (out[i].k !== "title" || !/SECONDA LETTURA/i.test(out[i].text)) continue;
+    let j = i + 1;
+    let insertAfter = i;
+    while (j < out.length && out[j].k === "sub") {
+      insertAfter = j;
+      j += 1;
+    }
+    if (out.slice(i + 1, j).some((b) => b.k === "sub" && isReadingThemeLine(b.text))) continue;
+
+    for (let k = j; k < out.length; k++) {
+      const b = out[k];
+      if (b.k === "title") break;
+      if (b.k === "sub" && isReadingThemeLine(b.text)) {
+        const themeText = b.text;
+        out.splice(k, 1);
+        if (insertAfter === i) {
+          const proseIdx = out.findIndex(
+            (x, idx) => idx > i && x.k === "prose" && isReadingSourceLine(x.text),
+          );
+          if (proseIdx >= 0) {
+            const src = out[proseIdx] as Extract<OreBlock, { k: "prose" }>;
+            out.splice(proseIdx, 1);
+            out.splice(i + 1, 0, { k: "sub", text: src.text });
+            insertAfter = i + 1;
+          }
+        }
+        out.splice(insertAfter + 1, 0, { k: "sub", text: themeText });
+        break;
+      }
+    }
+  }
+  return out;
+}
+
+function antiphonEchoMatches(ant: string, before: string): boolean {
+  const b = before.trim();
+  if (!b) return false;
+  const echoSpaced = `${b} ${JOIN_CROSS_MARK}`;
+  const echoTight = `${b}${JOIN_CROSS_MARK}`;
+  if (ant.endsWith(echoSpaced) || ant.endsWith(echoTight)) return true;
+  const antTail = (ant.split(JOIN_CROSS_MARK)[0] || ant).trim();
+  const stripTail = (s: string) => s.replace(/\s*\*\s*$/, "").replace(/[.,;:]\s*$/, "").trim();
+  const nb = stripTail(b);
+  const na = stripTail(antTail);
+  if (na.endsWith(nb) || nb.length >= 12 && na.slice(-nb.length) === nb) return true;
+  const norm = (s: string) => s.replace(/['’]/g, "'").replace(/\s+/g, " ").toLowerCase();
+  return norm(na).endsWith(norm(nb));
+}
+
+/**
+ * CEI ripete in coda all’antifona la frase prima del †; il primo versetto la riporta
+ * con † in mezzo riga. Toglie l’eco, lasciando † all’inizio del versetto.
+ */
+function stripAntiphonEchoFromPsalmVerses(blocks: OreBlock[]): OreBlock[] {
+  const out = blocks.slice();
+  for (let i = 0; i < out.length; i++) {
+    const b = out[i];
+    if (b.k !== "rubric" || !/ant/i.test(b.lab) || !hasJoinCross(b.text)) continue;
+
+    let stanzaIdx = -1;
+    for (let j = i + 1; j < out.length; j++) {
+      const n = out[j];
+      if (n.k === "stanza") {
+        stanzaIdx = j;
+        break;
+      }
+      if (n.k === "rubric" && /ant/i.test(n.lab)) break;
+      if (n.k === "title") {
+        if (isPsalmPartMarker(n.text)) continue;
+        break;
+      }
+    }
+    if (stanzaIdx < 0) continue;
+
+    const ant = b.text.replace(/\s+/g, " ").trim();
+    const stanza = out[stanzaIdx] as Extract<OreBlock, { k: "stanza" }>;
+    const lines = [...stanza.lines];
+    let changed = false;
+    for (let li = 0; li < lines.length; li++) {
+      const line = lines[li];
+      if (!hasJoinCross(line)) continue;
+      const crossIdx = line.indexOf(JOIN_CROSS_MARK);
+      const before = line.slice(0, crossIdx).trim();
+      const after = line.slice(crossIdx + JOIN_CROSS_MARK.length).trim();
+      if (!before) continue;
+      const echoSpaced = `${before} ${JOIN_CROSS_MARK}`;
+      const echoTight = `${before}${JOIN_CROSS_MARK}`;
+      const lineStarts =
+        line.startsWith(echoSpaced) || line.startsWith(echoTight) || line.startsWith(`${before} ${JOIN_CROSS_MARK}`);
+      if (antiphonEchoMatches(ant, before) && lineStarts) {
+        lines[li] = after ? `${JOIN_CROSS_MARK} ${after}` : JOIN_CROSS_MARK;
+        changed = true;
+        break;
+      }
+    }
+    if (changed) out[stanzaIdx] = { ...stanza, lines };
+  }
+  return out;
+}
+
 function attachJoinCrossBeforePsalmHead(blocks: OreBlock[]): OreBlock[] {
   const out: OreBlock[] = [];
   for (let i = 0; i < blocks.length; i++) {
@@ -1959,10 +2071,14 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
     blocks: peelGluedCanticleCites(
       capitalizePsalmOpenings(
         repairCeiPsalm8JoinAnomaly(
-          mergeLoneJoinCrossBlocks(
-            applyBundledGospelCanticles(
-              dropRepeatedPsalmCaption(
-                enrichPsalmHeads(normalizeIntroVrStanzas(normalizeReadingHeads(clean))),
+          stripAntiphonEchoFromPsalmVerses(
+            mergeLoneJoinCrossBlocks(
+              applyBundledGospelCanticles(
+                dropRepeatedPsalmCaption(
+                  enrichPsalmHeads(
+                    normalizeIntroVrStanzas(normalizeReadingHeads(repositionPatristicThemeSub(clean))),
+                  ),
+                ),
               ),
             ),
           ),

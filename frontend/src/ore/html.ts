@@ -21,6 +21,7 @@ export function decodeHtmlEntities(s: string): string {
       .replace(/&mdash;/gi, "—")
       .replace(/&dagger;/gi, "†")
       .replace(/&Dagger;/g, "‡")
+      .replace(/&not;/gi, "¬")
       .replace(/&hellip;/gi, "…")
       // Maiuscole prima delle minuscole (evita /i che mappa &Egrave; → è).
       .replace(/&Agrave;/g, "À")

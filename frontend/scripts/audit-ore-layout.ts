@@ -9,8 +9,7 @@ import { addDays, localDateStr, parseLocalDate } from "../src/dateUtils";
 import { computeEasterSunday, firstAdventSunday } from "../src/liturgicalDates";
 import { getBundledCompline } from "../src/ore/complineBundled";
 import { parseHourHtml } from "../src/ore/parseHour";
-import { hoursUrl } from "../src/ore/scraper";
-import { ceiHourSlug } from "../src/ore/titles";
+import { hoursUrlForHour } from "../src/ore/scraper";
 import type { OreBlock, OreHourId } from "../src/ore/types";
 
 const START = process.argv[2] || "2026-09-16";
@@ -82,11 +81,11 @@ async function main() {
         if (bundled?.blocks?.length) {
           blocks = bundled.blocks;
         } else {
-          const html = await fetchCeiUrl(hoursUrl(iso, ceiHourSlug(hour, d)));
+          const html = await fetchCeiUrl(hoursUrlForHour(iso, hour));
           blocks = parseHourHtml(html || "", hour, iso).blocks;
         }
       } else {
-        const html = await fetchCeiUrl(hoursUrl(iso, ceiHourSlug(hour, d)));
+        const html = await fetchCeiUrl(hoursUrlForHour(iso, hour));
         blocks = parseHourHtml(html || "", hour, iso).blocks;
       }
       const found = issuesFor(iso, hour, blocks);
