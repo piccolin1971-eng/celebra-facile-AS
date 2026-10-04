@@ -250,7 +250,36 @@ function isEditionCiteTitle(t: string): boolean {
   const s = t.replace(/\s+/g, " ").trim();
   // Citazioni di edizione CEI spesso in lo_titolo centrato: (Disc. …), (Nn. …; CCL …)
   if (!/^\(/.test(s) || !/\)$/.test(s)) return false;
-  return /\b(?:Disc\.|Nn\.|CCL|CSEL|SCh|PG|PL|Opera omnia|Cisterc|ed\.\s*Cisterc)\b/i.test(s);
+  return /\b(?:Disc\.|Nn\.|CCL|CSEL|SCh|PG|PL|Lib\.|Opera omnia|Cisterc|ed\.\s*Cisterc)\b/i.test(s);
+}
+
+/** «I (1-9)», «II (10-13)»: titolo di sezione del salmo, non frase-tono. */
+function isPsalmPartMarker(t: string): boolean {
+  return /^[IVXLCDM]{1,6}\s*\(\d[\d\s,–\-]*\)$/.test(t.replace(/\s+/g, " ").trim());
+}
+
+function normalizePsalmPart(t: string): string {
+  const m = t.replace(/\s+/g, " ").trim().match(/^([IVXLCDM]{1,6})\s*(\([^)]+\))$/);
+  if (!m) return t.replace(/\s+/g, " ").trim();
+  return `${m[1]} ${m[2].replace(/\s+/g, "")}`;
+}
+
+/**
+ * Il CEI a volte chiude male il sottotitolo e ci incolla «I (1-9)».
+ * Lo stacca, così resta titolo in oro come «II (10-13)».
+ */
+function peelPsalmPartMarker(text: string): { text: string; part: string } {
+  const flat = text.replace(/\s+/g, " ").trim();
+  if (isPsalmPartMarker(flat)) return { text: "", part: normalizePsalmPart(flat) };
+  const m = flat.match(/^(.*\S)\s+([IVXLCDM]{1,6})\s*(\(\d[\d\s,–\-]*\))\s*$/);
+  if (!m) return { text: flat, part: "" };
+  return { text: m[1].trim(), part: normalizePsalmPart(`${m[2]} ${m[3]}`) };
+}
+
+function splitCaptionParts(raw: string): { sub: string; cite: string; part: string } {
+  const peeled = peelPsalmPartMarker(raw);
+  const parsed = extractCite(peeled.text);
+  return { sub: parsed.sub, cite: parsed.cite, part: peeled.part };
 }
 
 function isReadingSourceLine(t: string): boolean {
@@ -310,17 +339,19 @@ function splitCaptionVerse(inner: string): { caption: string; verse: OreBlock | 
 function consumeSubAfterPsalm(
   nodes: HtmlNode[],
   i: number,
-): { sub: string; cite: string; skip: number; verse: OreBlock | null } {
+): { sub: string; cite: string; skip: number; verse: OreBlock | null; part: string } {
   let sub = "";
   let cite = "";
+  let part = "";
   let verse: OreBlock | null = null;
   const at = gapUntilContent(nodes, i);
   const n = nodes[at];
-  if (!n || n.kind !== "el") return { sub, cite, skip: 0, verse };
+  if (!n || n.kind !== "el") return { sub, cite, skip: 0, verse, part };
   const takeCaption = (caption: string, verseBlock: OreBlock | null) => {
-    const parsed = extractCite(caption);
+    const parsed = splitCaptionParts(caption);
     sub = parsed.sub;
     cite = parsed.cite;
+    part = parsed.part;
     if (verseBlock) verse = verseBlock;
   };
   // lo_sottotitolonoi = nome tematico (come lo_sottotitolorosso), non la frase-tono.
@@ -332,17 +363,19 @@ function consumeSubAfterPsalm(
     const split = splitCaptionVerse(n.inner);
     if (split.verse) takeCaption(split.caption, split.verse);
     else {
-      const parsed = extractCite(stripTags(n.inner));
+      const parsed = splitCaptionParts(stripTags(n.inner));
       sub = parsed.sub;
       cite = parsed.cite;
+      part = parsed.part;
       const innerVerse = topLevelNodes(n.inner).find((x) => x.kind === "el" && hasClass(x.cls, "lo_versetto"));
       if (innerVerse && innerVerse.kind === "el" && !sub) {
-        const parsed2 = extractCite(stripTags(innerVerse.inner));
+        const parsed2 = splitCaptionParts(stripTags(innerVerse.inner));
         sub = parsed2.sub;
         cite = parsed2.cite || cite;
+        part = parsed2.part || part;
       }
     }
-    return { sub, cite, skip: at - i + 1, verse };
+    return { sub, cite, skip: at - i + 1, verse, part };
   }
   if (hasClass(n.cls, "lo_versetto") || hasClass(n.cls, "lo_strofa")) {
     const kids = topLevelNodes(n.inner);
@@ -358,16 +391,17 @@ function consumeSubAfterPsalm(
         .trim();
       // Se il CEI mette i versetti (e a volte il resto dell'ora) nello stesso lo_versetto,
       // non saltare il nodo: altrimenti si perdono Benedictus, invocazioni, orazione.
-      if (leftover.length < 40) return { sub, cite, skip: at - i + 1, verse };
+      if (leftover.length < 40) return { sub, cite, skip: at - i + 1, verse, part };
       n.inner = removeFirstClassDiv(n.inner, "lo_sottotitolo");
-      return { sub, cite, skip: at - i, verse };
+      return { sub, cite, skip: at - i, verse, part };
     }
     const t = stripTags(n.inner);
     if (t && t.length < 80 && !/[*†]/.test(t) && !/lo_antifona/.test(n.inner) && !/lo_versetto/.test(n.inner)) {
-      return { sub: t, cite: "", skip: at - i + 1, verse: null };
+      const peeled = peelPsalmPartMarker(t);
+      return { sub: peeled.text, cite: "", skip: at - i + 1, verse: null, part: peeled.part };
     }
   }
-  return { sub, cite, skip: 0, verse };
+  return { sub, cite, skip: 0, verse, part };
 }
 
 /** Lettura con cantico in righe brevi: una strofa sola, la prosa resta a paragrafi. */
@@ -1674,6 +1708,7 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
           if (head.k === "psalmHead" && nameFromRed && !head.name) head.name = nameFromRed;
           blocks.push(head);
         }
+        if (consumed.part) blocks.push({ k: "title", text: consumed.part });
         if (consumed.verse) blocks.push(consumed.verse);
         i = from + skip;
         continue;
@@ -1720,13 +1755,14 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
       if (looksLikePsalmTitle(raw)) {
         const consumed = consumeSubAfterPsalm(nodes, i + 1);
         blocks.push(psalmHeadFromTitle(raw, consumed.sub, consumed.cite));
+        if (consumed.part) blocks.push({ k: "title", text: consumed.part });
         if (consumed.verse) blocks.push(consumed.verse);
         i += 1 + consumed.skip;
         continue;
       }
       const splitVerse = splitCaptionVerse(node.inner);
       if (splitVerse.verse) {
-        const parsed = extractCite(splitVerse.caption);
+        const parsed = splitCaptionParts(splitVerse.caption);
         const prev = blocks[blocks.length - 1];
         if (prev?.k === "psalmHead" && !prev.sub) {
           prev.sub = parsed.sub;
@@ -1734,19 +1770,25 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
         } else if (parsed.sub || parsed.cite) {
           blocks.push({ k: "sub", text: [parsed.sub, parsed.cite].filter(Boolean).join(" ") });
         }
+        if (parsed.part) blocks.push({ k: "title", text: parsed.part });
         blocks.push(splitVerse.verse);
         i += 1;
         continue;
       }
-      const parsed = extractCite(raw);
+      const parsed = splitCaptionParts(raw);
       const prev = blocks[blocks.length - 1];
       if (prev?.k === "psalmHead" && !prev.sub && (parsed.sub || parsed.cite)) {
         prev.sub = parsed.sub;
         prev.cite = parsed.cite || prev.cite;
+      } else if (parsed.part && isPsalmPartMarker(parsed.part) && !parsed.sub && !parsed.cite) {
+        blocks.push({ k: "title", text: parsed.part });
+        i += 1;
+        continue;
       } else {
         const text = [parsed.sub, parsed.cite].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
         if (text) blocks.push({ k: "sub", text });
       }
+      if (parsed.part) blocks.push({ k: "title", text: parsed.part });
       i += 1;
       continue;
     }
@@ -1830,6 +1872,12 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
       } else if (t === "*") {
         nodes.splice(i, 1, { kind: "text", text: t });
         continue;
+      } else if (isEditionCiteTitle(t)) {
+        blocks.push({ k: "sub", text: t });
+      } else if (isPsalmPartMarker(t)) {
+        blocks.push({ k: "title", text: normalizePsalmPart(t) });
+      } else if (/si può omettere/i.test(t)) {
+        blocks.push({ k: "omit", text: t });
       }
       i += 1;
       continue;
