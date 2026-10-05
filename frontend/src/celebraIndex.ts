@@ -53,7 +53,11 @@ const ALL_ITEMS: CelebraIndexItem[] = [
     label: "Padre nostro e pace",
     matchTitle: /^padre nostro$/i,
   },
-  { id: "dopo_comunione", label: "Dopo la Comunione / Fine", matchTitle: /^dopo la comunione$/i },
+  {
+    id: "dopo_comunione",
+    label: "Dopo la Comunione / Fine",
+    matchTitle: /^dopo la comunione(\s*\/\s*fine)?$/i,
+  },
 ];
 
 /** Azzurro «Letture» e azzurro ghiaccio, più distanti tra loro. */

@@ -19,8 +19,8 @@ export const LINE_SPACING_MIN = 0.85;
 export const LINE_SPACING_MAX = 1.5;
 export const LINE_SPACING_DEFAULT = 1;
 export const LINE_SPACING_STEP = 0.05;
-/** Solo Liturgia delle Ore: a interlinea 1,00 in Impostazioni le Ore si leggono a 1,15. */
-export const ORE_LINE_SPACING_FACTOR = 1.15;
+/** Solo Liturgia delle Ore: a interlinea 1,00 in Impostazioni le Ore si leggono a 1,05. */
+export const ORE_LINE_SPACING_FACTOR = 1.05;
 
 export function formatLineSpacingValue(n: number): string {
   return n.toFixed(2).replace(".", ",");

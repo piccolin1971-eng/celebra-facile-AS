@@ -27,6 +27,8 @@ type Props = {
   };
 };
 
+const GOLD = "#E0B429";
+
 export function AppUpdateModal({ visible, info, busy, onUpdate, onLater, colors }: Props) {
   if (!info) return null;
   const styles = makeStyles(colors);
@@ -36,9 +38,9 @@ export function AppUpdateModal({ visible, info, busy, onUpdate, onLater, colors 
       <View style={styles.backdrop} testID="app-update-modal">
         <View style={styles.card}>
           <Text style={styles.eyebrow}>Aggiornamento disponibile</Text>
-          <Text style={styles.title}>C’è una nuova versione</Text>
+          <Text style={styles.title}>Nuova versione</Text>
           <Text style={styles.versions}>
-            Installata {currentAppVersionName()} → {info.versionName}
+            {currentAppVersionName()} → {info.versionName}
           </Text>
           {info.body ? (
             <Text style={styles.body} numberOfLines={5}>
@@ -46,36 +48,33 @@ export function AppUpdateModal({ visible, info, busy, onUpdate, onLater, colors 
             </Text>
           ) : (
             <Text style={styles.body}>
-              Tocca «Aggiorna ora»: l’app scarica l’APK e chiede a Android di installarlo.
-              Impostazioni e liturgie scaricate restano.
+              Se non sei sicuro, tocca il pulsante rotondo. L’app continua a funzionare.
             </Text>
           )}
-          <View style={styles.steps}>
-            <Text style={styles.step}>1. Tocca «Aggiorna ora» (attendi il download)</Text>
-            <Text style={styles.step}>2. Conferma «Installa» quando Android lo chiede</Text>
-            <Text style={styles.step}>3. Se richiesto, abilita installazione da questa app</Text>
-          </View>
+          <Text style={styles.hintLabel}>Consigliato se serve aiuto</Text>
           <TouchableOpacity
-            style={[styles.primaryBtn, busy && { opacity: 0.6 }]}
-            onPress={onUpdate}
-            disabled={!!busy}
-            testID="btn-app-update-now"
-            accessibilityRole="button"
-          >
-            {busy ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.primaryLab}>Aggiorna ora</Text>
-            )}
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.secondaryBtn}
+            style={[styles.laterBtn, busy && { opacity: 0.55 }]}
             onPress={onLater}
             disabled={!!busy}
             testID="btn-app-update-later"
             accessibilityRole="button"
+            accessibilityLabel="Più tardi, chiudi aggiornamento"
           >
-            <Text style={styles.secondaryLab}>Più tardi</Text>
+            <Text style={styles.laterLab}>Più tardi</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.updateBtn, busy && { opacity: 0.6 }]}
+            onPress={onUpdate}
+            disabled={!!busy}
+            testID="btn-app-update-now"
+            accessibilityRole="button"
+            accessibilityLabel="Aggiorna ora"
+          >
+            {busy ? (
+              <ActivityIndicator color={colors.primary || "#4DA8DA"} />
+            ) : (
+              <Text style={styles.updateLab}>Aggiorna ora</Text>
+            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -84,6 +83,7 @@ export function AppUpdateModal({ visible, info, busy, onUpdate, onLater, colors 
 }
 
 function makeStyles(colors: Props["colors"]) {
+  const primary = colors.primary || "#4DA8DA";
   return StyleSheet.create({
     backdrop: {
       flex: 1,
@@ -103,62 +103,75 @@ function makeStyles(colors: Props["colors"]) {
       }),
     },
     eyebrow: {
-      color: "#E0B429",
-      fontSize: 13,
+      color: GOLD,
+      fontSize: 11,
       fontWeight: "700",
-      letterSpacing: 0.4,
+      letterSpacing: 0.6,
       marginBottom: 6,
       textTransform: "uppercase",
     },
     title: {
       color: colors.textPrimary,
-      fontSize: 22,
-      fontWeight: "800",
+      fontSize: 32,
+      fontWeight: "900",
+      lineHeight: 36,
       marginBottom: 8,
+      paddingBottom: 6,
+      borderBottomWidth: 4,
+      borderBottomColor: GOLD,
     },
     versions: {
       color: colors.textSecondary,
-      fontSize: 14,
+      fontSize: 16,
       marginBottom: 12,
+      marginTop: 4,
     },
     body: {
       color: colors.textPrimary,
-      fontSize: 15,
-      lineHeight: 22,
-      marginBottom: 14,
-      opacity: 0.92,
-    },
-    steps: {
-      marginBottom: 18,
-      gap: 4,
-    },
-    step: {
-      color: colors.textSecondary,
-      fontSize: 13,
-      lineHeight: 20,
-    },
-    primaryBtn: {
-      backgroundColor: colors.primary || "#4DA8DA",
-      borderRadius: 12,
-      paddingVertical: 14,
-      alignItems: "center",
+      fontSize: 17,
+      lineHeight: 24,
       marginBottom: 10,
-      minHeight: 48,
-      justifyContent: "center",
+      opacity: 0.95,
     },
-    primaryLab: {
-      color: "#fff",
-      fontSize: 19,
-      fontWeight: "800",
-    },
-    secondaryBtn: {
-      paddingVertical: 12,
-      alignItems: "center",
-    },
-    secondaryLab: {
+    hintLabel: {
       color: colors.textSecondary,
+      fontSize: 14,
+      textAlign: "center",
+      marginBottom: 8,
+    },
+    laterBtn: {
+      height: 80,
+      borderRadius: 999,
+      borderWidth: 2,
+      borderColor: "#8FA3C4",
+      backgroundColor: "#3D4554",
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 12,
+      paddingHorizontal: 12,
+    },
+    laterLab: {
+      color: "#FFFFFF",
+      fontSize: 40,
+      fontWeight: "900",
+      lineHeight: 42,
+      letterSpacing: 3.2,
+    },
+    updateBtn: {
+      height: 52,
+      borderRadius: 12,
+      borderWidth: 2,
+      borderColor: primary,
+      backgroundColor: "transparent",
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 12,
+    },
+    updateLab: {
+      color: primary,
       fontSize: 18,
-      fontWeight: "600",
+      fontWeight: "700",
+      lineHeight: 20,
     },
   });
 }

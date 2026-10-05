@@ -23,6 +23,8 @@ type Props = {
   headFontFamily?: string;
   headFontWeight?: AppFontWeight;
   afterFirstAnt?: React.ReactNode;
+  /** Es. scelta Terza/Sesta/Nona subito sotto il box giorno, prima dell’apertura V./R. */
+  afterHourHead?: React.ReactNode;
 };
 
 const LAB_RE = /^(V\.|R\.|Ant\.|Ant\. al (?:Ben|Magn)\.|\d+\s*ant\.|—)\s*/i;
@@ -201,6 +203,7 @@ export function OreBlocksView({
   headFontFamily,
   headFontWeight,
   afterFirstAnt,
+  afterHourHead,
 }: Props) {
   const body = {
     fontFamily: FONT,
@@ -220,6 +223,7 @@ export function OreBlocksView({
         fontFamily={headFontFamily}
         fontWeight={headFontWeight}
       />
+      {afterHourHead}
       {blocks.map((raw, i) => {
         const b = raw.k === "psalmHead" ? enrichPsalmHead(raw) : raw;
         if (inPreces && b.k === "title") inPreces = false;

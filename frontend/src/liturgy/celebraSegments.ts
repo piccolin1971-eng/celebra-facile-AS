@@ -215,6 +215,17 @@ export function splitFormaBreve(text: string): { long: string; short: string | n
   return { long, short: short || null };
 }
 
+/** Antifone (e letture) CEI con formula alternativa «Oppure». */
+export function splitOppureAlternatives(text: string): string[] {
+  const t = text.trim();
+  if (!/\boppure\b/i.test(t)) return [t];
+  const parts = t
+    .split(/(?:\n\s*|\s+)oppure\s*:?\s*/i)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  return parts.length >= 2 ? parts : [t];
+}
+
 /**
  * Blocco forma breve CEI: sottotitolo, poi «Dalla lettera…» + sigla, poi il testo.
  */
@@ -443,7 +454,16 @@ export function buildSegments(args: BuildArgs): Segment[] {
         type === "antifona_ingresso" || type === "antifona_comunione"
           ? "antifona"
           : "normal";
-      push(bodyKind, reflowReadingWraps(long));
+      const isAntifona = bodyKind === "antifona";
+      const alts = isAntifona ? splitOppureAlternatives(long) : [long];
+      for (let i = 0; i < alts.length; i++) {
+        if (isAntifona && i > 0) {
+          sp();
+          push("rubric", "oppure");
+          sp();
+        }
+        push(bodyKind, reflowReadingWraps(alts[i]));
+      }
       if (breve) {
         push("readingRef", "Forma breve");
         if (breve.subtitle) push("readingSubtitle", breve.subtitle);
@@ -861,18 +881,11 @@ export function buildSegments(args: BuildArgs): Segment[] {
   if (com) {
     for (const s of com.sections.slice(2)) addSection(s, { skipRubric: true });
   }
-  addReading("antifona_comunione", "antifonaTitle", "Antifona alla Comunione");
 
-  // ===== DOPO LA COMUNIONE =====
-  {
-    const r = liturgy?.readings?.find((rr: any) => rr.type === "dopo_comunione");
-    push("sectionTitleBreak", "Dopo la Comunione");
-    if (r?.text) {
-      if (r.reference) push("rubric", r.reference);
-      push("normal", r.text);
-    }
-    sp();
-  }
+  // ===== DOPO LA COMUNIONE / FINE (macro-pagina indice) =====
+  push("sectionTitleBreak", "Dopo la Comunione / Fine");
+  addReading("antifona_comunione", "antifonaTitle", "Antifona alla Comunione");
+  addReading("dopo_comunione", "orazioneTitle");
 
   // ===== RITI DI CONCLUSIONE (stessa macro-pagina di Dopo la Comunione) =====
   push("sectionTitle", "Riti di Conclusione");

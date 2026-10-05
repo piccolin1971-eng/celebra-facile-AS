@@ -350,23 +350,6 @@ export default function OreLeggi() {
       <ReadingBrightnessRow />
       </View>
 
-      {hour === "ora-media" ? (
-        <View style={styles.chips} accessibilityRole="tablist">
-          {MEDIA_IDS.map((id) => (
-            <TouchableOpacity
-              key={id}
-              onPress={() => changeMedia(id)}
-              style={[styles.chip, mediaId === id && styles.chipOn]}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: mediaId === id }}
-              {...webClickable}
-            >
-              <Text style={[styles.chipLab, mediaId === id && styles.chipLabOn]}>{MEDIA_LABEL[id]}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      ) : null}
-
       {loading ? (
         <View style={styles.center}>
           <ActivityIndicator color={ORE_BLUE} size="large" />
@@ -419,6 +402,28 @@ export default function OreLeggi() {
             textColor={colors.textPrimary}
             headFontFamily={headFont.fontFamily}
             headFontWeight={headFont.fontWeight}
+            afterHourHead={
+              hour === "ora-media" ? (
+                <View style={styles.invNums} accessibilityRole="tablist">
+                  {MEDIA_IDS.map((id) => (
+                    <TouchableOpacity
+                      key={id}
+                      onPress={() => changeMedia(id)}
+                      style={[styles.invChip, styles.mediaChip, mediaId === id && styles.invChipOn]}
+                      accessibilityRole="tab"
+                      accessibilityState={{ selected: mediaId === id }}
+                      accessibilityLabel={MEDIA_LABEL[id]}
+                      testID={`btn-ore-media-${id}`}
+                      {...webClickable}
+                    >
+                      <Text style={[styles.invChipLab, styles.mediaChipLab, mediaId === id && styles.invChipLabOn]}>
+                        {MEDIA_LABEL[id]}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ) : undefined
+            }
             afterFirstAnt={
               hour === "invitatorio" ? (
                 <View style={styles.invNums} accessibilityRole="tablist">
@@ -539,13 +544,6 @@ const makeStyles = (colors: any, fontSize: number) => {
     autoOn: { backgroundColor: AUTO_ON_BG, borderColor: ORE_BLUE },
     autoLab: { color: ORE_BLUE, fontWeight: "800", fontSize: Math.round(14 * scale) },
     autoLabOn: { color: AUTO_ON_TEXT },
-    chips: {
-      flexDirection: "row",
-      justifyContent: "center",
-      gap: 8,
-      paddingVertical: 8,
-      paddingHorizontal: 12,
-    },
     invNums: {
       flexDirection: "row",
       justifyContent: "center",
@@ -567,22 +565,21 @@ const makeStyles = (colors: any, fontSize: number) => {
       borderWidth: 3,
       borderColor: GOLD,
     },
+    mediaChip: {
+      width: undefined,
+      minWidth: 86,
+      paddingHorizontal: 14,
+    },
     invChipLab: {
       color: "#fff",
       fontWeight: "400",
       fontSize: Math.round(fontSize * 1.05),
     },
-    invChipLabOn: { color: "#fff" },
-    chip: {
-      borderWidth: 2,
-      borderColor: colors.border,
-      borderRadius: 999,
-      paddingHorizontal: 14,
-      paddingVertical: 6,
+    mediaChipLab: {
+      fontSize: Math.round(fontSize * 0.82 * 1.2),
+      fontWeight: "700",
     },
-    chipOn: { borderColor: GOLD },
-    chipLab: { color: colors.textPrimary, fontWeight: "800" },
-    chipLabOn: { color: GOLD },
+    invChipLabOn: { color: "#fff" },
     center: { flex: 1, alignItems: "center", justifyContent: "center" },
     scroll: { flex: 1 },
     scrollInner: { padding: 16, paddingBottom: 48 },

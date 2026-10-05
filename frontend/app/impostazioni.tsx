@@ -175,7 +175,7 @@ export default function Impostazioni() {
         <View style={styles.section} testID="section-line-spacing">
           <Text style={styles.sectionTitle}>Interlinea del testo</Text>
           <Text style={styles.sectionDesc}>
-            Spaziatura verticale tra le righe in Celebra e in Scegli la liturgia (Messa). Utile con carattere grande o per leggere con più respiro. Si adatta alla dimensione testo (A-/A+). Nella Liturgia delle Ore, a 1,00 l’interlinea è 1,15.
+            Spaziatura verticale tra le righe in Celebra e in Scegli la liturgia (Messa). Utile con carattere grande o per leggere con più respiro. Si adatta alla dimensione testo (A-/A+). Nella Liturgia delle Ore, a 1,00 l’interlinea è 1,05.
           </Text>
           <Text style={[styles.sectionDesc, { marginTop: 12 }]}>
             Interlinea: {formatLineSpacingValue(lineSpacing)} (1,00 = normale)

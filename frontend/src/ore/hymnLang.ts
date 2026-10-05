@@ -5,7 +5,11 @@ function hymnBlob(h: Hymn): string {
 }
 
 const IT_WORDS =
-  /\b(che|della|delle|nella|nello|degli|alla|alle|allo|sono|perché|perche|nel|dal|sul|sulla|una|questo|questa|tuo|tua|nostro|cuore|presso|madre|figlio|signore|pace|cielo|stelle)\b/gi;
+  /\b(che|della|delle|del|dell|ed|il|lo|gli|nella|nello|degli|alla|alle|allo|sono|perché|perche|nel|dal|sul|sulla|una|questo|questa|tuo|tua|nostro|cuore|cuori|presso|madre|figlio|signore|pace|cielo|stelle|sapienza|mistero|unico|trino|eterno|amore|lode|benigno|discendi|accordino|unisca)\b/gi;
+
+/** Incipit tipici degli inni italiani CEI (spesso con accenti che somigliano al latino). */
+const IT_HYMN_MARKERS =
+  /\b(riv[eéè]laci|paraclito|nell['’]intimo|o\s+spirito|o\s+luce|voce\s+e\s+mente)\b/i;
 
 const LATIN_ORTHO = /[æœǽáéíóúý]/gi;
 const LATIN_WORDS =
@@ -14,8 +18,10 @@ const LATIN_WORDS =
 export function looksLatinText(text: string): boolean {
   const t = String(text || "").normalize("NFC");
   if (!t.trim()) return false;
+  if (IT_HYMN_MARKERS.test(t)) return false;
   const latinOrtho = (t.match(LATIN_ORTHO) || []).length;
   const italian = (t.match(IT_WORDS) || []).length;
+  if (italian >= 2 && latinOrtho < 4) return false;
   if (LATIN_WORDS.test(t) && italian <= 2) return true;
   if (latinOrtho >= 3 && italian <= 2) return true;
   if (latinOrtho >= 1 && italian === 0) return true;
