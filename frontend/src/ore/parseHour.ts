@@ -296,8 +296,11 @@ function stripDecorativeRosso(inner: string): string {
 function isEditionCiteTitle(t: string): boolean {
   const s = t.replace(/\s+/g, " ").trim();
   // Citazioni di edizione CEI spesso in lo_titolo centrato: (Disc. …), (Nn. …; CCL …)
-  if (!/^\(/.test(s) || !/\)$/.test(s)) return false;
-  return /\b(?:Disc\.|Nn\.|Capp\.|CCL|CSEL|SCh|PG|PL|Lib\.|Lett\.|Funk|Opera omnia|Cisterc|ed\.\s*Cisterc)\b/i.test(s);
+  if (!/^\(/.test(s)) return false;
+  if (/\)$/.test(s) && /\b(?:Disc\.|Nn\.|Capp\.|Om\.|CCL|CSEL|SCh|PG|PL|Lib\.|Lett\.|Funk|Opera omnia|Cisterc|ed\.\s*Cisterc)\b/i.test(s)) {
+    return true;
+  }
+  return /^\([^)]*(?:Disc\.|Nn\.|Capp\.|Om\.|CCL|CSEL|SCh|PG|PL|Lib\.|Lett\.|Funk)\b[^)]*\)/i.test(s);
 }
 
 function editionCiteFromHtmlInner(inner: string): string {
@@ -360,6 +363,23 @@ function splitEmbeddedReadingEditions(blocks: OreBlock[]): OreBlock[] {
   return out;
 }
 
+/** Rif. biblico ancora nella riga fonte (CEI compatto / cache legacy). */
+function splitEmbeddedReadingRefs(blocks: OreBlock[]): OreBlock[] {
+  const out: OreBlock[] = [];
+  for (const b of blocks) {
+    if (b.k === "readHead" && b.role === "source") {
+      const { source, ref } = splitReadingSourceAndRef(b.text);
+      if (ref) {
+        out.push({ k: "readHead", role: "source", text: source });
+        out.push({ k: "readHead", role: "ref", text: ref });
+        continue;
+      }
+    }
+    out.push(b);
+  }
+  return out;
+}
+
 /** «I (1-9)», «II (10-13)»: titolo di sezione del salmo, non frase-tono. */
 function isPsalmPartMarker(t: string): boolean {
   return /^[IVXLCDM]{1,6}\s*\(\d[\d\s,–\-]*\)$/.test(t.replace(/\s+/g, " ").trim());
@@ -390,7 +410,8 @@ function splitCaptionParts(raw: string): { sub: string; cite: string; part: stri
 }
 
 function isReadingSourceLine(t: string): boolean {
-  return /^(?:Dal|Dalla|Dallo|Dai|Dalle|Dall['’])\s/i.test(t.replace(/\s+/g, " ").trim());
+  const s = t.replace(/\s+/g, " ").trim();
+  return /^(?:Dal|Dalla|Dallo|Dai|Dalle|Dall['’])(?:\s|[«"“'’])/i.test(s);
 }
 
 function isReadingSectionTitle(b: OreBlock | undefined): boolean {
@@ -403,7 +424,7 @@ function isInUfficioReadingHead(blocks: OreBlock[]): boolean {
     const b = blocks[i];
     if (b.k === "omit") continue;
     if (isReadingSectionTitle(b)) return true;
-    if (b.k === "readHead" && (b.role === "source" || b.role === "ref" || b.role === "edition")) return true;
+    if (b.k === "readHead") return true;
     if (b.k === "prose" || b.k === "stanza" || b.k === "hymn") return false;
     if (b.k === "title") return false;
     return false;
@@ -416,11 +437,103 @@ function pushReadHead(blocks: OreBlock[], role: ReadHeadRole, text: string) {
   if (t) blocks.push({ k: "readHead", role, text: t });
 }
 
+function peelLetturaTitleFromSub(text: string): { sectionTitle: string; tail: string } | null {
+  const m = text.replace(/\s+/g, " ").trim().match(/^(PRIMA|SECONDA)\s+LETTURA\s+([\s\S]+)$/i);
+  if (!m) return null;
+  return { sectionTitle: `${m[1].toUpperCase()} LETTURA`, tail: m[2].trim() };
+}
+
+function isReadingRefOnlyLine(t: string): boolean {
+  return /^\d[\d,\s.\-–]+$/i.test(t.replace(/\s+/g, " ").trim());
+}
+
+/** Fonte (+ lo_rif) subito dopo lo_titolo PRIMA/SECONDA LETTURA, prima dei sottotitoli. */
+function takeReadingSourcePrefix(nodes: HtmlNode[], start: number, blocks: OreBlock[]): number | null {
+  let j = start;
+  const chunks: string[] = [];
+  let rif = "";
+  const stopAt = (n: HtmlNode) =>
+    n.kind === "el" &&
+    (hasClass(n.cls, "lo_titolo") ||
+      hasClass(n.cls, "lo_versetto") ||
+      hasClassPrefix(n.cls, "lo_sottotitolo"));
+
+  while (j < nodes.length) {
+    const n = nodes[j];
+    if (n.kind === "br") {
+      j += 1;
+      continue;
+    }
+    if (n.kind === "text") {
+      const t = tidyLitText(decodeHtmlEntities(n.text));
+      if (t) chunks.push(t);
+      j += 1;
+      continue;
+    }
+    if (n.kind === "el" && hasClassPrefix(n.cls, "lo_rif")) {
+      rif = tidyLitText(stripTags(n.inner));
+      j += 1;
+      continue;
+    }
+    if (stopAt(n)) break;
+    if (n.kind === "el" && !isLo(n.cls)) {
+      const inner = topLevelNodes(n.inner);
+      let k = 0;
+      let got = false;
+      while (k < inner.length) {
+        const c = inner[k];
+        if (c.kind === "br") {
+          k += 1;
+          continue;
+        }
+        if (c.kind === "text") {
+          const t = tidyLitText(decodeHtmlEntities(c.text));
+          if (t) {
+            chunks.push(t);
+            got = true;
+          }
+          k += 1;
+          continue;
+        }
+        if (c.kind === "el" && hasClassPrefix(c.cls, "lo_rif")) {
+          rif = tidyLitText(stripTags(c.inner));
+          k += 1;
+          got = true;
+          continue;
+        }
+        if (c.kind === "el" && stopAt(c)) break;
+        break;
+      }
+      if (got) {
+        j += 1;
+        continue;
+      }
+    }
+    break;
+  }
+  const joined = chunks.join(" ").replace(/\s+/g, " ").trim();
+  if (!joined || !isReadingSourceLine(joined)) return null;
+  const { source, ref } = splitReadingSourceAndRef(joined);
+  pushReadHead(blocks, "source", source);
+  const r = ref || rif;
+  if (r) pushReadHead(blocks, "ref", r);
+  return j;
+}
+
 function pushReadingSubtitoloFromNode(blocks: OreBlock[], node: HtmlNode) {
   if (node.kind !== "el") return;
   if (hasClass(node.cls, "lo_sottotitolorosso")) {
+    const editionEarly = editionCiteFromHtmlInner(node.inner);
+    if (editionEarly && isInUfficioReadingHead(blocks)) {
+      pushReadHead(blocks, "edition", editionEarly);
+      return;
+    }
     const t = tidyLitText(stripTags(node.inner));
     if (!t) return;
+    if (isEditionCiteTitle(t) && isInUfficioReadingHead(blocks)) {
+      pushReadHead(blocks, "edition", t);
+      return;
+    }
     if (isInUfficioReadingHead(blocks)) pushReadHead(blocks, "theme", t);
     else blocks.push({ k: "sub", text: t });
     return;
@@ -430,8 +543,10 @@ function pushReadingSubtitoloFromNode(blocks: OreBlock[], node: HtmlNode) {
     const t = tidyLitText(title || stripTags(node.inner));
     if (!t) return;
     if (isReadingSourceLine(t) || isInUfficioReadingHead(blocks)) {
-      pushReadHead(blocks, "source", t);
-      if (rif.trim()) pushReadHead(blocks, "ref", rif.trim());
+      const { source, ref } = splitReadingSourceAndRef(t);
+      pushReadHead(blocks, "source", source);
+      if (ref) pushReadHead(blocks, "ref", ref);
+      else if (rif.trim()) pushReadHead(blocks, "ref", rif.trim());
     } else blocks.push({ k: "sub", text: t });
     return;
   }
@@ -444,6 +559,8 @@ function splitReadingSourceAndRef(line: string): { source: string; ref: string }
   const flat = line.replace(/\s+/g, " ").trim();
   const m = flat.match(/^([\s\S]+?)\s+(\d[\d\s,.\-–]+\s*-\s*[\d\s,.\-–]+)\s*$/);
   if (m && isReadingSourceLine(m[1])) return { source: m[1].trim(), ref: m[2].trim() };
+  const mEnd = flat.match(/^(.+)\s+(\d+,\s*\d+(?:\s*[-–]\s*[\d\s,]+)?)\s*$/);
+  if (mEnd && isReadingSourceLine(mEnd[1])) return { source: mEnd[1].trim(), ref: mEnd[2].trim() };
   const m2 = flat.match(/^([\s\S]+?)\s+(\d+,\s*\d[\d\s,.\-–]*)\s*$/);
   if (m2 && isReadingSourceLine(m2[1])) return { source: m2[1].trim(), ref: m2[2].trim() };
   return { source: flat, ref: "" };
@@ -1570,7 +1687,8 @@ function blocksFromVersetto(inner: string): OreBlock[] {
   const nested = nodes.filter((n) => n.kind === "el" && hasClass(n.cls, "lo_versetto"));
   if (nested.length) {
     const out: OreBlock[] = [];
-    for (const n of nodes) {
+    for (let ni = 0; ni < nodes.length; ni++) {
+      const n = nodes[ni];
       if (n.kind === "el" && hasClass(n.cls, "lo_versetto")) out.push(...blocksFromVersetto(n.inner));
       else if (n.kind === "el" && hasClass(n.cls, "lo_titolo")) {
         const { title, rif } = extractRif(n.inner);
@@ -1580,6 +1698,10 @@ function blocksFromVersetto(inner: string): OreBlock[] {
           else out.push({ k: "title", text: t });
         }
         if (rif) pushReadHead(out, "ref", rif);
+        if (/^(PRIMA|SECONDA)\s+LETTURA\b/i.test(t)) {
+          const after = takeReadingSourcePrefix(nodes, ni + 1, out);
+          if (after != null) ni = after - 1;
+        }
       } else if (n.kind === "el" && hasClass(n.cls, "lo_antifona")) {
         out.push({ k: "rubric", lab: normalizeLab(stripTags(n.inner)), text: "" });
       } else if (n.kind === "el" && hasClassPrefix(n.cls, "lo_sottotitolo")) {
@@ -1609,7 +1731,8 @@ function blocksFromVersetto(inner: string): OreBlock[] {
       out.push(...blocksFromCoalescedVersetto(serializeRosso(acc)));
       acc = "";
     };
-    for (const n of nodes) {
+    for (let ni = 0; ni < nodes.length; ni++) {
+      const n = nodes[ni];
       if (n.kind === "el" && hasClass(n.cls, "lo_titolo")) {
         flushAcc();
         const { title, rif } = extractRif(n.inner);
@@ -1619,11 +1742,22 @@ function blocksFromVersetto(inner: string): OreBlock[] {
           else out.push({ k: "title", text: t });
         }
         if (rif) pushReadHead(out, "ref", rif);
+        if (/^(PRIMA|SECONDA)\s+LETTURA\b/i.test(t)) {
+          const after = takeReadingSourcePrefix(nodes, ni + 1, out);
+          if (after != null) ni = after - 1;
+        }
         continue;
       }
       if (n.kind === "el" && hasClassPrefix(n.cls, "lo_sottotitolo")) {
         flushAcc();
         pushReadingSubtitoloFromNode(out, n);
+        continue;
+      }
+      if (n.kind === "el" && hasClassPrefix(n.cls, "lo_rif")) {
+        flushAcc();
+        const rifText = tidyLitText(stripTags(n.inner));
+        if (rifText && isInUfficioReadingHead(out)) pushReadHead(out, "ref", rifText);
+        else if (rifText) out.push({ k: "sub", text: rifText });
         continue;
       }
       if (n.kind === "el" && /^(i|em)$/i.test(n.tag)) {
@@ -1796,17 +1930,45 @@ function normalizeReadingHeads(blocks: OreBlock[]): OreBlock[] {
     if (
       b.k === "prose" &&
       isReadingSourceLine(b.text) &&
-      isReadingSectionTitle(prev)
+      (isReadingSectionTitle(prev) || isInUfficioReadingHead(out))
     ) {
-      pushReadHead(out, "source", b.text);
+      const { source, ref } = splitReadingSourceAndRef(b.text);
+      pushReadHead(out, "source", source);
+      if (ref) pushReadHead(out, "ref", ref);
       continue;
     }
     if (b.k === "title" && isEditionCiteTitle(b.text)) {
       pushReadHead(out, "edition", b.text);
       continue;
     }
+    if (b.k === "readHead" && b.role === "theme" && isEditionCiteTitle(b.text)) {
+      pushReadHead(out, "edition", b.text);
+      continue;
+    }
     if (b.k === "sub") {
+      const peeledLettura = peelLetturaTitleFromSub(b.text);
+      if (peeledLettura) {
+        out.push({ k: "title", text: peeledLettura.sectionTitle });
+        const tail = peeledLettura.tail;
+        if (isReadingSourceLine(tail)) {
+          const { source, ref } = splitReadingSourceAndRef(tail);
+          pushReadHead(out, "source", source);
+          if (ref) pushReadHead(out, "ref", ref);
+          else {
+            const nxt = blocks[i + 1];
+            if (nxt?.k === "sub" && isReadingRefOnlyLine(nxt.text)) {
+              pushReadHead(out, "ref", nxt.text.replace(/\s+/g, " ").trim());
+              i += 1;
+            }
+          }
+        } else if (tail) pushReadHead(out, "source", tail);
+        continue;
+      }
       if (isEditionCiteTitle(b.text)) {
+        pushReadHead(out, "edition", b.text);
+        continue;
+      }
+      if (isInUfficioReadingHead(out) && /^\(/.test(b.text.trim()) && !isReadingSourceLine(b.text)) {
         pushReadHead(out, "edition", b.text);
         continue;
       }
@@ -1834,7 +1996,9 @@ function normalizeReadingHeads(blocks: OreBlock[]): OreBlock[] {
 /** Riesegue la normalizzazione letture Ufficio (cache salvata prima dei blocchi readHead). */
 export function migrateOreBlocks(blocks: OreBlock[]): OreBlock[] {
   return reorderReadingHeads(
-    splitEmbeddedReadingEditions(normalizeReadingHeads(repositionPatristicThemeSub(blocks.slice()))),
+    splitEmbeddedReadingRefs(
+      splitEmbeddedReadingEditions(normalizeReadingHeads(repositionPatristicThemeSub(blocks.slice()))),
+    ),
   );
 }
 
@@ -1887,13 +2051,9 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
         const lines = merged.map((l) => tidyLitText(l.text)).filter(Boolean);
         // Fonte della lettura (Dalla lettera… / Dai «Discorsi»…) dopo PRIMA/SECONDA LETTURA.
         const prev = lastMeaningful(blocks);
-        if (
-          lines.length === 1 &&
-          prev?.k === "title" &&
-          /LETTURA/i.test(prev.text) &&
-          isReadingSourceLine(lines[0])
-        ) {
-          const { source, ref } = splitReadingSourceAndRef(lines[0]);
+        const joinedSource = lines.join(" ").replace(/\s+/g, " ").trim();
+        if (prev?.k === "title" && /LETTURA/i.test(prev.text) && isReadingSourceLine(joinedSource)) {
+          const { source, ref } = splitReadingSourceAndRef(joinedSource);
           pushReadHead(blocks, "source", source);
           if (ref) pushReadHead(blocks, "ref", ref);
           i = j;
@@ -2034,9 +2194,14 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
         i += 1;
         continue;
       }
-      blocks.push({ k: "title", text: peelEmbeddedResponsoryR(nodes, i, t) });
-      if (rif) blocks.push({ k: "sub", text: rif });
+      const sectionTitle = peelEmbeddedResponsoryR(nodes, i, t);
+      blocks.push({ k: "title", text: sectionTitle });
+      if (rif) pushReadHead(blocks, "ref", rif);
       i += 1;
+      if (/^(PRIMA|SECONDA)\s+LETTURA\b/i.test(sectionTitle)) {
+        const afterSource = takeReadingSourcePrefix(nodes, i, blocks);
+        if (afterSource != null) i = afterSource;
+      }
       continue;
     }
 
