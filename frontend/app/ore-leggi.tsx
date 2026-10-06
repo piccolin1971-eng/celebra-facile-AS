@@ -26,6 +26,7 @@ import { invitatoryBlocks } from "../src/ore/assemble";
 import { DEFAULT_INVIT_ANT, INVIT_PSALM_IDS } from "../src/ore/bundled";
 import { hourHeadMeta } from "../src/ore/dayHead";
 import { OreBlocksView } from "../src/ore/OreBlocks";
+import { migrateOreBlocks } from "../src/ore/parseHour";
 import { ensureHour, invitAntText } from "../src/ore/scraper";
 import { hourTitle } from "../src/ore/titles";
 import type { DayHoursCache } from "../src/ore/types";
@@ -49,6 +50,18 @@ const NEXT_GOLD = "#c4b06a";
 const FONT_LIT = "LibreBaskerville_400Regular";
 const MEDIA_IDS: MediaId[] = ["terza", "sesta", "nona"];
 const MEDIA_LABEL: Record<MediaId, string> = { terza: "Terza", sesta: "Sesta", nona: "Nona" };
+/** Tasti salmo / ora media @ DEFAULT_FONT_SIZE (26): crescita lineare col carattere di lettura. */
+const INVIT_CHIP_W = 60;
+const INVIT_CHIP_H = 52;
+const INVIT_CHIP_LABEL = 30;
+const MEDIA_CHIP_MIN_W = 86;
+const MEDIA_CHIP_H = 52;
+const MEDIA_CHIP_LABEL = 20;
+
+function oreChipScale(fontSize: number): number {
+  if (!Number.isFinite(fontSize) || fontSize <= 0) return 1;
+  return fontSize / DEFAULT_FONT_SIZE;
+}
 
 function parseHourParam(raw: unknown): OreHourId {
   const v = String(raw || "");
@@ -239,7 +252,7 @@ export default function OreLeggi() {
         setError(parsed?.error || "Testo non disponibile. Connettiti o scarica 10 giorni dalla Home.");
         return;
       }
-      setBlocks(parsed.blocks);
+      setBlocks(hour === "ufficio" ? migrateOreBlocks(parsed.blocks) : parsed.blocks);
       setError(parsed.error || "");
     },
     [hour],
@@ -416,7 +429,10 @@ export default function OreLeggi() {
                       testID={`btn-ore-media-${id}`}
                       {...webClickable}
                     >
-                      <Text style={[styles.invChipLab, styles.mediaChipLab, mediaId === id && styles.invChipLabOn]}>
+                      <Text
+                        style={[styles.invChipLab, styles.mediaChipLab, mediaId === id && styles.invChipLabOn]}
+                        numberOfLines={1}
+                      >
                         {MEDIA_LABEL[id]}
                       </Text>
                     </TouchableOpacity>
@@ -436,7 +452,9 @@ export default function OreLeggi() {
                       accessibilityState={{ selected: psalmId === id }}
                       {...webClickable}
                     >
-                      <Text style={[styles.invChipLab, psalmId === id && styles.invChipLabOn]}>{id}</Text>
+                      <Text style={[styles.invChipLab, psalmId === id && styles.invChipLabOn]} numberOfLines={1}>
+                        {id}
+                      </Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -495,6 +513,7 @@ export default function OreLeggi() {
 
 const makeStyles = (colors: any, fontSize: number) => {
   const scale = chromeScale(fontSize);
+  const chipScale = oreChipScale(fontSize);
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
     topBar: {
@@ -547,14 +566,15 @@ const makeStyles = (colors: any, fontSize: number) => {
     invNums: {
       flexDirection: "row",
       justifyContent: "center",
-      gap: 13,
+      flexWrap: "nowrap",
+      gap: Math.round(13 * chipScale),
       marginTop: 8,
       marginBottom: 14,
     },
     invChip: {
-      width: 60,
-      height: 52,
-      borderRadius: 10,
+      width: Math.round(INVIT_CHIP_W * chipScale),
+      height: Math.round(INVIT_CHIP_H * chipScale),
+      borderRadius: Math.round(10 * chipScale),
       borderWidth: 2,
       borderColor: ORE_BLUE,
       backgroundColor: "#000",
@@ -567,16 +587,17 @@ const makeStyles = (colors: any, fontSize: number) => {
     },
     mediaChip: {
       width: undefined,
-      minWidth: 86,
-      paddingHorizontal: 14,
+      minWidth: Math.round(MEDIA_CHIP_MIN_W * chipScale),
+      height: Math.round(MEDIA_CHIP_H * chipScale),
+      paddingHorizontal: Math.round(14 * chipScale),
     },
     invChipLab: {
       color: "#fff",
       fontWeight: "400",
-      fontSize: Math.round(fontSize * 1.05),
+      fontSize: Math.round(INVIT_CHIP_LABEL * chipScale),
     },
     mediaChipLab: {
-      fontSize: Math.round(fontSize * 0.82 * 1.2),
+      fontSize: Math.round(MEDIA_CHIP_LABEL * chipScale),
       fontWeight: "700",
     },
     invChipLabOn: { color: "#fff" },

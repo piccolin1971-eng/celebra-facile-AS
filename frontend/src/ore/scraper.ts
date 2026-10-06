@@ -4,7 +4,7 @@ import { hourHeadMeta } from "./dayHead";
 import { extractHoursBanner } from "./html";
 import { hymnNeedsItalianAlternate, prependItalianHymn } from "./hymnLang";
 import { fetchLdoDayHtml, ldoHymnForHour } from "./ldo";
-import { extractInvitatoryAntiphon, parseHourHtml, splitOraMediaHtml } from "./parseHour";
+import { extractInvitatoryAntiphon, migrateOreBlocks, parseHourHtml, splitOraMediaHtml } from "./parseHour";
 import { ldoFallbackPatch } from "./parseLdo";
 import { loadDayHours, saveDayHours } from "./cache";
 import { ceiFetchDateISO, ceiHourSlug } from "./titles";
@@ -178,7 +178,23 @@ async function ingestHtml(
     });
     return { ...out, hoursBanner };
   }
-  return { [hour]: parseHourHtml(html, hour, dateISO), hoursBanner };
+  const parsed = parseHourHtml(html, hour, dateISO);
+  return { [hour]: hour === "ufficio" ? { ...parsed, blocks: migrateOreBlocks(parsed.blocks) } : parsed, hoursBanner };
+}
+
+function migrateCachedParsed(hour: OreHourId, parsed: ParsedHour): ParsedHour {
+  if (hour !== "ufficio" || !parsed.blocks?.length) return parsed;
+  const blocks = migrateOreBlocks(parsed.blocks);
+  if (JSON.stringify(blocks) === JSON.stringify(parsed.blocks)) return parsed;
+  return { ...parsed, blocks };
+}
+
+function migrateHourPatch(patch: HourPatch): HourPatch {
+  const u = patch.ufficio;
+  if (!u) return patch;
+  const migrated = migrateCachedParsed("ufficio", u);
+  if (migrated === u) return patch;
+  return { ...patch, ufficio: migrated };
 }
 
 function parsedNeedsItalianHymn(parsed: ParsedHour | undefined): boolean {
@@ -292,7 +308,7 @@ export async function fetchDayHours(dateISO: string, ceiTitle = ""): Promise<Day
     }
     // Se l'ora è già in cache, non rischiare di rovinarla con un CEI ballerino.
     const cached = cachedHoursPatch(prev, hour);
-    if (cached && !hourPatchNeedsItalian(cached)) return cached;
+    if (cached && !hourPatchNeedsItalian(cached)) return migrateHourPatch(cached);
     return withLdoFallback(hour, await fetchHourPatch(dateISO, hour), dateISO);
   });
   let hours: DayHoursCache["hours"] = { ...prev.hours };
@@ -335,9 +351,19 @@ export async function ensureHour(
   } else if (existing) {
     const cached = cachedHoursPatch(existing, hour);
     if (cached) {
-      if (!hourPatchNeedsItalian(cached)) return existing;
-      const enriched = await enrichLatinHymns(cached, dateISO);
-      if (hymnFingerprint(enriched) === hymnFingerprint(cached)) return existing;
+      const migrated = migrateHourPatch(cached);
+      const ufficioMigrated =
+        hour === "ufficio" &&
+        migrated.ufficio &&
+        JSON.stringify(migrated.ufficio.blocks) !== JSON.stringify(existing.hours.ufficio?.blocks);
+      if (!hourPatchNeedsItalian(migrated)) {
+        if (ufficioMigrated) {
+          return mergeDayHours(dateISO, { hours: { ufficio: migrated.ufficio } }, ceiTitle);
+        }
+        return existing;
+      }
+      const enriched = await enrichLatinHymns(migrated, dateISO);
+      if (hymnFingerprint(enriched) === hymnFingerprint(migrated) && !ufficioMigrated) return existing;
       const { invitAnt: _a, invitFetched: _f, hoursBanner: _b, ...hourMap } = enriched;
       return mergeDayHours(dateISO, { hours: hourMap }, ceiTitle);
     }

@@ -55,11 +55,15 @@ function auditBlocks(date: string, hour: string, blocks: OreBlock[]): Issue[] {
       if (n.k === "title" && /LETTURA|RESPONSORIO|ORAZIONE/i.test(n.text)) break;
       after.push(n);
     }
-    const subs = after.filter((x) => x.k === "sub");
+    const subs = after.filter((x) => x.k === "sub" || x.k === "readHead");
     const proses = after.filter((x) => x.k === "prose");
 
     // Fonte (Dalla/Dai…)
-    const source = subs.find((x) => x.k === "sub" && /^(?:Dal|Dalla|Dallo|Dai|Dalle|Dall['’])\s/i.test(x.text));
+    const source = subs.find(
+      (x) =>
+        (x.k === "readHead" && x.role === "source") ||
+        (x.k === "sub" && /^(?:Dal|Dalla|Dallo|Dai|Dalle|Dall['’])\s/i.test(x.text)),
+    );
     if (!source && which === "seconda") {
       // Seconda patristica di solito ha Dai…
       const asProse = proses.find((x) => x.k === "prose" && /^(?:Dal|Dai)\s/i.test(x.text));

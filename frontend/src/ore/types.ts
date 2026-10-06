@@ -11,9 +11,13 @@ export type InvitPsalmId = "94" | "99" | "66" | "23";
 
 export type Hymn = { label: string | null; stanzas: string[][] };
 
+/** Intestazioni letture Ufficio (fonte, rif., tema, edizione). */
+export type ReadHeadRole = "source" | "ref" | "theme" | "edition";
+
 export type OreBlock =
   | { k: "title"; text: string }
   | { k: "psalmHead"; num: string; name: string; sub: string; cite: string }
+  | { k: "readHead"; role: ReadHeadRole; text: string }
   | { k: "sub"; text: string }
   | { k: "rubric"; lab: string; text: string }
   | { k: "omit"; text: string }

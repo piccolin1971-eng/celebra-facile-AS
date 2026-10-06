@@ -21,7 +21,7 @@ import {
 import { enrichPsalmHeads } from "./psalmHeadings";
 import { JOIN_CROSS_MARK, hasJoinCross } from "./joinCross";
 import { parseLocalDate } from "../dateUtils";
-import type { MediaId, OreBlock, OreHourId, ParsedHour } from "./types";
+import type { MediaId, OreBlock, OreHourId, ParsedHour, ReadHeadRole } from "./types";
 
 function isMarianTitle(t: string): boolean {
   return /ANTIFONE DELLA BEATA VERGINE/i.test(t) || /antifona della beata vergine/i.test(t);
@@ -297,7 +297,67 @@ function isEditionCiteTitle(t: string): boolean {
   const s = t.replace(/\s+/g, " ").trim();
   // Citazioni di edizione CEI spesso in lo_titolo centrato: (Disc. …), (Nn. …; CCL …)
   if (!/^\(/.test(s) || !/\)$/.test(s)) return false;
-  return /\b(?:Disc\.|Nn\.|CCL|CSEL|SCh|PG|PL|Lib\.|Opera omnia|Cisterc|ed\.\s*Cisterc)\b/i.test(s);
+  return /\b(?:Disc\.|Nn\.|Capp\.|CCL|CSEL|SCh|PG|PL|Lib\.|Lett\.|Funk|Opera omnia|Cisterc|ed\.\s*Cisterc)\b/i.test(s);
+}
+
+function editionCiteFromHtmlInner(inner: string): string {
+  const re = /<div[^>]*class="[^"]*lo_rosso[^"]*"[^>]*>([\s\S]*?)<\/div>/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(inner))) {
+    const t = tidyLitText(stripTags(m[1]));
+    if (isEditionCiteTitle(t)) return t;
+  }
+  return "";
+}
+
+/** Fonte patristica con citazione editoriale in coda: «…martire (Capp. …)». */
+function peelEditionFromSourceLine(line: string): { source: string; edition: string } {
+  const flat = line.replace(/\s+/g, " ").trim();
+  const m = flat.match(
+    /^([\s\S]+?)\s+(\([^)]*(?:\bCapp\.|\bDisc\.|\bCCL\b|\bCSEL\b|\bFunk\b|\bLett\.|\bOpera omnia|\bNn\.)[^)]*\))\s*$/i,
+  );
+  if (m && isReadingSourceLine(m[1])) return { source: m[1].trim(), edition: m[2].trim() };
+  return { source: flat, edition: "" };
+}
+
+function reorderReadingHeads(blocks: OreBlock[]): OreBlock[] {
+  const rank: Record<ReadHeadRole, number> = { source: 0, ref: 1, edition: 2, theme: 3 };
+  const out: OreBlock[] = [];
+  let i = 0;
+  while (i < blocks.length) {
+    const b = blocks[i];
+    if (b.k === "title" && /^(PRIMA|SECONDA)\s+LETTURA\b/i.test(b.text)) {
+      out.push(b);
+      i += 1;
+      const heads: OreBlock[] = [];
+      while (i < blocks.length && blocks[i].k === "readHead") {
+        heads.push(blocks[i]);
+        i += 1;
+      }
+      heads.sort((a, bb) => rank[(a as Extract<OreBlock, { k: "readHead" }>).role] - rank[(bb as Extract<OreBlock, { k: "readHead" }>).role]);
+      out.push(...heads);
+      continue;
+    }
+    out.push(b);
+    i += 1;
+  }
+  return out;
+}
+
+function splitEmbeddedReadingEditions(blocks: OreBlock[]): OreBlock[] {
+  const out: OreBlock[] = [];
+  for (const b of blocks) {
+    if (b.k === "readHead" && b.role === "source") {
+      const { source, edition } = peelEditionFromSourceLine(b.text);
+      if (edition) {
+        out.push({ k: "readHead", role: "source", text: source });
+        out.push({ k: "readHead", role: "edition", text: edition });
+        continue;
+      }
+    }
+    out.push(b);
+  }
+  return out;
 }
 
 /** «I (1-9)», «II (10-13)»: titolo di sezione del salmo, non frase-tono. */
@@ -331,6 +391,62 @@ function splitCaptionParts(raw: string): { sub: string; cite: string; part: stri
 
 function isReadingSourceLine(t: string): boolean {
   return /^(?:Dal|Dalla|Dallo|Dai|Dalle|Dall['’])\s/i.test(t.replace(/\s+/g, " ").trim());
+}
+
+function isReadingSectionTitle(b: OreBlock | undefined): boolean {
+  return !!(b && b.k === "title" && /^(PRIMA|SECONDA)\s+LETTURA\b/i.test(b.text));
+}
+
+/** Dopo PRIMA/SECONDA LETTURA e prima del corpo (fonte, rif., tema). */
+function isInUfficioReadingHead(blocks: OreBlock[]): boolean {
+  for (let i = blocks.length - 1; i >= 0; i--) {
+    const b = blocks[i];
+    if (b.k === "omit") continue;
+    if (isReadingSectionTitle(b)) return true;
+    if (b.k === "readHead" && (b.role === "source" || b.role === "ref" || b.role === "edition")) return true;
+    if (b.k === "prose" || b.k === "stanza" || b.k === "hymn") return false;
+    if (b.k === "title") return false;
+    return false;
+  }
+  return false;
+}
+
+function pushReadHead(blocks: OreBlock[], role: ReadHeadRole, text: string) {
+  const t = text.replace(/\s+/g, " ").trim();
+  if (t) blocks.push({ k: "readHead", role, text: t });
+}
+
+function pushReadingSubtitoloFromNode(blocks: OreBlock[], node: HtmlNode) {
+  if (node.kind !== "el") return;
+  if (hasClass(node.cls, "lo_sottotitolorosso")) {
+    const t = tidyLitText(stripTags(node.inner));
+    if (!t) return;
+    if (isInUfficioReadingHead(blocks)) pushReadHead(blocks, "theme", t);
+    else blocks.push({ k: "sub", text: t });
+    return;
+  }
+  if (hasClass(node.cls, "lo_sottotitolonoi")) {
+    const { title, rif } = extractRif(node.inner);
+    const t = tidyLitText(title || stripTags(node.inner));
+    if (!t) return;
+    if (isReadingSourceLine(t) || isInUfficioReadingHead(blocks)) {
+      pushReadHead(blocks, "source", t);
+      if (rif.trim()) pushReadHead(blocks, "ref", rif.trim());
+    } else blocks.push({ k: "sub", text: t });
+    return;
+  }
+  const t = stripTags(node.inner).replace(/\s+/g, " ").trim();
+  if (t) blocks.push({ k: "sub", text: t });
+}
+
+/** Riferimento biblico incollato in coda alla fonte (parser legacy / CEI compatto). */
+function splitReadingSourceAndRef(line: string): { source: string; ref: string } {
+  const flat = line.replace(/\s+/g, " ").trim();
+  const m = flat.match(/^([\s\S]+?)\s+(\d[\d\s,.\-–]+\s*-\s*[\d\s,.\-–]+)\s*$/);
+  if (m && isReadingSourceLine(m[1])) return { source: m[1].trim(), ref: m[2].trim() };
+  const m2 = flat.match(/^([\s\S]+?)\s+(\d+,\s*\d[\d\s,.\-–]*)\s*$/);
+  if (m2 && isReadingSourceLine(m2[1])) return { source: m2[1].trim(), ref: m2[2].trim() };
+  return { source: flat, ref: "" };
 }
 
 function lastMeaningful(blocks: OreBlock[]): OreBlock | undefined {
@@ -986,7 +1102,7 @@ function joinPrecesWrap(lines: string[]): string[] {
 }
 
 function blockPlain(b: OreBlock): string {
-  if (b.k === "prose" || b.k === "sub" || b.k === "omit" || b.k === "title") return b.text;
+  if (b.k === "readHead" || b.k === "prose" || b.k === "sub" || b.k === "omit" || b.k === "title") return b.text;
   if (b.k === "stanza") return b.lines.join(" ");
   if (b.k === "tone") return `${b.intro} ${b.refrain}`.trim();
   return "";
@@ -1253,23 +1369,31 @@ function isReadingThemeLine(t: string): boolean {
   return s.length >= 8;
 }
 
-/** Tema patristico a fine lettura (CEI) → sub dopo la fonte, prima del corpo. */
+/** Tema patristico a fine lettura (CEI) → readHead theme dopo la fonte, prima del corpo. */
 function repositionPatristicThemeSub(blocks: OreBlock[]): OreBlock[] {
   const out = blocks.slice();
   for (let i = 0; i < out.length; i++) {
     if (out[i].k !== "title" || !/SECONDA LETTURA/i.test(out[i].text)) continue;
     let j = i + 1;
     let insertAfter = i;
-    while (j < out.length && out[j].k === "sub") {
+    while (j < out.length && (out[j].k === "readHead" || out[j].k === "sub")) {
       insertAfter = j;
       j += 1;
     }
-    if (out.slice(i + 1, j).some((b) => b.k === "sub" && isReadingThemeLine(b.text))) continue;
+    if (
+      out.slice(i + 1, j).some(
+        (b) =>
+          (b.k === "readHead" && b.role === "theme") ||
+          (b.k === "sub" && isReadingThemeLine(b.text)),
+      )
+    ) {
+      continue;
+    }
 
     for (let k = j; k < out.length; k++) {
       const b = out[k];
       if (b.k === "title") break;
-      if (b.k === "sub" && isReadingThemeLine(b.text)) {
+      if ((b.k === "sub" && isReadingThemeLine(b.text)) || (b.k === "readHead" && b.role === "theme")) {
         const themeText = b.text;
         out.splice(k, 1);
         if (insertAfter === i) {
@@ -1279,11 +1403,11 @@ function repositionPatristicThemeSub(blocks: OreBlock[]): OreBlock[] {
           if (proseIdx >= 0) {
             const src = out[proseIdx] as Extract<OreBlock, { k: "prose" }>;
             out.splice(proseIdx, 1);
-            out.splice(i + 1, 0, { k: "sub", text: src.text });
+            out.splice(i + 1, 0, { k: "readHead", role: "source", text: src.text });
             insertAfter = i + 1;
           }
         }
-        out.splice(insertAfter + 1, 0, { k: "sub", text: themeText });
+        out.splice(insertAfter + 1, 0, { k: "readHead", role: "theme", text: themeText });
         break;
       }
     }
@@ -1452,15 +1576,14 @@ function blocksFromVersetto(inner: string): OreBlock[] {
         const { title, rif } = extractRif(n.inner);
         const t = title.replace(/\s+/g, " ").trim();
         if (t) {
-          if (isEditionCiteTitle(t)) out.push({ k: "sub", text: t });
+          if (isEditionCiteTitle(t)) pushReadHead(out, "edition", t);
           else out.push({ k: "title", text: t });
         }
-        if (rif) out.push({ k: "sub", text: rif });
+        if (rif) pushReadHead(out, "ref", rif);
       } else if (n.kind === "el" && hasClass(n.cls, "lo_antifona")) {
         out.push({ k: "rubric", lab: normalizeLab(stripTags(n.inner)), text: "" });
       } else if (n.kind === "el" && hasClassPrefix(n.cls, "lo_sottotitolo")) {
-        const t = stripTags(n.inner).replace(/\s+/g, " ").trim();
-        if (t) out.push({ k: "sub", text: t });
+        pushReadingSubtitoloFromNode(out, n);
       } else if (n.kind === "el" && /^(i|em)$/i.test(n.tag)) {
         const t = stripTags(n.inner).replace(/\s+/g, " ").trim();
         if (t) out.push({ k: "sub", text: t });
@@ -1492,16 +1615,15 @@ function blocksFromVersetto(inner: string): OreBlock[] {
         const { title, rif } = extractRif(n.inner);
         const t = title.replace(/\s+/g, " ").trim();
         if (t) {
-          if (isEditionCiteTitle(t)) out.push({ k: "sub", text: t });
+          if (isEditionCiteTitle(t)) pushReadHead(out, "edition", t);
           else out.push({ k: "title", text: t });
         }
-        if (rif) out.push({ k: "sub", text: rif });
+        if (rif) pushReadHead(out, "ref", rif);
         continue;
       }
       if (n.kind === "el" && hasClassPrefix(n.cls, "lo_sottotitolo")) {
         flushAcc();
-        const t = stripTags(n.inner).replace(/\s+/g, " ").trim();
-        if (t) out.push({ k: "sub", text: t });
+        pushReadingSubtitoloFromNode(out, n);
         continue;
       }
       if (n.kind === "el" && /^(i|em)$/i.test(n.tag)) {
@@ -1664,30 +1786,56 @@ function normalizeIntroVrStanzas(blocks: OreBlock[]): OreBlock[] {
   return out;
 }
 
-/** Fonte lettura finita come prosa → sub; togli punti orfani. */
+/** Fonte/tema/edizione letture: tipi readHead; togli punti orfani. */
 function normalizeReadingHeads(blocks: OreBlock[]): OreBlock[] {
   const out: OreBlock[] = [];
   for (let i = 0; i < blocks.length; i++) {
     const b = blocks[i];
     if (b.k === "prose" && /^[.\s·•…]+$/.test(b.text)) continue;
+    const prev = lastMeaningful(out);
     if (
       b.k === "prose" &&
       isReadingSourceLine(b.text) &&
-      out.length &&
-      out[out.length - 1].k === "title" &&
-      /LETTURA/i.test((out[out.length - 1] as Extract<OreBlock, { k: "title" }>).text)
+      isReadingSectionTitle(prev)
     ) {
-      out.push({ k: "sub", text: b.text });
+      pushReadHead(out, "source", b.text);
       continue;
     }
-    // Titolo edizione ancora come title (path già coperto, cintura)
     if (b.k === "title" && isEditionCiteTitle(b.text)) {
-      out.push({ k: "sub", text: b.text });
+      pushReadHead(out, "edition", b.text);
       continue;
+    }
+    if (b.k === "sub") {
+      if (isEditionCiteTitle(b.text)) {
+        pushReadHead(out, "edition", b.text);
+        continue;
+      }
+      if (isReadingSectionTitle(prev) && isReadingSourceLine(b.text)) {
+        const { source, ref } = splitReadingSourceAndRef(b.text);
+        pushReadHead(out, "source", source);
+        if (ref) pushReadHead(out, "ref", ref);
+        continue;
+      }
+      if (
+        isInUfficioReadingHead(out) &&
+        isReadingThemeLine(b.text) &&
+        !isReadingSourceLine(b.text) &&
+        !/^\(/.test(b.text.trim())
+      ) {
+        pushReadHead(out, "theme", b.text);
+        continue;
+      }
     }
     out.push(b);
   }
   return out;
+}
+
+/** Riesegue la normalizzazione letture Ufficio (cache salvata prima dei blocchi readHead). */
+export function migrateOreBlocks(blocks: OreBlock[]): OreBlock[] {
+  return reorderReadingHeads(
+    splitEmbeddedReadingEditions(normalizeReadingHeads(repositionPatristicThemeSub(blocks.slice()))),
+  );
 }
 
 export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?: string): ParsedHour {
@@ -1745,7 +1893,9 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
           /LETTURA/i.test(prev.text) &&
           isReadingSourceLine(lines[0])
         ) {
-          blocks.push({ k: "sub", text: lines[0] });
+          const { source, ref } = splitReadingSourceAndRef(lines[0]);
+          pushReadHead(blocks, "source", source);
+          if (ref) pushReadHead(blocks, "ref", ref);
           i = j;
           continue;
         }
@@ -1879,8 +2029,8 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
       }
       // Citazione di edizione in lo_titolo (es. Seconda lettura patristica).
       if (isEditionCiteTitle(t)) {
-        blocks.push({ k: "sub", text: t });
-        if (rif) blocks.push({ k: "sub", text: rif });
+        pushReadHead(blocks, "edition", t);
+        if (rif) pushReadHead(blocks, "ref", rif);
         i += 1;
         continue;
       }
@@ -1892,7 +2042,9 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
 
     if (hasClass(node.cls, "lo_sottotitolonoi")) {
       // Nome tematico del salmo, oppure fonte lettura (Dalla lettera… / Dai «Discorsi»…).
-      const text = tidyLitText(stripTags(node.inner));
+      const editionEarly = editionCiteFromHtmlInner(node.inner);
+      const { title, rif } = extractRif(node.inner);
+      const text = tidyLitText(title || stripTags(node.inner));
       const prev = blocks[blocks.length - 1];
       if (
         prev?.k === "psalmHead" &&
@@ -1902,6 +2054,12 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
         !isEditionCiteTitle(text)
       ) {
         prev.name = text;
+      } else if (text && (isReadingSourceLine(text) || isInUfficioReadingHead(blocks))) {
+        pushReadHead(blocks, "source", text);
+        if (rif.trim()) pushReadHead(blocks, "ref", rif.trim());
+        if (editionEarly) pushReadHead(blocks, "edition", editionEarly);
+      } else if (!text && editionEarly && isInUfficioReadingHead(blocks)) {
+        pushReadHead(blocks, "edition", editionEarly);
       } else if (text) {
         blocks.push({ k: "sub", text });
       }
@@ -1910,6 +2068,19 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
     }
 
     if (hasClassPrefix(node.cls, "lo_sottotitolo")) {
+      if (hasClass(node.cls, "lo_sottotitolorosso")) {
+        const text = tidyLitText(stripTags(node.inner));
+        if (text) {
+          if (isInUfficioReadingHead(blocks)) pushReadHead(blocks, "theme", text);
+          else {
+            const prev = blocks[blocks.length - 1];
+            if (prev?.k === "psalmHead" && !prev.name) prev.name = text;
+            else blocks.push({ k: "sub", text });
+          }
+        }
+        i += 1;
+        continue;
+      }
       const raw = stripTags(node.inner).replace(/\s+/g, " ").trim();
       if (looksLikePsalmTitle(raw)) {
         const consumed = consumeSubAfterPsalm(nodes, i + 1);
@@ -2032,7 +2203,12 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
         nodes.splice(i, 1, { kind: "text", text: t });
         continue;
       } else if (isEditionCiteTitle(t)) {
-        blocks.push({ k: "sub", text: t });
+        const dup =
+          blocks.length &&
+          blocks[blocks.length - 1].k === "readHead" &&
+          blocks[blocks.length - 1].role === "edition" &&
+          blocks[blocks.length - 1].text === t;
+        if (!dup) pushReadHead(blocks, "edition", t);
       } else if (isPsalmPartMarker(t)) {
         blocks.push({ k: "title", text: normalizePsalmPart(t) });
       } else if (/si può omettere/i.test(t)) {
@@ -2124,7 +2300,7 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
                 applyBundledGospelCanticles(
                   dropRepeatedPsalmCaption(
                     enrichPsalmHeads(
-                      normalizeIntroVrStanzas(normalizeReadingHeads(repositionPatristicThemeSub(clean))),
+                      normalizeIntroVrStanzas(migrateOreBlocks(repositionPatristicThemeSub(clean))),
                     ),
                   ),
                 ),

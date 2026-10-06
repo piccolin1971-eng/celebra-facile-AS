@@ -350,6 +350,78 @@ function renderBlock(
       </View>
     );
   }
+  if (b.k === "readHead") {
+    const emRh = (n: number) => Math.round(fontSize * n);
+    if (b.role === "source") {
+      return (
+        <Text
+          key={i}
+          style={{
+            fontFamily: FONT,
+            fontSize,
+            lineHeight,
+            color: textColor,
+            textAlign: "center",
+            marginTop: emRh(0.35),
+            marginBottom: emRh(0.15),
+          }}
+        >
+          {b.text}
+        </Text>
+      );
+    }
+    if (b.role === "ref") {
+      return (
+        <Text
+          key={i}
+          style={{
+            fontFamily: FONT,
+            fontSize: Math.round(fontSize * 0.92),
+            lineHeight: Math.round(fontSize * 1.25),
+            color: RUBRIC,
+            textAlign: "center",
+            marginBottom: emRh(0.2),
+          }}
+        >
+          {b.text}
+        </Text>
+      );
+    }
+    if (b.role === "theme") {
+      return (
+        <Text
+          key={i}
+          style={{
+            fontFamily: FONT,
+            fontSize: Math.round(fontSize * 0.95),
+            lineHeight: titleLh,
+            color: RUBRIC,
+            textAlign: "center",
+            marginTop: emRh(0.25),
+            marginBottom: emRh(0.55),
+            fontWeight: "600",
+          }}
+        >
+          {b.text}
+        </Text>
+      );
+    }
+    return (
+      <Text
+        key={i}
+        style={{
+          fontFamily: FONT_IT,
+          fontSize: Math.round(fontSize * 0.78),
+          lineHeight: Math.round(fontSize * 1.4 * 1.1),
+          color: RUBRIC,
+          textAlign: "center",
+          marginBottom: emRh(0.45),
+        }}
+      >
+        {b.text}
+      </Text>
+    );
+  }
   if (b.k === "sub") {
     // Riferimento di edizione (es. «(Nn. 1. 2; CCL 73, 1-3)»): sul CEI è rosso, non il titolo in oro.
     const editionRef = /^\([^)]*(?:\bNn\.|\bCCL\b|\bCSEL\b|\bSCh\b|\bPG\b|\bPL\b|\bLib\.|\bDisc\.|\bOpera omnia\b|\bCisterc)[^)]*\)$/i.test(
