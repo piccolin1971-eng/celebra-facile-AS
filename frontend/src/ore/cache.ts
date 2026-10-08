@@ -41,7 +41,7 @@ export function hoursLookComplete(data: DayHoursCache | null): boolean {
   ];
   return need.every((h) => {
     const hour = data.hours[h];
-    return !!(hour && hour.blocks && hour.blocks.length > 0);
+    return !!(hour && hour.blocks && hour.blocks.length > 0 && !hour.error);
   });
 }
 

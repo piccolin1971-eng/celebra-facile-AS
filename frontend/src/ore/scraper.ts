@@ -94,7 +94,7 @@ type HourPatch = Partial<Record<OreHourId | MediaId, ParsedHour>> & {
 };
 
 function hourHasContent(parsed: ParsedHour | undefined | null): boolean {
-  return !!(parsed && parsed.blocks && parsed.blocks.length > 0);
+  return !!(parsed && parsed.blocks && parsed.blocks.length > 0 && !parsed.error);
 }
 
 /** Non sovrascrivere un'ora già buona con un fetch fallito (blocks vuoti). */
@@ -268,7 +268,7 @@ function patchHourComplete(patch: HourPatch, hour: OreHourId): boolean {
   return hourHasContent(patch[hour]);
 }
 
-/** Se il CEI non ha dato contenuto, completa da liturgiadelleore.it. */
+/** Se il CEI non ha dato contenuto (o ha error), completa da liturgiadelleore.it. */
 async function withLdoFallback(hour: OreHourId, patch: HourPatch, dateISO: string): Promise<HourPatch> {
   if (patchHourComplete(patch, hour)) return patch;
   const ldo = await fetchLdoDayHtml(dateISO);
@@ -277,6 +277,13 @@ async function withLdoFallback(hour: OreHourId, patch: HourPatch, dateISO: strin
     invitAnt?: string;
     invitFetched?: boolean;
   } = { ...patch };
+  // Non passare al fill le ore CEI fallite (solo error): LDO le sostituisce.
+  if (hour !== "invitatorio" && hour !== "ora-media") {
+    const cur = patch[hour];
+    if (cur && (!cur.blocks?.length || cur.error)) {
+      delete (existing as Record<string, unknown>)[hour];
+    }
+  }
   const fill = ldoFallbackPatch(ldo, hour, dateISO, existing);
   if (!Object.keys(fill).length) return patch;
   const next: HourPatch = { ...patch, ...fill };
@@ -286,6 +293,11 @@ async function withLdoFallback(hour: OreHourId, patch: HourPatch, dateISO: strin
       if (!hourHasContent(patch[id]) && hourHasContent(fill[id])) next[id] = fill[id];
       else if (hourHasContent(patch[id])) next[id] = patch[id];
     }
+  }
+  // Ora singola: se LDO ha riempito, togli l'error CEI residuo.
+  if (hour !== "invitatorio" && hour !== "ora-media" && hourHasContent(next[hour]) && next[hour]?.error) {
+    const { error: _e, ...rest } = next[hour]!;
+    next[hour] = rest as ParsedHour;
   }
   return next;
 }

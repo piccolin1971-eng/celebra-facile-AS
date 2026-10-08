@@ -11,7 +11,9 @@
     "lint": "expo lint",
     "parse:lezionario-santi": "node ../scripts/parse-lezionario-santi.mjs",
     "test:vigil-modes": "npx tsx scripts/test-vigil-modes.ts",
-    "test:votive-liturgy": "npx tsx scripts/test-votive-liturgy.ts"
+    "test:votive-liturgy": "npx tsx scripts/test-votive-liturgy.ts",
+    "test:ore-parsers": "npx tsx scripts/test-ore-parsers.ts",
+    "test:parsers": "npx tsx scripts/test-ore-parsers.ts"
   },
   "dependencies": {
     "@babel/runtime": "^7.20.6",

@@ -21,6 +21,20 @@ function liturgyStorageKey(date: string, mode: CelebrationMode = "calendar_day")
   return `${LITURGY_PREFIX}${date}_${mode}`;
 }
 
+/** Indice: `YYYY-MM-DD` oppure `YYYY-MM-DD:vigil_proper` → chiave AsyncStorage. */
+function storageKeyFromIndexId(indexId: string): string {
+  const colon = indexId.indexOf(":");
+  if (colon < 0) return `${LITURGY_PREFIX}${indexId}`;
+  const date = indexId.slice(0, colon);
+  const mode = indexId.slice(colon + 1) as CelebrationMode;
+  return liturgyStorageKey(date, mode || "calendar_day");
+}
+
+function datePartFromIndexId(indexId: string): string {
+  const colon = indexId.indexOf(":");
+  return colon < 0 ? indexId : indexId.slice(0, colon);
+}
+
 export type CachedLiturgyIndexEntry = {
   date: string;          // YYYY-MM-DD
   cachedAt: number;      // timestamp ms
@@ -81,9 +95,17 @@ export async function getLiturgyIndex(): Promise<CachedLiturgyIndexEntry[]> {
 
 export async function removeLiturgy(date: string): Promise<void> {
   try {
-    await AsyncStorage.removeItem(`${LITURGY_PREFIX}${date}`);
+    await AsyncStorage.removeItem(storageKeyFromIndexId(date));
+    // Rimuovi anche eventuali varianti di modalità per quella data.
     const index = await getLiturgyIndex();
-    const next = index.filter((e) => e.date !== date);
+    const next: CachedLiturgyIndexEntry[] = [];
+    for (const e of index) {
+      if (e.date === date || datePartFromIndexId(e.date) === date) {
+        await AsyncStorage.removeItem(storageKeyFromIndexId(e.date));
+        continue;
+      }
+      next.push(e);
+    }
     await AsyncStorage.setItem(INDEX_KEY, JSON.stringify(next));
   } catch (e) {
     console.log("removeLiturgy error:", e);
@@ -94,7 +116,7 @@ export async function clearAllLiturgies(): Promise<number> {
   const index = await getLiturgyIndex();
   let count = 0;
   for (const e of index) {
-    await AsyncStorage.removeItem(`${LITURGY_PREFIX}${e.date}`);
+    await AsyncStorage.removeItem(storageKeyFromIndexId(e.date));
     count++;
   }
   await AsyncStorage.removeItem(INDEX_KEY);
@@ -113,8 +135,9 @@ export async function pruneOldLiturgies(keepDaysBack = 3): Promise<number> {
   let removed = 0;
   const next: CachedLiturgyIndexEntry[] = [];
   for (const e of index) {
-    if (e.date < thresholdStr) {
-      await AsyncStorage.removeItem(`${LITURGY_PREFIX}${e.date}`);
+    const day = datePartFromIndexId(e.date);
+    if (day < thresholdStr) {
+      await AsyncStorage.removeItem(storageKeyFromIndexId(e.date));
       removed++;
     } else {
       next.push(e);

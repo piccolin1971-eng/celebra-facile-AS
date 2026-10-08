@@ -52,6 +52,7 @@ import {
   ACTION_TITLE_WEIGHT,
 } from "../src/uiActionTokens";
 import { prefetchMassAndHours } from "../src/ore/prefetch";
+import { pruneOldLiturgies } from "../src/offlineCache";
 import { unifiedCacheDaysLeft } from "../src/ore/cache";
 
 const webClickable = Platform.OS === "web" ? ({ cursor: "pointer" } as const) : undefined;
@@ -350,6 +351,8 @@ export default function Home() {
       void reloadPreparedFlags();
       void reloadQuickAccessCount();
       void reloadDlDays();
+      // Giorni di Messa troppo vecchi: libera spazio (le Ore si puliscono al download).
+      void pruneOldLiturgies(3);
     }, [reloadSessions, reloadPreparedFlags, reloadQuickAccessCount, reloadDlDays]),
   );
 

@@ -1,6 +1,7 @@
 import { stripTags } from "./html";
 import { normalizeHymnStanzas } from "./hymns";
 import { fetchCeiUrl } from "../liturgyScraper";
+import { withRetries } from "../fetchRetry";
 import type { Hymn, MediaId, OreHourId } from "./types";
 import { parseLocalDate } from "../dateUtils";
 
@@ -46,7 +47,7 @@ export function fetchLdoDayHtml(dateISO: string): Promise<string | null> {
   return p;
 }
 
-async function fetchLdoDayHtmlUncached(dateISO: string): Promise<string | null> {
+async function fetchLdoDayHtmlOnce(dateISO: string): Promise<string | null> {
   const ymd = dateISO.replace(/-/g, "");
   if (typeof document !== "undefined") {
     try {
@@ -61,6 +62,15 @@ async function fetchLdoDayHtmlUncached(dateISO: string): Promise<string | null> 
   }
   const viaCei = await fetchCeiUrl(ldoDayUrl(dateISO));
   return viaCei && looksLikeLdoDayHtml(viaCei) ? viaCei : null;
+}
+
+async function fetchLdoDayHtmlUncached(dateISO: string): Promise<string | null> {
+  // fetchCeiUrl già ritenta: qui bastano 2 giri sul giorno LDO.
+  return withRetries(() => fetchLdoDayHtmlOnce(dateISO), {
+    attempts: 2,
+    delayMs: 600,
+    isOk: (html) => !!(html && looksLikeLdoDayHtml(html)),
+  });
 }
 
 export function extractLdoHourHtml(dayHtml: string, hour: OreHourId | MediaId): string {

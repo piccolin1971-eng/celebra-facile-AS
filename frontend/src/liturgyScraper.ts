@@ -17,6 +17,7 @@ import { getVigilEveContext } from "./vigilCatalog";
 import type { CelebrationMode } from "./massSession";
 import { localDateStr, parseLocalDate } from "./dateUtils";
 import { normalizeTypewriterCapAccents } from "./litTextNormalize";
+import { withRetries } from "./fetchRetry";
 
 export type Reading = {
   type: string;
@@ -474,22 +475,31 @@ function isWebEnvironment(): boolean {
 const ceiHtmlCache = new Map<string, string>();
 const ceiHtmlInflight = new Map<string, Promise<string | null>>();
 
-/** Fetch HTML CEI (Ore, letture). Su APK: diretto; su web: proxy CORS. */
+/** Fetch HTML CEI (Ore, letture). Su APK: diretto; su web: proxy CORS. Ritenta se la rete falla. */
 export async function fetchCeiUrl(url: string): Promise<string | null> {
-  if (!isWebEnvironment()) {
-    try {
-      return await fetchCeiHtmlViaCandidate(url);
-    } catch (e) {
-      if (__DEV__) console.log("fetchCeiUrl err:", e);
-      return null;
-    }
-  }
-  try {
-    return await Promise.any(CORS_PROXIES.map((p) => fetchCeiHtmlViaCandidate(p(url))));
-  } catch (e) {
-    if (__DEV__) console.log("fetchCeiUrl web err:", e);
-    return null;
-  }
+  return withRetries(
+    async () => {
+      if (!isWebEnvironment()) {
+        try {
+          return await fetchCeiHtmlViaCandidate(url);
+        } catch (e) {
+          if (__DEV__) console.log("fetchCeiUrl err:", e);
+          return null;
+        }
+      }
+      try {
+        return await Promise.any(CORS_PROXIES.map((p) => fetchCeiHtmlViaCandidate(p(url))));
+      } catch (e) {
+        if (__DEV__) console.log("fetchCeiUrl web err:", e);
+        return null;
+      }
+    },
+    {
+      attempts: 2,
+      delayMs: 500,
+      isOk: (html) => !!(html && html.length > 500),
+    },
+  );
 }
 
 async function fetchCeiHtmlOnce(
