@@ -48,4 +48,9 @@ export type DayHoursCache = {
   meta: DayHoursMeta;
   hours: Partial<Record<OreHourId | MediaId, ParsedHour>>;
   fetchedAt: number;
+  /**
+   * Versione del *contenuto* (parse/blocchi), non del nome chiave AsyncStorage.
+   * La chiave resta `ore_day_<data>`; si alza solo questo campo se serve una migrazione.
+   */
+  schemaVersion?: number;
 };

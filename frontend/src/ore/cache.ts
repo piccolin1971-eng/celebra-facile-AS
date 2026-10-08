@@ -1,16 +1,80 @@
+/**
+ * Cache offline Liturgia delle Ore.
+ *
+ * Chiave stabile (non cambiare al bump di parser):
+ *   ore_day_<YYYY-MM-DD>
+ *
+ * Prefissi legacy `ore_day_vN_<data>` (v4…v35): in lettura si migrano sulla chiave stabile
+ * e si rimuovono, così un aggiornamento APK non “cancella” i giorni scaricati.
+ *
+ * `schemaVersion` nel JSON: alza questo numero se cambia il formato dei blocchi;
+ * non rinominare la chiave AsyncStorage.
+ */
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { nextDates, loadLiturgy } from "../offlineCache";
 import type { DayHoursCache, MediaId, OreHourId } from "./types";
 
-const PREFIX = "ore_day_v35_";
+/** Prefisso fisso. Non bumpare: usare SCHEMA_VERSION nel JSON. */
+const PREFIX = "ore_day_";
+
+/** Schema contenuto attuale (allineato all’ultima generaz. v35 del parse). */
+export const ORE_CACHE_SCHEMA_VERSION = 35;
+
+const STABLE_KEY_RE = /^ore_day_(\d{4}-\d{2}-\d{2})$/;
+const LEGACY_KEY_RE = /^ore_day_v(\d+)_(\d{4}-\d{2}-\d{2})$/;
 
 function key(date: string): string {
   return `${PREFIX}${date}`;
 }
 
+function dateFromStorageKey(storageKey: string): string | null {
+  const stable = storageKey.match(STABLE_KEY_RE);
+  if (stable) return stable[1];
+  const legacy = storageKey.match(LEGACY_KEY_RE);
+  if (legacy) return legacy[2];
+  return null;
+}
+
+function stamp(data: DayHoursCache): DayHoursCache {
+  return {
+    ...data,
+    invitFetched: !!data.invitFetched,
+    schemaVersion: ORE_CACHE_SCHEMA_VERSION,
+  };
+}
+
+async function removeLegacyKeysForDate(date: string): Promise<void> {
+  try {
+    const keys = await AsyncStorage.getAllKeys();
+    const stale = keys.filter((k) => {
+      const m = k.match(LEGACY_KEY_RE);
+      return !!(m && m[2] === date);
+    });
+    if (stale.length) await AsyncStorage.multiRemove(stale);
+  } catch (e) {
+    console.log("removeLegacyKeysForDate error:", e);
+  }
+}
+
+/** Tra più chiavi legacy per la stessa data, preferisce la v più alta. */
+async function findBestLegacyKey(date: string): Promise<string | null> {
+  const keys = await AsyncStorage.getAllKeys();
+  let best: { key: string; ver: number } | null = null;
+  for (const k of keys) {
+    const m = k.match(LEGACY_KEY_RE);
+    if (!m || m[2] !== date) continue;
+    const ver = Number(m[1]);
+    if (!Number.isFinite(ver)) continue;
+    if (!best || ver > best.ver) best = { key: k, ver };
+  }
+  return best?.key ?? null;
+}
+
 export async function saveDayHours(data: DayHoursCache): Promise<void> {
   try {
-    await AsyncStorage.setItem(key(data.date), JSON.stringify(data));
+    const stamped = stamp(data);
+    await AsyncStorage.setItem(key(data.date), JSON.stringify(stamped));
+    await removeLegacyKeysForDate(data.date);
   } catch (e) {
     console.log("saveDayHours error:", e);
   }
@@ -18,10 +82,28 @@ export async function saveDayHours(data: DayHoursCache): Promise<void> {
 
 export async function loadDayHours(date: string): Promise<DayHoursCache | null> {
   try {
-    const raw = await AsyncStorage.getItem(key(date));
-    if (!raw) return null;
-    const data = JSON.parse(raw) as DayHoursCache;
-    return { ...data, invitFetched: !!data.invitFetched };
+    const stableKey = key(date);
+    let raw = await AsyncStorage.getItem(stableKey);
+    let fromLegacy = false;
+
+    if (!raw) {
+      const legacyKey = await findBestLegacyKey(date);
+      if (!legacyKey) return null;
+      raw = await AsyncStorage.getItem(legacyKey);
+      if (!raw) return null;
+      fromLegacy = true;
+    }
+
+    const parsed = JSON.parse(raw) as DayHoursCache;
+    const data = stamp({ ...parsed, date, invitFetched: !!parsed.invitFetched });
+
+    // Migra su chiave stabile (e aggiorna schemaVersion) se serve.
+    if (fromLegacy || parsed.schemaVersion !== ORE_CACHE_SCHEMA_VERSION) {
+      await AsyncStorage.setItem(stableKey, JSON.stringify(data));
+      if (fromLegacy) await removeLegacyKeysForDate(date);
+    }
+
+    return data;
   } catch (e) {
     console.log("loadDayHours error:", e);
     return null;
@@ -65,7 +147,10 @@ export async function pruneOldHours(keepFromToday = 0): Promise<void> {
   const keep = new Set(nextDates(10 + keepFromToday));
   try {
     const keys = await AsyncStorage.getAllKeys();
-    const stale = keys.filter((k) => k.startsWith(PREFIX) && !keep.has(k.slice(PREFIX.length)));
+    const stale = keys.filter((k) => {
+      const date = dateFromStorageKey(k);
+      return date != null && !keep.has(date);
+    });
     if (stale.length) await AsyncStorage.multiRemove(stale);
   } catch (e) {
     console.log("pruneOldHours error:", e);
