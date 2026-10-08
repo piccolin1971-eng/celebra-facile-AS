@@ -2,6 +2,7 @@ import { writeFileSync } from "fs";
 import { fetchCeiUrl } from "../src/liturgyScraper";
 import { addDays, localDateStr, parseLocalDate } from "../src/dateUtils";
 import { scrubLoneParenLines, stripCeiMarianTail } from "../src/ore/bundled";
+import { normalizeJoinCrossBlocks } from "../src/ore/joinCross";
 import { parseHourHtml } from "../src/ore/parseHour";
 import { hoursUrl } from "../src/ore/scraper";
 import { complineCeiSlug } from "../src/ore/titles";
@@ -48,7 +49,7 @@ function tidyComplineBlocks(blocks: OreBlock[]): OreBlock[] {
     }
     out.push(b);
   }
-  return out;
+  return normalizeJoinCrossBlocks(out);
 }
 
 async function main() {

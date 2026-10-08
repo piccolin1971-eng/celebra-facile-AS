@@ -11,6 +11,7 @@ import { getObservedSaintsForDate } from "../saintsCalendar";
 import { isSolemnityVigilEvening } from "./titles";
 import { marianAntiphonsForDate, scrubLoneParenLines, stripCeiMarianTail } from "./bundled";
 import { peelGluedCanticleCites } from "./parseHour";
+import { normalizeJoinCrossBlocks } from "./joinCross";
 import type { OreBlock, ParsedHour } from "./types";
 import schemasData from "./data/complineSchemas.json";
 
@@ -79,6 +80,8 @@ export function getBundledCompline(dateISO: string): ParsedHour | null {
   if (complineNeedsCeiFetch(date)) return null;
   const pack = SCHEMAS[complineSchemaId(date)];
   if (!pack?.blocks?.length) return null;
-  const blocks = peelGluedCanticleCites(withMarian(JSON.parse(JSON.stringify(pack.blocks)) as OreBlock[], date));
+  const blocks = normalizeJoinCrossBlocks(
+    peelGluedCanticleCites(withMarian(JSON.parse(JSON.stringify(pack.blocks)) as OreBlock[], date)),
+  );
   return { hour: "compieta", blocks };
 }

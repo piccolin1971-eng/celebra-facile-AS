@@ -930,14 +930,14 @@
       {
         "k": "stanza",
         "lines": [
-          "\uFFF0 Dal profondo a te grido, o Signore; *",
-          "Signore, ascolta la mia voce.",
+          "Dal profondo a te grido, o Signore; *",
+          "\uFFF0 Signore, ascolta la mia voce.",
           "Siano i tuoi orecchi attenti *",
           "alla voce della mia preghiera."
         ],
         "hang": [
           0,
-          1,
+          0,
           0,
           1
         ]

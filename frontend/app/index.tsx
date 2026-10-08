@@ -525,31 +525,33 @@ export default function Home() {
         style={styles.homeScroll}
       >
         <View style={styles.daySelector} testID="day-selector">
-          <View
-            style={styles.daySelectorLegend}
-            testID="day-selector-legend"
-            accessibilityRole="text"
-            accessibilityLabel="Pallini: vuoto nessuna liturgia preparata, uno verde una liturgia, due verdi due liturgie"
-          >
-            <Text style={styles.legendLead} accessibilityElementsHidden>
-              Preparata
-            </Text>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, styles.legendDotEmpty]} />
-              <Text style={styles.daySelectorLabel}>nessuna</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, styles.legendDotPrepared]} />
-              <Text style={styles.daySelectorLabel}>una</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={styles.legendDotsCol}>
-                <View style={[styles.legendDot, styles.legendDotPrepared]} />
-                <View style={[styles.legendDot, styles.legendDotPrepared]} />
+          {preparaCelebraEnabled ? (
+            <View
+              style={styles.daySelectorLegend}
+              testID="day-selector-legend"
+              accessibilityRole="text"
+              accessibilityLabel="Pallini: vuoto nessuna liturgia preparata, uno verde una liturgia, due verdi due liturgie"
+            >
+              <Text style={styles.legendLead} accessibilityElementsHidden>
+                Preparata
+              </Text>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, styles.legendDotEmpty]} />
+                <Text style={styles.daySelectorLabel}>nessuna</Text>
               </View>
-              <Text style={styles.daySelectorLabel}>due</Text>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, styles.legendDotPrepared]} />
+                <Text style={styles.daySelectorLabel}>una</Text>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={styles.legendDotsCol}>
+                  <View style={[styles.legendDot, styles.legendDotPrepared]} />
+                  <View style={[styles.legendDot, styles.legendDotPrepared]} />
+                </View>
+                <Text style={styles.daySelectorLabel}>due</Text>
+              </View>
             </View>
-          </View>
+          ) : null}
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -567,8 +569,7 @@ export default function Home() {
               const dateSpoken = isToday ? `${dayNum} ${monthLabel}` : `${label} ${dayNum} ${monthLabel}`;
               const stripMeta = homeStripDayMeta(d, stripCeiTitles[dateStr]);
               const borderHex = liturgicalColorHex(stripMeta.liturgicalColor, colors);
-              // Pallini verdi solo se «Scegli la liturgia» è attivo (altrimenti
-              // resterebbero verdi senza riquadro sessione).
+              // Pallini solo se «Prepara la liturgia» è attivo.
               const prepCount = preparaCelebraEnabled
                 ? (preparedCounts[dateStr] ?? 0)
                 : 0;
@@ -582,6 +583,7 @@ export default function Home() {
               const celebrationLabel = stripMeta.subtitle
                 ? `, ${stripMeta.subtitle}`
                 : "";
+              const a11yPrep = preparaCelebraEnabled ? `, liturgia ${prepLabel}` : "";
               return (
                 <DayChipWrap key={offset} active={isActive} styles={styles}>
                 <TouchableOpacity
@@ -595,27 +597,29 @@ export default function Home() {
                   testID={offset === 0 ? "btn-day-today" : `btn-day-${offset}`}
                   accessibilityRole="button"
                   accessibilityState={{ selected: isActive }}
-                  accessibilityLabel={`${isToday ? `${label}, ${dateSpoken}` : dateSpoken}${celebrationLabel}, liturgia ${prepLabel}`}
+                  accessibilityLabel={`${isToday ? `${label}, ${dateSpoken}` : dateSpoken}${celebrationLabel}${a11yPrep}`}
                 >
-                  {prepCount >= 2 ? (
-                    <View
-                      style={styles.dayStatusDotsStack}
-                      pointerEvents="none"
-                      testID={`day-status-dots-${offset}`}
-                    >
-                      <View style={[styles.dayStatusDot, styles.dayStatusDotPrepared]} />
-                      <View style={[styles.dayStatusDot, styles.dayStatusDotPrepared]} />
-                    </View>
-                  ) : (
-                    <View
-                      style={[
-                        styles.dayStatusDotSolo,
-                        isPrepared ? styles.dayStatusDotPrepared : styles.dayStatusDotEmpty,
-                      ]}
-                      pointerEvents="none"
-                      testID={`day-status-dot-${offset}`}
-                    />
-                  )}
+                  {preparaCelebraEnabled ? (
+                    prepCount >= 2 ? (
+                      <View
+                        style={styles.dayStatusDotsStack}
+                        pointerEvents="none"
+                        testID={`day-status-dots-${offset}`}
+                      >
+                        <View style={[styles.dayStatusDot, styles.dayStatusDotPrepared]} />
+                        <View style={[styles.dayStatusDot, styles.dayStatusDotPrepared]} />
+                      </View>
+                    ) : (
+                      <View
+                        style={[
+                          styles.dayStatusDotSolo,
+                          isPrepared ? styles.dayStatusDotPrepared : styles.dayStatusDotEmpty,
+                        ]}
+                        pointerEvents="none"
+                        testID={`day-status-dot-${offset}`}
+                      />
+                    )
+                  ) : null}
                   {isToday ? (
                     <>
                       <Text style={styles.dayButtonLabel}>{label}</Text>

@@ -6,7 +6,7 @@ import {
   splitPsalmTitle,
 } from "./bundled";
 import { enrichPsalmHeads } from "./psalmHeadings";
-import { JOIN_CROSS_MARK } from "./joinCross";
+import { JOIN_CROSS_MARK, normalizeJoinCrossBlocks } from "./joinCross";
 import { parseLocalDate } from "../dateUtils";
 import { normalizeHymnStanzas } from "./hymns";
 import type { Hymn, MediaId, OreBlock, OreHourId, ParsedHour } from "./types";
@@ -364,19 +364,8 @@ function parsePsalmHead(
   return { head, next: i };
 }
 
-function maybeAttachJoinToFirstVerse(blocks: OreBlock[]) {
-  // Se antifona ha JOIN_CROSS e la strofa successiva inizia senza, prefissa † oro al primo versetto.
-  for (let i = 0; i < blocks.length - 1; i++) {
-    const a = blocks[i];
-    if (a.k !== "rubric" || !/ant/i.test(a.lab) || !a.text.includes(JOIN_CROSS_MARK)) continue;
-    // Salta psalmHead
-    let j = i + 1;
-    while (j < blocks.length && (blocks[j].k === "psalmHead" || blocks[j].k === "title")) j += 1;
-    const st = blocks[j];
-    if (st?.k === "stanza" && st.lines[0] && !st.lines[0].includes(JOIN_CROSS_MARK)) {
-      st.lines[0] = `${JOIN_CROSS_MARK} ${st.lines[0]}`;
-    }
-  }
+function maybeAttachJoinToFirstVerse(_blocks: OreBlock[]) {
+  // La posizione della † (dopo l’eco dell’antifona, a inizio riga) è in normalizeJoinCrossBlocks.
 }
 
 function parseInvocations(blocks: OreBlock[], bodyLines: string[]) {
@@ -639,15 +628,17 @@ export function parseLdoHourHtml(
 
   maybeAttachJoinToFirstVerse(blocks);
 
-  const clean = enrichPsalmHeads(
-    applyBundledGospelCanticles(
-      blocks.filter((b) => {
-        if (b.k === "stanza") return b.lines.some((l) => l && l !== JOIN_CROSS_MARK);
-        if (b.k === "prose") return b.text.length > 0;
-        if (b.k === "rubric") return !!(b.lab || b.text);
-        if (b.k === "title") return b.text.length > 0;
-        return true;
-      }),
+  const clean = normalizeJoinCrossBlocks(
+    enrichPsalmHeads(
+      applyBundledGospelCanticles(
+        blocks.filter((b) => {
+          if (b.k === "stanza") return b.lines.some((l) => l && l !== JOIN_CROSS_MARK);
+          if (b.k === "prose") return b.text.length > 0;
+          if (b.k === "rubric") return !!(b.lab || b.text);
+          if (b.k === "title") return b.text.length > 0;
+          return true;
+        }),
+      ),
     ),
   );
 

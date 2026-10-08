@@ -9,7 +9,12 @@ import { extractHoursBanner, liturgicalFragment } from "../src/ore/html";
 import { hourHeadMeta } from "../src/ore/dayHead";
 import { parseHourHtml, splitOraMediaHtml } from "../src/ore/parseHour";
 import { hoursUrlForHour } from "../src/ore/scraper";
-import { JOIN_CROSS_MARK, hasJoinCross } from "../src/ore/joinCross";
+import {
+  JOIN_CROSS_MARK,
+  hasJoinCross,
+  joinCrossAfterAsterisk,
+  joinCrossAtLineStart,
+} from "../src/ore/joinCross";
 import type { OreBlock, OreHourId, MediaId } from "../src/ore/types";
 
 const START = process.argv[2] || "2026-08-31";
@@ -96,11 +101,16 @@ function auditBlocks(blocks: OreBlock[]) {
         markCount += line.split(JOIN_CROSS_MARK).length - 1;
         const alone = line.trim() === JOIN_CROSS_MARK;
         // Croce all'inizio di riga con testo dopo (come sul CEI)
-        const okMerged = new RegExp(`^${JOIN_CROSS_MARK}\\s+\\S`).test(line.trim());
-        // Oppure croce in coda all'antifona-riga (accettabile in corpo solo se non sola)
+        // Forma corretta: † a inizio riga dopo l’eco (eco tenuta); non dopo * a metà riga
+        const okMerged = joinCrossAtLineStart(line);
         const okTrailing =
           !alone && line.trim().endsWith(JOIN_CROSS_MARK) && line.trim().length > 1;
-        bodyJoins.push({ line, alone, okMerged: okMerged || okTrailing });
+        const badAfterStar = joinCrossAfterAsterisk(line);
+        bodyJoins.push({
+          line,
+          alone,
+          okMerged: (okMerged || okTrailing) && !badAfterStar,
+        });
       }
     }
     if (b.k === "prose" && hasJoinCross(b.text)) {
