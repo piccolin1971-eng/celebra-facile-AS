@@ -1318,10 +1318,23 @@ function normalizeOrElseText(t: string): string {
   return /:$/.test(s) ? s : `${s}:`;
 }
 
+/** Solo la rubrica «Oppure:» tra formulari, non versi che iniziano con «oppure». */
+function isOrElseRubric(t: string): boolean {
+  const s = t.replace(/\s+/g, " ").trim();
+  return /^Oppure\s*:?\s*$/i.test(s);
+}
+
+function hemistichContinuation(line: string): boolean {
+  const t = line.trim();
+  if (/^(V\.|R\.|Ant\.|—|\d+\s*ant\.)/i.test(t)) return false;
+  if (isOrElseRubric(t)) return false;
+  return /^[a-zàèéìòù(«"']/.test(t) || /^oppure\b/i.test(t);
+}
+
 function orElseRawText(b: OreBlock): string | null {
   const from = (t: string) => {
     const s = t.replace(/\s+/g, " ").trim();
-    return /^Oppure\b/i.test(s) ? s : null;
+    return isOrElseRubric(s) ? s : null;
   };
   if (b.k === "omit" || b.k === "prose" || b.k === "sub" || b.k === "title") return from(b.text);
   if (b.k === "rubric") return from(b.lab) || from(b.text) || from(`${b.lab} ${b.text}`.trim());
@@ -1347,7 +1360,7 @@ function explodeOrElse(blocks: OreBlock[]): OreBlock[] {
       hang = [];
     };
     b.lines.forEach((line, i) => {
-      if (/^Oppure\b/i.test(line.trim())) {
+      if (isOrElseRubric(line.trim())) {
         flush();
         out.push({ k: "omit", text: normalizeOrElseText(line) });
         return;
@@ -1362,7 +1375,7 @@ function explodeOrElse(blocks: OreBlock[]): OreBlock[] {
 
 function isPrecesStop(n: OreBlock): boolean {
   if (n.k === "title" || n.k === "marian") return true;
-  if (n.k === "omit" && /^Oppure\b/i.test(n.text)) return true;
+  if (n.k === "omit" && isOrElseRubric(n.text)) return true;
   if (n.k === "prose" && /^Padre nostro\b/i.test(n.text.trim())) return true;
   return false;
 }
@@ -1405,7 +1418,7 @@ function applyTonePhrases(blocks: OreBlock[]): OreBlock[] {
       } else if (grabbed.length) {
         rebuiltAll.push(...(hadOrElse ? petitionsFromBlocks(grabbed) : grabbed));
       }
-      if (j < src.length && src[j].k === "omit" && /^Oppure\b/i.test(src[j].text)) {
+      if (j < src.length && src[j].k === "omit" && isOrElseRubric(src[j].text)) {
         rebuiltAll.push(src[j]);
         hadOrElse = true;
         j += 1;
@@ -1434,6 +1447,47 @@ function mergeRubricPrefixLines(blocks: OreBlock[]): OreBlock[] {
 }
 
 /** Unisce «3 ant.» vuota / strofa-sola + testo successivo senza *† (testo fuori dal div CEI). */
+/** Secondo emistichio a volte in `lo_nota` (es. Ger 14: «oppure ti sei disgustato di Sion?»). */
+function mergeSplitHemistichStanzas(blocks: OreBlock[]): OreBlock[] {
+  const out: OreBlock[] = [];
+  for (let i = 0; i < blocks.length; i++) {
+    let b = blocks[i];
+    const next = blocks[i + 1];
+
+    if (b.k === "omit" && !isOrElseRubric(b.text) && !/si può omettere/i.test(b.text)) {
+      const prev = out[out.length - 1];
+      if (prev?.k === "stanza" && prev.lines.length && /[*†]\s*$/.test(prev.lines[prev.lines.length - 1]!)) {
+        const hangs = [...(prev.hang || [])];
+        while (hangs.length < prev.lines.length) hangs.push(0);
+        prev.lines.push(b.text);
+        hangs.push(1);
+        prev.hang = hangs;
+        continue;
+      }
+      b = { k: "stanza", lines: [b.text], hang: [0] };
+    }
+
+    if (
+      b.k === "stanza" &&
+      next?.k === "stanza" &&
+      b.lines.length === 1 &&
+      /[*†]\s*$/.test(b.lines[0]) &&
+      next.lines.length > 0 &&
+      hemistichContinuation(next.lines[0])
+    ) {
+      out.push({
+        k: "stanza",
+        lines: [...b.lines, ...next.lines],
+        hang: [b.hang?.[0] ?? 0, ...(next.hang || next.lines.map(() => 0))],
+      });
+      i += 1;
+      continue;
+    }
+    out.push(b);
+  }
+  return out;
+}
+
 function attachOrphanAntiphonText(blocks: OreBlock[]): OreBlock[] {
   const out: OreBlock[] = [];
   for (let i = 0; i < blocks.length; i++) {
@@ -2070,7 +2124,14 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
           continue;
         }
       }
-      if (t) blocks.push({ k: "omit", text: t });
+      if (isOrElseRubric(t) || /si può omettere/i.test(t)) {
+        if (t) blocks.push({ k: "omit", text: isOrElseRubric(t) ? normalizeOrElseText(t) : t });
+      } else if (t) {
+        for (const p of blocksFromVersetto(node.inner)) {
+          if (p.k === "prose" && isChromeText(p.text)) continue;
+          blocks.push(p);
+        }
+      }
       i += 1;
       continue;
     }
@@ -2124,8 +2185,8 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
         i = from + skip;
         continue;
       }
-      if (/^Oppure\b/i.test(t)) {
-        blocks.push({ k: "omit", text: t.endsWith(":") ? t : `${t}:` });
+      if (isOrElseRubric(t)) {
+        blocks.push({ k: "omit", text: normalizeOrElseText(t) });
         i += 1;
         continue;
       }
@@ -2289,8 +2350,8 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
 
     if (hasClass(node.cls, "lo_rosso")) {
       const t = stripTags(node.inner).replace(/\s+/g, " ").trim();
-      if (/^Oppure\b/i.test(t)) {
-        blocks.push({ k: "omit", text: t.endsWith(":") ? t : `${t}:` });
+      if (isOrElseRubric(t)) {
+        blocks.push({ k: "omit", text: normalizeOrElseText(t) });
       } else if (
         /^(ORAZIONE|INVOCAZIONI|INTERCESSIONI|LETTURA(?:\s+BREVE)?|RESPONSORIO(?:\s+BREVE)?|TE DEUM|PREGHIERA)\b/i.test(
           t,
@@ -2369,6 +2430,7 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
         mergeRubricPrefixLines(
           attachJoinCrossBeforePsalmHead(
             attachOrphanAntiphonText(
+              mergeSplitHemistichStanzas(
               scrubLoneParenLines(
                 blocks.filter((b) => {
                   if (b.k === "prose") {
@@ -2381,6 +2443,7 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
                   if (b.k === "stanza") return b.lines.length > 0;
                   return true;
                 }),
+              ),
               ),
             ),
           ),
