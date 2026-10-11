@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { parseBannerCelebration } from "../homeBannerUtils";
 import { localDateStr } from "../dateUtils";
 import { getSaintBioPreview, saintBioButtonLabel } from "../saintBioPreview";
+import { getOptionalSaintBioPreview } from "../optionalSaintBio";
 import { SaintBioModal } from "./SaintBioModal";
 
 type ThemeColors = {
@@ -34,6 +35,8 @@ type Props = {
   titleTestID?: string;
   /** false: solo la barra del colore liturgico, senza riquadro (Home). */
   framed?: boolean;
+  /** Memoria facoltativa scelta in impostazioni (scheda bio dedicata). */
+  optionalSaintId?: string;
 };
 
 function colorHex(colors: ThemeColors, liturgicalColor: string): string {
@@ -111,6 +114,7 @@ export function LiturgyDayBanner({
   rankTestID = "celebration-rank",
   titleTestID = "celebration-title",
   framed = true,
+  optionalSaintId,
 }: Props) {
   const styles = makeStyles(colors, fontSize, framed);
   const accent = colors.primary ?? "#0056B3";
@@ -119,10 +123,14 @@ export function LiturgyDayBanner({
   const celebration = parseBannerCelebration(ceiTitle, seasonName, celebrationDate);
   const showCelebrationTitle =
     celebration.displayTitle.trim().toLowerCase() !== celebration.seasonLine.trim().toLowerCase();
-  const saintBio = getSaintBioPreview(celebrationDate, {
+  const bannerCtx = {
     rankLabel: celebration.rankLabel,
     displayTitle: celebration.displayTitle,
-  });
+  };
+  const saintBio =
+    (optionalSaintId
+      ? getOptionalSaintBioPreview(optionalSaintId, celebration.displayTitle)
+      : null) ?? getSaintBioPreview(celebrationDate, bannerCtx);
   const celebrationDateKey = localDateStr(celebrationDate);
   const [bioOpen, setBioOpen] = useState(false);
   const webClickable = Platform.OS === "web" ? ({ cursor: "pointer" } as const) : undefined;

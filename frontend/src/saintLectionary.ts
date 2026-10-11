@@ -224,6 +224,45 @@ export function shouldOfferSaintProperToggle(liturgy: Liturgy | null | undefined
   return false;
 }
 
+/** Letture proprie dal lezionario per memoria facoltativa scelta (titolo esplicito). */
+export function mergeOptionalSaintLectionaryIntoLiturgy(
+  liturgy: Liturgy,
+  saintTitle: string,
+): Liturgy | null {
+  if (!liturgy.date || !saintTitle.trim()) return null;
+  const d = parseLocalDate(liturgy.date);
+  const entry = findEntryForSaint(mmddFromDate(d), saintTitle);
+  if (!entry || !hasInlineProperReadings(entry)) return null;
+
+  const kept = (liturgy.readings || []).filter((r) => !READING_TYPES_TO_REPLACE.has(r.type));
+  const merged = [...kept, ...entry.readings];
+  const order = [
+    "antifona_ingresso",
+    "colletta",
+    "prima_lettura",
+    "salmo",
+    "seconda_lettura",
+    "sequenza",
+    "acclamazione",
+    "vangelo",
+    "sulle_offerte",
+    "antifona_comunione",
+    "dopo_comunione",
+  ];
+  merged.sort((a, b) => {
+    const ia = order.indexOf(a.type);
+    const ib = order.indexOf(b.type);
+    return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+  });
+
+  return {
+    ...liturgy,
+    title: entry.saintTitle || saintTitle,
+    readings: merged,
+    error: null,
+  };
+}
+
 /** Replace reading blocks with lezionario propri when toggle is ON; keep antifone/colletta from scraper. */
 export function mergeSaintReadingsIntoLiturgy(
   liturgy: Liturgy,

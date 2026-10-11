@@ -42,6 +42,18 @@ export function favoriteFromTarget(
       addedAt,
     };
   }
+  if (target.kind === "optionalSaint") {
+    return {
+      id: sessionTargetKey(target),
+      kind: "dated",
+      dateISO: target.dateISO,
+      celebrationMode: "calendar_day",
+      title: meta.title,
+      subtitle: meta.subtitle ?? "Memoria facoltativa",
+      liturgicalColor: meta.liturgicalColor,
+      addedAt,
+    };
+  }
   return {
     id: sessionTargetKey(target),
     kind: "dated",

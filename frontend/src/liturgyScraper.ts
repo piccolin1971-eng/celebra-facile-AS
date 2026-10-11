@@ -326,6 +326,53 @@ function resolveLiturgyFromCeiHtmlInternal(
   return { title, liturgical_color, readings };
 }
 
+/** Blocco CEI della memoria facoltativa / santo locale che coincide con il titolo scelto. */
+export function resolveLiturgyFromCeiHtmlForOptionalSaint(
+  html: string,
+  targetDate: Date,
+  saintTitle: string,
+): { title: string; liturgical_color: string; readings: Reading[] } {
+  const chunks = extractH3Chunks(html);
+  const colorBlocks = extractCelebrationColorBlocksFromHtml(html);
+  const want = saintTitle.trim();
+  if (!want || chunks.length === 0) {
+    return { title: want, liturgical_color: "", readings: [] };
+  }
+
+  const pickChunk =
+    chunks.find((c) => celebrationTitlesMatch(c.title, want)) ??
+    chunks.find(
+      (c) =>
+        /\bmemoria\s+facoltativa\b/i.test(c.title) && celebrationTitlesMatch(c.title, want),
+    );
+
+  if (!pickChunk) {
+    const pageTitle = extractOgTitle(html);
+    if (
+      pageTitle &&
+      /\bmemoria\s+facoltativa\b/i.test(pageTitle) &&
+      celebrationTitlesMatch(pageTitle, want)
+    ) {
+      const fromPage = resolveLiturgyFromCeiHtmlInternal(html, targetDate, "calendar_day");
+      if (fromPage && celebrationTitlesMatch(fromPage.title, want)) {
+        return fromPage;
+      }
+    }
+    return { title: want, liturgical_color: "", readings: [] };
+  }
+
+  const colorBlock =
+    colorBlocks.find((b) => celebrationTitlesMatch(b.title, pickChunk.title)) ?? null;
+  const readings = readingsFromHtmlChunk(pickChunk.chunk);
+  const title = colorBlock?.title || pickChunk.title;
+  const liturgical_color =
+    colorBlock?.color ||
+    resolveCeiPrimaryCelebration(html, extractOgTitle(html)).color ||
+    "";
+
+  return { title, liturgical_color, readings };
+}
+
 /** Risolve titolo, colore e letture da HTML CEI (testabile / offline). */
 export function resolveLiturgyFromCeiHtml(
   html: string,

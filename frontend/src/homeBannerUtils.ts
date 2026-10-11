@@ -415,7 +415,11 @@ export type HomeStripDayMeta = {
 };
 
 /** Bordo liturgico e sottotitolo per i tasti giorno nella striscia Home. */
-export function homeStripDayMeta(date: Date, ceiTitle?: string): HomeStripDayMeta {
+export function homeStripDayMeta(
+  date: Date,
+  ceiTitle?: string,
+  optionalSaintOverlay?: { liturgicalColor: string; subtitle: string } | null,
+): HomeStripDayMeta {
   const season = getLiturgicalSeason(date);
   const saints = getSaintsForDate(date);
   const cei = (ceiTitle || "").trim();
@@ -431,7 +435,17 @@ export function homeStripDayMeta(date: Date, ceiTitle?: string): HomeStripDayMet
     if (!hasObligatory) rawTitle = "";
   }
 
-  const liturgicalColor = homeBannerLiturgicalColor(date, "calendar_day", null, rawTitle);
+  const liturgicalColor =
+    optionalSaintOverlay?.liturgicalColor?.trim() ||
+    homeBannerLiturgicalColor(date, "calendar_day", null, rawTitle);
+
+  if (optionalSaintOverlay?.subtitle?.trim()) {
+    const subtitle =
+      abbreviateStripCelebration(optionalSaintOverlay.subtitle, "Memoria") ||
+      optionalSaintOverlay.subtitle.trim();
+    return { liturgicalColor, subtitle };
+  }
+
   const parsed = parseBannerCelebration(rawTitle || undefined, season.season, date);
 
   const isSunday = date.getDay() === 0;

@@ -111,7 +111,7 @@ import { HomeCircleButton } from "../src/components/HomeCircleButton";
 import { FontSizeButtons } from "../src/components/FontSizeButtons";
 import { PinchFontZoom } from "../src/components/PinchFontZoom";
 import { triggerAppHaptic } from "../src/appHaptics";
-import { loadSession, saveSession, loadVotiveSession, saveVotiveSession, loadSessionForTarget, saveSessionForTarget, type MassSession, parseCelebrationMode, messaRouteDateParam, messaRouteModeParam, messaRouteVotiveParam, routeParamStr, type CelebrationMode, type SessionTarget } from "../src/massSession";
+import { loadSession, saveSession, loadVotiveSession, saveVotiveSession, loadOptionalSaintSession, loadSessionForTarget, saveSessionForTarget, type MassSession, parseCelebrationMode, messaRouteDateParam, messaRouteModeParam, messaRouteVotiveParam, messaRouteOptionalSaintParam, routeParamStr, type CelebrationMode, type SessionTarget } from "../src/massSession";
 import { coerceCelebrationMode } from "../src/celebrationModeLabels";
 import { getVigilEveContextForISO } from "../src/vigilCatalog";
 import { reconcileLiturgyColors } from "../src/localLiturgy";
@@ -180,6 +180,7 @@ function CelebraScreenInner() {
     date?: string;
     mode?: string;
     votive?: string;
+    optionalSaint?: string;
     section?: string;
     from?: string;
     index?: string;
@@ -202,6 +203,7 @@ function CelebraScreenInner() {
   const [sessionDate, setSessionDate] = useState<string | null>(null);
   const [celebrationMode, setCelebrationMode] = useState<CelebrationMode>("calendar_day");
   const [activeVotiveId, setActiveVotiveId] = useState<string | null>(null);
+  const [activeOptionalSaintId, setActiveOptionalSaintId] = useState<string | null>(null);
   const [hasSession, setHasSession] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -214,6 +216,7 @@ function CelebraScreenInner() {
   const routeDateParam = messaRouteDateParam(params);
   const routeModeParam = messaRouteModeParam(params);
   const routeVotiveParam = messaRouteVotiveParam(params);
+  const routeOptionalSaintParam = messaRouteOptionalSaintParam(params);
   const routeSectionId = parseCelebraSectionId(params.section);
   /** Flusso Celebra subito: indice overlay, a fine sezione si torna all'indice. */
   const fromIndice = routeParamStr(params.from) === "indice";
@@ -242,6 +245,16 @@ function CelebraScreenInner() {
         setHasSession(true);
         return;
       }
+      if (routeOptionalSaintParam) {
+        const dateKey = routeDateParam || todayStr();
+        const saved = await loadOptionalSaintSession(dateKey, routeOptionalSaintParam);
+        if (cancelled || !saved) return;
+        setActiveOptionalSaintId(routeOptionalSaintParam);
+        setSessionDate(dateKey);
+        setSession((prev) => prev ?? saved);
+        setHasSession(true);
+        return;
+      }
       const dateKey = routeDateParam || todayStr();
       const mode = coerceCelebrationMode(
         parseCelebrationMode(routeModeParam),
@@ -257,13 +270,16 @@ function CelebraScreenInner() {
     return () => {
       cancelled = true;
     };
-  }, [fromIndice, routeDateParam, routeModeParam, routeVotiveParam]);
+  }, [fromIndice, routeDateParam, routeModeParam, routeVotiveParam, routeOptionalSaintParam]);
 
   const currentSessionTarget = useMemo((): SessionTarget | null => {
     if (activeVotiveId) return { kind: "votive", votiveId: activeVotiveId };
+    if (activeOptionalSaintId && sessionDate) {
+      return { kind: "optionalSaint", dateISO: sessionDate, saintId: activeOptionalSaintId };
+    }
     if (sessionDate) return { kind: "calendar", dateISO: sessionDate, mode: celebrationMode };
     return null;
-  }, [activeVotiveId, sessionDate, celebrationMode]);
+  }, [activeVotiveId, activeOptionalSaintId, sessionDate, celebrationMode]);
 
   const applyLiturgyForSession = useCallback(
     (base: Liturgy | null, saved: MassSession | null, mode: CelebrationMode) => {
@@ -323,6 +339,30 @@ function CelebraScreenInner() {
       applyLiturgyForSession(reconciled, saved, "calendar_day");
       return;
     }
+    if (currentSessionTarget.kind === "optionalSaint") {
+      const lit = await api.liturgyForOptionalSaint(
+        currentSessionTarget.dateISO,
+        currentSessionTarget.saintId,
+      );
+      const reconciled = reconcileLiturgyColors({
+        ...lit,
+        celebrationMode: "calendar_day",
+      });
+      baseLiturgyRef.current = reconciled;
+      const saved = await loadOptionalSaintSession(
+        currentSessionTarget.dateISO,
+        currentSessionTarget.saintId,
+      );
+      if (saved) {
+        setSession(saved);
+        setHasSession(true);
+      } else {
+        setSession(null);
+        setHasSession(false);
+      }
+      applyLiturgyForSession(reconciled, saved, "calendar_day");
+      return;
+    }
     const lit = await api.liturgyForDate(currentSessionTarget.dateISO, currentSessionTarget.mode);
     const reconciled = reconcileLiturgyColors({
       ...lit,
@@ -366,7 +406,8 @@ function CelebraScreenInner() {
         applyLiturgyForSession(
           baseLiturgyRef.current,
           next,
-          currentSessionTarget.kind === "votive"
+          currentSessionTarget.kind === "votive" ||
+          currentSessionTarget.kind === "optionalSaint"
             ? "calendar_day"
             : currentSessionTarget.mode,
         );
@@ -463,7 +504,52 @@ function CelebraScreenInner() {
           return;
         }
 
+        if (routeOptionalSaintParam) {
+          const dateParam = routeDateParam;
+          const dateKey = dateParam || todayStr();
+          const [lit, parts, pr, pe, acc, bless] = await Promise.all([
+            api.liturgyForOptionalSaint(dateKey, routeOptionalSaintParam),
+            api.fixedParts(),
+            api.prefaces(),
+            api.eucharisticPrayers(),
+            api.mysteryAcclamations(),
+            api.solemnBlessings(),
+          ]);
+          if (cancelled) return;
+          setActiveVotiveId(null);
+          setActiveOptionalSaintId(routeOptionalSaintParam);
+          const reconciled = reconcileLiturgyColors({
+            ...lit,
+            celebrationMode: "calendar_day",
+          });
+          setSessionDate(lit?.date || dateKey);
+          setCelebrationMode("calendar_day");
+          const saved = await loadOptionalSaintSession(dateKey, routeOptionalSaintParam);
+          if (cancelled) return;
+          baseLiturgyRef.current = reconciled;
+          applyLiturgyForSession(reconciled, saved, "calendar_day");
+          setFixedParts(parts.parts);
+          setPrefaces(pr.prefaces);
+          setPrayers(pe.prayers);
+          setAcclamations(acc.acclamations);
+          setSolemnBlessings(bless.blessings);
+          setPasquaDismissal((bless as any).pasqua_dismissal);
+          if (Array.isArray((bless as any).prayersOverPeople)) {
+            setPrayersOverPeople((bless as any).prayersOverPeople);
+          }
+          const seasonKey = getLiturgicalSeasonKey(reconciled?.season?.season || "");
+          setCurrentSeasonKey(seasonKey);
+          if (saved) {
+            setSession(saved);
+            setHasSession(true);
+          } else {
+            setHasSession(false);
+          }
+          return;
+        }
+
         setActiveVotiveId(null);
+        setActiveOptionalSaintId(null);
         const dateParam = routeDateParam;
         const provisionalKey = dateParam || todayStr();
         const mode = coerceCelebrationMode(
@@ -514,7 +600,7 @@ function CelebraScreenInner() {
     return () => {
       cancelled = true;
     };
-  }, [routeDateParam, routeModeParam, routeVotiveParam, applyLiturgyForSession]);
+  }, [routeDateParam, routeModeParam, routeVotiveParam, routeOptionalSaintParam, applyLiturgyForSession]);
 
   useFocusEffect(
     useCallback(() => {

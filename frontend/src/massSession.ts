@@ -76,6 +76,12 @@ export function messaRouteVotiveParam(params: { votive?: string | string[] }): s
   return routeParamStr(params.votive) ?? routeSearchParam("votive");
 }
 
+export function messaRouteOptionalSaintParam(params: {
+  optionalSaint?: string | string[];
+}): string | undefined {
+  return routeParamStr(params.optionalSaint) ?? routeSearchParam("optionalSaint");
+}
+
 
 
 export type MassSession = {
@@ -130,10 +136,12 @@ export type MassSession = {
 
   useSaintProperReadings?: boolean;
 
-  /** calendar = messa a data; votive = formulario votivo. */
-  liturgyKind?: "calendar" | "votive";
+  /** calendar = messa a data; votive = formulario votivo; optional_saint = memoria scelta. */
+  liturgyKind?: "calendar" | "votive" | "optional_saint";
 
   votiveId?: string;
+
+  optionalSaintId?: string;
 
   /**
    * Origine della sessione in Home:
@@ -147,10 +155,12 @@ export type MassSession = {
 
 export type SessionTarget =
   | { kind: "calendar"; dateISO: string; mode: CelebrationMode }
-  | { kind: "votive"; votiveId: string };
+  | { kind: "votive"; votiveId: string }
+  | { kind: "optionalSaint"; dateISO: string; saintId: string };
 
 export function sessionTargetKey(target: SessionTarget): string {
   if (target.kind === "votive") return `v:${target.votiveId}`;
+  if (target.kind === "optionalSaint") return `o:${target.dateISO}:${target.saintId}`;
   return `d:${target.dateISO}:${target.mode}`;
 }
 
@@ -169,6 +179,9 @@ const sessionKey = (dateISO: string, mode: CelebrationMode) =>
   `${KEY_PREFIX}${dateISO}_${mode}`;
 
 const votiveSessionKey = (votiveId: string) => `${KEY_PREFIX}votive_${votiveId}`;
+
+const optionalSaintSessionKey = (dateISO: string, saintId: string) =>
+  `${KEY_PREFIX}opt_${dateISO}_${saintId}`;
 
 
 
@@ -283,6 +296,9 @@ export async function loadVotiveSession(votiveId: string): Promise<MassSession |
 
 export async function loadSessionForTarget(target: SessionTarget): Promise<MassSession | null> {
   if (target.kind === "votive") return loadVotiveSession(target.votiveId);
+  if (target.kind === "optionalSaint") {
+    return loadOptionalSaintSession(target.dateISO, target.saintId);
+  }
   return loadSession(target.dateISO, target.mode);
 }
 
@@ -309,7 +325,50 @@ export async function saveSessionForTarget(
     await saveVotiveSession(target.votiveId, session);
     return;
   }
+  if (target.kind === "optionalSaint") {
+    await saveOptionalSaintSession(target.dateISO, target.saintId, session);
+    return;
+  }
   await saveSession(target.dateISO, target.mode, session);
+}
+
+export async function loadOptionalSaintSession(
+  dateISO: string,
+  saintId: string,
+): Promise<MassSession | null> {
+  try {
+    const raw = await AsyncStorage.getItem(optionalSaintSessionKey(dateISO, saintId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as MassSession;
+    return {
+      ...parsed,
+      liturgyKind: "optional_saint",
+      optionalSaintId: saintId,
+      celebrationMode: "calendar_day",
+    };
+  } catch (e) {
+    if (__DEV__) console.log("loadOptionalSaintSession err:", e);
+    return null;
+  }
+}
+
+export async function saveOptionalSaintSession(
+  dateISO: string,
+  saintId: string,
+  session: MassSession,
+): Promise<void> {
+  try {
+    const payload: MassSession = {
+      ...session,
+      liturgyKind: "optional_saint",
+      optionalSaintId: saintId,
+      celebrationMode: "calendar_day",
+      preparedAt: session.preparedAt ?? Date.now(),
+    };
+    await AsyncStorage.setItem(optionalSaintSessionKey(dateISO, saintId), JSON.stringify(payload));
+  } catch (e) {
+    if (__DEV__) console.log("saveOptionalSaintSession err:", e);
+  }
 }
 
 export async function clearVotiveSession(votiveId: string): Promise<void> {

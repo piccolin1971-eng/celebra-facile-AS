@@ -1,0 +1,674 @@
+{
+  "carlo-acutis": {
+    "liturgical_color": "bianco",
+    "sourceNote": "Memoria facoltativa: testi da edizione diocesana (Chiesa di Milano), quando il CEI nazionale non pubblica il blocco nella pagina del giorno.",
+    "readings": [
+      {
+        "type": "antifona_ingresso",
+        "title": "Antifona d'ingresso",
+        "reference": "",
+        "text": "Il giusto non vacillerà perché il Signore lo tiene per mano. Egli ha sempre compassione, per questo la sua stirpe è benedetta."
+      },
+      {
+        "type": "colletta",
+        "title": "Colletta",
+        "reference": "",
+        "text": "O Dio, che hai reso il beato Carlo Acutis testimone davanti ai giovani per il suo amore all’Eucaristia e la sua sensibilità verso i poveri, concedi anche a noi, per sua intercessione, di vivere sempre uniti a te e di riconoscere nei fratelli che incontriamo sul nostro cammino la presenza del Figlio tuo Gesù Cristo. Per il nostro Signore Gesù Cristo, tuo Figlio, che è Dio, e vive e regna con te, nell’unità dello Spirito Santo, per tutti i secoli dei secoli."
+      },
+      {
+        "type": "prima_lettura",
+        "title": "Prima Lettura",
+        "reference": "Dalla lettera di san Paolo apostolo a Tito (1, 1-9)",
+        "text": "Paolo, servo di Dio e apostolo di Gesù Cristo per portare alla fede quelli che Dio ha scelto e per far conoscere la verità, che è conforme a un’autentica religiosità, nella speranza della vita eterna – promessa fin dai secoli eterni da Dio, il quale non mente, e manifestata al tempo stabilito nella sua parola mediante la predicazione, a me affidata per ordine di Dio, nostro salvatore –, a Tito, mio vero figlio nella medesima fede: grazia e pace da Dio Padre e da Cristo Gesù, nostro salvatore.\n\nPer questo ti ho lasciato a Creta: perché tu metta ordine in quello che rimane da fare e stabilisca alcuni presbìteri in ogni città, secondo le istruzioni che ti ho dato. Ognuno di loro sia irreprensibile, marito di una sola donna e abbia figli credenti, non accusabili di vita dissoluta o indisciplinati. Il vescovo infatti, come amministratore di Dio, deve essere irreprensibile: non arrogante, non collerico, non dedito al vino, non violento, non avido di guadagni disonesti, ma ospitale, amante del bene, assennato, giusto, santo, padrone di sé, fedele alla Parola, degna di fede, che gli è stata insegnata, perché sia in grado di esortare con la sua sana dottrina e di confutare i suoi oppositori.\n\nParola di Dio."
+      },
+      {
+        "type": "salmo",
+        "title": "Salmo Responsoriale",
+        "reference": "Dal Salmo 23 (24)",
+        "text": "I puri di cuore abiteranno la casa del Signore.\n\nDel Signore è la terra e quanto contiene: il mondo, con i suoi abitanti. È lui che l’ha fondato sui mari e sui fiumi l’ha stabilito.\n\nChi potrà salire il monte del Signore? Chi potrà stare nel suo luogo santo? Chi ha mani innocenti e cuore puro, chi non si rivolge agli idoli, chi non giura con inganno.\n\nEgli otterrà benedizione dal Signore, giustizia da Dio sua salvezza. Ecco la generazione che lo cerca, che cerca il tuo volto, Dio di Giacobbe."
+      },
+      {
+        "type": "acclamazione",
+        "title": "Acclamazione al Vangelo",
+        "reference": "Gv 15, 5",
+        "text": "Io sono la vite, voi i tralci; chi rimane in me e io in lui, porta molto frutto, dice il Signore."
+      },
+      {
+        "type": "vangelo",
+        "title": "Vangelo",
+        "reference": "Dal Vangelo secondo Luca (22, 35-37)",
+        "text": "In quel tempo, il Signore Gesù disse: «Quando vi ho mandato senza borsa, né sacca, né sandali, vi è forse mancato qualcosa?». Risposero: «Nulla». Ed egli soggiunse: «Ma ora, chi ha una borsa la prenda, e così chi ha una sacca; chi non ha spada, venda il mantello e ne compri una. Perché io vi dico: deve compiersi in me questa parola della Scrittura: “E fu annoverato tra gli empi”. Infatti tutto quello che mi riguarda volge al suo compimento».\n\nParola del Signore."
+      },
+      {
+        "type": "sulle_offerte",
+        "title": "Preghiera sulle offerte",
+        "reference": "",
+        "text": "Accetta e santifica, o Padre, queste offerte dei tuoi figli devoti; fa’ che, onorando san Carlo Acutis e celebrando la tua gloria, si sentano sorretti dalle sue preghiere nel cammino tribolato della vita e giungano alla pace promessa. Per Cristo nostro Signore."
+      },
+      {
+        "type": "dopo_comunione",
+        "title": "Preghiera dopo la Comunione",
+        "reference": "",
+        "text": "Dio onnipotente ed eterno, che, elevando i santi alla gloria del cielo, ci offri rinnovate prove del tuo amore per noi, fa’ che la loro intercessione e il loro esempio ci spingano a imitare fedelmente il tuo unigenito Figlio. Per Cristo nostro Signore."
+      }
+    ]
+  },
+  "nome-gesu": {
+    "liturgical_color": "bianco",
+    "sourceNote": "Orazioni dal Messale Romano (Proprio dei Santi); letture dal lezionario in app.",
+    "readings": [
+      {
+        "type": "antifona_ingresso",
+        "title": "Antifona d'ingresso",
+        "reference": "Fil 2, 10-11",
+        "text": "Nel nome di Gesù ogni ginocchio si pieghi nei cieli, sulla terra e sotto terra, e ogni lingua proclami: «Gesù Cristo è Signore!», a gloria di Dio Padre."
+      },
+      {
+        "type": "colletta",
+        "title": "Colletta",
+        "reference": "",
+        "text": "O Dio, nell’incarnazione del tuo Verbo hai posto il fondamento all’opera della salvezza del genere umano: concedi la tua misericordia al popolo che la implora, perché tutti riconoscano che non c’è altro nome da invocare per essere salvati, se non quello del tuo unico Figlio. Egli è Dio, e vive e regna con te, nell’unità dello Spirito Santo, per tutti i secoli dei secoli."
+      },
+      {
+        "type": "sulle_offerte",
+        "title": "Preghiera sulle offerte",
+        "reference": "",
+        "text": "Ti presentiamo, o Padre, i doni che abbiamo ricevuto dalla tua bontà e ti preghiamo: tu, che a Cristo fatto obbediente fino alla morte hai dato il nome che è fonte di salvezza, concedi a noi di essere sostenuti dalla sua potenza redentrice. Egli vive e regna nei secoli dei secoli."
+      },
+      {
+        "type": "dopo_comunione",
+        "title": "Preghiera dopo la Comunione",
+        "reference": "",
+        "text": "O Signore, la partecipazione al sacrificio, a te offerto nella memoria del nome di Gesù, infonda in noi l’abbondanza della tua grazia, perché possiamo rallegrarci che anche i nostri nomi sono scritti nei cieli. Per Cristo nostro Signore."
+      }
+    ]
+  },
+  "san-patrizio": {
+    "liturgical_color": "bianco",
+    "sourceNote": "Orazioni dal Messale Romano; letture dal lezionario in app.",
+    "readings": [
+      {
+        "type": "colletta",
+        "title": "Colletta",
+        "reference": "",
+        "text": "O Dio, che hai mandato il santo vescovo Patrizio a far conoscere il tuo nome ai popoli dell’Irlanda, per i suoi meriti e la sua intercessione concedi a quanti si gloriano del nome cristiano di annunciare agli uomini le meraviglie del tuo amore. Per il nostro Signore Gesù Cristo, tuo Figlio, che è Dio, e vive e regna con te, nell’unità dello Spirito Santo, per tutti i secoli dei secoli."
+      }
+    ]
+  },
+  "francesco-paola": {
+    "liturgical_color": "bianco",
+    "sourceNote": "Orazioni dal Messale Romano; letture dal lezionario in app.",
+    "readings": [
+      {
+        "type": "colletta",
+        "title": "Colletta",
+        "reference": "",
+        "text": "O Dio, grandezza degli umili, che hai innalzato alla gloria dei santi il tuo servo Francesco da Paola, minimo tra i fratelli, per i suoi meriti e il suo esempio concedi anche a noi di ottenere l’eredità promessa agli umili di cuore. Per il nostro Signore Gesù Cristo, tuo Figlio, che è Dio, e vive e regna con te, nell’unità dello Spirito Santo, per tutti i secoli dei secoli."
+      }
+    ]
+  },
+  "giuseppe-lavoratore": {
+    "liturgical_color": "bianco",
+    "sourceNote": "Orazioni dal Messale Romano; letture dal lezionario in app.",
+    "readings": [
+      {
+        "type": "colletta",
+        "title": "Colletta",
+        "reference": "",
+        "text": "O Dio, creatore del mondo, che hai ordinato la legge del lavoro per l’uomo, concedi propizamente che, imitando san Giuseppe e sotto la sua protezione, compiamo le opere che ci affidi e otteniamo i premi promessi. Per il nostro Signore Gesù Cristo, tuo Figlio, che è Dio, e vive e regna con te, nell’unità dello Spirito Santo, per tutti i secoli dei secoli."
+      }
+    ]
+  },
+  "san-nicola": {
+    "liturgical_color": "bianco",
+    "sourceNote": "Orazioni dal Messale Romano; letture dal lezionario in app.",
+    "readings": [
+      {
+        "type": "colletta",
+        "title": "Colletta",
+        "reference": "",
+        "text": "O Dio, che hai glorificato il beato vescovo Nicola con innumerevoli miracoli, concedi che, per i suoi meriti e preghiere, siamo liberati dalle insidie del tempo e dell’eternità. Per il nostro Signore Gesù Cristo, tuo Figlio, che è Dio, e vive e regna con te, nell’unità dello Spirito Santo, per tutti i secoli dei secoli."
+      }
+    ]
+  },
+  "gabriele-addolorata": {
+    "liturgical_color": "bianco",
+    "sourceNote": "Formulario del Santuario di San Gabriele (testi propri approvati).",
+    "readings": [
+      {
+        "type": "antifona_ingresso",
+        "title": "Antifona d'ingresso",
+        "reference": "1 Re 14, 8",
+        "text": "Il mio servo mi ha seguito con tutto il cuore facendo solo quanto è giusto davanti ai miei occhi."
+      },
+      {
+        "type": "colletta",
+        "title": "Colletta",
+        "reference": "",
+        "text": "O Dio, che con mirabile disegno di amore hai chiamato san Gabriele dell’Addolorata a vivere il mistero della Croce insieme con Maria, la madre di Gesù, guida il nostro spirito verso il tuo Figlio crocifisso perché partecipando alla sua passione e morte conseguiamo la gloria della risurrezione. Per il nostro Signore Gesù Cristo, tuo Figlio, che è Dio, e vive e regna con te, nell’unità dello Spirito Santo, per tutti i secoli dei secoli."
+      },
+      {
+        "type": "prima_lettura",
+        "title": "Prima Lettura",
+        "reference": "Dal libro della Genesi (12, 1-2.4)",
+        "text": "In quei giorni, il Signore disse ad Abràm: «Vàttene dal tuo paese, dalla tua patria e dalla casa di tuo padre, verso il paese che io ti indicherò. Farò di te un grande popolo e ti benedirò; renderò grande il tuo nome e diventerai una benedizione». Allora Abràm partì, come gli aveva ordinato il Signore.\n\nParola di Dio."
+      },
+      {
+        "type": "salmo",
+        "title": "Salmo Responsoriale",
+        "reference": "Dal Salmo 118 (119)",
+        "text": "La tua parola, Signore, è fonte di gioia.\n\nCome potrà un giovane tenere pura la sua via? Custodendo le tue parole. Con tutto il cuore ti cerco: non farmi deviare dai tuoi precetti."
+      },
+      {
+        "type": "acclamazione",
+        "title": "Acclamazione al Vangelo",
+        "reference": "Lc 11, 28",
+        "text": "Beati quelli che custodiscono la parola di Dio in un cuore buono e sincero e portano frutto con perseveranza."
+      },
+      {
+        "type": "vangelo",
+        "title": "Vangelo",
+        "reference": "Dal Vangelo secondo Marco (10, 17-21)",
+        "text": "In quel tempo, mentre Gesù usciva per mettersi in viaggio, un tale gli corse incontro e, gettandosi in ginocchio davanti a lui, gli domandò: «Maestro buono, che cosa devo fare per avere la vita eterna?». Gesù gli disse: «Perché mi chiami buono? Nessuno è buono se non Dio solo. Tu conosci i comandamenti…». Egli allora disse: «Maestro, tutte queste cose le ho osservate fin dalla mia giovinezza». Allora Gesù fissatolo, lo amò e gli disse: «Una cosa sola ti manca: va’, vendi quello che hai e dàllo ai poveri, e avrai un tesoro in cielo; poi vieni e seguimi».\n\nParola del Signore."
+      },
+      {
+        "type": "sulle_offerte",
+        "title": "Preghiera sulle offerte",
+        "reference": "",
+        "text": "Accetta, Signore, i doni che ti presentiamo nella memoria di san Gabriele dell’Addolorata; giovi alla nostra salvezza e ci ottenga i doni del tuo Spirito Santo. Per Cristo nostro Signore."
+      },
+      {
+        "type": "dopo_comunione",
+        "title": "Preghiera dopo la Comunione",
+        "reference": "",
+        "text": "O Dio, fonte di vita, il sacramento che abbiamo ricevuto aumenti in noi il tuo spirito di verità e di amore, e nell’imitazione di san Gabriele dell’Addolorata ci ottenga di partecipare con lui al convito della gloria eterna. Per Cristo nostro Signore."
+      }
+    ]
+  },
+  "faustina": {
+    "liturgical_color": "bianco",
+    "sourceNote": "Testi propri approvati dalla Congregazione per il Culto Divino (memoria 5 ottobre).",
+    "readings": [
+      {
+        "type": "colletta",
+        "title": "Colletta",
+        "reference": "",
+        "text": "O Dio onnipotente ed eterno, che hai scelto la santa Faustina Kowalska per proclamare al mondo le immense ricchezze della tua infinita misericordia, concedi a noi, per sua intercessione, di confidare come lei pienamente nella tua bontà e di compiere con cuore generoso le opere di carità cristiana. Per il nostro Signore Gesù Cristo, tuo Figlio, che è Dio, e vive e regna con te, nell’unità dello Spirito Santo, per tutti i secoli dei secoli."
+      },
+      {
+        "type": "prima_lettura",
+        "title": "Prima Lettura",
+        "reference": "Dalla lettera di san Paolo apostolo ai Romani (8, 28-30)",
+        "text": "Fratelli, noi sappiamo che tutto concorre al bene di coloro che amano Dio, che sono stati chiamati secondo il suo disegno. Poiché quelli che egli ha preconosciuti li ha anche predestinati a essere conformi all’immagine del Figlio suo, perché egli sia il primogenito tra molti fratelli. Quelli poi che ha predestinati, li ha anche chiamati; quelli che ha chiamati, li ha anche giustificati; quelli che ha giustificati, li ha anche glorificati.\n\nParola di Dio."
+      },
+      {
+        "type": "salmo",
+        "title": "Salmo Responsoriale",
+        "reference": "Dal Salmo 102 (103)",
+        "text": "Il Signore è pietà e amore.\n\nBenedici il Signore, anima mia; quanto è in me benedica il suo santo nome. Benedici il Signore, anima mia, non dimenticare tutti i suoi benefici."
+      },
+      {
+        "type": "acclamazione",
+        "title": "Acclamazione al Vangelo",
+        "reference": "Gv 15, 5",
+        "text": "Io sono la vite, voi i tralci; chi rimane in me e io in lui, porta molto frutto, dice il Signore."
+      },
+      {
+        "type": "vangelo",
+        "title": "Vangelo",
+        "reference": "Dal Vangelo secondo Giovanni (15, 1-8)",
+        "text": "In quel tempo, Gesù disse ai suoi discepoli: «Io sono la vite vera e il Padre mio è l’agricoltore. Ogni tralcio che in me non porta frutto, lo taglia, e ogni tralcio che porta frutto, lo pota perché porti più frutto… Chi rimane in me, e io in lui, porta molto frutto».\n\nParola del Signore."
+      }
+    ]
+  },
+  "pier-giorgio-frassati": {
+    "liturgical_color": "bianco",
+    "sourceNote": "Memoria facoltativa (testi propri post-canonizzazione; orazione conforme alla tradizione liturgica).",
+    "readings": [
+      {
+        "type": "colletta",
+        "title": "Colletta",
+        "reference": "",
+        "text": "O Dio, che hai fatto risplendere nella vita di san Pier Giorgio Frassati l’ardore della fede e la carità verso i poveri, concedi ai tuoi fedeli di imitare la sua testimonianza, per essere sempre pronti a servire il tuo popolo. Per il nostro Signore Gesù Cristo, tuo Figlio, che è Dio, e vive e regna con te, nell’unità dello Spirito Santo, per tutti i secoli dei secoli."
+      },
+      {
+        "type": "prima_lettura",
+        "title": "Prima Lettura",
+        "reference": "Dalla lettera di san Giacomo (1, 22-27)",
+        "text": "Fratelli, siate di quelli che mettono in pratica la parola e non solo di quelli che la ascoltano, ingannando voi stessi. Poiché chi ascolta la parola e non la mette in pratica, è simile a un uomo che guarda in uno specchio il proprio volto naturale: si guarda, poi se ne va e subito dimentica com’era. Chi invece fissa lo sguardo sulla legge perfetta, quella della libertà, e ci persevera, non come uomo che ascolta per dimenticare, ma mettendo in pratica, sarà felice nel suo operare.\n\nParola di Dio."
+      },
+      {
+        "type": "salmo",
+        "title": "Salmo Responsoriale",
+        "reference": "Dal Salmo 15 (16)",
+        "text": "Tu mi mostri il sentiero della vita.\n\nCustodiscimi, Dio, perché in te mi rifugio. Tu sei il mio bene, nulla ho al di fuori di te."
+      },
+      {
+        "type": "acclamazione",
+        "title": "Acclamazione al Vangelo",
+        "reference": "Mt 5, 8",
+        "text": "Beati i puri di cuore, perché vedranno Dio."
+      },
+      {
+        "type": "vangelo",
+        "title": "Vangelo",
+        "reference": "Dal Vangelo secondo Matteo (25, 31-40)",
+        "text": "In quel tempo, Gesù disse ai suoi discepoli: «Quando il Figlio dell’uomo verrà nella sua gloria… il re dirà a quelli che saranno alla sua destra: “Venite, benedetti del Padre mio… perché ho avuto fame e mi avete dato da mangiare…”».\n\nParola del Signore."
+      }
+    ]
+  },
+  "sant-orso-d-aosta": {
+    "liturgical_color": "bianco",
+    "sourceNote": "Santo locale (Messale diocesano Piemonte–Valle d’Aosta): orazioni in app; letture dal Comune dei pastori.",
+    "readings": [
+      {
+        "type": "colletta",
+        "title": "Colletta",
+        "reference": "",
+        "text": "O Dio, che hai reso il tuo servo Orso fedele pastore del popolo che gli hai affidato, fa’ che per sua intercessione perseveriamo nella fede e nella carità. Per il nostro Signore Gesù Cristo, tuo Figlio, che è Dio, e vive e regna con te, nell’unità dello Spirito Santo, per tutti i secoli dei secoli."
+      },
+      {
+        "type": "prima_lettura",
+        "title": "Prima Lettura",
+        "reference": "Dalla prima lettera di san Pietro apostolo (5, 1-4)",
+        "text": "Esorto gli anziani tra voi, come anziano con loro e testimone delle passioni di Cristo, e come partecipe della gloria che deve manifestarsi: pascete il gregge di Dio che v’è affidato, vigilando su di esso non per forza, ma volontariamente, secondo Dio; non per vile interesse, ma con generosità; non come dominatori delle comunità, ma come modelli del gregge. Quando apparirà il sommo Pastore, voi riceverete la corona della gloria che non appassisce.\n\nParola di Dio."
+      },
+      {
+        "type": "salmo",
+        "title": "Salmo Responsoriale",
+        "reference": "Dal Salmo 23 (24)",
+        "text": "Il Signore è il mio pastore: nulla mi manca."
+      },
+      {
+        "type": "vangelo",
+        "title": "Vangelo",
+        "reference": "Dal Vangelo secondo Giovanni (10, 11-16)",
+        "text": "In quel tempo, Gesù disse: «Io sono il buon pastore. Il buon pastore dà la vita per le sue pecore…».\n\nParola del Signore."
+      }
+    ]
+  },
+  "san-grato-d-aosta": {
+    "liturgical_color": "bianco",
+    "sourceNote": "Santo locale (diocesi di Aosta): testi sintetici in app.",
+    "readings": [
+      {
+        "type": "colletta",
+        "title": "Colletta",
+        "reference": "",
+        "text": "O Dio, che per mezzo del vescovo san Grato hai difeso e consolato la tua Chiesa, concedi che, per sua intercessione, camminiamo fedelmente dietro Cristo pastore. Per il nostro Signore Gesù Cristo, tuo Figlio, che è Dio, e vive e regna con te, nell’unità dello Spirito Santo, per tutti i secoli dei secoli."
+      },
+      {
+        "type": "prima_lettura",
+        "title": "Prima Lettura",
+        "reference": "Dalla lettera di san Paolo apostolo agli Efesini (4, 1-6)",
+        "text": "Vi esorto dunque, io, il prigioniero per il Signore, a camminare in maniera degna della vocazione che avete ricevuto… Un solo corpo e un solo Spirito, come anche voi siete stati chiamati a una sola speranza nella vostra vocazione; un solo Signore, una sola fede, un solo battesimo, un solo Dio e Padre di tutti.\n\nParola di Dio."
+      },
+      {
+        "type": "vangelo",
+        "title": "Vangelo",
+        "reference": "Dal Vangelo secondo Matteo (5, 1-12a)",
+        "text": "In quel tempo, vedendo le folle, Gesù salì sul monte e si sedette… «Beati i poveri in spirito…».\n\nParola del Signore."
+      }
+    ]
+  },
+  "santi-vittore-e-corona": {
+    "liturgical_color": "rosso",
+    "sourceNote": "Santi locali (Veneto): testi sintetici in app.",
+    "readings": [
+      {
+        "type": "colletta",
+        "title": "Colletta",
+        "reference": "",
+        "text": "O Dio, che hai reso forti i santi martiri Vittore e Corona nel combattimento della fede, concedi che, celebrando il loro trionfo, imitiamo la loro costanza. Per il nostro Signore Gesù Cristo, tuo Figlio, che è Dio, e vive e regna con te, nell’unità dello Spirito Santo, per tutti i secoli dei secoli."
+      },
+      {
+        "type": "prima_lettura",
+        "title": "Prima Lettura",
+        "reference": "Dalla lettera di san Paolo apostolo ai Romani (8, 31b-39)",
+        "text": "Se Dio è per noi, chi sarà contro di noi?… Io sono convinto che né morte né vita… potranno separarci dall’amore di Dio in Cristo Gesù, nostro Signore.\n\nParola di Dio."
+      },
+      {
+        "type": "vangelo",
+        "title": "Vangelo",
+        "reference": "Dal Vangelo secondo Giovanni (12, 24-26)",
+        "text": "In quel tempo, Gesù disse ai suoi discepoli: «In verità, in verità vi dico: se il chicco di grano caduto in terra non muore, resta solo; se invece muore, produce molto frutto».\n\nParola del Signore."
+      }
+    ]
+  },
+  "angela-merici": {
+    "liturgical_color": "bianco",
+    "sourceNote": "Letture dal lezionario dei Santi in app (CEI nazionale senza blocco facoltativo).",
+    "readings": [
+      {
+        "type": "prima_lettura",
+        "title": "Prima Lettura",
+        "reference": "Dalla prima lettera di san Pietro apostolo (4, 7-11)",
+        "text": "Carissimi, la fine di tutte le cose è vicina. Siate dunque moderati e sobri, per dedicarvi alla preghiera. Soprattutto conservate tra voi una carità fervente, perché la carità copre una moltitudine di peccati. Praticate l’ospitalità gli uni verso gli altri, senza mormorare. Ciascuno, secondo il dono ricevuto, lo metta a servizio degli altri, come buoni amministratori della multiforme grazia di Dio. Chi parla, lo faccia con parole di Dio; chi esercita un ufficio, lo compia con l’energia ricevuta da Dio, perché in tutto sia glorificato Dio per mezzo di Gesù Cristo, al quale appartengono la gloria e la potenza nei secoli dei secoli. Amen!\n\nParola di Dio."
+      },
+      {
+        "type": "salmo",
+        "title": "Salmo Responsoriale",
+        "reference": "Dal Salmo 148",
+        "text": "Giovani e ragazze lodate il nome del Signore.\n\nLodate il Signore dai cieli,\nlodatelo nell’alto dei cieli.\n\nLodatelo, voi tutti, suoi angeli,\nlodatelo, voi tutte, sue schiere.\n\nI re della terra e i popoli tutti,\ni governanti e i giudici della terra,\ni giovani e le ragazze,\ni vecchi insieme ai bambini\nlodino il nome del Signore.\n\nLa sua maestà sovrasta la terra e i cieli.\n\nHa accresciuto la potenza del suo popolo.\n\nEgli è la lode, per tutti i suoi fedeli,\nper i figli d’Israele, popolo a lui vicino."
+      },
+      {
+        "type": "acclamazione",
+        "title": "Acclamazione al Vangelo",
+        "reference": "Mt 23, 11.12b",
+        "text": "Chi tra voi è più grande, sarà vostro servo, dice il Signore, chi si umilierà sarà esaltato."
+      },
+      {
+        "type": "vangelo",
+        "title": "Vangelo",
+        "reference": "Dal Vangelo secondo Marco (9, 33-37)",
+        "text": "In quel tempo, Gesù e i suoi discepoli giunsero a Cafàrnao. Quando fu in casa, chiese loro: «Di che cosa stavate discutendo per la strada?». Ed essi tacevano. Per la strada infatti avevano discusso tra loro chi fosse più grande.\n\nSedutosi, chiamò i Dodici e disse loro: «Se uno vuole essere il primo, sia l’ultimo di tutti e il servitore di tutti». E, preso un bambino, lo pose in mezzo a loro e, abbracciandolo, disse loro: «Chi accoglie uno solo di questi bambini nel mio nome, accoglie me; e chi accoglie me, non accoglie me, ma colui che mi ha mandato».\n\nParola del Signore."
+      }
+    ]
+  },
+  "maria-lourdes": {
+    "liturgical_color": "bianco",
+    "sourceNote": "Letture dal lezionario dei Santi in app (CEI nazionale senza blocco facoltativo).",
+    "readings": [
+      {
+        "type": "prima_lettura",
+        "title": "Prima Lettura",
+        "reference": "Dal libro del profeta Isaìa (66, 10-14c)",
+        "text": "Rallegratevi con Gerusalemme, esultate per essa tutti voi che l’amate. Sfavillate con essa di gioia tutti voi che per essa eravate in lutto.\n\nCosì sarete allattati e vi sazierete al seno delle sue consolazioni; succhierete e vi delizierete al petto della sua gloria. Perché così dice il Signore: «Ecco, io farò scorrere verso di essa, come un fiume, la pace; come un torrente in piena, la gloria delle genti. Voi sarete allattati e portati in braccio, e sulle ginocchia sarete accarezzati. Come una madre consola un figlio, così io vi consolerò; a Gerusalemme sarete consolati. Voi lo vedrete e gioirà il vostro cuore, le vostre ossa saranno rigogliose come l’erba. La mano del Signore si farà conoscere ai suoi servi».\n\nParola di Dio."
+      },
+      {
+        "type": "salmo",
+        "title": "Salmo Responsoriale",
+        "reference": "",
+        "text": "Gdt 13, 18-19\n\nTu sei splendido onore della nostra gente.\n\nBenedetta sei tu, figlia, davanti al Dio altissimo\npiù di tutte le donne che vivono sulla terra,\ne benedetto il Signore Dio che ha creato il cielo e la terra.\n\nDavvero il coraggio che ti ha sostenuto\nnon sarà dimenticato dagli uomini,\nche ricorderanno per sempre la potenza di Dio."
+      },
+      {
+        "type": "acclamazione",
+        "title": "Acclamazione al Vangelo",
+        "reference": "Cf. Lc 1, 45",
+        "text": "Beata sei tu, o Vergine Maria, che hai creduto: in te si è adempiuta la parola del Signore."
+      },
+      {
+        "type": "vangelo",
+        "title": "Vangelo",
+        "reference": "Dal Vangelo secondo Giovanni (2, 1-11)",
+        "text": "In quel tempo, vi fu una festa di nozze a Cana di Galilea e c’era la madre di Gesù. Fu invitato alle nozze anche Gesù con i suoi discepoli. Venuto a mancare il vino, la madre di Gesù gli disse: «Non hanno vino». E Gesù le rispose: «Donna, che vuoi da me? Non è ancora giunta la mia ora». Sua madre disse ai servitori: «Qualsiasi cosa vi dica, fatela».\n\nVi erano là sei anfore di pietra per la purificazione rituale dei Giudei, contenenti ciascuna da ottanta a centoventi litri. E Gesù disse loro: «Riempite d’acqua le anfore»; e le riempirono fino all’orlo. Disse loro di nuovo: «Ora prendetene e portatene a colui che dirige il banchetto». Ed essi gliene portarono. Come ebbe assaggiato l’acqua diventata vino, colui che dirigeva il banchetto – il quale non sapeva da dove venisse, ma lo sapevano i servitori che avevano preso l’acqua – chiamò lo sposo e gli disse: «Tutti mettono in tavola il vino buono all’inizio e, quando si è già bevuto molto, quello meno buono.\n\nTu invece hai tenuto da parte il vino buono finora». Questo, a Cana di Galilea, fu l’inizio dei segni compiuti da Gesù; egli manifestò la sua gloria e i suoi discepoli credettero in lui.\n\nParola del Signore."
+      }
+    ]
+  },
+  "san-giorgio": {
+    "liturgical_color": "bianco",
+    "sourceNote": "Letture dal lezionario dei Santi in app (CEI nazionale senza blocco facoltativo).",
+    "readings": [
+      {
+        "type": "prima_lettura",
+        "title": "Prima Lettura",
+        "reference": "Dal libro dell’Apocalisse di san Giovanni apostolo (21, 5-7)",
+        "text": "Colui che sedeva sul trono disse: «Ecco, io faccio nuove tutte le cose». E soggiunse: «Scrivi, perché queste parole sono certe e vere».\n\nE mi disse: «Ecco, sono compiute! Io sono l’Alfa e l’Omèga, il Principio e la Fine. Acolui che ha sete io darò gratuitamente da bere alla fonte dell’acqua della vita. Chi sarà vincitore erediterà questi beni; io sarò suo Dio ed egli sarà mio figlio».\n\nParola di Dio."
+      },
+      {
+        "type": "salmo",
+        "title": "Salmo Responsoriale",
+        "reference": "",
+        "text": "Salmo 125 (126)\n\nChi semina nelle lacrime mieterà nella gioia.\n\nQuando il Signore ristabilì la sorte di Sion,\nci sembrava di sognare.\n\nAllora la nostra bocca si riempì di sorriso,\nla nostra lingua di gioia.\n\nAllora si diceva tra le genti:\n«Il Signore ha fatto grandi cose per loro».\n\nGrandi cose ha fatto il Signore per noi:\neravamo pieni di gioia.\n\nRistabilisci, Signore, la nostra sorte,\ncome i torrenti del Negheb.\n\nChi semina nelle lacrime\nmieterà nella gioia.\n\nNell’andare, se ne va piangendo,\nportando la semente da gettare,\nma nel tornare, viene con gioia,\nportando i suoi covoni."
+      },
+      {
+        "type": "vangelo",
+        "title": "Vangelo",
+        "reference": "Dal Vangelo secondo Luca (9, 23-26)",
+        "text": "In quel tempo, Gesù, a tutti, diceva: «Se qualcuno vuole venire dietro a me, rinneghi se stesso, prenda la sua croce ogni giorno e mi segua. Chi vuole salvare la propria vita, la perderà, ma chi perderà la propria vita per causa mia, la salverà. Infatti, quale vantaggio ha un uomo che guadagna il mondo intero, ma perde o rovina se stesso? Chi si vergognerà di me e delle mie parole, di lui si vergognerà il Figlio dell’uomo quando verrà nella gloria sua e del Padre e degli angeli santi».\n\nParola del Signore."
+      }
+    ]
+  },
+  "maria-fatima": {
+    "liturgical_color": "bianco",
+    "sourceNote": "Letture dal lezionario dei Santi in app (CEI nazionale senza blocco facoltativo).",
+    "readings": [
+      {
+        "type": "prima_lettura",
+        "title": "Prima Lettura",
+        "reference": "Dal libro del profeta Isaìa (61, 9-11)",
+        "text": "Sarà famosa tra le genti la loro stirpe, la loro discendenza in mezzo ai popoli.\n\nColoro che li vedranno riconosceranno che essi sono la stirpe benedetta dal Signore. Io gioisco pienamente nel Signore, la mia anima esulta nel mio Dio, perché mi ha rivestito delle vesti della salvezza, mi ha avvolto con il mantello della giustizia, come uno sposo si mette il diadema e come una sposa si adorna di gioielli. Poiché, come la terra produce i suoi germogli e come un giardino fa germogliare i suoi semi, così il Signore Dio farà germogliare la giustizia e la lode davanti a tutte le genti.\n\nParola di Dio."
+      },
+      {
+        "type": "salmo",
+        "title": "Salmo Responsoriale",
+        "reference": "Dal Salmo 44 (45)",
+        "text": "Risplende la regina, Signore, alla tua destra.\n\nFiglie di re fra le tue predilette;\nalla tua destra sta la regina, in ori di Ofir.\n\nAscolta, figlia, guarda, porgi l’orecchio:\ndimentica il tuo popolo e la casa di tuo padre.\n\nIl re è invaghito della tua bellezza.\n\nÈlui il tuo signore: rendigli omaggio."
+      },
+      {
+        "type": "vangelo",
+        "title": "Vangelo",
+        "reference": "Dal Vangelo secondo Luca (11, 27-28)",
+        "text": "In quel tempo, mentre Gesù parlava alle folle, una donna dalla folla alzò la voce e gli disse: «Beato il grembo che ti ha portato e il seno che ti ha allattato!».\n\nMa egli disse: «Beati piuttosto coloro che ascoltano la parola di Dio e la osservano!».\n\nParola del Signore."
+      }
+    ]
+  },
+  "rita-cascia": {
+    "liturgical_color": "bianco",
+    "sourceNote": "Letture dal lezionario dei Santi in app (CEI nazionale senza blocco facoltativo).",
+    "readings": [
+      {
+        "type": "prima_lettura",
+        "title": "Prima Lettura",
+        "reference": "Dalla lettera di san Paolo apostolo ai Filippési (4, 4-9)",
+        "text": "Fratelli, siate sempre lieti nel Signore, ve lo ripeto: siate lieti. La vostra amabilità sia nota a tutti. Il Signore è vicino! Non angustiatevi per nulla, ma in ogni circostanza fate presenti a Dio le vostre richieste con preghiere, suppliche e ringraziamenti. E la pace di Dio, che supera ogni intelligenza, custodirà i vostri cuori e le vostre menti in Cristo Gesù. In conclusione, fratelli, quello che è vero, quello che è nobile, quello che è giusto, quello che è puro, quello che è amabile, quello che è onorato, ciò che è virtù e ciò che merita lode, questo sia oggetto dei vostri pensieri. Le cose che avete imparato, ricevuto, ascoltato e veduto in me, mettetele in pratica. E il Dio della pace sarà con voi!\n\nParola di Dio."
+      },
+      {
+        "type": "salmo",
+        "title": "Salmo Responsoriale",
+        "reference": "Dal Salmo 1",
+        "text": "Beato l’uomo che confida nel Signore.\n\nBeato l’uomo che non entra nel consiglio dei malvagi,\nnon resta nella via dei peccatori\ne non siede in compagnia degli arroganti,\nma nella legge del Signore trova la sua gioia,\nla sua legge medita giorno e notte.\n\nÈcome albero piantato lungo corsi d’acqua,\nche dà frutto a suo tempo:\nle sue foglie non appassiscono\ne tutto quello che fa, riesce bene.\n\nNon così, non così i malvagi,\nma come pula che il vento disperde;\npoiché il Signore veglia sul cammino dei giusti,\nmentre la via dei malvagi va in rovina."
+      },
+      {
+        "type": "vangelo",
+        "title": "Vangelo",
+        "reference": "Dal Vangelo secondo Luca (6, 27-38)",
+        "text": "In quel tempo, Gesù disse ai suoi discepoli: «A voi che ascoltate, io dico: amate i vostri nemici, fate del bene a quelli che vi odiano, benedite coloro che vi maledicono, pregate per coloro che vi trattano male. A chi ti percuote sulla guancia, offri anche l’altra; a chi ti strappa il mantello, non rifiutare neanche la tunica. Da’ a chiunque ti chiede, e a chi prende le cose tue, non chiederle indietro. Ecome volete che gli uomini facciano a voi, così anche voi fate a loro. Se amate quelli che vi amano, quale gratitudine vi è dovuta? Anche i peccatori amano quelli che li amano. E se fate del bene a coloro che fanno del bene a voi, quale gratitudine vi è dovuta? Anche i peccatori fanno lo stesso. E se prestate a coloro da cui sperate ricevere, quale gratitudine vi è dovuta? Anche i peccatori concedono prestiti ai peccatori per riceverne altrettanto. Amate invece i vostri nemici, fate del bene e prestate senza sperarne nulla, e la vostra ricompensa sarà grande e sarete figli dell’Altissimo, perché egli è benevolo verso gli ingrati e i malvagi. Siate misericordiosi, come il Padre vostro è misericordioso. Non giudicate e non sarete giudicati; non condannate e non sarete condannati; perdonate e sarete perdonati. Date e vi sarà dato: una misura buona, pigiata, colma e traboccante vi sarà versata nel grembo, perché con la misura con la quale misurate, sarà misurato a voi in cambio».\n\nParola del Signore."
+      }
+    ]
+  },
+  "elisabetta-portogallo": {
+    "liturgical_color": "bianco",
+    "sourceNote": "Letture dal lezionario dei Santi in app (CEI nazionale senza blocco facoltativo).",
+    "readings": [
+      {
+        "type": "prima_lettura",
+        "title": "Prima Lettura",
+        "reference": "Dalla prima lettera di san Giovanni apostolo (3, 14-18)",
+        "text": "Figlioli, noi sappiamo che siamo passati dalla morte alla vita, perché amiamo i fratelli. Chi non ama rimane nella morte. Chiunque odia il proprio fratello è omicida, e voi sapete che nessun omicida ha più la vita eterna che dimora in lui. In questo abbiamo conosciuto l’amore, nel fatto che egli ha dato la sua vita per noi; quindi anche noi dobbiamo dare la vita per i fratelli. Ma se uno ha ricchezze di questo mondo e, vedendo il suo fratello in necessità, gli chiude il proprio cuore, come rimane in lui l’amore di Dio? Figlioli, non amiamo a parole né con la lingua, ma con i fatti e nella verità.\n\nParola di Dio."
+      },
+      {
+        "type": "salmo",
+        "title": "Salmo Responsoriale",
+        "reference": "Dal Salmo 111 (112)",
+        "text": "Beato l’uomo che teme il Signore.\n\nBeato l’uomo che teme il Signore\ne nei suoi precetti trova grande gioia.\n\nPotente sulla terra sarà la sua stirpe,\nla discendenza degli uomini retti sarà benedetta.\n\nProsperità e ricchezza nella sua casa,\nla sua giustizia rimane per sempre.\n\nSpunta nelle tenebre, luce per gli uomini retti:\nmisericordioso, pietoso e giusto.\n\nFelice l’uomo pietoso che dà in prestito,\namministra i suoi beni con giustizia.\n\nEgli non vacillerà in eterno:\neterno sarà il ricordo del giusto.\n\nSaldo è il suo cuore, confida nel Signore.\n\nEgli dona largamente ai poveri,\nla sua giustizia rimane per sempre,\nla sua fronte s’innalza nella gloria."
+      },
+      {
+        "type": "acclamazione",
+        "title": "Acclamazione al Vangelo",
+        "reference": "Cf. Gv 13, 34",
+        "text": "Vi do un comandamento nuovo, dice il Signore: come io ho amato voi, così amatevi anche voi gli uni gli altri."
+      },
+      {
+        "type": "vangelo",
+        "title": "Vangelo",
+        "reference": "Dal Vangelo secondo Matteo (25, 31-46)",
+        "text": "In quel tempo, Gesù disse ai suoi discepoli: «Quando il Figlio dell’uomo verrà nella sua gloria, e tutti gli angeli con lui, siederà sul trono della sua gloria. Davanti a lui verranno radunati tutti i popoli. Egli separerà gli uni dagli altri, come il pastore separa le pecore dalle capre, e porrà le pecore alla sua destra e le capre alla sinistra.\n\nAllora il re dirà a quelli che saranno alla sua destra: “Venite, benedetti del Padre mio, ricevete in eredità il regno preparato per voi fin dalla creazione del mondo, perché ho avuto fame e mi avete dato da mangiare, ho avuto sete e mi avete dato da bere, ero straniero e mi avete accolto, nudo e mi avete vestito, malato e mi avete visitato, ero in carcere e siete venuti a trovarmi”.\n\nAllora i giusti gli risponderanno: “Signore, quando ti abbiamo visto affamato e ti abbiamo dato da mangiare, o assetato e ti abbiamo dato da bere? Quando mai ti abbiamo visto straniero e ti abbiamo accolto, o nudo e ti abbiamo vestito? Quando mai ti abbiamo visto malato o in carcere e siamo venuti a visitarti?”. E il re risponderà loro: “In verità io vi dico: tutto quello che avete fatto a uno solo di questi miei fratelli più piccoli, l’avete fatto a me”. Poi dirà anche a quelli che saranno alla sinistra: “Via, lontano da me, maledetti, nel fuoco eterno, preparato per il diavolo e per i suoi angeli, perché ho avuto fame e non mi avete dato da mangiare, ho avuto sete e non mi avete dato da bere, ero straniero e non mi avete accolto, nudo e non mi avete vestito, malato e in carcere e non mi avete visitato”. Anch’essi allora risponderanno: “Signore, quando ti abbiamo visto affamato o assetato o straniero o nudo o malato o in carcere, e non ti abbiamo servito?”. Allora egli risponderà loro: “In verità io vi dico: tutto quello che non avete fatto a uno solo di questi più piccoli, non l’avete fatto a me”.\n\nE se ne andranno: questi al supplizio eterno, i giusti invece alla vita eterna».\n\nParola del Signore."
+      }
+    ]
+  },
+  "maria-goretti": {
+    "liturgical_color": "bianco",
+    "sourceNote": "Letture dal lezionario dei Santi in app (CEI nazionale senza blocco facoltativo).",
+    "readings": [
+      {
+        "type": "prima_lettura",
+        "title": "Prima Lettura",
+        "reference": "Dalla prima lettera di san Paolo apostolo ai Corìnzi (6, 13c-15a.17-20)",
+        "text": "Fratelli, il corpo non è per l’impurità, ma per il Signore, e il Signore è per il corpo. Dio, che ha risuscitato il Signore, risusciterà anche noi con la sua potenza. Non sapete che i vostri corpi sono membra di Cristo? Chi si unisce al Signore forma con lui un solo spirito. State lontani dall’impurità! Qualsiasi peccato l’uomo commetta, è fuori del suo corpo; ma chi si dà all’impurità, pecca contro il proprio corpo. Non sapete che il vostro corpo è tempio dello Spirito Santo, che è in voi? Lo avete ricevuto da Dio e voi non appartenete a voi stessi. Infatti siete stati comprati a caro prezzo: glorificate dunque Dio nel vostro corpo!\n\nParola di Dio."
+      },
+      {
+        "type": "salmo",
+        "title": "Salmo Responsoriale",
+        "reference": "Dal Salmo 30 (31)",
+        "text": "Alle tue mani, Signore, affido il mio spirito.\n\nSii per me una roccia di rifugio,\nun luogo fortificato che mi salva.\n\nPerché mia rupe e mia fortezza tu sei,\nper il tuo nome guidami e conducimi.\n\nAlle tue mani affido il mio spirito;\ntu mi hai riscattato, Signore, Dio fedele.\n\nEsulterò e gioirò per la tua grazia,\nperché hai guardato alla mia miseria.\n\nLiberami dalla mano dei miei nemici\ne dai miei persecutori:\nsul tuo servo fa’ splendere il tuo volto,\nsalvami per la tua misericordia."
+      },
+      {
+        "type": "acclamazione",
+        "title": "Acclamazione al Vangelo",
+        "reference": "Gc 1, 12",
+        "text": "Beato l’uomo che resiste alla tentazione perché, dopo averla superata, riceverà la corona della vita."
+      },
+      {
+        "type": "vangelo",
+        "title": "Vangelo",
+        "reference": "Dal Vangelo secondo Giovanni (12, 24-26)",
+        "text": "In quel tempo, Gesù disse ai suoi discepoli: «In verità, in verità io vi dico: se il chicco di grano, caduto in terra, non muore, rimane solo; se invece muore, produce molto frutto. Chi ama la propria vita, la perde e chi odia la propria vita in questo mondo, la conserverà per la vita eterna. Se uno mi vuole servire, mi segua, e dove sono io, là sarà anche il mio servitore. Se uno serve me, il Padre lo onorerà».\n\nParola del Signore."
+      }
+    ]
+  },
+  "monte-carmelo": {
+    "liturgical_color": "bianco",
+    "sourceNote": "Letture dal lezionario dei Santi in app (CEI nazionale senza blocco facoltativo).",
+    "readings": [
+      {
+        "type": "prima_lettura",
+        "title": "Prima Lettura",
+        "reference": "Dal libro del profeta Zaccarìa (2, 14-17)",
+        "text": "Rallégrati, esulta, figlia di Sion, perché, ecco, io vengo ad abitare in mezzo a te. Oracolo del Signore. Nazioni numerose aderiranno in quel giorno al Signore e diverranno suo popolo, ed egli dimorerà in mezzo a te e tu saprai che il Signore degli eserciti mi ha inviato a te.\n\nIl Signore si terrà Giuda come eredità nella terra santa ed eleggerà di nuovo Gerusalemme. Taccia ogni mortale davanti al Signore, poiché egli si è destato dalla sua santa dimora.\n\nParola di Dio."
+      },
+      {
+        "type": "salmo",
+        "title": "Salmo Responsoriale",
+        "reference": "",
+        "text": "Da Lc 1, 46-55\n\nIl Signore si è ricordato della sua misericordia.\n\nGrandi cose ha fatto per me l’Onnipotente.\n\nL’anima mia magnifica il Signore\ne il mio spirito esulta in Dio, mio salvatore.\n\nPerché ha guardato l’umiltà della sua serva.\n\nD’ora in poi tutte le generazioni mi chiameranno beata.\n\nGrandi cose ha fatto per me l’Onnipotente\ne Santo è il suo nome.\n\nDi generazione in generazione la sua misericordia\nper quelli che lo temono.\n\nHa spiegato la potenza del suo braccio,\nha disperso i superbi nei pensieri del loro cuore.\n\nHa rovesciato i potenti dai troni,\nha innalzato gli umili;\nha ricolmato di beni gli affamati,\nha rimandato i ricchi a mani vuote.\n\nHa soccorso Israele, suo servo,\nricordandosi della sua misericordia,\ncome aveva detto ai nostri padri,\nper Abramo e la sua discendenza, per sempre."
+      },
+      {
+        "type": "vangelo",
+        "title": "Vangelo",
+        "reference": "Dal Vangelo secondo Matteo (12, 46-50)",
+        "text": "In quel tempo, mentre Gesù parlava ancora alla folla, ecco, sua madre e i suoi fratelli stavano fuori e cercavano di parlargli. Qualcuno gli disse: «Ecco, tua madre e i tuoi fratelli stanno fuori e cercano di parlarti». Ed egli, rispondendo a chi gli parlava, disse: «Chi è mia madre e chi sono i miei fratelli?». Poi, tendendo la mano verso i suoi discepoli, disse: «Ecco mia madre e i miei fratelli! Perché chiunque fa la volontà del Padre mio che è nei cieli, egli è per me fratello, sorella e madre».\n\nParola del Signore."
+      }
+    ]
+  },
+  "nome-maria": {
+    "liturgical_color": "bianco",
+    "sourceNote": "Letture dal lezionario dei Santi in app (CEI nazionale senza blocco facoltativo).",
+    "readings": [
+      {
+        "type": "prima_lettura",
+        "title": "Prima Lettura",
+        "reference": "Dalla lettera di san Paolo apostolo ai Gàlati (4, 4-7)",
+        "text": "Fratelli, quando venne la pienezza del tempo, Dio mandò il suo Figlio, nato da donna, nato sotto la Legge, per riscattare quelli che erano sotto la Legge, perché ricevessimo l’adozione a figli.\n\nE che voi siete figli lo prova il fatto che Dio mandò nei nostri cuori lo Spirito del suo Figlio, il quale grida: «Abbà! Padre!» Quindi non sei più schiavo, ma figlio e, se figlio, sei anche erede per grazia di Dio.\n\nParola di Dio."
+      },
+      {
+        "type": "salmo",
+        "title": "Salmo Responsoriale",
+        "reference": "Dalla lettera di san Paolo apostolo agli Efesìni (1, 3-6.11-12)",
+        "text": "Benedetto Dio, Padre del Signore nostro Gesù Cristo, che ci ha benedetti con ogni benedizione spirituale nei cieli in Cristo. In lui ci ha scelti prima della creazione del mondo per essere santi e immacolati di fronte a lui nella carità, predestinandoci a essere per lui figli adottivi mediante Gesù Cristo, secondo il disegno d’amore della sua volontà, a lode dello splendore della sua grazia, di cui ci ha gratificati nel Figlio amato. In lui siamo stati fatti anche eredi, predestinati – secondo il progetto di colui che tutto opera secondo la sua volontà – a essere lode della sua gloria, noi, che già prima abbiamo sperato nel Cristo.\n\nParola di Dio."
+      },
+      {
+        "type": "vangelo",
+        "title": "Vangelo",
+        "reference": "Dal Vangelo secondo Luca (1, 39-47)",
+        "text": "In quei giorni Maria si alzò e andò in fretta verso la regione montuosa, in una città di Giuda. Entrata nella casa di Zaccarìa, salutò Elisabetta.\n\nAppena Elisabetta ebbe udito il saluto di Maria, il bambino sussultò nel suo grembo. Elisabetta fu colmata di Spirito Santo ed esclamò a gran voce: «Benedetta tu fra le donne e benedetto il frutto del tuo grembo! A che cosa devo che la madre del mio Signore venga da me? Ecco, appena il tuo saluto è giunto ai miei orecchi, il bambino ha sussultato di gioia nel mio grembo. E beata colei che ha creduto nell’adempimento di ciò che il Signore le ha detto».\n\nAllora Maria disse: «L’anima mia magnifica il Signore e il mio spirito esulta in Dio, mio salvatore».\n\nParola del Signore."
+      }
+    ]
+  },
+  "margherita-maria": {
+    "liturgical_color": "bianco",
+    "sourceNote": "Letture dal lezionario dei Santi in app (CEI nazionale senza blocco facoltativo).",
+    "readings": [
+      {
+        "type": "prima_lettura",
+        "title": "Prima Lettura",
+        "reference": "Dalla lettera di san Paolo apostolo agli Efesìni (3, 14-19)",
+        "text": "Fratelli, io piego le ginocchia davanti al Padre, dal quale ha origine ogni discendenza in cielo e sulla terra, perché vi conceda, secondo la ricchezza della sua gloria, di essere potentemente rafforzati nell’uomo interiore mediante il suo Spirito.\n\nChe il Cristo abiti per mezzo della fede nei vostri cuori, e così, radicati e fondati nella carità, siate in grado di comprendere con tutti i santi quale sia l’ampiezza, la lunghezza, l’altezza e la profondità, e di conoscere l’amore di Cristo che supera ogni conoscenza, perché siate ricolmi di tutta la pienezza di Dio.\n\nParola di Dio."
+      },
+      {
+        "type": "salmo",
+        "title": "Salmo Responsoriale",
+        "reference": "Dal Salmo 22 (23)",
+        "text": "Il Signore è il mio pastore: non manco di nulla.\n\nSu pascoli erbosi mi fa riposare,\nad acque tranquille mi conduce.\n\nRinfranca l’anima mia,\nmi guida per il giusto cammino\na motivo del suo nome.\n\nAnche se vado per una valle oscura,\nnon temo alcun male, perché tu sei con me.\n\nIl tuo bastone e il tuo vincastro\nmi danno sicurezza.\n\nDavanti a me tu prepari una mensa\nsotto gli occhi dei miei nemici.\n\nUngi di olio il mio capo;\nil mio calice trabocca.\n\nSì, bontà e fedeltà mi saranno compagne\ntutti i giorni della mia vita,\nabiterò ancora nella casa del Signore\nper lunghi giorni."
+      },
+      {
+        "type": "vangelo",
+        "title": "Vangelo",
+        "reference": "Dal Vangelo secondo Matteo (11, 25-30)",
+        "text": "In quel tempo, Gesù disse: «Ti rendo lode, Padre, Signore del cielo e della terra, perché hai nascosto queste cose ai sapienti e ai dotti e le hai rivelate ai piccoli. Sì, o Padre, perché così hai deciso nella tua benevolenza. Tutto è stato dato a me dal Padre mio; nessuno conosce il Figlio se non il Padre, e nessuno conosce il Padre se non il Figlio e colui al quale il Figlio vorrà rivelarlo. Venite a me, voi tutti che siete stanchi e oppressi, e io vi darò ristoro. Prendete il mio giogo sopra di voi e imparate da me, che sono mite e umile di cuore, e troverete ristoro per la vostra vita. Il mio giogo infatti è dolce e il mio peso leggero».\n\nParola del Signore."
+      }
+    ]
+  },
+  "paolo-della-croce": {
+    "liturgical_color": "bianco",
+    "sourceNote": "Letture dal lezionario dei Santi in app (CEI nazionale senza blocco facoltativo).",
+    "readings": [
+      {
+        "type": "prima_lettura",
+        "title": "Prima Lettura",
+        "reference": "Dalla prima lettera di san Paolo apostolo ai Corìnzi (1, 18-25)",
+        "text": "Fratelli, la parola della croce è stoltezza per quelli che si perdono, ma per quelli che si salvano, ossia per noi, è potenza di Dio. Sta scritto infatti: «Distruggerò la sapienza dei sapienti e annullerò l’intelligenza degli intelligenti». Dov’è il sapiente? Dov’è il dotto? Dov’è il sottile ragionatore di questo mondo? Dio non ha forse dimostrato stolta la sapienza del mondo? Poiché infatti, nel disegno sapiente di Dio, il mondo, con tutta la sua sapienza, non ha conosciuto Dio, è piaciuto a Dio salvare i credenti con la stoltezza della predicazione.\n\nMentre i Giudei chiedono segni e i Greci cercano sapienza, noi invece annunciamo Cristo crocifisso: scandalo per i Giudei e stoltezza per i pagani; ma per coloro che sono chiamati, sia Giudei che Greci, Cristo è potenza di Dio e sapienza di Dio. Infatti ciò che è stoltezza di Dio è più sapiente degli uomini, e ciò che è debolezza di Dio è più forte degli uomini.\n\nParola di Dio."
+      },
+      {
+        "type": "salmo",
+        "title": "Salmo Responsoriale",
+        "reference": "Dal Salmo 116 (117)",
+        "text": "Andate in tutto il mondo e proclamate il Vangelo.\n\nGenti tutte, lodate il Signore,\npopoli tutti, cantate la sua lode.\n\nPerché forte è il suo amore per noi\ne la fedeltà del Signore dura per sempre."
+      },
+      {
+        "type": "vangelo",
+        "title": "Vangelo",
+        "reference": "Dal Vangelo secondo Matteo (16, 24-27)",
+        "text": "In quel tempo, Gesù disse ai suoi discepoli: «Se qualcuno vuole venire dietro a me, rinneghi se stesso, prenda la sua croce e mi segua. Perché chi vuole salvare la propria vita, la perderà; ma chi perderà la propria vita per causa mia, la troverà. Infatti quale vantaggio avrà un uomo se guadagnerà il mondo intero, ma perderà la propria vita? O che cosa un uomo potrà dare in cambio della propria vita? Perché il Figlio dell’uomo sta per venire nella gloria del Padre suo, con i suoi angeli, e allora renderà a ciascuno secondo le sue azioni».\n\nParola del Signore."
+      }
+    ]
+  },
+  "martino-porres": {
+    "liturgical_color": "bianco",
+    "sourceNote": "Letture dal lezionario dei Santi in app (CEI nazionale senza blocco facoltativo).",
+    "readings": [
+      {
+        "type": "prima_lettura",
+        "title": "Prima Lettura",
+        "reference": "Dalla lettera di san Paolo apostolo ai Filippési (4, 4-9)",
+        "text": "Fratelli, siate sempre lieti nel Signore, ve lo ripeto: siate lieti. La vostra amabilità sia nota a tutti. Il Signore è vicino! Non angustiatevi per nulla, ma in ogni circostanza fate presenti a Dio le vostre richieste con preghiere, suppliche e ringraziamenti. E la pace di Dio, che supera ogni intelligenza, custodirà i vostri cuori e le vostre menti in Cristo Gesù. In conclusione, fratelli, quello che è vero, quello che è nobile, quello che è giusto, quello che è puro, quello che è amabile, quello che è onorato, ciò che è virtù e ciò che merita lode, questo sia oggetto dei vostri pensieri. Le cose che avete imparato, ricevuto, ascoltato e veduto in me, mettetele in pratica. E il Dio della pace sarà con voi!\n\nParola di Dio."
+      },
+      {
+        "type": "salmo",
+        "title": "Salmo Responsoriale",
+        "reference": "",
+        "text": "Salmo 130 (131)\n\nCustodiscimi, Signore, nella pace.\n\nSignore, non si esalta il mio cuore\nné i miei occhi guardano in alto;\nnon vado cercando cose grandi\nné meraviglie più alte di me.\n\nIo invece resto quieto e sereno:\ncome un bimbo svezzato in braccio a sua madre,\ncome un bimbo svezzato è in me l’anima mia.\n\nIsraele attenda il Signore,\nda ora e per sempre."
+      },
+      {
+        "type": "vangelo",
+        "title": "Vangelo",
+        "reference": "Dal Vangelo secondo Matteo (22, 34-40)",
+        "text": "In quel tempo, i farisei, avendo udito che Gesù aveva chiuso la bocca ai sadducèi, si riunirono insieme e uno di loro, un dottore della Legge, lo interrogò per metterlo alla prova: «Maestro, nella Legge, qual è il grande comandamento?». Gli rispose: «“Amerai il Signore tuo Dio con tutto il tuo cuore, con tutta la tua anima e con tutta la tua mente”. Questo è il grande e primo comandamento. Il secondo poi è simile a quello: “Amerai il tuo prossimo come te stesso”. Da questi due comandamenti dipendono tutta la Legge e i Profeti».\n\nParola del Signore."
+      }
+    ]
+  },
+  "guadalupe": {
+    "liturgical_color": "bianco",
+    "sourceNote": "Letture dal lezionario dei Santi in app (CEI nazionale senza blocco facoltativo).",
+    "readings": [
+      {
+        "type": "prima_lettura",
+        "title": "Prima Lettura",
+        "reference": "Dal libro del profeta Isaìa (7, 10-14; 8, 10c)",
+        "text": "In quei giorni, il Signore parlò ad Acaz: «Chiedi per te un segno dal Signore, tuo Dio, dal profondo degli inferi oppure dall’alto».\n\nMa Acaz rispose: «Non lo chiederò, non voglio tentare il Signore».\n\nAllora Isaia disse: «Ascoltate, casa di Davide! Non vi basta stancare gli uomini, perché ora vogliate stancare anche il mio Dio? Pertanto il Signore stesso vi darà un segno. Ecco: la vergine concepirà e partorirà un figlio, che chiamerà Emmanuele, perché Dio è con noi».\n\nParola di Dio."
+      },
+      {
+        "type": "salmo",
+        "title": "Salmo Responsoriale",
+        "reference": "",
+        "text": "1 Sam 2, 1.4-8\n\nIl mio cuore esulta nel Signore, mio salvatore.\n\nIl mio cuore esulta nel Signore,\nla mia forza s’innalza grazie al mio Dio.\n\nSi apre la mia bocca contro i miei nemici,\nperché io gioisco per la tua salvezza.\n\nL’arco dei forti s’è spezzato,\nma i deboli si sono rivestiti di vigore.\n\nIsazi si sono venduti per un pane,\nhanno smesso di farlo gli affamati.\n\nLa sterile ha partorito sette volte\ne la ricca di figli è sfiorita.\n\nIl Signore fa morire e fa vivere,\nscendere agli inferi e risalire.\n\nIl Signore rende povero e arricchisce,\nabbassa ed esalta.\n\nSolleva dalla polvere il debole,\ndall’immondizia rialza il povero,\nper farli sedere con i nobili\ne assegnare loro un trono di gloria."
+      },
+      {
+        "type": "vangelo",
+        "title": "Vangelo",
+        "reference": "Dal Vangelo secondo Luca (1, 39-47)",
+        "text": "In quei giorni Maria si alzò e andò in fretta verso la regione montuosa, in una città di Giuda. Entrata nella casa di Zaccarìa, salutò Elisabetta.\n\nAppena Elisabetta ebbe udito il saluto di Maria, il bambino sussultò nel suo grembo. Elisabetta fu colmata di Spirito Santo ed esclamò a gran voce: «Benedetta tu fra le donne e benedetto il frutto del tuo grembo! A che cosa devo che la madre del mio Signore venga da me? Ecco, appena il tuo saluto è giunto ai miei orecchi, il bambino ha sussultato di gioia nel mio grembo. E beata colei che ha creduto nell’adempimento di ciò che il Signore le ha detto».\n\nAllora Maria disse: «L’anima mia magnifica il Signore e il mio spirito esulta in Dio, mio salvatore».\n\nParola del Signore."
+      }
+    ]
+  }
+}

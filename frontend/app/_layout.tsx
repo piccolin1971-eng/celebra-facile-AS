@@ -58,6 +58,7 @@ export default function RootLayout() {
         <Stack.Screen name="calendario" />
         <Stack.Screen name="anteprima" />
         <Stack.Screen name="impostazioni" />
+        <Stack.Screen name="impostazioni-memorie-facoltative" />
         <Stack.Screen name="ore" />
         <Stack.Screen name="ore-leggi" />
       </Stack>

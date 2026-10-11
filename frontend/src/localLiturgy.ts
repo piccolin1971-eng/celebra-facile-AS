@@ -242,6 +242,8 @@ export type Liturgy = {
   error?: string | null;
   fromLocalCache?: boolean;
   celebrationMode?: CelebrationMode;
+  /** Memoria facoltativa scelta in impostazioni (liturgia in cache dedicata). */
+  optionalSaintId?: string;
 };
 
 export async function getFullLiturgy(

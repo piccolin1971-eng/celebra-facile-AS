@@ -43,7 +43,27 @@ import { HomeDatePickerModal } from "../src/components/HomeDatePickerModal";
 import { QuickAccessModal } from "../src/components/QuickAccessModal";
 import { loadLiturgyFavorites } from "../src/liturgyFavorites";
 import { bannerCeiTitleWithRank, calendarCelebrationBannerTitle, formatCelebrationTitle, homeBannerLiturgicalColor, homeStripDayMeta, liturgicalColorHex, preparedBannerLiturgyTitle } from "../src/homeBannerUtils";
-import { ensureQuickCelebrateSession } from "../src/defaultMassSession";
+import {
+  ensureQuickCelebrateOptionalSaintSession,
+  ensureQuickCelebrateSession,
+} from "../src/defaultMassSession";
+import { OptionalSaintLineChoice } from "../src/components/OptionalSaintLineChoice";
+import {
+  emptyOptionalSaintHomeResolution,
+  homeBannerTitleFromResolution,
+  optionalSaintHomeLiturgicalColor,
+  optionalSaintStripOverlay,
+  resolveOptionalSaintHome,
+} from "../src/optionalSaintHome";
+import {
+  loadOptionalSaintLinePick,
+  saveOptionalSaintLinePick,
+  type OptionalSaintLinePick,
+} from "../src/optionalSaintLinePick";
+import {
+  loadOptionalSaintsSelection,
+  type OptionalSaintsStorage,
+} from "../src/optionalSaintsStorage";
 import { triggerAppHaptic } from "../src/appHaptics";
 import {
   ACTION_LABEL_WEIGHT,
@@ -103,7 +123,17 @@ function dayLabelFor(offset: number, date: Date): string {
 export default function Home() {
   const router = useRouter();
   const params = useLocalSearchParams<{ date?: string }>();
-  const { colors, scaledFont, fontSize, celebraSubitoEnabled, preparaCelebraEnabled, oreEnabled, messeRitualiEnabled, theme } = useSettings();
+  const {
+    colors,
+    scaledFont,
+    fontSize,
+    celebraSubitoEnabled,
+    preparaCelebraEnabled,
+    oreEnabled,
+    messeRitualiEnabled,
+    optionalSaintsUseSelection,
+    theme,
+  } = useSettings();
   const [selectedDateISO, setSelectedDateISO] = useState(() => localDateStr(new Date()));
   const [sessions, setSessions] = useState<MassSession[]>([]);
   const [selectedCelebrateMode, setSelectedCelebrateMode] = useState<CelebrationMode | null>(null);
@@ -126,6 +156,10 @@ export default function Home() {
   const calendarDayRef = useRef(localDateStr(new Date()));
   const selectedDateStrRef = useRef("");
   const updateCheckedRef = useRef(false);
+  const [optionalSaintSelection, setOptionalSaintSelection] = useState<OptionalSaintsStorage>({
+    selectedByMonthDay: {},
+  });
+  const [optionalLinePick, setOptionalLinePick] = useState<OptionalSaintLinePick | null>(null);
 
   const muteFill = (hex: string) =>
     mixHexTowardBlack(hex, theme === "dark" ? 0.32 : theme === "parchment" ? 0.16 : 0.12);
@@ -151,12 +185,43 @@ export default function Home() {
     ceiDayTitle ||
     calendarCelebrationBannerTitle(selectedDate) ||
     "Prepara la liturgia per questo giorno";
+
+  const optionalSaintHome = useMemo(() => {
+    if (vigilEve) return emptyOptionalSaintHomeResolution(calendarDayFallbackTitle);
+    return resolveOptionalSaintHome({
+      useSelection: optionalSaintsUseSelection,
+      selectedByMonthDay: optionalSaintSelection.selectedByMonthDay,
+      date: selectedDate,
+      dateISO: selectedDateISO,
+      calendarCeiTitle: calendarDayFallbackTitle,
+      savedLinePick: optionalLinePick,
+    });
+  }, [
+    vigilEve,
+    optionalSaintsUseSelection,
+    optionalSaintSelection.selectedByMonthDay,
+    selectedDate,
+    selectedDateISO,
+    calendarDayFallbackTitle,
+    optionalLinePick,
+  ]);
+
+  const activeOptionalSaintId =
+    optionalSaintHome.saint && optionalSaintHome.activeLine === "optional"
+      ? optionalSaintHome.saint.id
+      : undefined;
+
+  const optionalAwareFallback =
+    !vigilEve && optionalSaintHome.saint
+      ? homeBannerTitleFromResolution(optionalSaintHome)
+      : calendarDayFallbackTitle;
+
   const bannerTitle =
     preparedBannerLiturgyTitle(activeSession?.liturgyTitle) ||
     (activeCelebrateMode !== "calendar_day" && vigilEve
       ? celebrationShortLabel(activeCelebrateMode, vigilEve)
       : "") ||
-    calendarDayFallbackTitle;
+    optionalAwareFallback;
   const calendarBannerTitle =
     preparedBannerLiturgyTitle(calendarSession?.liturgyTitle) ||
     (vigilEve ? ceiDayTitle || "Messa del giorno di calendario" : bannerTitle);
@@ -166,13 +231,17 @@ export default function Home() {
     vigilEve,
     calendarBannerTitle,
   );
-  const liturgicalColor = homeBannerLiturgicalColor(
+  const calendarLiturgicalColor = homeBannerLiturgicalColor(
     selectedDate,
     activeCelebrateMode,
     vigilEve,
     bannerTitle,
   );
+  const optionalSaintColor = optionalSaintHomeLiturgicalColor(optionalSaintHome);
+  const liturgicalColor = optionalSaintColor ?? calendarLiturgicalColor;
   const hasPreparedSession = sessions.length > 0;
+  const canOpenCelebra =
+    hasPreparedSession || (!!activeOptionalSaintId && !!optionalSaintHome.saint);
   const hasDualPrepared = sessions.length >= 2;
 
   const syncCelebrateSelection = useCallback(
@@ -351,16 +420,37 @@ export default function Home() {
       void reloadPreparedFlags();
       void reloadQuickAccessCount();
       void reloadDlDays();
+      void loadOptionalSaintsSelection().then(setOptionalSaintSelection);
+      void loadOptionalSaintLinePick(selectedDateStrRef.current).then(setOptionalLinePick);
       // Giorni di Messa troppo vecchi: libera spazio (le Ore si puliscono al download).
       void pruneOldLiturgies(3);
     }, [reloadSessions, reloadPreparedFlags, reloadQuickAccessCount, reloadDlDays]),
   );
 
+  useEffect(() => {
+    void loadOptionalSaintLinePick(selectedDateISO).then(setOptionalLinePick);
+  }, [selectedDateISO]);
+
+  const handleOptionalLinePick = (line: OptionalSaintLinePick) => {
+    setOptionalLinePick(line);
+    void saveOptionalSaintLinePick(selectedDateISO, line);
+    const saint = optionalSaintHome.saint;
+    if (line === "optional" && saint) {
+      void ensureQuickCelebrateOptionalSaintSession(selectedDateISO, saint.id);
+    }
+  };
+
+  const optionalSaintNavParam = (): { optionalSaint?: string } =>
+    activeOptionalSaintId ? { optionalSaint: activeOptionalSaintId } : {};
+
   const messaMode: CelebrationMode = activeCelebrateMode;
 
   const openMessa = () => {
     void triggerAppHaptic("light");
-    const navParams: { date?: string; mode: string } = { mode: messaMode };
+    const navParams: { date?: string; mode: string; optionalSaint?: string } = {
+      mode: messaMode,
+      ...optionalSaintNavParam(),
+    };
     if (selectedDateISO !== todayISO) navParams.date = selectedDateISO;
     router.push({ pathname: "/messa", params: navParams });
   };
@@ -399,14 +489,17 @@ export default function Home() {
 
   const goCelebra = (mode: CelebrationMode) => {
     void triggerAppHaptic("light");
-    const navParams: { date?: string; mode: string } = { mode };
+    const navParams: { date?: string; mode: string; optionalSaint?: string } = {
+      mode,
+      ...optionalSaintNavParam(),
+    };
     if (selectedDateISO !== todayISO) navParams.date = selectedDateISO;
     router.push({ pathname: "/celebra" as any, params: navParams });
   };
 
   const openCelebra = () => {
-    if (!hasPreparedSession) return;
-    if (hasDualPrepared && !selectedCelebrateMode) {
+    if (!canOpenCelebra) return;
+    if (hasDualPrepared && !selectedCelebrateMode && !activeOptionalSaintId) {
       setCelebrateDialogVisible(true);
       return;
     }
@@ -414,7 +507,15 @@ export default function Home() {
       selectedCelebrateMode ??
       sessions[sessions.length - 1]?.celebrationMode ??
       "calendar_day";
-    goCelebra(mode);
+    void (async () => {
+      if (activeOptionalSaintId) {
+        await ensureQuickCelebrateOptionalSaintSession(
+          selectedDateISO,
+          activeOptionalSaintId,
+        );
+      }
+      goCelebra(mode);
+    })();
   };
 
   const openCelebraSubito = async () => {
@@ -423,11 +524,22 @@ export default function Home() {
     const mode = selectedCelebrateMode ?? "calendar_day";
     setQuickStarting(true);
     try {
-      await ensureQuickCelebrateSession(selectedDateISO, mode);
-      const navParams: { date?: string; mode: string; from: string; index: string } = {
+      if (activeOptionalSaintId) {
+        await ensureQuickCelebrateOptionalSaintSession(selectedDateISO, activeOptionalSaintId);
+      } else {
+        await ensureQuickCelebrateSession(selectedDateISO, mode);
+      }
+      const navParams: {
+        date?: string;
+        mode: string;
+        from: string;
+        index: string;
+        optionalSaint?: string;
+      } = {
         mode,
         from: "indice",
         index: "1",
+        ...optionalSaintNavParam(),
       };
       if (selectedDateISO !== todayISO) navParams.date = selectedDateISO;
       // Un solo caricamento: indice come overlay su /celebra (niente schermata intermedia).
@@ -443,16 +555,28 @@ export default function Home() {
     }
   };
 
-  const celebrateButtonSub =
-    hasPreparedSession && activeCelebrateMode
-      ? formatCelebrationTitle(
-          celebrationShortLabel(
-            activeCelebrateMode,
-            vigilEve,
-            activeSession?.liturgyTitle,
-          ),
-        )
-      : null;
+  const celebrateButtonSub = useMemo(() => {
+    if (activeOptionalSaintId && optionalSaintHome.optionalBannerTitle) {
+      return formatCelebrationTitle(optionalSaintHome.optionalBannerTitle);
+    }
+    if (hasPreparedSession && activeCelebrateMode) {
+      return formatCelebrationTitle(
+        celebrationShortLabel(
+          activeCelebrateMode,
+          vigilEve,
+          activeSession?.liturgyTitle,
+        ),
+      );
+    }
+    return null;
+  }, [
+    activeOptionalSaintId,
+    optionalSaintHome.optionalBannerTitle,
+    hasPreparedSession,
+    activeCelebrateMode,
+    vigilEve,
+    activeSession?.liturgyTitle,
+  ]);
 
   const { width: windowWidth } = useWindowDimensions();
   const topBarIconSize = topBarGlyphSize(fontSize, windowWidth < 380 ? 36 : 40);
@@ -570,7 +694,15 @@ export default function Home() {
               const isToday = offset === 0;
               const monthLabel = italianMonthName(d);
               const dateSpoken = isToday ? `${dayNum} ${monthLabel}` : `${label} ${dayNum} ${monthLabel}`;
-              const stripMeta = homeStripDayMeta(d, stripCeiTitles[dateStr]);
+              const stripOptional = optionalSaintStripOverlay({
+                useSelection: optionalSaintsUseSelection,
+                selectedByMonthDay: optionalSaintSelection.selectedByMonthDay,
+                date: d,
+                calendarCeiTitle: stripCeiTitles[dateStr] || "",
+                savedLinePick: dateStr === selectedDateISO ? optionalLinePick : null,
+                isSelectedDate: dateStr === selectedDateISO,
+              });
+              const stripMeta = homeStripDayMeta(d, stripCeiTitles[dateStr], stripOptional);
               const borderHex = liturgicalColorHex(stripMeta.liturgicalColor, colors);
               // Pallini solo se «Prepara la liturgia» è attivo.
               const prepCount = preparaCelebraEnabled
@@ -699,12 +831,25 @@ export default function Home() {
             ceiTitle={bannerCeiTitleWithRank(bannerTitle, activeCelebrateMode, vigilEve)}
             liturgicalColor={liturgicalColor}
             celebrationDate={selectedDate}
+            optionalSaintId={activeOptionalSaintId}
             colors={colors}
             fontSize={fontSize}
             framed={false}
             testID="home-day-banner"
           />
         )}
+
+        {optionalSaintHome.showLineChoice ? (
+          <OptionalSaintLineChoice
+            calendarTitle={optionalSaintHome.calendarBannerTitle}
+            optionalTitle={optionalSaintHome.optionalBannerTitle}
+            activeLine={optionalSaintHome.activeLine}
+            onPick={handleOptionalLinePick}
+            colors={colors}
+            fontSize={fontSize}
+            scaledFont={scaledFont}
+          />
+        ) : null}
 
         {vigilEve && activeCelebrateMode !== "calendar_day" ? (
           <View style={styles.vigilSelectionBannerWrap} testID="home-vigil-banner-wrap">
@@ -930,28 +1075,28 @@ export default function Home() {
               <TouchableOpacity
                 style={[
                   styles.heroCard,
-                  hasPreparedSession
+                  canOpenCelebra
                     ? { backgroundColor: muteFill(colors.liturgicalGreen) }
                     : styles.heroCardGhost,
                   webClickable,
                 ]}
                 onPress={openCelebra}
-                disabled={!hasPreparedSession}
+                disabled={!canOpenCelebra}
                 testID="btn-celebrate-clean"
                 accessibilityRole="button"
                 accessibilityLabel={
-                  hasPreparedSession
+                  canOpenCelebra
                     ? celebrateButtonSub
                       ? `Celebra la Messa: ${celebrateButtonSub}`
                       : "Celebra la Messa, modalità lettura per l'altare"
                     : "Celebra la Messa, disponibile dopo la preparazione della liturgia"
                 }
-                accessibilityState={{ disabled: !hasPreparedSession }}
+                accessibilityState={{ disabled: !canOpenCelebra }}
               >
                   <Text
                     style={[
                       styles.heroTitle,
-                      !hasPreparedSession && styles.heroTitleGhost,
+                      !canOpenCelebra && styles.heroTitleGhost,
                     ]}
                     numberOfLines={2}
                   >
@@ -1170,6 +1315,9 @@ export default function Home() {
           colors={colors}
           fontSize={fontSize}
           scaledFont={scaledFont}
+          optionalSaintsUseSelection={optionalSaintsUseSelection}
+          optionalSelectedByMonthDay={optionalSaintSelection.selectedByMonthDay}
+          optionalLinePick={optionalLinePick}
           onPick={(dateISO) => {
             setDatePickerVisible(false);
             setSelectedDateISO(dateISO);

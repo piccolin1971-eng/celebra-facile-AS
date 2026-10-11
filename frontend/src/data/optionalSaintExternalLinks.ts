@@ -1,0 +1,63 @@
+/**
+ * Link esterni verificati per le bio dei santi facoltativi (Wikipedia + Santiebeati dettaglio).
+ */
+export const OPTIONAL_SAINT_WIKIPEDIA: Record<string, string> = {
+  "nome-gesu": "https://it.wikipedia.org/wiki/Santissimo_Nome_di_Ges%C3%B9",
+  "angela-merici": "https://it.wikipedia.org/wiki/Sant%27Angela_Merici",
+  "sant-orso-d-aosta": "https://it.wikipedia.org/wiki/Orso_di_Aosta",
+  "maria-lourdes": "https://it.wikipedia.org/wiki/Nostra_Signora_di_Lourdes",
+  "gabriele-addolorata": "https://it.wikipedia.org/wiki/San_Gabriele_dell%27Addolorata",
+  "san-patrizio": "https://it.wikipedia.org/wiki/San_Patrizio",
+  "francesco-paola": "https://it.wikipedia.org/wiki/Francesco_da_Paola",
+  "san-giorgio": "https://it.wikipedia.org/wiki/San_Giorgio",
+  "giuseppe-lavoratore": "https://it.wikipedia.org/wiki/San_Giuseppe_Lavoratore",
+  "maria-fatima": "https://it.wikipedia.org/wiki/Madonna_di_F%C3%A1tima",
+  "santi-vittore-e-corona": "https://it.wikipedia.org/wiki/Vittore_e_Corona",
+  "rita-cascia": "https://it.wikipedia.org/wiki/Rita_da_Cascia",
+  "pier-giorgio-frassati": "https://it.wikipedia.org/wiki/Pier_Giorgio_Frassati",
+  "elisabetta-portogallo": "https://it.wikipedia.org/wiki/Elisabetta_del_Portogallo",
+  "maria-goretti": "https://it.wikipedia.org/wiki/Maria_Goretti",
+  "monte-carmelo": "https://it.wikipedia.org/wiki/Madonna_del_Carmelo",
+  /** Nessuna voce dedicata su Wikipedia IT (solo ricerca). */
+  "san-grato-d-aosta":
+    "https://it.wikipedia.org/w/index.php?search=San+Grato+di+Aosta&title=Speciale%3ARicerca",
+  "nome-maria": "https://it.wikipedia.org/wiki/Santissimo_Nome_di_Maria",
+  faustina: "https://it.wikipedia.org/wiki/Maria_Faustina_Kowalska",
+  "carlo-acutis": "https://it.wikipedia.org/wiki/Carlo_Acutis",
+  "margherita-maria": "https://it.wikipedia.org/wiki/Margherita_Maria_Alacoque",
+  "paolo-della-croce": "https://it.wikipedia.org/wiki/Paolo_della_Croce",
+  "martino-porres": "https://it.wikipedia.org/wiki/Martino_de_Porres",
+  "san-nicola": "https://it.wikipedia.org/wiki/San_Nicola_di_Mira",
+  loreto: "https://it.wikipedia.org/wiki/Santa_Casa_di_Loreto",
+  guadalupe: "https://it.wikipedia.org/wiki/Madonna_di_Guadalupe",
+};
+
+/** Schede santiebeati.it/dettaglio/… (non ricerca generica). */
+export const OPTIONAL_SAINT_SANTIE_BEATI: Record<string, string> = {
+  "nome-gesu": "https://www.santiebeati.it/dettaglio/25625",
+  "angela-merici": "https://www.santiebeati.it/dettaglio/25900",
+  "sant-orso-d-aosta": "https://www.santiebeati.it/dettaglio/31250",
+  "maria-lourdes": "https://www.santiebeati.it/dettaglio/26100",
+  "gabriele-addolorata": "https://www.santiebeati.it/dettaglio/26000",
+  "san-patrizio": "https://www.santiebeati.it/dettaglio/26400",
+  "francesco-paola": "https://www.santiebeati.it/dettaglio/26550",
+  "san-giorgio": "https://www.santiebeati.it/dettaglio/26860",
+  "giuseppe-lavoratore": "https://www.santiebeati.it/dettaglio/27050",
+  "maria-fatima": "https://www.santiebeati.it/dettaglio/53050",
+  "santi-vittore-e-corona": "https://www.santiebeati.it/dettaglio/92614",
+  "rita-cascia": "https://www.santiebeati.it/dettaglio/32950",
+  "pier-giorgio-frassati": "https://www.santiebeati.it/dettaglio/88050",
+  "elisabetta-portogallo": "https://www.santiebeati.it/dettaglio/28050",
+  "maria-goretti": "https://www.santiebeati.it/dettaglio/28150",
+  "monte-carmelo": "https://www.santiebeati.it/dettaglio/28300",
+  "san-grato-d-aosta": "https://www.santiebeati.it/dettaglio/34550",
+  "nome-maria": "https://www.santiebeati.it/dettaglio/69950",
+  faustina: "https://www.santiebeati.it/dettaglio/57000",
+  "carlo-acutis": "https://www.santiebeati.it/dettaglio/93910",
+  "margherita-maria": "https://www.santiebeati.it/dettaglio/29650",
+  "paolo-della-croce": "https://www.santiebeati.it/dettaglio/29750",
+  "martino-porres": "https://www.santiebeati.it/dettaglio/29900",
+  "san-nicola": "https://www.santiebeati.it/dettaglio/30300",
+  loreto: "https://www.santiebeati.it/dettaglio/80900",
+  guadalupe: "https://www.santiebeati.it/dettaglio/81100",
+};

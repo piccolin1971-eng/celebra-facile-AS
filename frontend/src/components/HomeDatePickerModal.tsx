@@ -3,6 +3,10 @@ import { Modal, View, Text, TouchableOpacity, StyleSheet, Platform, ScrollView }
 import { Ionicons } from "@expo/vector-icons";
 import { buildMonthCalendarDays, type CalendarDayEntry } from "../calendarMonth";
 import { localDateStr, parseLocalDate } from "../dateUtils";
+import { formatCelebrationTitle } from "../homeBannerUtils";
+import { optionalSaintStripOverlay } from "../optionalSaintHome";
+import { getEnabledOptionalSaintForDate } from "../optionalSaints";
+import type { OptionalSaintLinePick } from "../optionalSaintLinePick";
 
 const MONTHS = [
   "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
@@ -30,6 +34,9 @@ type Props = {
   colors: ThemeColors;
   fontSize: number;
   scaledFont: (n: number) => number;
+  optionalSaintsUseSelection: boolean;
+  optionalSelectedByMonthDay: Record<string, string>;
+  optionalLinePick: OptionalSaintLinePick | null;
   onPick: (dateISO: string) => void;
   onCancel: () => void;
 };
@@ -55,6 +62,9 @@ export function HomeDatePickerModal({
   colors,
   fontSize,
   scaledFont,
+  optionalSaintsUseSelection,
+  optionalSelectedByMonthDay,
+  optionalLinePick,
   onPick,
   onCancel,
 }: Props) {
@@ -69,10 +79,37 @@ export function HomeDatePickerModal({
     setViewMonth(d.getMonth() + 1);
   }, [visible, initialDateISO]);
 
-  const monthDays = useMemo(
-    () => buildMonthCalendarDays(viewYear, viewMonth),
-    [viewYear, viewMonth],
-  );
+  const monthDays = useMemo(() => {
+    const base = buildMonthCalendarDays(viewYear, viewMonth);
+    if (!optionalSaintsUseSelection) return base;
+    return base.map((day) => {
+      const d = parseLocalDate(day.dateISO);
+      const overlay = optionalSaintStripOverlay({
+        useSelection: true,
+        selectedByMonthDay: optionalSelectedByMonthDay,
+        date: d,
+        calendarCeiTitle: day.title,
+        savedLinePick: day.dateISO === initialDateISO ? optionalLinePick : null,
+        isSelectedDate: day.dateISO === initialDateISO,
+      });
+      if (!overlay) return day;
+      const saint = getEnabledOptionalSaintForDate(d, optionalSelectedByMonthDay);
+      if (!saint) return day;
+      return {
+        ...day,
+        title: formatCelebrationTitle(saint.title),
+        liturgicalColor: overlay.liturgicalColor,
+        rankLabel: "Memoria",
+      };
+    });
+  }, [
+    viewYear,
+    viewMonth,
+    optionalSaintsUseSelection,
+    optionalSelectedByMonthDay,
+    optionalLinePick,
+    initialDateISO,
+  ]);
 
   const firstWeekdayMon0 = (new Date(viewYear, viewMonth - 1, 1).getDay() + 6) % 7;
   const gridRows = useMemo(() => {

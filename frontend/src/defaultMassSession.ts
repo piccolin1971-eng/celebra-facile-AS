@@ -8,6 +8,8 @@ import { getMassToggleDefaults } from "./massToggleDefaults";
 import {
   loadSession,
   saveSession,
+  loadOptionalSaintSession,
+  saveOptionalSaintSession,
   type CelebrationMode,
   type MassSession,
   DEFAULT_CONGEDO_ID,
@@ -87,4 +89,33 @@ export async function ensureQuickCelebrateSession(
   });
   await saveSession(dateISO, mode, session);
   return session;
+}
+
+export async function ensureQuickCelebrateOptionalSaintSession(
+  dateISO: string,
+  saintId: string,
+): Promise<MassSession> {
+  const existing = await loadOptionalSaintSession(dateISO, saintId);
+  if (existing) return existing;
+
+  const [lit, pr, bless] = await Promise.all([
+    api.liturgyForOptionalSaint(dateISO, saintId),
+    api.prefaces(),
+    api.solemnBlessings(),
+  ]);
+  const session = buildDefaultMassSession({
+    liturgy: lit,
+    mode: "calendar_day",
+    prefaces: pr.prefaces,
+    solemnBlessings: bless.blessings || [],
+    vigilEve: getVigilEveContextForISO(dateISO),
+  });
+  const withKind: MassSession = {
+    ...session,
+    liturgyKind: "optional_saint",
+    optionalSaintId: saintId,
+    liturgyTitle: lit.title || session.liturgyTitle,
+  };
+  await saveOptionalSaintSession(dateISO, saintId, withKind);
+  return withKind;
 }

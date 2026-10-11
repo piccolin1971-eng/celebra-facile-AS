@@ -1,0 +1,161 @@
+{
+  "version": 1,
+  "saints": [
+    {
+      "id": "nome-gesu",
+      "date": "01-03",
+      "title": "Santissimo Nome di Gesù",
+      "custom": false
+    },
+    {
+      "id": "angela-merici",
+      "date": "01-27",
+      "title": "Sant'Angela Merici, vergine",
+      "custom": false
+    },
+    {
+      "id": "sant-orso-d-aosta",
+      "date": "02-01",
+      "title": "Sant'Orso d'Aosta",
+      "custom": true
+    },
+    {
+      "id": "maria-lourdes",
+      "date": "02-11",
+      "title": "Beata Vergine Maria di Lourdes",
+      "custom": false
+    },
+    {
+      "id": "gabriele-addolorata",
+      "date": "02-27",
+      "title": "San Gabriele dell'Addolorata, religioso",
+      "custom": false
+    },
+    {
+      "id": "san-patrizio",
+      "date": "03-17",
+      "title": "San Patrizio, vescovo",
+      "custom": false
+    },
+    {
+      "id": "francesco-paola",
+      "date": "04-02",
+      "title": "San Francesco di Paola, eremita",
+      "custom": false
+    },
+    {
+      "id": "san-giorgio",
+      "date": "04-23",
+      "title": "San Giorgio, martire",
+      "custom": false
+    },
+    {
+      "id": "giuseppe-lavoratore",
+      "date": "05-01",
+      "title": "San Giuseppe lavoratore",
+      "custom": false
+    },
+    {
+      "id": "maria-fatima",
+      "date": "05-13",
+      "title": "Beata Vergine Maria di Fatima",
+      "custom": false
+    },
+    {
+      "id": "santi-vittore-e-corona",
+      "date": "05-14",
+      "title": "Santi Vittore e Corona",
+      "custom": true
+    },
+    {
+      "id": "rita-cascia",
+      "date": "05-22",
+      "title": "Santa Rita da Cascia, religiosa",
+      "custom": false
+    },
+    {
+      "id": "pier-giorgio-frassati",
+      "date": "07-04",
+      "title": "San Pier Giorgio Frassati",
+      "custom": false
+    },
+    {
+      "id": "elisabetta-portogallo",
+      "date": "07-04",
+      "title": "Santa Elisabetta di Portogallo",
+      "custom": false
+    },
+    {
+      "id": "maria-goretti",
+      "date": "07-06",
+      "title": "Santa Maria Goretti, vergine e martire",
+      "custom": false
+    },
+    {
+      "id": "monte-carmelo",
+      "date": "07-16",
+      "title": "Beata Vergine Maria del Monte Carmelo",
+      "custom": false
+    },
+    {
+      "id": "san-grato-d-aosta",
+      "date": "09-07",
+      "title": "San Grato d'Aosta",
+      "custom": true
+    },
+    {
+      "id": "nome-maria",
+      "date": "09-12",
+      "title": "Santissimo Nome di Maria",
+      "custom": false
+    },
+    {
+      "id": "faustina",
+      "date": "10-05",
+      "title": "Santa Faustina Kowalska, vergine",
+      "custom": false
+    },
+    {
+      "id": "carlo-acutis",
+      "date": "10-12",
+      "title": "San Carlo Acutis",
+      "custom": false
+    },
+    {
+      "id": "margherita-maria",
+      "date": "10-16",
+      "title": "Santa Margherita Maria Alacoque, vergine",
+      "custom": false
+    },
+    {
+      "id": "paolo-della-croce",
+      "date": "10-19",
+      "title": "San Paolo della Croce, presbitero",
+      "custom": false
+    },
+    {
+      "id": "martino-porres",
+      "date": "11-03",
+      "title": "San Martino de Porres, religioso",
+      "custom": false
+    },
+    {
+      "id": "san-nicola",
+      "date": "12-06",
+      "title": "San Nicola, vescovo",
+      "custom": false
+    },
+    {
+      "id": "loreto",
+      "date": "12-10",
+      "title": "Beata Vergine Maria di Loreto",
+      "custom": false
+    },
+    {
+      "id": "guadalupe",
+      "date": "12-12",
+      "title": "Beata Vergine Maria di Guadalupe",
+      "custom": false
+    }
+  ]
+}

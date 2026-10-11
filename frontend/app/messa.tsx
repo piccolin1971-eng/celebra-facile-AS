@@ -9,7 +9,8 @@ import { api, Liturgy, Preface, EucharisticPrayer, MysteryAcclamation, SolemnBle
 import { PrefaceSelectorModal } from "../src/components/PrefaceSelectorModal";
 import { getOrazionaleSections, getPrayerById, suggestPrayerForLiturgy, OrazionalePrayer } from "../src/orazionale";
 import { splitFedeliTextIntoChunks } from "../src/orazionaleChunking";
-import { loadSession, saveSession, loadVotiveSession, saveVotiveSession, saveSessionForTarget, loadSessionForTarget, cleanupOldSessions, MassSession, parseCelebrationMode, messaRouteDateParam, messaRouteModeParam, messaRouteVotiveParam, type CelebrationMode, type SessionTarget, DEFAULT_CONGEDO_ID } from "../src/massSession";
+import { loadSession, saveSession, loadVotiveSession, saveVotiveSession, loadOptionalSaintSession, saveOptionalSaintSession, saveSessionForTarget, loadSessionForTarget, cleanupOldSessions, MassSession, parseCelebrationMode, messaRouteDateParam, messaRouteModeParam, messaRouteVotiveParam, messaRouteOptionalSaintParam, type CelebrationMode, type SessionTarget, DEFAULT_CONGEDO_ID } from "../src/massSession";
+import { getOptionalSaintById } from "../src/optionalSaints";
 import { todayStr, parseLocalDate, italianDateLabel } from "../src/dateUtils";
 import { LiturgyDayBanner } from "../src/components/LiturgyDayBanner";
 import { BrandScreenTitle } from "../src/components/BrandScreenTitle";
@@ -100,7 +101,7 @@ export default function MessaScreen() {
   }, []);
 
   const router = useRouter();
-  const params = useLocalSearchParams<{ date?: string; preface?: string; votive?: string; mode?: string }>();
+  const params = useLocalSearchParams<{ date?: string; preface?: string; votive?: string; optionalSaint?: string; mode?: string }>();
   const {
     colors,
     fontSize,
@@ -170,11 +171,12 @@ export default function MessaScreen() {
   const [activeVotiveMeta, setActiveVotiveMeta] = useState<{ title: string; color: string } | null>(
     null,
   );
+  const [activeOptionalSaintId, setActiveOptionalSaintId] = useState<string | null>(null);
   const [celebrationMode, setCelebrationMode] = useState<CelebrationMode>("calendar_day");
 
   useEffect(() => {
     setPageKey("intro");
-  }, [sessionDate, activeVotiveId, celebrationMode]);
+  }, [sessionDate, activeVotiveId, activeOptionalSaintId, celebrationMode]);
 
   useEffect(() => {
     setPageKey((k) => (massPageSection(k) === "pe" ? "pe-cons-0" : k));
@@ -215,9 +217,12 @@ export default function MessaScreen() {
 
   const currentSessionTarget = useMemo((): SessionTarget | null => {
     if (activeVotiveId) return { kind: "votive", votiveId: activeVotiveId };
+    if (activeOptionalSaintId && sessionDate) {
+      return { kind: "optionalSaint", dateISO: sessionDate, saintId: activeOptionalSaintId };
+    }
     if (sessionDate) return { kind: "calendar", dateISO: sessionDate, mode: celebrationMode };
     return null;
-  }, [activeVotiveId, sessionDate, celebrationMode]);
+  }, [activeVotiveId, activeOptionalSaintId, sessionDate, celebrationMode]);
 
   const styles = makeStyles(colors, fontSize, fontFamilyId, isBold, lineSpacing);
 
@@ -387,6 +392,7 @@ export default function MessaScreen() {
   const routeDateParam = messaRouteDateParam(params);
   const routeModeParam = messaRouteModeParam(params);
   const routeVotiveParam = messaRouteVotiveParam(params);
+  const routeOptionalSaintParam = messaRouteOptionalSaintParam(params);
   const routePrefaceParam = typeof params.preface === "string" ? params.preface : "";
 
   useEffect(() => {
@@ -500,8 +506,77 @@ export default function MessaScreen() {
           return;
         }
 
+        if (routeOptionalSaintParam) {
+          const saint = getOptionalSaintById(routeOptionalSaintParam);
+          if (!saint) {
+            setLoadError("Memoria facoltativa non trovata.");
+            return;
+          }
+          const dateParam = routeDateParam;
+          const dateKey = dateParam || todayStr();
+          const [optLit, calLit, parts, pr, pe, acc, bless] = await Promise.all([
+            api.liturgyForOptionalSaint(dateKey, routeOptionalSaintParam),
+            api.liturgyForDate(dateKey, "calendar_day"),
+            api.fixedParts(),
+            api.prefaces(),
+            api.eucharisticPrayers(),
+            api.mysteryAcclamations(),
+            api.solemnBlessings(),
+          ]);
+          if (!parts?.parts) {
+            setLoadError("Impossibile caricare i testi fissi della Messa. Verifica lo spazio libero e riprova.");
+            setFixedParts(null);
+            return;
+          }
+          if (cancelled || gen !== liturgyLoadGenRef.current) return;
+          setActiveVotiveId(null);
+          setActiveVotiveMeta(null);
+          setActiveOptionalSaintId(routeOptionalSaintParam);
+          setCalendarDayLiturgy(
+            reconcileLiturgyColors({ ...calLit, celebrationMode: "calendar_day" }),
+          );
+          setVigilModeLiturgy(null);
+          const reconciled = reconcileLiturgyColors({
+            ...optLit,
+            celebrationMode: "calendar_day",
+          });
+          setLiturgy(reconciled);
+          setFixedParts(parts.parts);
+          setPrefaces(pr.prefaces);
+          prefacesRef.current = pr.prefaces;
+          setPrayers(pe.prayers);
+          setAcclamations(acc.acclamations);
+          setSolemnBlessings(bless.blessings);
+          setPasquaDismissal(bless.pasqua_dismissal);
+          if (Array.isArray((bless as any).prayersOverPeople)) {
+            setPrayersOverPeople((bless as any).prayersOverPeople);
+          }
+          resetMassSessionChoicesRef.current();
+          const seasBlessSeason = getLiturgicalSeasonKey(reconciled?.season?.season || "");
+          const seasBless =
+            bless.blessings.find((b) => b.id === seasBlessSeason) ||
+            bless.blessings.find((b) => b.season === seasBlessSeason);
+          if (seasBless) setSolemnBlessingId(seasBless.id);
+          if (seasBlessSeason === "pasqua") setCongedoId("pasqua_alleluia");
+          setSessionDate(optLit?.date || dateKey);
+          setCelebrationMode("calendar_day");
+          const saved = await loadOptionalSaintSession(dateKey, routeOptionalSaintParam);
+          if (cancelled || gen !== liturgyLoadGenRef.current) return;
+          if (saved) {
+            applySessionFromStorageRef.current(saved);
+          }
+          applyLiturgyChoicesFor(reconciled);
+          if (optLit.error && reconciled.readings.length === 0) {
+            setLoadError(String(optLit.error));
+          }
+          cleanupOldSessions();
+          setSessionLoaded(true);
+          return;
+        }
+
         setActiveVotiveId(null);
         setActiveVotiveMeta(null);
+        setActiveOptionalSaintId(null);
         const dateParam = routeDateParam;
         const dateKey = dateParam || todayStr();
         const initialMode = coerceCelebrationMode(
@@ -647,7 +722,7 @@ export default function MessaScreen() {
     return () => {
       cancelled = true;
     };
-  }, [routeDateParam, routeModeParam, routePrefaceParam, routeVotiveParam, applyLiturgyChoicesFor]);
+  }, [routeDateParam, routeModeParam, routePrefaceParam, routeVotiveParam, routeOptionalSaintParam, applyLiturgyChoicesFor]);
 
   useEffect(() => {
     if (!sessionLoaded || !currentSessionTarget) {
@@ -710,8 +785,13 @@ export default function MessaScreen() {
       liturgyTitleForMode(celebrationMode, liturgy?.title || "", vigilEve);
     const session: MassSession = {
       celebrationMode,
-      liturgyKind: activeVotiveId ? "votive" : "calendar",
+      liturgyKind: activeVotiveId
+        ? "votive"
+        : activeOptionalSaintId
+          ? "optional_saint"
+          : "calendar",
       votiveId: activeVotiveId ?? undefined,
+      optionalSaintId: activeOptionalSaintId ?? undefined,
       liturgyTitle,
       prepSource: "prepara",
       showGloria, showCredo, showOrazionalePray,

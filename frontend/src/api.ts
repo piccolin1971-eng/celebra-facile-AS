@@ -29,6 +29,7 @@ import {
   loadLiturgy,
   getLiturgyIndex,
 } from "./offlineCache";
+import { getOptionalSaintFullLiturgy } from "./optionalSaintLiturgy";
 import { todayStr, parseLocalDate, italianDateLabel } from "./dateUtils";
 import type { CelebrationMode } from "./massSession";
 import { fillMissingFeastSecondReading } from "./saintLectionary";
@@ -218,6 +219,8 @@ export const api = {
   liturgyToday: (mode?: CelebrationMode) => liturgyForDateCached(todayStr(), mode ?? "calendar_day"),
   liturgyForDate: (date: string, mode: CelebrationMode = "calendar_day") =>
     liturgyForDateCached(date, mode),
+  liturgyForOptionalSaint: (date: string, saintId: string) =>
+    getOptionalSaintFullLiturgy(date, saintId),
   resolveCeiCelebrationTitle,
   warmLiturgyModes,
   refreshLiturgy: async (date: string) => {

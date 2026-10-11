@@ -132,6 +132,24 @@ export default function Impostazioni() {
           </View>
         </View>
 
+        <View style={styles.section} testID="section-optional-saints">
+          <Text style={styles.sectionTitle}>Memorie facoltative e santi locali</Text>
+          <Text style={styles.sectionDesc}>
+            Scegli quali memorie facoltative mettere in evidenza nei giorni del calendario. Liturgia da CEI,
+            lezionario o testi in app. Disattivato di default: finché non attivi «Usa la mia selezione»,
+            nulla cambia in Home.
+          </Text>
+          <TouchableOpacity
+            style={styles.previewLinkBtn}
+            onPress={() => router.push("/impostazioni-memorie-facoltative" as never)}
+            testID="btn-optional-saints-settings"
+          >
+            <Ionicons name="person-outline" size={scaledFont(24)} color={colors.primary} />
+            <Text style={styles.previewLinkText}>Gestisci la selezione</Text>
+            <Ionicons name="chevron-forward" size={scaledFont(22)} color={colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
+
         <View style={styles.section} testID="section-haptic">
           <View style={styles.switchRow}>
             <View style={{ flex: 1 }}>

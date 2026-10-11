@@ -21,6 +21,48 @@ function liturgyStorageKey(date: string, mode: CelebrationMode = "calendar_day")
   return `${LITURGY_PREFIX}${date}_${mode}`;
 }
 
+function optionalSaintLiturgyStorageKey(date: string, saintId: string): string {
+  return `${LITURGY_PREFIX}${date}_opt_${saintId}`;
+}
+
+export async function saveOptionalSaintLiturgy(
+  date: string,
+  saintId: string,
+  data: any,
+): Promise<void> {
+  try {
+    const key = optionalSaintLiturgyStorageKey(date, saintId);
+    await AsyncStorage.setItem(key, JSON.stringify({ ...data, optionalSaintId: saintId }));
+    const index = await getLiturgyIndex();
+    const indexId = `${date}:opt:${saintId}`;
+    const next = index.filter((e) => e.date !== indexId);
+    next.push({
+      date: indexId,
+      cachedAt: Date.now(),
+      title: data?.title,
+      date_label: data?.date_label,
+    });
+    next.sort((a, b) => a.date.localeCompare(b.date));
+    await AsyncStorage.setItem(INDEX_KEY, JSON.stringify(next));
+  } catch (e) {
+    console.log("saveOptionalSaintLiturgy error:", e);
+  }
+}
+
+export async function loadOptionalSaintLiturgy(
+  date: string,
+  saintId: string,
+): Promise<any | null> {
+  try {
+    const raw = await AsyncStorage.getItem(optionalSaintLiturgyStorageKey(date, saintId));
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (e) {
+    console.log("loadOptionalSaintLiturgy error:", e);
+    return null;
+  }
+}
+
 /** Indice: `YYYY-MM-DD` oppure `YYYY-MM-DD:vigil_proper` → chiave AsyncStorage. */
 function storageKeyFromIndexId(indexId: string): string {
   const colon = indexId.indexOf(":");
