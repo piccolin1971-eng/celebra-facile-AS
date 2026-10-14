@@ -214,7 +214,11 @@ function parseRubricLine(inner: string): OreBlock | null {
 }
 
 function normalizeLab(raw: string): string {
-  const t = raw.replace(/\s+/g, " ").trim();
+  const t = raw
+    .replace(new RegExp(JOIN_CROSS_MARK, "g"), "")
+    .replace(/^†\s*/, "")
+    .replace(/\s+/g, " ")
+    .trim();
   if (/^V\.?$/i.test(t)) return "V.";
   if (/^R\.?$/i.test(t)) return "R.";
   return t;
@@ -786,6 +790,13 @@ function blocksFromAntiphonal(inner: string): OreBlock[] {
     acc = [];
   };
   for (const n of nodes) {
+    if (
+      n.kind === "el" &&
+      (hasClass(n.cls, "lo_cersetto") || (!isLo(n.cls) && /lo_antifona/i.test(n.inner)))
+    ) {
+      out.push(...blocksFromAntiphonal(n.inner));
+      continue;
+    }
     if (n.kind === "el" && (hasClass(n.cls, "lo_antifona") || hasClass(n.cls, "lo_rosso"))) {
       const raw = stripTags(n.inner).replace(/\s+/g, " ").trim();
       if (!raw || raw === "*") continue;
@@ -1848,15 +1859,29 @@ function dropRepeatedPsalmCaption(blocks: OreBlock[]): OreBlock[] {
   return out;
 }
 
-/** «CANTICO DI SIMEONE Lc 2, 29-32» → titolo e citazione staccati. */
+/** «CANTICO DI SIMEONE Lc 2, 29-32» / «CANTICO Cfr. Col 1, 3. 12-20» → titolo, citazione, nome tematico (CEI lo_rosso). */
 export function peelGluedCanticleCites(blocks: OreBlock[]): OreBlock[] {
   return blocks.map((b) => {
-    if (b.k !== "psalmHead" || b.cite.trim()) return b;
-    const m = b.num.match(
-      /^(CANTICO\s+(?:DI|DELLA|DEL|DEI|DEGLI|DELLE)\s+[A-ZÀ-Ù][A-Za-zÀ-ÿ'’]+)\s+((?:Lc|Mt|Mc|Gv|Is)\s+\d[\d.,\s\-–]*)$/i,
-    );
-    if (!m) return b;
-    return { ...b, num: m[1].trim(), cite: m[2].replace(/\s+/g, " ").trim() };
+    if (b.k !== "psalmHead") return b;
+    const cfr = b.num.match(/^CANTICO\s+Cfr\.?\s+(.+)$/i);
+    if (cfr) {
+      const citeFromNum = cfr[1].replace(/\s+/g, " ").trim();
+      const thematic = b.name.trim() || b.sub.trim();
+      return {
+        ...b,
+        num: `CANTICO Cfr. ${citeFromNum}`,
+        cite: "",
+        name: thematic,
+        sub: "",
+      };
+    }
+    if (!b.cite.trim()) {
+      const m = b.num.match(
+        /^(CANTICO\s+(?:DI|DELLA|DEL|DEI|DEGLI|DELLE)\s+[A-ZÀ-Ù][A-Za-zÀ-ÿ'’]+)\s+((?:Lc|Mt|Mc|Gv|Is)\s+\d[\d.,\s\-–]*)$/i,
+      );
+      if (m) return { ...b, num: m[1].trim(), cite: m[2].replace(/\s+/g, " ").trim() };
+    }
+    return b;
   });
 }
 

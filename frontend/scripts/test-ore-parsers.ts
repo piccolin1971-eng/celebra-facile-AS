@@ -5,11 +5,15 @@
 import { getBundledCompline } from "../src/ore/complineBundled";
 import {
   JOIN_CROSS_MARK,
+  hasJoinCross,
   joinCrossAfterAsterisk,
   joinCrossAtLineStart,
+  fixMidLineJoinCrossLines,
   normalizeJoinCrossBlocks,
   placeJoinCrossAfterAntiphonEcho,
 } from "../src/ore/joinCross";
+import { peelGluedCanticleCites } from "../src/ore/parseHour";
+import { enrichPsalmHead } from "../src/ore/psalmHeadings";
 import type { OreBlock } from "../src/ore/types";
 
 const show = (s: string) => s.replaceAll(JOIN_CROSS_MARK, "†");
@@ -60,6 +64,48 @@ const ant = `Dal profondo a te grido, o Signore! ${JOIN_CROSS_MARK}`;
   expectEchoThenCross(r.lines, "eco-ripristinata");
 }
 
+// «eco * † resto» senza eco riconosciuta (punteggiatura) ma con * prima della †
+{
+  const ant = "Ti amo, Signore, mia forza.";
+  const r = placeJoinCrossAfterAntiphonEcho(`${ant} ${JOIN_CROSS_MARK}`, [
+    `Ti amo, Signore, mia forza, * ${JOIN_CROSS_MARK} Signore, mia roccia, *`,
+  ]);
+  assert(r.lines.length >= 2, "ti amo: spezzato");
+  assert(!joinCrossAfterAsterisk(r.lines[0]), "ti amo: eco senza † dopo *");
+  assert(joinCrossAtLineStart(r.lines[1]), "ti amo: † a inizio 2ª riga");
+}
+
+// † a metà strofa (Sal 147 lodi): eco interna, non testo dell’antifona
+{
+  const lines = fixMidLineJoinCrossLines([
+    "Glorifica il Signore, Gerusalemme, *",
+    `loda, Sion, il tuo Dio. ${JOIN_CROSS_MARK} Perché ha rinforzato le sbarre delle tue porte, *`,
+    "in mezzo a te ha benedetto i tuoi figli.",
+  ]);
+  assert(lines.length === 4, "sal147: quattro righe");
+  assert(joinCrossAtLineStart(lines[2]), "sal147: † a inizio riga");
+}
+
+// Salmo senza † in antifona ma † nel corpo dopo l’eco (IV sett.)
+{
+  const ant = "Loda, Sion, il tuo Dio.";
+  const dirty: OreBlock[] = [
+    { k: "rubric", lab: "1 ant.", text: ant },
+    { k: "psalmHead", num: "SALMO 147", name: "", sub: "", cite: "" },
+    {
+      k: "stanza",
+      lines: [`loda, Sion, il tuo Dio. ${JOIN_CROSS_MARK} Perché ha rinforzato le sbarre delle tue porte, *`],
+    },
+  ];
+  const fixed = normalizeJoinCrossBlocks(dirty);
+  const st = fixed[2];
+  assert(st?.k === "stanza", "loda sion: stanza");
+  if (st.k === "stanza") {
+    assert(!hasJoinCross(st.lines[0]) || !st.lines[0].includes(JOIN_CROSS_MARK), "loda sion: eco pulita");
+    assert(joinCrossAtLineStart(st.lines[1] || st.lines[0]), "loda sion: † a inizio riga resto");
+  }
+}
+
 // normalizeJoinCrossBlocks su blocchi sporchi
 {
   const dirty: OreBlock[] = [
@@ -102,6 +148,35 @@ const ant = `Dal profondo a te grido, o Signore! ${JOIN_CROSS_MARK}`;
       (b.k === "stanza" && b.lines.some((l) => /lascia,?\s*o Signore/i.test(l))),
   );
   assert(nunc, "compieta: Nunc dimittis");
+}
+
+// Cantico «Cfr. Col …»: cite staccata, tematica in name (CEI lo_rosso → oro)
+{
+  const [head] = peelGluedCanticleCites([
+    {
+      k: "psalmHead",
+      num: "CANTICO Cfr. Col 1, 3. 12-20",
+      name: "Cristo fu generato prima di ogni creatura, è il primogenito di coloro che risuscitano dai morti",
+      sub: "",
+      cite: "",
+    },
+  ]);
+  assert(head?.k === "psalmHead", "cfr: psalmHead");
+  if (head.k === "psalmHead") {
+    assert(/CANTICO\s+Cfr\./i.test(head.num), "cfr: titolo con Cfr");
+    assert(/Col\s+1,\s*3\.\s*12-20/i.test(head.num), "cfr: ref nel titolo oro");
+    assert(head.cite === "", "cfr: niente riga cite grigia");
+    assert(/Cristo fu generato/i.test(head.name), "cfr: tematica in name");
+    assert(head.sub === "", "cfr: no sub grigio");
+  }
+  assert(head.k === "psalmHead", "cfr: head type");
+  const enriched = enrichPsalmHead(head);
+  assert(/Cristo fu generato/i.test(enriched.name), "cfr enrich: tematica in name");
+  assert(enriched.sub === "", "cfr enrich: sub vuoto");
+  assert(enriched.cite === "", "cfr enrich: cite non duplicata");
+  assert(head.k === "psalmHead", "cfr: type");
+  const withDupCite = enrichPsalmHead({ ...head, cite: "Col 1, 3. 12-20" });
+  assert(withDupCite.cite === "", "cfr enrich: cite tolta se già nel titolo");
 }
 
 console.log("OK test-ore-parsers");

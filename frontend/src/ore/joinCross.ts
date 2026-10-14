@@ -89,7 +89,8 @@ export function placeJoinCrossAfterAntiphonEcho(
     const before = line.slice(0, crossIdx).replace(/\s+$/, "");
     const after = line.slice(crossIdx + JOIN_CROSS_MARK.length).trim();
     if (!before.trim()) continue;
-    if (!isAntiphonEcho(before, core)) continue;
+    const endsWithAsterisk = /\*\s*$/.test(before.trim());
+    if (!isAntiphonEcho(before, core) && !endsWithAsterisk) continue;
     const echo = before.trim();
     const rest = after ? `${JOIN_CROSS_MARK} ${after}` : JOIN_CROSS_MARK;
     next.splice(li, 1, echo, rest);
@@ -184,7 +185,45 @@ export function placeJoinCrossAfterAntiphonEcho(
 }
 
 function isPsalmPartMarker(t: string): boolean {
-  return /^(I|II|III|IV|V|VI)\s*$/i.test(t.trim()) || /^Parte\b/i.test(t.trim());
+  const s = t.trim();
+  return (
+    /^(I|II|III|IV|V|VI)\s*$/i.test(s) ||
+    /^Parte\b/i.test(s) ||
+    /^(I|II|III|IV|V|VI)\s*\([^)]*\)/i.test(s)
+  );
+}
+
+/** Spezza «eco * † resto» o «eco. † resto» sulla stessa riga (anche senza eco dell’antifona). */
+export function fixMidLineJoinCrossLines(lines: string[]): string[] {
+  const out: string[] = [];
+  for (const line of lines) {
+    if (!hasJoinCross(line) || joinCrossAtLineStart(line.trim())) {
+      out.push(line);
+      continue;
+    }
+    const crossIdx = line.indexOf(JOIN_CROSS_MARK);
+    const before = line.slice(0, crossIdx).replace(/\s+$/, "");
+    const after = line.slice(crossIdx + JOIN_CROSS_MARK.length).trim();
+    if (!before.trim() || !after) {
+      out.push(line);
+      continue;
+    }
+    const splitAfterStar = joinCrossAfterAsterisk(line);
+    const splitAfterPeriod = /[.;]\s*$/.test(before.trim());
+    if (splitAfterStar || splitAfterPeriod) {
+      out.push(before.trim());
+      out.push(`${JOIN_CROSS_MARK} ${after}`);
+      continue;
+    }
+    out.push(line);
+  }
+  return out;
+}
+
+function stanzaNeedsJoinCrossFix(lines: string[]): boolean {
+  return lines.some(
+    (l) => hasJoinCross(l) && (joinCrossAfterAsterisk(l) || !joinCrossAtLineStart(l.trim())),
+  );
 }
 
 /** Applica la regola su tutte le antifone con † → prima strofa del salmo. */
@@ -195,7 +234,9 @@ export function normalizeJoinCrossBlocks(blocks: OreBlock[]): OreBlock[] {
 
   for (let i = 0; i < out.length; i++) {
     const b = out[i];
-    if (b.k !== "rubric" || !/ant/i.test(b.lab) || !hasJoinCross(b.text)) continue;
+    if (b.k !== "rubric" || !/ant/i.test(b.lab)) continue;
+    const antRaw = b.text.replace(/\s+/g, " ").trim();
+    if (!hasJoinCross(antRaw) && !antRaw) continue;
 
     let stanzaIdx = -1;
     for (let j = i + 1; j < out.length; j++) {
@@ -205,6 +246,7 @@ export function normalizeJoinCrossBlocks(blocks: OreBlock[]): OreBlock[] {
         break;
       }
       if (n.k === "rubric" && /ant/i.test(n.lab)) break;
+      if (n.k === "psalmHead") continue;
       if (n.k === "title") {
         if (isPsalmPartMarker(n.text)) continue;
         break;
@@ -213,8 +255,35 @@ export function normalizeJoinCrossBlocks(blocks: OreBlock[]): OreBlock[] {
     if (stanzaIdx < 0) continue;
 
     const st = out[stanzaIdx] as Extract<OreBlock, { k: "stanza" }>;
-    const fixed = placeJoinCrossAfterAntiphonEcho(b.text, st.lines, st.hang);
+    if (!hasJoinCross(antRaw) && !stanzaNeedsJoinCrossFix(st.lines)) continue;
+    const antText = hasJoinCross(antRaw) ? b.text : `${antRaw} ${JOIN_CROSS_MARK}`;
+    const fixed = placeJoinCrossAfterAntiphonEcho(antText, st.lines, st.hang);
     out[stanzaIdx] = { k: "stanza", lines: fixed.lines, hang: fixed.hang };
+  }
+
+  for (let i = 0; i < out.length; i++) {
+    const b = out[i];
+    if (b.k !== "stanza") continue;
+    const newLines: string[] = [];
+    const newHang: number[] = [];
+    let changed = false;
+    for (let li = 0; li < b.lines.length; li++) {
+      const h = b.hang?.[li] ?? 0;
+      const split = fixMidLineJoinCrossLines([b.lines[li]]);
+      if (split.length === 1 && split[0] === b.lines[li]) {
+        newLines.push(b.lines[li]);
+        newHang.push(h);
+        continue;
+      }
+      changed = true;
+      split.forEach((l, j) => {
+        newLines.push(l);
+        newHang.push(j === 0 ? h : 0);
+      });
+    }
+    if (changed) {
+      out[i] = { k: "stanza", lines: newLines, hang: b.hang ? newHang : undefined };
+    }
   }
 
   return out;
