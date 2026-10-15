@@ -57,6 +57,8 @@ function tidyLitText(t: string): string {
       .replace(/\s+/g, " ")
       .replace(/\s*\bbr\s*$/i, "")
       .replace(/\s*(?:div|span)\s+class\s*=\s*"?\s*$/i, "")
+      // Refuso ricorrente sul CEI (intercessioni vergini)
+      .replace(/\bintatta a sua fede\b/gi, "intatta la sua fede")
       .trim(),
   );
 }
@@ -1216,13 +1218,9 @@ function joinPrecesWrap(lines: string[]): string[] {
     }
     const prev = out[out.length - 1];
     const prevIsDash = !!prev && /^—/.test(prev);
-    const wrapAfterDash = prevIsDash && !/^—/.test(t) && !/[.!?]$/.test(prev);
-    const cont =
-      prev &&
-      !/:\s*$/.test(prev) &&
-      !/[.!?]$/.test(prev) &&
-      !/^(V\.|R\.|Ant\.)/i.test(t) &&
-      (!prevIsDash || wrapAfterDash);
+    const wrapAfterDash = prevIsDash && !/^—/.test(t) && !/[.!?…][»”"]?\s*$/.test(prev);
+    // Unisci solo il proseguo di una risposta dopo «—», non le righe d’invito/petizione del CEI.
+    const cont = prevIsDash && wrapAfterDash;
     if (cont) out[out.length - 1] = `${prev} ${t}`;
     else out.push(t);
   }
@@ -1307,16 +1305,26 @@ function rebuildPreces(grabbed: OreBlock[]): OreBlock[] | null {
   const last = lines[introEnd] || "";
   const inline = last.match(/^(.*?:\s*)(.+)$/);
   if (inline && inline[2].trim() && inline[2].trim().length <= 140 && !/^—/.test(inline[2].trim())) {
-    intro = [...lines.slice(0, introEnd), inline[1].trim()].join(" ");
+    intro = [...lines.slice(0, introEnd), inline[1].trim()]
+      .map((l) => l.replace(/\s+/g, " ").trim())
+      .join("\n");
     if (!refrain) refrain = inline[2].trim();
   } else {
-    intro = lines.slice(0, introEnd + 1).join(" ");
+    intro = lines
+      .slice(0, introEnd + 1)
+      .map((l) => l.replace(/\s+/g, " ").trim())
+      .join("\n");
     if (!refrain && rest[0] && rest[0].length <= 140 && !/^—/.test(rest[0]) && !/,$/.test(rest[0])) {
       refrain = rest[0];
       rest = rest.slice(1);
     }
   }
-  intro = intro.replace(/\s+/g, " ").trim();
+  if (!intro.includes("\n")) intro = intro.replace(/\s+/g, " ").trim();
+  else intro = intro
+    .split("\n")
+    .map((l) => l.replace(/\s+/g, " ").trim())
+    .filter(Boolean)
+    .join("\n");
   refrain = (refrain || "").replace(/\s+/g, " ").trim();
   if (!intro || intro.length < 8) return null;
   const out: OreBlock[] = [{ k: "tone", intro, refrain }];

@@ -119,28 +119,24 @@ function LitLine({
   const pad = hangPad(body.fontSize, hang || 0);
   const useResponseBullet = responseBullet && lab?.[1] === "—";
   if (useResponseBullet) {
+    const bulletSize = Math.round(body.fontSize * 1.24 * 0.85);
     return (
-      <View style={[{ flexDirection: "row", alignItems: "flex-start" }, pad]}>
+      <Text style={[body, pad]}>
         <Text
           style={[
             rubricStyle(body.fontSize),
             {
               fontFamily: FONT,
-              fontSize: Math.round(body.fontSize * 1.24 * 0.85),
+              fontSize: bulletSize,
               lineHeight: body.lineHeight,
-              width: Math.round(body.fontSize * 1.24 * 0.85),
-              textAlign: "center",
-              marginRight: Math.round(body.fontSize * 0.16),
             },
           ]}
         >
-          ●
+          ●{" "}
         </Text>
-        <Text style={[body, { flex: 1 }]}>
-          {colorStars(rest, body)}
-          {ant ? <Text style={rubricStyle(body.fontSize)}> (Ant.).</Text> : null}
-        </Text>
-      </View>
+        {colorStars(rest, body)}
+        {ant ? <Text style={rubricStyle(body.fontSize)}> (Ant.).</Text> : null}
+      </Text>
     );
   }
   return (
@@ -213,6 +209,7 @@ export function OreBlocksView({
   };
   const titleLh = Math.round(fontSize * 1.3 * 1.1);
   let antSeen = false;
+  let inPrecesSection = false;
   let inPreces = false;
 
   return (
@@ -226,7 +223,13 @@ export function OreBlocksView({
       {afterHourHead}
       {blocks.map((raw, i) => {
         const b = raw.k === "psalmHead" ? enrichPsalmHead(raw) : raw;
-        if (inPreces && b.k === "title") inPreces = false;
+        if (b.k === "title" && /^(INVOCAZIONI|INTERCESSIONI)\b/i.test(b.text)) {
+          inPrecesSection = true;
+          inPreces = false;
+        } else if (inPrecesSection && b.k === "title") {
+          inPrecesSection = false;
+          inPreces = false;
+        }
         const node = renderBlock(
           b,
           i,
@@ -237,7 +240,7 @@ export function OreBlocksView({
           textColor,
           inPreces,
         );
-        if (b.k === "tone") inPreces = true;
+        if (inPrecesSection && b.k === "tone") inPreces = true;
         if (b.k === "rubric" && /ant/i.test(b.lab) && !antSeen) {
           antSeen = true;
           return (
@@ -558,18 +561,23 @@ function renderBlock(
     );
   }
   if (b.k === "tone") {
+    const introLines = b.intro.split("\n").filter((l) => l.trim());
     return (
       <View key={i} style={{ marginTop: em(0.85), marginBottom: em(0.55) }}>
-        <Text
-          style={{
-            fontFamily: FONT,
-            fontSize,
-            lineHeight,
-            color: textColor,
-          }}
-        >
-          {b.intro}
-        </Text>
+        {introLines.map((line, li) => (
+          <Text
+            key={li}
+            style={{
+              fontFamily: FONT,
+              fontSize,
+              lineHeight,
+              color: textColor,
+              ...(li > 0 ? hangPad(fontSize, 1) : null),
+            }}
+          >
+            {line}
+          </Text>
+        ))}
         {b.refrain ? (
           <Text
             style={{
