@@ -3,7 +3,7 @@ import { Text, View, StyleSheet, type StyleProp, type ViewStyle } from "react-na
 import type { AppFontWeight } from "../fontFamily";
 import type { OreBlock, DayHoursMeta } from "./types";
 import { formatHourHeadLine } from "./dayHead";
-import { enrichPsalmHead } from "./psalmHeadings";
+import { enrichPsalmHeads } from "./psalmHeadings";
 import { JOIN_CROSS_MARK } from "./joinCross";
 
 const GOLD_TITLE = "#c4b06a";
@@ -191,7 +191,7 @@ function colorStars(text: string, body: { fontFamily: string; fontSize: number; 
 }
 
 export function OreBlocksView({
-  blocks,
+  blocks: rawBlocks,
   meta,
   fontSize,
   lineHeight,
@@ -201,6 +201,7 @@ export function OreBlocksView({
   afterFirstAnt,
   afterHourHead,
 }: Props) {
+  const blocks = React.useMemo(() => enrichPsalmHeads(rawBlocks), [rawBlocks]);
   const body = {
     fontFamily: FONT,
     fontSize,
@@ -221,8 +222,7 @@ export function OreBlocksView({
         fontWeight={headFontWeight}
       />
       {afterHourHead}
-      {blocks.map((raw, i) => {
-        const b = raw.k === "psalmHead" ? enrichPsalmHead(raw) : raw;
+      {blocks.map((b, i) => {
         if (b.k === "title" && /^(INVOCAZIONI|INTERCESSIONI)\b/i.test(b.text)) {
           inPrecesSection = true;
           inPreces = false;

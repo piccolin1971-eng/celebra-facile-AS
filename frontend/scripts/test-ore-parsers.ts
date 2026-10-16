@@ -13,7 +13,7 @@ import {
   placeJoinCrossAfterAntiphonEcho,
 } from "../src/ore/joinCross";
 import { peelGluedCanticleCites } from "../src/ore/parseHour";
-import { enrichPsalmHead } from "../src/ore/psalmHeadings";
+import { enrichPsalmHead, enrichPsalmHeads } from "../src/ore/psalmHeadings";
 import type { OreBlock } from "../src/ore/types";
 
 const show = (s: string) => s.replaceAll(JOIN_CROSS_MARK, "†");
@@ -177,6 +177,26 @@ const ant = `Dal profondo a te grido, o Signore! ${JOIN_CROSS_MARK}`;
   assert(head.k === "psalmHead", "cfr: type");
   const withDupCite = enrichPsalmHead({ ...head, cite: "Col 1, 3. 12-20" });
   assert(withDupCite.cite === "", "cfr enrich: cite tolta se già nel titolo");
+}
+
+// Sal 147: nome+sub dal CEI, cite da psalmHeadings + niente prose duplicata
+{
+  const head = enrichPsalmHead({
+    k: "psalmHead",
+    num: "SALMO 147",
+    name: "La Gerusalemme riedificata",
+    sub: "Vieni, ti mostrerò la fidanzata, la sposa dell'Agnello",
+    cite: "",
+  });
+  assert(head.cite === "(Ap 21, 9).", "sal147: cite da json");
+  const blocks = enrichPsalmHeads([
+    head,
+    { k: "prose", text: "(Ap 21, 9)." },
+    { k: "stanza", lines: ["Glorifica il Signore, Gerusalemme, *"] },
+  ]);
+  assert(blocks.length === 2, "sal147: prose cite rimossa");
+  assert(blocks[0].k === "psalmHead" && blocks[0].cite === "(Ap 21, 9).", "sal147: head cite");
+  assert(blocks[1].k === "stanza", "sal147: versetti dopo head");
 }
 
 console.log("OK test-ore-parsers");

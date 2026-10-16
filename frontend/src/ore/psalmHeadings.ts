@@ -73,9 +73,32 @@ function mergeHitCite(num: string, blockCite: string, hitCite: string): string {
   return "";
 }
 
+function citeProseKey(t: string): string {
+  return t.replace(/\s+/g, " ").trim().toLowerCase().replace(/\.+$/, "");
+}
+
+/** CEI: riferimento biblico subito dopo lo_sottotitolo → cite nel psalmHead, non paragrafo. */
+function dropOrphanPsalmCiteProse(blocks: OreBlock[]): OreBlock[] {
+  const out: OreBlock[] = [];
+  for (let i = 0; i < blocks.length; i++) {
+    const b = blocks[i];
+    if (b.k === "psalmHead" && b.cite.trim()) {
+      out.push(b);
+      const next = blocks[i + 1];
+      if (next?.k === "prose" && /^\([^)]+\)\.?$/.test(next.text.trim())) {
+        if (citeProseKey(next.text) === citeProseKey(b.cite)) {
+          i += 1;
+        }
+      }
+      continue;
+    }
+    out.push(b);
+  }
+  return out;
+}
+
 export function enrichPsalmHead(b: Extract<OreBlock, { k: "psalmHead" }>): Extract<OreBlock, { k: "psalmHead" }> {
   b = peelCfrCanticleHead(b);
-  if (b.name && b.sub) return b;
   let hit = lookupPsalmHeading(b.num);
   if (!hit && b.cite.trim() && /^CANTICO$/i.test(b.num.trim())) {
     hit = lookupPsalmHeading(`CANTICO Cfr. ${b.cite}`);
@@ -108,5 +131,6 @@ export function enrichPsalmHead(b: Extract<OreBlock, { k: "psalmHead" }>): Extra
 }
 
 export function enrichPsalmHeads(blocks: OreBlock[]): OreBlock[] {
-  return blocks.map((b) => (b.k === "psalmHead" ? enrichPsalmHead(b) : b));
+  const enriched = blocks.map((b) => (b.k === "psalmHead" ? enrichPsalmHead(b) : b));
+  return dropOrphanPsalmCiteProse(enriched);
 }
