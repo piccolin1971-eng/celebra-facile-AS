@@ -2,7 +2,10 @@ import { Preface } from "./api";
 import feastMapData from "./data/prefaceFeastMap.json";
 import { parseLocalDate } from "./dateUtils";
 import { getObservedSaintsForDate, getLiturgicalSeason, getSaintsForDate, isCalendarFeastObservedOnDate } from "./localLiturgy";
-import { getVigilEveContextForISO } from "./vigilCatalog";
+import {
+  eveningFestiveDateISO,
+  getMassEveningChoiceContextForISO,
+} from "./massEveningContext";
 import type { CelebrationMode } from "./massSession";
 
 type LiturgyLike = {
@@ -94,8 +97,8 @@ function monthDayIsObservedOnLiturgyDate(liturgy: LiturgyLike, monthDay: string)
   if (!liturgy.date || !/^\d{4}-\d{2}-\d{2}$/.test(liturgy.date)) return true;
   const candidates: Date[] = [parseLocalDate(liturgy.date)];
   if (liturgy.celebrationMode && liturgy.celebrationMode !== "calendar_day") {
-    const vigil = getVigilEveContextForISO(liturgy.date);
-    if (vigil) candidates.push(parseLocalDate(vigil.solemnityDateISO));
+    const evening = getMassEveningChoiceContextForISO(liturgy.date);
+    if (evening) candidates.push(parseLocalDate(eveningFestiveDateISO(evening)));
   }
   for (const d of candidates) {
     const md = `${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -110,8 +113,8 @@ function monthDaysForLiturgy(liturgy: LiturgyLike): string[] {
   if (!liturgy.date || !/^\d{4}-\d{2}-\d{2}$/.test(liturgy.date)) return [];
   const days = [liturgy.date.slice(5)];
   if (liturgy.celebrationMode && liturgy.celebrationMode !== "calendar_day") {
-    const vigil = getVigilEveContextForISO(liturgy.date);
-    if (vigil) days.push(vigil.solemnityDateISO.slice(5));
+    const evening = getMassEveningChoiceContextForISO(liturgy.date);
+    if (evening) days.push(eveningFestiveDateISO(evening).slice(5));
   }
   return [...new Set(days)];
 }

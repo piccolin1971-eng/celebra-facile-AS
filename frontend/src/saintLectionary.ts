@@ -5,7 +5,10 @@ import lectionaryData from "./data/saintLectionary.json";
 import type { Liturgy } from "./localLiturgy";
 import { parseLocalDate } from "./dateUtils";
 import { getObservedSaintsForDate } from "./saintsCalendar";
-import { getVigilEveContext } from "./vigilCatalog";
+import {
+  eveningFestiveDateISO,
+  getMassEveningChoiceContext,
+} from "./massEveningContext";
 
 export type SaintLectionaryReading = {
   type: string;
@@ -312,8 +315,8 @@ function normalizeRankName(rank: string): string {
 function lectionaryDateForLiturgy(liturgy: Liturgy): Date {
   const d = parseLocalDate(liturgy.date);
   if (liturgy.celebrationMode && liturgy.celebrationMode !== "calendar_day") {
-    const vigil = getVigilEveContext(d);
-    if (vigil) return parseLocalDate(vigil.solemnityDateISO);
+    const evening = getMassEveningChoiceContext(d);
+    if (evening) return parseLocalDate(eveningFestiveDateISO(evening));
   }
   return d;
 }

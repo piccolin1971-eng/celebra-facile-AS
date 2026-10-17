@@ -19,7 +19,12 @@ import { FontSizeButtons } from "../src/components/FontSizeButtons";
 import { SettingsTopBarButton } from "../src/components/SettingsTopBarButton";
 import { PinchFontZoom } from "../src/components/PinchFontZoom";
 import { MessaVigilIntroSection } from "../src/components/MessaVigilIntroSection";
-import { getVigilEveContextForISO } from "../src/vigilCatalog";
+import {
+  defaultCelebrationModeForDate,
+  eveningFestiveTitle,
+  getMassEveningChoiceContextForISO,
+  preferredEveningCelebrationMode,
+} from "../src/massEveningContext";
 import {
   availableCelebrationModes,
   coerceCelebrationMode,
@@ -204,8 +209,8 @@ export default function MessaScreen() {
   );
   const resetMassSessionChoicesRef = React.useRef(() => {});
 
-  const vigilEve = useMemo(
-    () => (sessionDate ? getVigilEveContextForISO(sessionDate) : null),
+  const eveningCtx = useMemo(
+    () => (sessionDate ? getMassEveningChoiceContextForISO(sessionDate) : null),
     [sessionDate],
   );
 
@@ -579,10 +584,10 @@ export default function MessaScreen() {
         setActiveOptionalSaintId(null);
         const dateParam = routeDateParam;
         const dateKey = dateParam || todayStr();
-        const initialMode = coerceCelebrationMode(
-          parseCelebrationMode(routeModeParam),
-          getVigilEveContextForISO(dateKey),
-        );
+        const eveningForDate = getMassEveningChoiceContextForISO(dateKey);
+        const initialMode = routeModeParam
+          ? coerceCelebrationMode(parseCelebrationMode(routeModeParam), eveningForDate)
+          : defaultCelebrationModeForDate(parseLocalDate(dateKey), eveningForDate);
         const [lit, parts, pr, pe, acc, bless] = await Promise.all([
           dateParam
             ? api.liturgyForDate(dateParam, initialMode)
@@ -629,11 +634,13 @@ export default function MessaScreen() {
 
         // === SESSION RESTORE ===
         const resolvedDateKey = lit?.date || dateKey;
-        const vigilCtxForMode = getVigilEveContextForISO(resolvedDateKey);
-        const resolvedMode = coerceCelebrationMode(
-          parseCelebrationMode(routeModeParam),
-          vigilCtxForMode,
-        );
+        const eveningCtxForMode = getMassEveningChoiceContextForISO(resolvedDateKey);
+        const resolvedMode = routeModeParam
+          ? coerceCelebrationMode(parseCelebrationMode(routeModeParam), eveningCtxForMode)
+          : defaultCelebrationModeForDate(
+              parseLocalDate(resolvedDateKey),
+              eveningCtxForMode,
+            );
         const modeToApply = userPickedCelebrationModeRef.current
           ? celebrationModeRef.current
           : resolvedMode;
@@ -651,7 +658,7 @@ export default function MessaScreen() {
         }
         const saved = await loadSession(resolvedDateKey, modeToApply);
         if (cancelled || gen !== liturgyLoadGenRef.current) return;
-        const vigilCtx = vigilCtxForMode;
+        const vigilCtx = eveningCtxForMode;
         if (vigilCtx) {
           const calLit =
             modeToApply === "calendar_day"
@@ -664,7 +671,7 @@ export default function MessaScreen() {
           const otherModes = availableCelebrationModes(vigilCtx).filter((m) => m !== modeToApply);
           void api.warmLiturgyModes(resolvedDateKey, otherModes);
           if (modeToApply === "calendar_day") {
-            const altMode = vigilCtx.hasVigilProper ? "vigil_proper" : "solemnity_day";
+            const altMode = preferredEveningCelebrationMode(vigilCtx);
             void api.liturgyForDate(resolvedDateKey, altMode).then((altLit) => {
               if (gen !== liturgyLoadGenRef.current) return;
               setVigilModeLiturgy(
@@ -746,12 +753,12 @@ export default function MessaScreen() {
     }
     const title =
       activeVotiveMeta?.title ||
-      liturgyTitleForMode(celebrationMode, liturgy?.title || "", vigilEve);
+      liturgyTitleForMode(celebrationMode, liturgy?.title || "", eveningCtx);
     const subtitle = activeVotiveId
       ? "Messa votiva"
       : `${italianDateLabel(parseLocalDate(sessionDate))} · ${celebrationKindLabel(
           celebrationMode,
-          vigilEve,
+          eveningCtx,
         )}`;
     const liturgicalColor =
       activeVotiveMeta?.color || liturgy?.liturgical_color || liturgy?.season?.color;
@@ -771,7 +778,7 @@ export default function MessaScreen() {
     activeVotiveId,
     liturgy,
     celebrationMode,
-    vigilEve,
+    eveningCtx,
     sessionDate,
   ]);
 
@@ -782,7 +789,7 @@ export default function MessaScreen() {
     if (!sessionLoaded || !currentSessionTarget || suppressSessionSaveRef.current) return;
     const liturgyTitle =
       activeVotiveMeta?.title ||
-      liturgyTitleForMode(celebrationMode, liturgy?.title || "", vigilEve);
+      liturgyTitleForMode(celebrationMode, liturgy?.title || "", eveningCtx);
     const session: MassSession = {
       celebrationMode,
       liturgyKind: activeVotiveId
@@ -804,7 +811,7 @@ export default function MessaScreen() {
       useOrazionePopolo, orazionePopoloId,
     };
     void saveSessionForTarget(currentSessionTarget, session);
-  }, [sessionLoaded, currentSessionTarget, celebrationMode, activeVotiveId, activeVotiveMeta, liturgy?.title, vigilEve, showGloria, showCredo, showOrazionalePray,
+  }, [sessionLoaded, currentSessionTarget, celebrationMode, activeVotiveId, activeVotiveMeta, liturgy?.title, eveningCtx, showGloria, showCredo, showOrazionalePray,
       useSaintProperReadings,
       selectedOrazionaleId, selectedPrefaceId, selectedPrayerId,
       benedizioneId, congedoId, acclamationId, padreNostroIntroId,
@@ -2002,10 +2009,10 @@ export default function MessaScreen() {
           disableTapAdvance: true, // Evita avanzamento accidentale mentre si toccano i toggle Gloria/Credo
           render: () => (
             <View style={styles.partBox}>
-              {vigilEve ? (
+              {eveningCtx ? (
                 <MessaVigilIntroSection
                   key={celebrationMode}
-                  vigilCtx={vigilEve}
+                  eveningCtx={eveningCtx}
                   celebrationMode={celebrationMode}
                   calendarDayLiturgy={calendarDayLiturgy}
                   vigilLiturgy={vigilModeLiturgy}
@@ -2033,10 +2040,10 @@ export default function MessaScreen() {
                 </View>
               )}
               <View
-                style={vigilEve ? styles.partsPanel : styles.togglesBox}
+                style={eveningCtx ? styles.partsPanel : styles.togglesBox}
                 data-tap-stop="true"
               >
-                {vigilEve ? (
+                {eveningCtx ? (
                   <Text style={styles.partsPanelTitle}>Parti della Messa</Text>
                 ) : null}
                 <View style={styles.toggleRow}>
@@ -2050,9 +2057,9 @@ export default function MessaScreen() {
                 <View style={styles.toggleRow}>
                   <View style={styles.toggleLabelCol}>
                     <Text style={styles.toggleLabel}>Preghiera dei fedeli</Text>
-                    {vigilEve && celebrationMode !== "calendar_day" ? (
+                    {eveningCtx && celebrationMode !== "calendar_day" ? (
                       <Text style={styles.toggleSubLabel} numberOfLines={2}>
-                        {vigilEve.solemnityTitle}
+                        {eveningFestiveTitle(eveningCtx)}
                       </Text>
                     ) : null}
                   </View>

@@ -33,7 +33,10 @@ import { getOptionalSaintFullLiturgy } from "./optionalSaintLiturgy";
 import { todayStr, parseLocalDate, italianDateLabel } from "./dateUtils";
 import type { CelebrationMode } from "./massSession";
 import { fillMissingFeastSecondReading } from "./saintLectionary";
-import { getVigilEveContext } from "./vigilCatalog";
+import {
+  eveningFestiveTitle,
+  getMassEveningChoiceContext,
+} from "./massEveningContext";
 import {
   celebrationTitlesMatch,
   isVigilOrVespertineMass,
@@ -76,17 +79,16 @@ function vigilCacheLooksValid(
   date: string,
 ): boolean {
   if (!raw || mode === "calendar_day") return true;
-  const vigil = getVigilEveContext(parseLocalDate(date));
-  if (!vigil) return true;
+  const evening = getMassEveningChoiceContext(parseLocalDate(date));
+  if (!evening) return true;
   const title = (raw.title || "").trim();
   if (!title) return false;
+  const festive = eveningFestiveTitle(evening);
   if (mode === "vigil_proper") {
-    return (
-      isVigilOrVespertineMass(title) || celebrationTitlesMatch(title, vigil.solemnityTitle)
-    );
+    return isVigilOrVespertineMass(title) || celebrationTitlesMatch(title, festive);
   }
-  if (mode === "solemnity_day") {
-    return celebrationTitlesMatch(title, vigil.solemnityTitle) && !isVigilOrVespertineMass(title);
+  if (mode === "solemnity_day" || mode === "sunday_day") {
+    return celebrationTitlesMatch(title, festive) && !isVigilOrVespertineMass(title);
   }
   return true;
 }

@@ -16,7 +16,10 @@ import {
 } from "./massSession";
 import { suggestPrayerForLiturgy } from "./orazionale";
 import { getLiturgicalSeasonKey, getSuggestedPrefacesForLiturgy } from "./prefaceUtils";
-import { getVigilEveContextForISO, type VigilEveContext } from "./vigilCatalog";
+import {
+  getMassEveningChoiceContextForISO,
+  type MassEveningChoiceContext,
+} from "./massEveningContext";
 
 export const DEFAULT_PRAYER_ID = "pe2";
 
@@ -25,9 +28,9 @@ export function buildDefaultMassSession(args: {
   mode: CelebrationMode;
   prefaces: Preface[];
   solemnBlessings: SolemnBlessing[];
-  vigilEve: VigilEveContext | null;
+  eveningCtx: MassEveningChoiceContext | null;
 }): MassSession {
-  const { liturgy, mode, prefaces, solemnBlessings, vigilEve } = args;
+  const { liturgy, mode, prefaces, solemnBlessings, eveningCtx } = args;
   const seasonKey = getLiturgicalSeasonKey(liturgy?.season?.season || "");
   const penitentialSeason = seasonKey === "passione" ? "quaresima" : seasonKey;
   const suggested = getSuggestedPrefacesForLiturgy(prefaces, liturgy);
@@ -37,7 +40,7 @@ export function buildDefaultMassSession(args: {
   const seasBless =
     solemnBlessings.find((b) => b.id === seasonKey) ||
     solemnBlessings.find((b) => b.season === seasonKey);
-  const liturgyTitle = liturgyTitleForMode(mode, liturgy.title || "", vigilEve);
+  const liturgyTitle = liturgyTitleForMode(mode, liturgy.title || "", eveningCtx);
 
   return {
     celebrationMode: mode,
@@ -85,7 +88,7 @@ export async function ensureQuickCelebrateSession(
     mode,
     prefaces: pr.prefaces,
     solemnBlessings: bless.blessings || [],
-    vigilEve: getVigilEveContextForISO(dateISO),
+    eveningCtx: getMassEveningChoiceContextForISO(dateISO),
   });
   await saveSession(dateISO, mode, session);
   return session;
@@ -108,7 +111,7 @@ export async function ensureQuickCelebrateOptionalSaintSession(
     mode: "calendar_day",
     prefaces: pr.prefaces,
     solemnBlessings: bless.blessings || [],
-    vigilEve: getVigilEveContextForISO(dateISO),
+    eveningCtx: getMassEveningChoiceContextForISO(dateISO),
   });
   const withKind: MassSession = {
     ...session,

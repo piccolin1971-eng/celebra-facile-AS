@@ -1,5 +1,8 @@
 import type { CelebrationMode } from "./massSession";
-import type { VigilEveContext } from "./vigilCatalog";
+import {
+  eveningFestiveTitle,
+  type MassEveningChoiceContext,
+} from "./massEveningContext";
 
 const MOVEABLE_FEAST_COLORS: { keywords: string[]; color: string }[] = [
   { keywords: ["corpus", "corpo e sangue", "santissimo corpo"], color: "bianco" },
@@ -172,17 +175,18 @@ export function selectLiturgicalColorFromCeiBlocks(
  */
 export function pickPrimaryCeiMassBlock(
   blocks: CeiCelebrationColorBlock[],
-  vigilEve: { solemnityTitle: string } | null | undefined,
+  eveningCtx: MassEveningChoiceContext | null | undefined,
 ): CeiCelebrationColorBlock | null {
   if (blocks.length === 0) return null;
 
   const pickNonVigil = () => blocks.find((b) => !isVigilOrVespertineMass(b.title)) ?? blocks[0];
 
-  if (!vigilEve) return pickNonVigil();
+  if (!eveningCtx) return pickNonVigil();
 
+  const festiveTitle = eveningFestiveTitle(eveningCtx);
   for (const block of blocks) {
     if (isVigilOrVespertineMass(block.title)) continue;
-    if (celebrationTitlesMatch(block.title, vigilEve.solemnityTitle)) continue;
+    if (celebrationTitlesMatch(block.title, festiveTitle)) continue;
     return block;
   }
 
@@ -195,34 +199,41 @@ export function pickPrimaryCeiMassBlock(
 export function pickCeiMassBlockForMode(
   blocks: CeiCelebrationColorBlock[],
   mode: CelebrationMode,
-  vigilEve: VigilEveContext | null | undefined,
+  eveningCtx: MassEveningChoiceContext | null | undefined,
 ): CeiCelebrationColorBlock | null {
   if (blocks.length === 0) return null;
-  if (!vigilEve || mode === "calendar_day") {
-    return pickPrimaryCeiMassBlock(blocks, vigilEve);
+  if (!eveningCtx || mode === "calendar_day") {
+    return pickPrimaryCeiMassBlock(blocks, eveningCtx);
   }
+
+  const festiveTitle = eveningFestiveTitle(eveningCtx);
 
   if (mode === "vigil_proper") {
     const vigil = blocks.find(
       (b) =>
-        isVigilOrVespertineMass(b.title) &&
-        celebrationTitlesMatch(b.title, vigilEve.solemnityTitle),
+        isVigilOrVespertineMass(b.title) && celebrationTitlesMatch(b.title, festiveTitle),
     );
     if (vigil) return vigil;
     return blocks.find((b) => isVigilOrVespertineMass(b.title)) ?? null;
   }
 
-  if (mode === "solemnity_day") {
+  if (mode === "solemnity_day" || mode === "sunday_day") {
     const sol = blocks.find(
       (b) =>
-        !isVigilOrVespertineMass(b.title) &&
-        celebrationTitlesMatch(b.title, vigilEve.solemnityTitle),
+        !isVigilOrVespertineMass(b.title) && celebrationTitlesMatch(b.title, festiveTitle),
     );
     if (sol) return sol;
+    if (mode === "sunday_day") {
+      return (
+        blocks.find(
+          (b) => /\bdomenica\b/i.test(b.title) && !isVigilOrVespertineMass(b.title),
+        ) ?? null
+      );
+    }
     return null;
   }
 
-  return pickPrimaryCeiMassBlock(blocks, vigilEve);
+  return pickPrimaryCeiMassBlock(blocks, eveningCtx);
 }
 
 /** Titolo della Messa del giorno: primo h3 della pagina CEI (non il <title> HTML). */

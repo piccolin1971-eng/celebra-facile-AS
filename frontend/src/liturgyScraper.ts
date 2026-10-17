@@ -13,7 +13,12 @@ import {
   celebrationTitlesMatch,
   isVigilOrVespertineMass,
 } from "./liturgicalColorUtils";
-import { getVigilEveContext } from "./vigilCatalog";
+import {
+  eveningFestiveDateISO,
+  eveningFestiveTitle,
+  getMassEveningChoiceContext,
+  type MassEveningChoiceContext,
+} from "./massEveningContext";
 import type { CelebrationMode } from "./massSession";
 import { localDateStr, parseLocalDate } from "./dateUtils";
 import { normalizeTypewriterCapAccents } from "./litTextNormalize";
@@ -260,7 +265,7 @@ function pickChunkForMode(
   chunks: Array<{ title: string; chunk: string }>,
   colorBlock: { title: string } | null,
   mode: CelebrationMode,
-  vigilEve: ReturnType<typeof getVigilEveContext>,
+  eveningCtx: MassEveningChoiceContext | null,
 ): { title: string; chunk: string } | null {
   if (chunks.length === 0) return null;
 
@@ -269,31 +274,37 @@ function pickChunkForMode(
     if (matched) return matched;
   }
 
-  if (vigilEve && mode === "vigil_proper") {
+  const festiveTitle = eveningCtx ? eveningFestiveTitle(eveningCtx) : "";
+
+  if (eveningCtx && mode === "vigil_proper") {
     const vigil = chunks.find(
       (c) =>
-        isVigilOrVespertineMass(c.title) &&
-        celebrationTitlesMatch(c.title, vigilEve.solemnityTitle),
+        isVigilOrVespertineMass(c.title) && celebrationTitlesMatch(c.title, festiveTitle),
     );
     if (vigil) return vigil;
     return chunks.find((c) => isVigilOrVespertineMass(c.title)) ?? null;
   }
 
-  if (vigilEve && mode === "solemnity_day") {
+  if (eveningCtx && (mode === "solemnity_day" || mode === "sunday_day")) {
     const sol = chunks.find(
       (c) =>
-        !isVigilOrVespertineMass(c.title) &&
-        celebrationTitlesMatch(c.title, vigilEve.solemnityTitle),
+        !isVigilOrVespertineMass(c.title) && celebrationTitlesMatch(c.title, festiveTitle),
     );
     if (sol) return sol;
+    if (mode === "sunday_day") {
+      return (
+        chunks.find(
+          (c) => /\bdomenica\b/i.test(c.title) && !isVigilOrVespertineMass(c.title),
+        ) ?? null
+      );
+    }
     return null;
   }
 
-  if (vigilEve) {
+  if (eveningCtx) {
     const fallback = chunks.find(
       (c) =>
-        !isVigilOrVespertineMass(c.title) &&
-        !celebrationTitlesMatch(c.title, vigilEve.solemnityTitle),
+        !isVigilOrVespertineMass(c.title) && !celebrationTitlesMatch(c.title, festiveTitle),
     );
     if (fallback) return fallback;
   }
@@ -310,9 +321,9 @@ function resolveLiturgyFromCeiHtmlInternal(
   if (chunks.length === 0) return null;
 
   const colorBlocks = extractCelebrationColorBlocksFromHtml(html);
-  const vigilEve = getVigilEveContext(targetDate);
-  const colorBlock = pickCeiMassBlockForMode(colorBlocks, mode, vigilEve);
-  const primaryChunk = pickChunkForMode(chunks, colorBlock, mode, vigilEve);
+  const eveningCtx = getMassEveningChoiceContext(targetDate);
+  const colorBlock = pickCeiMassBlockForMode(colorBlocks, mode, eveningCtx);
+  const primaryChunk = pickChunkForMode(chunks, colorBlock, mode, eveningCtx);
   if (!primaryChunk) return null;
 
   const readings = readingsFromHtmlChunk(primaryChunk.chunk);
@@ -385,8 +396,8 @@ export function resolveLiturgyFromCeiHtml(
     return fromBlocks;
   }
 
-  const vigilEve = getVigilEveContext(targetDate);
-  if (vigilEve && mode !== "calendar_day") {
+  const eveningCtx = getMassEveningChoiceContext(targetDate);
+  if (eveningCtx && mode !== "calendar_day") {
     return {
       title: fromBlocks?.title || "",
       liturgical_color: fromBlocks?.liturgical_color || "",
@@ -654,7 +665,7 @@ export async function scrapeLiturgy(
     source_url: url,
   };
 
-  const vigilEve = getVigilEveContext(targetDate);
+  const eveningCtx = getMassEveningChoiceContext(targetDate);
   const html = await fetchCeiHtml(targetDate);
   if (!html) {
     return {
@@ -666,11 +677,11 @@ export async function scrapeLiturgy(
   let resolved = resolveLiturgyFromCeiHtml(html, targetDate, mode);
 
   if (
-    mode === "solemnity_day" &&
-    vigilEve &&
+    (mode === "solemnity_day" || mode === "sunday_day") &&
+    eveningCtx &&
     resolved.readings.length === 0
   ) {
-    const solDate = parseLocalDate(vigilEve.solemnityDateISO);
+    const solDate = parseLocalDate(eveningFestiveDateISO(eveningCtx));
     const htmlSol = await fetchCeiHtml(solDate);
     if (htmlSol) {
       const fromSol = resolveLiturgyFromCeiHtml(htmlSol, solDate, "calendar_day");

@@ -96,7 +96,7 @@ export default function OreLeggi() {
   const [error, setError] = useState("");
   const [blocks, setBlocks] = useState<OreBlock[]>([]);
   const [day, setDay] = useState<DayHoursCache | null>(null);
-  const [meta, setMeta] = useState(hourHeadMeta(dateISO));
+  const [meta, setMeta] = useState(() => hourHeadMeta(dateISO, "", "", hour));
   const [psalmId, setPsalmId] = useState<InvitPsalmId>("94");
   const [mediaId, setMediaId] = useState<MediaId>("terza");
   const [invitAnt, setInvitAnt] = useState(DEFAULT_INVIT_ANT);
@@ -237,7 +237,10 @@ export default function OreLeggi() {
 
   const applyDay = useCallback(
     (day: Awaited<ReturnType<typeof ensureHour>>, media: MediaId, psalm: InvitPsalmId) => {
-      setMeta(day.meta);
+      setMeta({
+        ...day.meta,
+        colorHex: hourHeadMeta(dateISO, "", "", hour).colorHex,
+      });
       const ant = invitAntText(day);
       setInvitAnt(ant);
       if (hour === "invitatorio") {

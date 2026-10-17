@@ -16,7 +16,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 /** Modalità liturgica per la preparazione / celebrazione. */
 
-export type CelebrationMode = "calendar_day" | "vigil_proper" | "solemnity_day";
+export type CelebrationMode = "calendar_day" | "vigil_proper" | "solemnity_day" | "sunday_day";
 
 
 
@@ -28,6 +28,8 @@ export const CELEBRATION_MODES: CelebrationMode[] = [
 
   "solemnity_day",
 
+  "sunday_day",
+
 ];
 
 /** Congedo di default: «Glorificate il Signore con la vostra vita: andate in pace.» */
@@ -37,7 +39,12 @@ export const DEFAULT_CONGEDO_ID = "C";
 
 export function parseCelebrationMode(raw: unknown): CelebrationMode {
 
-  if (raw === "vigil_proper" || raw === "solemnity_day" || raw === "calendar_day") {
+  if (
+    raw === "vigil_proper" ||
+    raw === "solemnity_day" ||
+    raw === "sunday_day" ||
+    raw === "calendar_day"
+  ) {
 
     return raw;
 

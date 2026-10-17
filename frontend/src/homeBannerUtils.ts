@@ -1,6 +1,10 @@
 import { shouldSuppressFacultativeMemory } from "./liturgicalCelebrationUtils";
 import type { CelebrationMode } from "./massSession";
-import type { VigilEveContext } from "./vigilCatalog";
+import {
+  eveningFestiveDateISO,
+  eveningFestiveTitle,
+  type MassEveningChoiceContext,
+} from "./massEveningContext";
 import { localDateStr, parseLocalDate } from "./dateUtils";
 import {
   getLiturgicalSeason,
@@ -15,11 +19,11 @@ import { getMoveableFeastsForYear } from "./calendarMonth";
 export function bannerCeiTitleWithRank(
   title: string,
   mode: CelebrationMode,
-  vigilCtx: VigilEveContext | null,
+  eveningCtx: MassEveningChoiceContext | null,
 ): string {
   const t = title.trim();
   if (!t) return t;
-  if (vigilCtx && (mode === "vigil_proper" || mode === "solemnity_day")) {
+  if (eveningCtx && (mode === "vigil_proper" || mode === "solemnity_day")) {
     if (/solennit/i.test(t)) return t;
     return `${t} — Solennità`;
   }
@@ -30,19 +34,19 @@ export function bannerCeiTitleWithRank(
 export function homeBannerLiturgicalColor(
   date: Date,
   mode: CelebrationMode,
-  vigilCtx: VigilEveContext | null,
+  eveningCtx: MassEveningChoiceContext | null,
   liturgyTitle: string,
 ): string {
-  const vigilNonCalendar = vigilCtx && mode !== "calendar_day";
-  const colorDate = vigilNonCalendar
-    ? parseLocalDate(vigilCtx.solemnityDateISO)
+  const eveningNonCalendar = eveningCtx && mode !== "calendar_day";
+  const colorDate = eveningNonCalendar
+    ? parseLocalDate(eveningFestiveDateISO(eveningCtx))
     : date;
   const season = getLiturgicalSeason(colorDate);
   const saints = getSaintsForDate(colorDate);
   const title = bannerCeiTitleWithRank(
-    liturgyTitle || (vigilNonCalendar ? vigilCtx.solemnityTitle : ""),
+    liturgyTitle || (eveningNonCalendar ? eveningFestiveTitle(eveningCtx) : ""),
     mode,
-    vigilCtx,
+    eveningCtx,
   );
   return resolveLiturgicalColorForDay(colorDate, season, saints, title).color;
 }

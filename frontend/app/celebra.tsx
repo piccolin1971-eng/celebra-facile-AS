@@ -113,7 +113,7 @@ import { PinchFontZoom } from "../src/components/PinchFontZoom";
 import { triggerAppHaptic } from "../src/appHaptics";
 import { loadSession, saveSession, loadVotiveSession, saveVotiveSession, loadOptionalSaintSession, loadSessionForTarget, saveSessionForTarget, type MassSession, parseCelebrationMode, messaRouteDateParam, messaRouteModeParam, messaRouteVotiveParam, messaRouteOptionalSaintParam, routeParamStr, type CelebrationMode, type SessionTarget } from "../src/massSession";
 import { coerceCelebrationMode } from "../src/celebrationModeLabels";
-import { getVigilEveContextForISO } from "../src/vigilCatalog";
+import { getMassEveningChoiceContextForISO } from "../src/massEveningContext";
 import { reconcileLiturgyColors } from "../src/localLiturgy";
 import { mergeSaintReadingsIntoLiturgy } from "../src/saintLectionary";
 import { applyVotiveMassToLiturgy, hasVotiveProperReadings, type VotiveMassFull } from "../src/votiveLiturgy";
@@ -258,7 +258,7 @@ function CelebraScreenInner() {
       const dateKey = routeDateParam || todayStr();
       const mode = coerceCelebrationMode(
         parseCelebrationMode(routeModeParam),
-        getVigilEveContextForISO(dateKey),
+        getMassEveningChoiceContextForISO(dateKey),
       );
       const saved = await loadSession(dateKey, mode);
       if (cancelled || !saved) return;
@@ -554,7 +554,7 @@ function CelebraScreenInner() {
         const provisionalKey = dateParam || todayStr();
         const mode = coerceCelebrationMode(
           parseCelebrationMode(routeModeParam),
-          getVigilEveContextForISO(provisionalKey),
+          getMassEveningChoiceContextForISO(provisionalKey),
         );
         const [lit, parts, pr, pe, acc, bless] = await Promise.all([
           dateParam ? api.liturgyForDate(dateParam, mode) : api.liturgyToday(mode),

@@ -5,7 +5,10 @@
 import { parseLocalDate } from "./dateUtils";
 import { getLiturgicalSeasonKey, LiturgyLike } from "./prefaceUtils";
 import { parseBannerCelebration } from "./homeBannerUtils";
-import { getVigilEveContext } from "./vigilCatalog";
+import {
+  eveningFestiveDateISO,
+  getMassEveningChoiceContext,
+} from "./massEveningContext";
 import type { CelebrationMode } from "./massSession";
 
 export type MassToggleDefaults = {
@@ -20,8 +23,8 @@ function contextDateForToggles(liturgy: LiturgyLike): Date {
   const vigilDate = parseLocalDate(dateStr);
   const mode = (liturgy as { celebrationMode?: CelebrationMode }).celebrationMode;
   if (mode && mode !== "calendar_day") {
-    const vigilEve = getVigilEveContext(vigilDate);
-    if (vigilEve) return parseLocalDate(vigilEve.solemnityDateISO);
+    const eveningCtx = getMassEveningChoiceContext(vigilDate);
+    if (eveningCtx) return parseLocalDate(eveningFestiveDateISO(eveningCtx));
   }
   return vigilDate;
 }

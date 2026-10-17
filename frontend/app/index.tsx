@@ -23,11 +23,17 @@ import {
   type CelebrationMode,
   parseCelebrationMode,
 } from "../src/massSession";
-import { getVigilEveContext, vigilEveBannerMessage } from "../src/vigilCatalog";
+import {
+  defaultCelebrationModeForDate,
+  eveningFestiveDateISO,
+  getMassEveningChoiceContext,
+  isSundayEveMassContext,
+} from "../src/massEveningContext";
 import { getLiturgicalSeason } from "../src/localLiturgy";
 import {
   celebrationKindLabel,
   celebrationShortLabel,
+  eveningChoiceBannerMessage,
 } from "../src/celebrationModeLabels";
 import { CelebrateChoiceDialog } from "../src/components/CelebrateChoiceDialog";
 import { AppUpdateModal } from "../src/components/AppUpdateModal";
@@ -172,11 +178,15 @@ export default function Home() {
   selectedDateStrRef.current = selectedDateISO;
   const todayISO = localDateStr(new Date());
   const stripSelected = dayOffsetFromToday(selectedDateISO) != null;
-  const vigilEve = useMemo(() => getVigilEveContext(selectedDate), [selectedDate]);
+  const eveningCtx = useMemo(() => getMassEveningChoiceContext(selectedDate), [selectedDate]);
+  const saturdayOrdinaryEve = eveningCtx != null && isSundayEveMassContext(eveningCtx);
+  const timeDefaultCelebrateMode = defaultCelebrationModeForDate(selectedDate, eveningCtx);
   const selectedDateLabel = italianDateLabel(selectedDate);
   const activeCelebrateMode: CelebrationMode =
     selectedCelebrateMode ??
-    (sessions.length === 1 ? (sessions[0].celebrationMode ?? "calendar_day") : "calendar_day");
+    (sessions.length === 1
+      ? (sessions[0].celebrationMode ?? "calendar_day")
+      : timeDefaultCelebrateMode);
   const activeSession = sessions.find(
     (s) => (s.celebrationMode ?? "calendar_day") === activeCelebrateMode,
   );
@@ -189,7 +199,7 @@ export default function Home() {
     "Prepara la liturgia per questo giorno";
 
   const optionalSaintHome = useMemo(() => {
-    if (vigilEve) return emptyOptionalSaintHomeResolution(calendarDayFallbackTitle);
+    if (eveningCtx) return emptyOptionalSaintHomeResolution(calendarDayFallbackTitle);
     return resolveOptionalSaintHome({
       useSelection: optionalSaintsUseSelection,
       selectedByMonthDay: optionalSaintSelection.selectedByMonthDay,
@@ -199,7 +209,7 @@ export default function Home() {
       savedLinePick: optionalLinePick,
     });
   }, [
-    vigilEve,
+    eveningCtx,
     optionalSaintsUseSelection,
     optionalSaintSelection.selectedByMonthDay,
     selectedDate,
@@ -214,31 +224,31 @@ export default function Home() {
       : undefined;
 
   const optionalAwareFallback =
-    !vigilEve && optionalSaintHome.saint
+    !eveningCtx && optionalSaintHome.saint
       ? homeBannerTitleFromResolution(optionalSaintHome)
       : calendarDayFallbackTitle;
 
   const bannerTitle =
     preparedBannerLiturgyTitle(activeSession?.liturgyTitle) ||
-    (activeCelebrateMode !== "calendar_day" && vigilEve
-      ? celebrationShortLabel(activeCelebrateMode, vigilEve)
+    (activeCelebrateMode !== "calendar_day" && eveningCtx
+      ? celebrationShortLabel(activeCelebrateMode, eveningCtx)
       : "") ||
     optionalAwareFallback;
   const calendarBannerTitle =
     preparedBannerLiturgyTitle(calendarSession?.liturgyTitle) ||
-    (vigilEve
+    (eveningCtx
       ? ceiDayTitle || "Messa del giorno di calendario"
       : calendarDayFallbackTitle);
   const calendarBannerColor = homeBannerLiturgicalColor(
     selectedDate,
     "calendar_day",
-    vigilEve,
+    eveningCtx,
     calendarBannerTitle,
   );
   const calendarLiturgicalColor = homeBannerLiturgicalColor(
     selectedDate,
     activeCelebrateMode,
-    vigilEve,
+    eveningCtx,
     bannerTitle,
   );
   const optionalSaintColor = optionalSaintHomeLiturgicalColor(optionalSaintHome);
@@ -266,7 +276,13 @@ export default function Home() {
         setSelectedCelebrateMode(pick);
         return;
       }
-      const last = loaded[loaded.length - 1]?.celebrationMode ?? "calendar_day";
+      const date = parseLocalDate(dateStr);
+      const ctx = getMassEveningChoiceContext(date);
+      const timeDefault = defaultCelebrationModeForDate(date, ctx);
+      const last =
+        (modes.has(timeDefault) ? timeDefault : null) ??
+        loaded[loaded.length - 1]?.celebrationMode ??
+        "calendar_day";
       setSelectedCelebrateMode(last);
       await saveCelebratePick(dateStr, last);
     },
@@ -510,7 +526,7 @@ export default function Home() {
     const mode =
       selectedCelebrateMode ??
       sessions[sessions.length - 1]?.celebrationMode ??
-      "calendar_day";
+      defaultCelebrationModeForDate(selectedDate, eveningCtx);
     void (async () => {
       if (activeOptionalSaintId) {
         await ensureQuickCelebrateOptionalSaintSession(
@@ -525,7 +541,12 @@ export default function Home() {
   const openCelebraSubito = async () => {
     if (quickStarting) return;
     void triggerAppHaptic("light");
-    const mode = selectedCelebrateMode ?? "calendar_day";
+    const mode =
+      selectedCelebrateMode ??
+      defaultCelebrationModeForDate(
+        parseLocalDate(selectedDateISO),
+        getMassEveningChoiceContext(parseLocalDate(selectedDateISO)),
+      );
     setQuickStarting(true);
     try {
       if (activeOptionalSaintId) {
@@ -567,7 +588,7 @@ export default function Home() {
       return formatCelebrationTitle(
         celebrationShortLabel(
           activeCelebrateMode,
-          vigilEve,
+          eveningCtx,
           activeSession?.liturgyTitle,
         ),
       );
@@ -578,7 +599,7 @@ export default function Home() {
     optionalSaintHome.optionalBannerTitle,
     hasPreparedSession,
     activeCelebrateMode,
-    vigilEve,
+    eveningCtx,
     activeSession?.liturgyTitle,
   ]);
 
@@ -821,23 +842,11 @@ export default function Home() {
           ) : null}
         </View>
 
-        {vigilEve ? (
+        {!eveningCtx ? (
           <LiturgyDayBanner
             dateLabel={selectedDateLabel}
             seasonName={selectedSeasonName}
-            ceiTitle={calendarBannerTitle}
-            liturgicalColor={calendarBannerColor}
-            celebrationDate={selectedDate}
-            colors={colors}
-            fontSize={fontSize}
-            framed={false}
-            testID="home-day-banner-calendar"
-          />
-        ) : (
-          <LiturgyDayBanner
-            dateLabel={selectedDateLabel}
-            seasonName={selectedSeasonName}
-            ceiTitle={bannerCeiTitleWithRank(bannerTitle, activeCelebrateMode, vigilEve)}
+            ceiTitle={bannerCeiTitleWithRank(bannerTitle, activeCelebrateMode, eveningCtx)}
             liturgicalColor={liturgicalColor}
             celebrationDate={selectedDate}
             optionalSaintId={activeOptionalSaintId}
@@ -857,31 +866,79 @@ export default function Home() {
             framed={false}
             testID="home-day-banner"
           />
-        )}
-
-        {vigilEve && activeCelebrateMode !== "calendar_day" ? (
-          <View style={styles.vigilSelectionBannerWrap} testID="home-vigil-banner-wrap">
-            <Text style={styles.vigilSelectionBannerKind}>
-              {celebrationKindLabel(activeCelebrateMode, vigilEve)}
-            </Text>
+        ) : saturdayOrdinaryEve ? (
+          activeCelebrateMode === "calendar_day" ? (
             <LiturgyDayBanner
               dateLabel={selectedDateLabel}
-              seasonName={getLiturgicalSeason(parseLocalDate(vigilEve.solemnityDateISO)).season}
-              ceiTitle={bannerCeiTitleWithRank(bannerTitle, activeCelebrateMode, vigilEve)}
-              liturgicalColor={liturgicalColor}
-              celebrationDate={parseLocalDate(vigilEve.solemnityDateISO)}
+              seasonName={selectedSeasonName}
+              ceiTitle={bannerCeiTitleWithRank(calendarBannerTitle, "calendar_day", eveningCtx)}
+              liturgicalColor={calendarBannerColor}
+              celebrationDate={selectedDate}
               colors={colors}
               fontSize={fontSize}
               framed={false}
-              testID="home-vigil-banner"
+              testID="home-day-banner-calendar"
             />
-          </View>
-        ) : null}
+          ) : (
+            <View style={styles.vigilSelectionBannerWrap} testID="home-vigil-banner-wrap">
+              <Text style={styles.vigilSelectionBannerKind}>
+                {celebrationKindLabel(activeCelebrateMode, eveningCtx)}
+              </Text>
+              <LiturgyDayBanner
+                dateLabel={selectedDateLabel}
+                seasonName={
+                  getLiturgicalSeason(parseLocalDate(eveningFestiveDateISO(eveningCtx))).season
+                }
+                ceiTitle={bannerCeiTitleWithRank(bannerTitle, activeCelebrateMode, eveningCtx)}
+                liturgicalColor={liturgicalColor}
+                celebrationDate={parseLocalDate(eveningFestiveDateISO(eveningCtx))}
+                colors={colors}
+                fontSize={fontSize}
+                framed={false}
+                testID="home-vigil-banner"
+              />
+            </View>
+          )
+        ) : (
+          <>
+            <LiturgyDayBanner
+              dateLabel={selectedDateLabel}
+              seasonName={selectedSeasonName}
+              ceiTitle={calendarBannerTitle}
+              liturgicalColor={calendarBannerColor}
+              celebrationDate={selectedDate}
+              colors={colors}
+              fontSize={fontSize}
+              framed={false}
+              testID="home-day-banner-calendar"
+            />
+            {activeCelebrateMode !== "calendar_day" ? (
+              <View style={styles.vigilSelectionBannerWrap} testID="home-vigil-banner-wrap">
+                <Text style={styles.vigilSelectionBannerKind}>
+                  {celebrationKindLabel(activeCelebrateMode, eveningCtx)}
+                </Text>
+                <LiturgyDayBanner
+                  dateLabel={selectedDateLabel}
+                  seasonName={
+                    getLiturgicalSeason(parseLocalDate(eveningFestiveDateISO(eveningCtx))).season
+                  }
+                  ceiTitle={bannerCeiTitleWithRank(bannerTitle, activeCelebrateMode, eveningCtx)}
+                  liturgicalColor={liturgicalColor}
+                  celebrationDate={parseLocalDate(eveningFestiveDateISO(eveningCtx))}
+                  colors={colors}
+                  fontSize={fontSize}
+                  framed={false}
+                  testID="home-vigil-banner"
+                />
+              </View>
+            ) : null}
+          </>
+        )}
 
-        {vigilEve ? (
+        {eveningCtx ? (
           <View style={styles.vigilEveBanner} testID="vigil-eve-banner">
             <Ionicons name="moon-outline" size={scaledFont(24)} color={colors.primary} />
-            <Text style={styles.vigilEveText}>{vigilEveBannerMessage(vigilEve)}</Text>
+            <Text style={styles.vigilEveText}>{eveningChoiceBannerMessage(eveningCtx)}</Text>
           </View>
         ) : null}
 
@@ -901,8 +958,8 @@ export default function Home() {
                   colors={colors}
                   fontSize={fontSize}
                   scaledFont={scaledFont}
-                  kindLabel={celebrationKindLabel(mode, vigilEve)}
-                  liturgySubtitle={celebrationShortLabel(mode, vigilEve, s.liturgyTitle)}
+                  kindLabel={celebrationKindLabel(mode, eveningCtx)}
+                  liturgySubtitle={celebrationShortLabel(mode, eveningCtx, s.liturgyTitle)}
                   selected={hasDualPrepared && activeCelebrateMode === mode}
                   selectable={hasDualPrepared}
                   onSelect={
@@ -1280,7 +1337,7 @@ export default function Home() {
         <CelebrateChoiceDialog
           visible
           sessions={sessions}
-          vigilCtx={vigilEve}
+          eveningCtx={eveningCtx}
           colors={colors}
           fontSize={fontSize}
           onPick={(mode) => {

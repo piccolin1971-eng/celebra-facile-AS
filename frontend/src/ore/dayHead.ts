@@ -1,7 +1,8 @@
 import { getLiturgicalSeason } from "../liturgicalDates";
 import { italianDateLabel, parseLocalDate } from "../dateUtils";
 import { calculateLiturgicalColor, getSaintsForDate, LITURGICAL_COLOR_HEX } from "../saintsCalendar";
-import type { DayHoursMeta } from "./types";
+import { oreLiturgicalColorDateISO } from "./liturgicalColorDate";
+import type { DayHoursMeta, OreHourId } from "./types";
 
 const ROMAN: Record<string, number> = {
   I: 1,
@@ -145,8 +146,15 @@ function feastNameFromBanner(title: string): string {
   return head.replace(/\s+/g, " ").trim();
 }
 
-export function hourHeadMeta(dateISO: string, ceiTitle = "", hoursBanner = ""): DayHoursMeta {
+export function hourHeadMeta(
+  dateISO: string,
+  ceiTitle = "",
+  hoursBanner = "",
+  hour?: OreHourId,
+): DayHoursMeta {
   const d = parseLocalDate(dateISO);
+  const colorDateISO = hour ? oreLiturgicalColorDateISO(dateISO, hour) : dateISO;
+  const colorD = parseLocalDate(colorDateISO);
   const dateLabel = italianDateLabel(d);
   const title = (hoursBanner || ceiTitle).trim();
   const feast = feastNameFromBanner(title);
@@ -175,8 +183,13 @@ export function hourHeadMeta(dateISO: string, ceiTitle = "", hoursBanner = ""): 
     psalterLine = `${ROMAN_OUT[p]} settimana del salterio`;
   }
 
-  const season = getLiturgicalSeason(d);
-  const color = calculateLiturgicalColor(season, getSaintsForDate(d), title || seasonLine, d);
+  const season = getLiturgicalSeason(colorD);
+  const color = calculateLiturgicalColor(
+    season,
+    getSaintsForDate(colorD),
+    title || seasonLine,
+    colorD,
+  );
   const colorHex = color.color_hex || LITURGICAL_COLOR_HEX[season.color] || season.color_hex;
   return {
     dateLabel,

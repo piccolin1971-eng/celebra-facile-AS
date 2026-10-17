@@ -2,7 +2,12 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import type { Liturgy } from "../api";
 import type { CelebrationMode } from "../massSession";
-import type { VigilEveContext } from "../vigilCatalog";
+import {
+  eveningFestiveDateISO,
+  eveningFestiveTitle,
+  isSundayEveMassContext,
+  type MassEveningChoiceContext,
+} from "../massEveningContext";
 import { LiturgyDayBanner } from "./LiturgyDayBanner";
 import { CelebrationModePanel } from "./CelebrationModePanel";
 import {
@@ -30,7 +35,7 @@ type ThemeColors = {
 };
 
 type Props = {
-  vigilCtx: VigilEveContext;
+  eveningCtx: MassEveningChoiceContext;
   celebrationMode: CelebrationMode;
   calendarDayLiturgy: Liturgy | null;
   vigilLiturgy: Liturgy | null;
@@ -40,17 +45,21 @@ type Props = {
   fontSize: number;
 };
 
-function vigilBannerContent(
-  vigilCtx: VigilEveContext,
+function eveningBannerContent(
+  eveningCtx: MassEveningChoiceContext,
   celebrationMode: CelebrationMode,
   calendarDayLiturgy: Liturgy | null,
   selectedLiturgy: Liturgy | null,
 ) {
+  const festiveTitle = eveningFestiveTitle(eveningCtx);
+  const eveISO = isSundayEveMassContext(eveningCtx)
+    ? eveningCtx.eveDateISO
+    : eveningCtx.vigilDateISO;
   const calTitle = calendarDayLiturgy?.title?.trim() || "";
   const baseLit =
     selectedLiturgy ??
     ({
-      date: vigilCtx.vigilDateISO,
+      date: eveISO,
       date_label: "",
       title: "",
       season: calendarDayLiturgy?.season,
@@ -62,24 +71,22 @@ function vigilBannerContent(
   let ceiTitle = fixed.title?.trim() || "";
   const titleMatchesMode =
     celebrationMode === "vigil_proper"
-      ? isVigilOrVespertineMass(ceiTitle) ||
-        celebrationTitlesMatch(ceiTitle, vigilCtx.solemnityTitle)
-      : celebrationTitlesMatch(ceiTitle, vigilCtx.solemnityTitle) &&
-        !isVigilOrVespertineMass(ceiTitle);
+      ? isVigilOrVespertineMass(ceiTitle) || celebrationTitlesMatch(ceiTitle, festiveTitle)
+      : celebrationTitlesMatch(ceiTitle, festiveTitle) && !isVigilOrVespertineMass(ceiTitle);
   if (!ceiTitle || ceiTitle === calTitle || !titleMatchesMode) {
-    ceiTitle = liturgyTitleForMode(celebrationMode, calTitle, vigilCtx);
+    ceiTitle = liturgyTitleForMode(celebrationMode, calTitle, eveningCtx);
   }
   return {
     ceiTitle,
     liturgicalColor: fixed.liturgical_color || fixed.season?.color || "verde",
     seasonName: fixed.season?.season || "",
     dateLabel: baseLit.date_label || calendarDayLiturgy?.date_label || "",
-    kindLabel: celebrationKindLabel(celebrationMode, vigilCtx),
+    kindLabel: celebrationKindLabel(celebrationMode, eveningCtx),
   };
 }
 
 export function MessaVigilIntroSection({
-  vigilCtx,
+  eveningCtx,
   celebrationMode,
   calendarDayLiturgy,
   vigilLiturgy,
@@ -92,7 +99,7 @@ export function MessaVigilIntroSection({
   const litForVigilBanner = vigilLiturgy ?? selectedLiturgy;
   const showVigilBanner = celebrationMode !== "calendar_day";
   const vigilBanner = showVigilBanner
-    ? vigilBannerContent(vigilCtx, celebrationMode, calendarDayLiturgy, litForVigilBanner)
+    ? eveningBannerContent(eveningCtx, celebrationMode, calendarDayLiturgy, litForVigilBanner)
     : null;
 
   return (
@@ -123,7 +130,7 @@ export function MessaVigilIntroSection({
       ) : null}
 
       <CelebrationModePanel
-        vigilCtx={vigilCtx}
+        eveningCtx={eveningCtx}
         calendarTitle={calendarDayLiturgy?.title || ""}
         selectedMode={celebrationMode}
         onSelectMode={onSelectMode}
@@ -139,7 +146,7 @@ export function MessaVigilIntroSection({
             seasonName={vigilBanner.seasonName}
             ceiTitle={vigilBanner.ceiTitle}
             liturgicalColor={vigilBanner.liturgicalColor}
-            celebrationDate={parseLocalDate(vigilCtx.solemnityDateISO)}
+            celebrationDate={parseLocalDate(eveningFestiveDateISO(eveningCtx))}
             colors={colors}
             fontSize={fontSize}
             testID="mass-day-banner-vigil"

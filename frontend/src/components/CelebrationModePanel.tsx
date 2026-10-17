@@ -2,13 +2,13 @@ import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { CelebrationMode } from "../massSession";
-import type { VigilEveContext } from "../vigilCatalog";
+import type { MassEveningChoiceContext } from "../massEveningContext";
 import {
   availableCelebrationModes,
   celebrationKindLabel,
   celebrationOptionDescription,
+  eveningChoiceBannerMessage,
 } from "../celebrationModeLabels";
-import { parseLocalDate } from "../dateUtils";
 
 type ThemeColors = {
   surface: string;
@@ -20,7 +20,7 @@ type ThemeColors = {
 };
 
 type Props = {
-  vigilCtx: VigilEveContext;
+  eveningCtx: MassEveningChoiceContext;
   calendarTitle: string;
   selectedMode: CelebrationMode;
   onSelectMode: (mode: CelebrationMode) => void;
@@ -28,18 +28,8 @@ type Props = {
   fontSize: number;
 };
 
-function formatVigilHint(ctx: VigilEveContext): string {
-  const d = parseLocalDate(ctx.vigilDateISO);
-  const months = [
-    "gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno",
-    "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre",
-  ];
-  const dayLabel = `${d.getDate()} ${months[d.getMonth()]}`;
-  return `Sera del ${dayLabel}: dopo i Primi Vespri inizia la solennità di domani. Scegli una sola opzione.`;
-}
-
 export function CelebrationModePanel({
-  vigilCtx,
+  eveningCtx,
   calendarTitle,
   selectedMode,
   onSelectMode,
@@ -47,12 +37,12 @@ export function CelebrationModePanel({
   fontSize,
 }: Props) {
   const styles = makeStyles(colors, fontSize);
-  const modes = availableCelebrationModes(vigilCtx);
+  const modes = availableCelebrationModes(eveningCtx);
 
   return (
     <View style={styles.panel} testID="celebration-mode-panel" data-tap-stop="true">
       <Text style={styles.panelTitle}>Quale liturgia?</Text>
-      <Text style={styles.hint}>{formatVigilHint(vigilCtx)}</Text>
+      <Text style={styles.hint}>{eveningChoiceBannerMessage(eveningCtx)}</Text>
       {modes.map((mode) => {
         const selected = selectedMode === mode;
         return (
@@ -64,7 +54,7 @@ export function CelebrationModePanel({
             testID={`celebration-mode-${mode}`}
             accessibilityRole="radio"
             accessibilityState={{ selected }}
-            accessibilityLabel={celebrationKindLabel(mode, vigilCtx)}
+            accessibilityLabel={celebrationKindLabel(mode, eveningCtx)}
           >
             <Ionicons
               name={selected ? "radio-button-on" : "radio-button-off"}
@@ -73,9 +63,9 @@ export function CelebrationModePanel({
               style={styles.radioIcon}
             />
             <View style={styles.optionText}>
-              <Text style={styles.optionLabel}>{celebrationKindLabel(mode, vigilCtx)}</Text>
+              <Text style={styles.optionLabel}>{celebrationKindLabel(mode, eveningCtx)}</Text>
               <Text style={styles.optionSub}>
-                {celebrationOptionDescription(mode, vigilCtx, calendarTitle)}
+                {celebrationOptionDescription(mode, eveningCtx, calendarTitle)}
               </Text>
             </View>
           </TouchableOpacity>
@@ -108,7 +98,6 @@ function makeStyles(colors: ThemeColors, fontSize: number) {
       fontSize: Math.round(fontSize * 0.58),
       color: colors.textSecondary,
       lineHeight: Math.round(fontSize * 0.85),
-      marginBottom: 4,
     },
     option: {
       flexDirection: "row",

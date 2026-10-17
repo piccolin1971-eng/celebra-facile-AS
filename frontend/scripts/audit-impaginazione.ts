@@ -288,7 +288,7 @@ async function onePass(pass: number, withHours: boolean) {
         mode: "calendar_day",
         prefaces: prefaces as any,
         solemnBlessings: blessings.blessings as any,
-        vigilEve: null,
+        eveningCtx: null,
       });
       const raw = buildSegments({
         liturgy,

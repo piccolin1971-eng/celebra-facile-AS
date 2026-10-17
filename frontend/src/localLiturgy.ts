@@ -12,7 +12,11 @@ import {
   isVigilOrVespertineMass,
 } from "./liturgicalColorUtils";
 import { shouldSuppressFacultativeMemory } from "./liturgicalCelebrationUtils";
-import { getVigilEveContext } from "./vigilCatalog";
+import {
+  eveningFestiveDateISO,
+  eveningFestiveTitle,
+  getMassEveningChoiceContext,
+} from "./massEveningContext";
 import { localDateStr, italianDateLabel as italianDateLabelUtil, parseLocalDate } from "./dateUtils";
 
 // Import dati statici bundlati nell'APK
@@ -138,13 +142,13 @@ function liturgyMetadataForMode(
   saints: SaintEntry[];
   liturgical_color: string;
 } {
-  const vigilEve = getVigilEveContext(vigilDate);
+  const eveningCtx = getMassEveningChoiceContext(vigilDate);
   let colorDate = vigilDate;
   let season = getLiturgicalSeason(vigilDate);
   let saints = getSaintsForDate(vigilDate);
 
-  if (vigilEve && mode !== "calendar_day") {
-    colorDate = parseDateStr(vigilEve.solemnityDateISO);
+  if (eveningCtx && mode !== "calendar_day") {
+    colorDate = parseDateStr(eveningFestiveDateISO(eveningCtx));
     season = getLiturgicalSeason(colorDate);
     saints = getSaintsForDate(colorDate);
   }
@@ -168,13 +172,13 @@ function liturgyMetadataForMode(
 export function reconcileLiturgyColors(liturgy: Liturgy): Liturgy {
   const mode = liturgy.celebrationMode ?? "calendar_day";
   const d = parseDateStr(liturgy.date);
-  const vigilEve = getVigilEveContext(d);
+  const eveningCtx = getMassEveningChoiceContext(d);
   let seasonBase = getLiturgicalSeason(d);
   let saints = liturgy.saints?.length ? liturgy.saints : getSaintsForDate(d);
   let colorDate = d;
 
-  if (vigilEve && mode !== "calendar_day") {
-    colorDate = parseDateStr(vigilEve.solemnityDateISO);
+  if (eveningCtx && mode !== "calendar_day") {
+    colorDate = parseDateStr(eveningFestiveDateISO(eveningCtx));
     seasonBase = getLiturgicalSeason(colorDate);
     saints = getSaintsForDate(colorDate);
   }
@@ -187,27 +191,26 @@ export function reconcileLiturgyColors(liturgy: Liturgy): Liturgy {
     displayTitle = "";
   }
 
+  const festiveTitle = eveningCtx ? eveningFestiveTitle(eveningCtx) : "";
   const titleMatchesMode =
-    !vigilEve ||
+    !eveningCtx ||
     mode === "calendar_day" ||
     (mode === "vigil_proper" &&
       (isVigilOrVespertineMass(displayTitle) ||
-        celebrationTitlesMatch(displayTitle, vigilEve.solemnityTitle))) ||
-    (mode === "solemnity_day" &&
-      celebrationTitlesMatch(displayTitle, vigilEve.solemnityTitle) &&
+        celebrationTitlesMatch(displayTitle, festiveTitle))) ||
+    ((mode === "solemnity_day" || mode === "sunday_day") &&
+      celebrationTitlesMatch(displayTitle, festiveTitle) &&
       !isVigilOrVespertineMass(displayTitle));
 
   const colorTitle =
-    vigilEve && mode !== "calendar_day" && !titleMatchesMode
-      ? vigilEve.solemnityTitle
-      : displayTitle;
+    eveningCtx && mode !== "calendar_day" && !titleMatchesMode ? festiveTitle : displayTitle;
 
-  if (vigilEve && mode !== "calendar_day" && !titleMatchesMode) {
-    displayTitle = vigilEve.solemnityTitle;
+  if (eveningCtx && mode !== "calendar_day" && !titleMatchesMode) {
+    displayTitle = festiveTitle;
   }
 
   let scrapedColorRaw = liturgy.liturgical_color;
-  if (vigilEve && mode !== "calendar_day" && !titleMatchesMode) {
+  if (eveningCtx && mode !== "calendar_day" && !titleMatchesMode) {
     scrapedColorRaw = "";
   }
 
