@@ -96,6 +96,19 @@ export function celebrationTitlesMatch(a: string, b: string): boolean {
   return fa === fb || fa.includes(fb) || fb.includes(fa);
 }
 
+/** Titolo CEI della Messa primaria: feria, domenica, settimana, ottava (non un santo). */
+export function isTemporalPrimaryCelebrationTitle(title: string): boolean {
+  const t = normalizeTitle(title);
+  if (!t) return false;
+  if (/\bferia\b/.test(t)) return true;
+  if (/\bdomenica\b/.test(t)) return true;
+  if (/\bottava\b/.test(t)) return true;
+  if (/fra l ottava/.test(t)) return true;
+  if (/\bsettimana\b/.test(t)) return true;
+  if (/\b(lunedi|martedi|mercoledi|giovedi|venerdi|sabato)\b/.test(t)) return true;
+  return false;
+}
+
 /** Estrae coppie titolo celebrazione (h3) → colore dalla pagina CEI. */
 export function extractCelebrationColorBlocksFromHtml(html: string): CeiCelebrationColorBlock[] {
   const blocks: CeiCelebrationColorBlock[] = [];

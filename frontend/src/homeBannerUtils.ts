@@ -419,6 +419,7 @@ export function homeStripDayMeta(
   date: Date,
   ceiTitle?: string,
   optionalSaintOverlay?: { liturgicalColor: string; subtitle: string } | null,
+  ceiLiturgicalColor?: string,
 ): HomeStripDayMeta {
   const season = getLiturgicalSeason(date);
   const saints = getSaintsForDate(date);
@@ -435,8 +436,10 @@ export function homeStripDayMeta(
     if (!hasObligatory) rawTitle = "";
   }
 
+  const scrapedColor = (ceiLiturgicalColor || "").trim();
   const liturgicalColor =
     optionalSaintOverlay?.liturgicalColor?.trim() ||
+    scrapedColor ||
     homeBannerLiturgicalColor(date, "calendar_day", null, rawTitle);
 
   if (optionalSaintOverlay?.subtitle?.trim()) {

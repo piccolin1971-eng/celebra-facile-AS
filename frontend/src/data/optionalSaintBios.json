@@ -8,6 +8,15 @@
     "wikipediaUrl": "https://it.wikipedia.org/wiki/Santissimo_Nome_di_Ges%C3%B9",
     "santiebeatiUrl": "https://www.santiebeati.it/dettaglio/25625"
   },
+  "fabiano-sebastiano": {
+    "title": "Santi Fabiano, papa, e Sebastiano, martiri",
+    "rank": "Memoria",
+    "kind": "santo",
+    "biography": "Fabiano, papa per quasi quindici anni (236-250/251), organizzò la Chiesa di Roma in sette circoscrizioni ecclesiastiche, afdando ciascuna di esse a un diacono. Subì il martirio durante la persecuzione dell'imperatore Decio e fu sepolto nel cimitero di Callisto. Sia la Depositio martyrum (336) sia il Martirologio geronimiano (sec. V-VI) lo ricordano il 20 gennaio.",
+    "sourceNote": "Messale Romano, Proprio dei Santi — 01-20",
+    "wikipediaUrl": "https://it.wikipedia.org/wiki/Fabiano_(papa)",
+    "santiebeatiUrl": "https://www.santiebeati.it/dettaglio/25750"
+  },
   "angela-merici": {
     "title": "Sant'Angela Merici, vergine",
     "rank": "Memoria",
@@ -26,6 +35,15 @@
     "wikipediaUrl": "https://it.wikipedia.org/wiki/Orso_di_Aosta",
     "santiebeatiUrl": "https://www.santiebeati.it/dettaglio/31250"
   },
+  "san-biagio": {
+    "title": "San Biagio, vescovo e martire",
+    "rank": "Memoria",
+    "kind": "santo",
+    "biography": "Biagio (sec. IV), secondo la tradizione, fu vescovo di Sebaste in Armenia (attuale Sivas, Turchia), dove subì il martirio. È figura molto venerata nel mondo contadino, anche per le guarigioni che gli furono attribuite.",
+    "sourceNote": "Messale Romano, Proprio dei Santi — 02-03",
+    "wikipediaUrl": "https://it.wikipedia.org/wiki/San_Biagio",
+    "santiebeatiUrl": "https://www.santiebeati.it/dettaglio/26050"
+  },
   "maria-lourdes": {
     "title": "Beata Vergine Maria di Lourdes",
     "rank": "Memoria",
@@ -34,6 +52,15 @@
     "sourceNote": "Messale Romano, Proprio dei Santi — 02-11",
     "wikipediaUrl": "https://it.wikipedia.org/wiki/Nostra_Signora_di_Lourdes",
     "santiebeatiUrl": "https://www.santiebeati.it/dettaglio/26100"
+  },
+  "pier-damiani": {
+    "title": "San Pier Damiani, vescovo e dottore della Chiesa",
+    "rank": "Memoria",
+    "kind": "santo",
+    "biography": "Ilario (Poitiers, Francia, 310/320 - 367/368), vescovo della sua città natale, difese con scritti di alto profilo (tra i quali soprattutto il trattato De Trinitate) la fede nella piena divinità del Figlio, afermata dal Concilio di Nicea (325) contro l'eresia di Ario. Per la sua ferma opposizione agli orientamenti filoariani della corte imperiale fu perseguitato ed esiliato. È ricordato nel Martirologio geronimiano (sec. V-VI) il 13 gennaio.",
+    "sourceNote": "Messale Romano, Proprio dei Santi — 02-21",
+    "wikipediaUrl": "https://it.wikipedia.org/wiki/Pier_Damiani",
+    "santiebeatiUrl": "https://www.santiebeati.it/dettaglio/26200"
   },
   "gabriele-addolorata": {
     "title": "San Gabriele dell'Addolorata, religioso",
@@ -53,6 +80,15 @@
     "wikipediaUrl": "https://it.wikipedia.org/wiki/San_Patrizio",
     "santiebeatiUrl": "https://www.santiebeati.it/dettaglio/26400"
   },
+  "cirillo-gerusalemme": {
+    "title": "San Cirillo di Gerusalemme, vescovo e dottore della Chiesa",
+    "rank": "Memoria",
+    "kind": "santo",
+    "biography": "Ilario (Poitiers, Francia, 310/320 - 367/368), vescovo della sua città natale, difese con scritti di alto profilo (tra i quali soprattutto il trattato De Trinitate) la fede nella piena divinità del Figlio, afermata dal Concilio di Nicea (325) contro l'eresia di Ario. Per la sua ferma opposizione agli orientamenti filoariani della corte imperiale fu perseguitato ed esiliato. È ricordato nel Martirologio geronimiano (sec. V-VI) il 13 gennaio.",
+    "sourceNote": "Messale Romano, Proprio dei Santi — 03-18",
+    "wikipediaUrl": "https://it.wikipedia.org/wiki/Cirillo_di_Gerusalemme",
+    "santiebeatiUrl": "https://www.santiebeati.it/dettaglio/26600"
+  },
   "francesco-paola": {
     "title": "San Francesco di Paola, eremita",
     "rank": "Memoria",
@@ -61,6 +97,15 @@
     "sourceNote": "Messale Romano, Proprio dei Santi — 04-02",
     "wikipediaUrl": "https://it.wikipedia.org/wiki/Francesco_da_Paola",
     "santiebeatiUrl": "https://www.santiebeati.it/dettaglio/26550"
+  },
+  "anselmo": {
+    "title": "Sant'Anselmo, vescovo e dottore della Chiesa",
+    "rank": "Memoria",
+    "kind": "santo",
+    "biography": "Ilario (Poitiers, Francia, 310/320 - 367/368), vescovo della sua città natale, difese con scritti di alto profilo (tra i quali soprattutto il trattato De Trinitate) la fede nella piena divinità del Figlio, afermata dal Concilio di Nicea (325) contro l'eresia di Ario. Per la sua ferma opposizione agli orientamenti filoariani della corte imperiale fu perseguitato ed esiliato. È ricordato nel Martirologio geronimiano (sec. V-VI) il 13 gennaio.",
+    "sourceNote": "Messale Romano, Proprio dei Santi — 04-21",
+    "wikipediaUrl": "https://it.wikipedia.org/wiki/Anselmo_d%27Aosta",
+    "santiebeatiUrl": "https://www.santiebeati.it/dettaglio/26900"
   },
   "san-giorgio": {
     "title": "San Giorgio, martire",
@@ -98,6 +143,15 @@
     "wikipediaUrl": "https://it.wikipedia.org/wiki/Vittore_e_Corona",
     "santiebeatiUrl": "https://www.santiebeati.it/dettaglio/92614"
   },
+  "bernardino-siena": {
+    "title": "San Bernardino da Siena, presbitero",
+    "rank": "Memoria",
+    "kind": "santo",
+    "biography": "Bernardino (Massa Marittima, Grosseto, 8 settembre 1380 - L'Aquila, 20 maggio 1444), della nobile famiglia senese degli Albizzeschi, dopo gli studi giuridici, fu accolto fra i Frati Minori, aderendo al movimento dell'Osservanza. Predicatore di vasta cultura, immediata concretezza e grande popolarità, percorse l'Italia centro- settentrionale suscitando un intenso rinnovamento di vita cristiana. Difuse ovunque la devozione al nome di Gesù.",
+    "sourceNote": "Messale Romano, Proprio dei Santi — 05-20",
+    "wikipediaUrl": "https://it.wikipedia.org/wiki/Bernardino_da_Siena",
+    "santiebeatiUrl": "https://www.santiebeati.it/dettaglio/29450"
+  },
   "rita-cascia": {
     "title": "Santa Rita da Cascia, religiosa",
     "rank": "Memoria",
@@ -134,6 +188,15 @@
     "wikipediaUrl": "https://it.wikipedia.org/wiki/Maria_Goretti",
     "santiebeatiUrl": "https://www.santiebeati.it/dettaglio/28150"
   },
+  "camillo-de-lellis": {
+    "title": "San Camillo de Lellis, presbitero",
+    "rank": "Memoria",
+    "kind": "santo",
+    "biography": "Camillo (Bucchianico, Chieti, 25 maggio 1550 - Roma, 14 luglio 1614) fu in gioventù soldato di ventura e dedito al gioco; riscoprì la fede nel convento dei Cappuccini di Manfredonia; desideroso di entrare nell'Ordine, per due volte iniziò il noviziato, ma una piaga incurabile al piede gli impedì di continuare. Ricoverato nell'ospedale di San Giacomo degli Incurabili a Roma, incontrò san Filippo Neri che lo aiutò nel suo cammino spirituale; si votò in seguito a una vita tutta dedita al servizio di Cristo, nella cura amorevole delle sue membra sofferenti. Divenuto presbitero, fondò i Chierici regolari ministri degli infermi (Camilliani).",
+    "sourceNote": "Messale Romano, Proprio dei Santi — 14 luglio",
+    "wikipediaUrl": "https://it.wikipedia.org/wiki/Camillo_de_Lellis",
+    "santiebeatiUrl": "https://www.santiebeati.it/dettaglio/28250"
+  },
   "monte-carmelo": {
     "title": "Beata Vergine Maria del Monte Carmelo",
     "rank": "Memoria",
@@ -142,6 +205,24 @@
     "sourceNote": "Messale Romano, Proprio dei Santi — 07-16",
     "wikipediaUrl": "https://it.wikipedia.org/wiki/Madonna_del_Carmelo",
     "santiebeatiUrl": "https://www.santiebeati.it/dettaglio/28300"
+  },
+  "cirillo-alessandria": {
+    "title": "San Cirillo d'Alessandria, vescovo e dottore della Chiesa",
+    "rank": "Memoria",
+    "kind": "santo",
+    "biography": "Ilario (Poitiers, Francia, 310/320 - 367/368), vescovo della sua città natale, difese con scritti di alto profilo (tra i quali soprattutto il trattato De Trinitate) la fede nella piena divinità del Figlio, afermata dal Concilio di Nicea (325) contro l'eresia di Ario. Per la sua ferma opposizione agli orientamenti filoariani della corte imperiale fu perseguitato ed esiliato. È ricordato nel Martirologio geronimiano (sec. V-VI) il 13 gennaio.",
+    "sourceNote": "Messale Romano, Proprio dei Santi — 06-27",
+    "wikipediaUrl": "https://it.wikipedia.org/wiki/Cirillo_di_Alessandria",
+    "santiebeatiUrl": "https://www.santiebeati.it/dettaglio/28850"
+  },
+  "rosa-lima": {
+    "title": "Santa Rosa da Lima, vergine",
+    "rank": "Memoria",
+    "kind": "santo",
+    "biography": "Rosa de santa Maria, al secolo Isabella Flores de Oliva (Lima, Perù, 20 aprile 1586 - 24 agosto 1617), battezzata dall'arcivescovo san Turibio de Mogrovejo, fu accolta tra le terziarie domenicane. Visse la quotidiana esperienza della famiglia, prendendosi cura della casa e della nonna malata, aprendo le porte all'accoglienza di bambini abbandonati e anziani soli. Unita nelle sofferenze alla passione di Cristo, poté godere dell'intimità mistica con lui. Fu la prima donna latino-americana a essere proclamata santa (1672).",
+    "sourceNote": "Messale Romano, Proprio dei Santi — 08-23",
+    "wikipediaUrl": "https://it.wikipedia.org/wiki/Rosa_da_Lima",
+    "santiebeatiUrl": "https://www.santiebeati.it/dettaglio/29850"
   },
   "san-grato-d-aosta": {
     "title": "San Grato d'Aosta",
@@ -170,6 +251,24 @@
     "wikipediaUrl": "https://it.wikipedia.org/wiki/Maria_Faustina_Kowalska",
     "santiebeatiUrl": "https://www.santiebeati.it/dettaglio/57000"
   },
+  "san-bruno": {
+    "title": "San Bruno, presbitero",
+    "rank": "Memoria",
+    "kind": "santo",
+    "biography": "Bruno (Colonia, Germania, 1030 ca. - Serra San Bruno, Catanzaro, 6 ottobre 1101), già maestro di teologia e cancelliere vescovile a Reims, passò ad austera vita eremitica sul massiccio della Chartreuse ( presso Grenoble), luogo che darà origine e nome all'Ordine certosino, nato dalla sua esperienza. Chiamato a Roma da papa Urbano II, suo antico discepolo, tornò poco dopo alla vita contemplativa, in Calabria, nella località detta La Torre, dove passò dalla contemplazione terrena alla visione eterna.",
+    "sourceNote": "Messale Romano, Proprio dei Santi — 10-06",
+    "wikipediaUrl": "https://it.wikipedia.org/wiki/Bruno_(santo)",
+    "santiebeatiUrl": "https://www.santiebeati.it/dettaglio/29600"
+  },
+  "giovanni-xxiii": {
+    "title": "San Giovanni XXIII, papa",
+    "rank": "Memoria",
+    "kind": "santo",
+    "biography": "Angelo Giuseppe Roncalli nacque a Sotto il Monte (Bergamo) nel 1881. A undici anni entrò nel seminario di Bergamo, per proseguire poi al Pontificio Seminario Romano. Ordinato presbitero nel 1904, fu segretario del vescovo di Bergamo. Nel 1921 iniziò il suo servizio alla Santa Sede come presidente per l'Italia del Consiglio centrale della Pontificia Opera per la Propagazione della Fede; nel 1925 come visitatore apostolico e poi delegato apostolico in Bulgaria; nel 1935 come delegato apostolico in Turchia e Grecia; nel 1944 come nunzio apostolico in Francia. Nel 1953 fu creato cardinale e nominato patriarca di Venezia. Fu eletto papa nel 1958: convocò il Sinodo Romano, istituì la Commissione per la revisione del Codice di Diritto Canonico, indisse e aprì il Concilio Ecumenico Vaticano II. Morì la sera del 3 giugno 1963.",
+    "sourceNote": "Messale Romano, Proprio dei Santi — 11 ottobre",
+    "wikipediaUrl": "https://it.wikipedia.org/wiki/Giovanni_XXIII",
+    "santiebeatiUrl": "https://www.santiebeati.it/dettaglio/55725"
+  },
   "carlo-acutis": {
     "title": "San Carlo Acutis",
     "rank": "Memoria",
@@ -197,6 +296,15 @@
     "wikipediaUrl": "https://it.wikipedia.org/wiki/Paolo_della_Croce",
     "santiebeatiUrl": "https://www.santiebeati.it/dettaglio/29750"
   },
+  "giovanni-paolo-ii": {
+    "title": "San Giovanni Paolo II, papa",
+    "rank": "Memoria",
+    "kind": "santo",
+    "biography": "Karol Józef Wojtyła (Wadowice, Polonia, 18 maggio 1920 - Roma, 2 aprile 2005) fu ordinato presbitero il 1° novembre 1946. Docente di teologia morale (Lublino), fu eletto ausiliare e in seguito arcivescovo di Cracovia (1964) negli anni della dura repressione del regime comunista. Partecipò al Concilio Vaticano II. Eletto papa (1978) dopo il breve pontificato di Giovanni Paolo I, ne assunse il doppio nome. Alla crescente secolarizzazione contrappose la centralità di Cristo rilanciando la missione della Chiesa, sia con i numerosi viaggi apostolici in tutto il mondo, sia con la proclamazione a beati o santi di innumerevoli testimoni della fede. Promosse il confronto ecumenico e sviluppò il dialogo interreligioso. Con il Grande Giubileo dell'anno 2000 introdusse la Chiesa nel terzo millennio della sua storia.",
+    "sourceNote": "Messale Romano, Proprio dei Santi — 22 ottobre",
+    "wikipediaUrl": "https://it.wikipedia.org/wiki/Giovanni_Paolo_II",
+    "santiebeatiUrl": "https://www.santiebeati.it/dettaglio/90026"
+  },
   "martino-porres": {
     "title": "San Martino de Porres, religioso",
     "rank": "Memoria",
@@ -205,6 +313,33 @@
     "sourceNote": "Messale Romano, Proprio dei Santi — 11-03",
     "wikipediaUrl": "https://it.wikipedia.org/wiki/Martino_de_Porres",
     "santiebeatiUrl": "https://www.santiebeati.it/dettaglio/29900"
+  },
+  "alberto-magno": {
+    "title": "Sant'Alberto Magno, vescovo e dottore della Chiesa",
+    "rank": "Memoria",
+    "kind": "santo",
+    "biography": "Ilario (Poitiers, Francia, 310/320 - 367/368), vescovo della sua città natale, difese con scritti di alto profilo (tra i quali soprattutto il trattato De Trinitate) la fede nella piena divinità del Figlio, afermata dal Concilio di Nicea (325) contro l'eresia di Ario. Per la sua ferma opposizione agli orientamenti filoariani della corte imperiale fu perseguitato ed esiliato. È ricordato nel Martirologio geronimiano (sec. V-VI) il 13 gennaio.",
+    "sourceNote": "Messale Romano, Proprio dei Santi — 11-15",
+    "wikipediaUrl": "https://it.wikipedia.org/wiki/Alberto_Magno",
+    "santiebeatiUrl": "https://www.santiebeati.it/dettaglio/30050"
+  },
+  "caterina-alessandria": {
+    "title": "Santa Caterina di Alessandria, vergine e martire",
+    "rank": "Memoria",
+    "kind": "santo",
+    "biography": "vergine e martire Caterina di Alessandria (sec. III-IV), secondo la Passione che è stata tramandata (sec. VI-VIII), difese la fede di fronte a cinquanta saggi pagani e la testimoniò con il martirio. Le reliquie sono venerate nel monastero a lei intitolato ai piedi del monte Sinai.",
+    "sourceNote": "Messale Romano, Proprio dei Santi — 11-25",
+    "wikipediaUrl": "https://it.wikipedia.org/wiki/Caterina_di_Alessandria",
+    "santiebeatiUrl": "https://www.santiebeati.it/dettaglio/30150"
+  },
+  "giovanni-damasceno": {
+    "title": "San Giovanni Damasceno, presbitero e dottore della Chiesa",
+    "rank": "Memoria",
+    "kind": "santo",
+    "biography": "Ilario (Poitiers, Francia, 310/320 - 367/368), vescovo della sua città natale, difese con scritti di alto profilo (tra i quali soprattutto il trattato De Trinitate) la fede nella piena divinità del Figlio, afermata dal Concilio di Nicea (325) contro l'eresia di Ario. Per la sua ferma opposizione agli orientamenti filoariani della corte imperiale fu perseguitato ed esiliato. È ricordato nel Martirologio geronimiano (sec. V-VI) il 13 gennaio.",
+    "sourceNote": "Messale Romano, Proprio dei Santi — 12-04",
+    "wikipediaUrl": "https://it.wikipedia.org/wiki/Giovanni_Damasceno",
+    "santiebeatiUrl": "https://www.santiebeati.it/dettaglio/30250"
   },
   "san-nicola": {
     "title": "San Nicola, vescovo",

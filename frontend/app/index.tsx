@@ -149,7 +149,9 @@ export default function Home() {
   const [prefaces, setPrefaces] = useState<Preface[]>([]);
   const [prayers, setPrayers] = useState<EucharisticPrayer[]>([]);
   const [ceiDayTitle, setCeiDayTitle] = useState("");
-  const [stripCeiTitles, setStripCeiTitles] = useState<Record<string, string>>({});
+  const [stripCeiMeta, setStripCeiMeta] = useState<
+    Record<string, { title: string; liturgicalColor: string }>
+  >({});
   const [updateInfo, setUpdateInfo] = useState<AppUpdateInfo | null>(null);
   const [updateVisible, setUpdateVisible] = useState(false);
   const [updateBusy, setUpdateBusy] = useState(false);
@@ -359,15 +361,15 @@ export default function Home() {
 
   useEffect(() => {
     let cancelled = false;
-    setStripCeiTitles({});
+    setStripCeiMeta({});
     void (async () => {
       for (const offset of STRIP_OFFSETS) {
         if (cancelled) return;
         const dateStr = localDateStr(addDays(new Date(), offset));
         try {
-          const title = await api.resolveCeiCelebrationTitle(dateStr, "calendar_day");
-          if (!cancelled && title) {
-            setStripCeiTitles((prev) => ({ ...prev, [dateStr]: title }));
+          const meta = await api.resolveCeiCelebrationStripMeta(dateStr, "calendar_day");
+          if (!cancelled && meta.title) {
+            setStripCeiMeta((prev) => ({ ...prev, [dateStr]: meta }));
           }
         } catch (e) {
           if (__DEV__) console.log("Home: titolo CEI striscia", dateStr, e);
@@ -698,11 +700,16 @@ export default function Home() {
                 useSelection: optionalSaintsUseSelection,
                 selectedByMonthDay: optionalSaintSelection.selectedByMonthDay,
                 date: d,
-                calendarCeiTitle: stripCeiTitles[dateStr] || "",
+                calendarCeiTitle: stripCeiMeta[dateStr]?.title || "",
                 savedLinePick: dateStr === selectedDateISO ? optionalLinePick : null,
                 isSelectedDate: dateStr === selectedDateISO,
               });
-              const stripMeta = homeStripDayMeta(d, stripCeiTitles[dateStr], stripOptional);
+              const stripMeta = homeStripDayMeta(
+                d,
+                stripCeiMeta[dateStr]?.title,
+                stripOptional,
+                stripCeiMeta[dateStr]?.liturgicalColor,
+              );
               const borderHex = liturgicalColorHex(stripMeta.liturgicalColor, colors);
               // Pallini solo se «Prepara la liturgia» è attivo.
               const prepCount = preparaCelebraEnabled

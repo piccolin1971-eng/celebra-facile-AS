@@ -894,7 +894,7 @@
     "celebrations": [
       {
         "title": "San Camillo de Lellis, presbitero",
-        "rank": "memoria_obbligatoria",
+        "rank": "memoria_facoltativa",
         "color": "bianco"
       }
     ]
@@ -1524,7 +1524,7 @@
     "celebrations": [
       {
         "title": "San Giovanni XXIII, papa",
-        "rank": "memoria_obbligatoria",
+        "rank": "memoria_facoltativa",
         "color": "bianco"
       }
     ]
@@ -1594,7 +1594,7 @@
     "celebrations": [
       {
         "title": "San Giovanni Paolo II, papa",
-        "rank": "memoria_obbligatoria",
+        "rank": "memoria_facoltativa",
         "color": "bianco"
       }
     ]
@@ -1705,7 +1705,7 @@
       {
         "title": "San Giosafat, vescovo e martire",
         "rank": "memoria_obbligatoria",
-        "color": "rosso"
+        "color": "bianco"
       }
     ]
   },

@@ -199,17 +199,55 @@ export async function resolveCeiCelebrationTitle(
   date: string,
   mode: CelebrationMode = "calendar_day",
 ): Promise<string> {
+  const meta = await resolveCeiCelebrationStripMeta(date, mode);
+  return meta.title;
+}
+
+/** Titolo e colore CEI per striscia home (allineati alla liturgia in cache). */
+export async function resolveCeiCelebrationStripMeta(
+  date: string,
+  mode: CelebrationMode = "calendar_day",
+): Promise<{ title: string; liturgicalColor: string }> {
   try {
     const raw = await loadLiturgy(date, mode);
     if (raw && vigilCacheLooksValid(raw, mode, date)) {
-      const cached = reconciledCeiTitle(raw, date, mode);
-      if (cached) return cached;
+      const reconciled = reconcileLiturgyColors({
+        ...(raw as LocalLiturgy),
+        date,
+        celebrationMode: mode,
+      });
+      const title = (reconciled.title || "").trim();
+      if (title) {
+        return { title, liturgicalColor: (reconciled.liturgical_color || "").trim() };
+      }
     }
 
-    return await scrapeAndCacheCeiTitle(date, mode, raw);
+    await scrapeAndCacheCeiTitle(date, mode, raw);
+    const cached = await loadLiturgy(date, mode);
+    const reconciled = cached
+      ? reconcileLiturgyColors({
+          ...(cached as LocalLiturgy),
+          date,
+          celebrationMode: mode,
+        })
+      : null;
+    return {
+      title: reconciledCeiTitle(cached, date, mode),
+      liturgicalColor: (reconciled?.liturgical_color || "").trim(),
+    };
   } catch {
     const raw = await loadLiturgy(date, mode);
-    return reconciledCeiTitle(raw, date, mode);
+    const reconciled = raw
+      ? reconcileLiturgyColors({
+          ...(raw as LocalLiturgy),
+          date,
+          celebrationMode: mode,
+        })
+      : null;
+    return {
+      title: reconciledCeiTitle(raw, date, mode),
+      liturgicalColor: (reconciled?.liturgical_color || "").trim(),
+    };
   }
 }
 
@@ -222,6 +260,7 @@ export const api = {
   liturgyForOptionalSaint: (date: string, saintId: string) =>
     getOptionalSaintFullLiturgy(date, saintId),
   resolveCeiCelebrationTitle,
+  resolveCeiCelebrationStripMeta,
   warmLiturgyModes,
   refreshLiturgy: async (date: string) => {
     // Forza nuovo scraping ignorando cache

@@ -3,7 +3,11 @@
  * Foglia: non importa scraper, vigilie né il calendario mensile.
  */
 import saintsCalendarArr from "./data/saintsCalendar.json";
-import { liturgicalColorFromMoveableFeastTitle } from "./liturgicalColorUtils";
+import {
+  celebrationTitlesMatch,
+  isTemporalPrimaryCelebrationTitle,
+  liturgicalColorFromMoveableFeastTitle,
+} from "./liturgicalColorUtils";
 import { getLiturgicalSeason } from "./liturgicalDates";
 
 export type SaintEntry = { title: string; rank: string; color: string; votive_mass?: string };
@@ -82,7 +86,13 @@ export function calculateLiturgicalColor(
   ];
 
   if (best && date && isCalendarFeastObservedOnDate(best, date, season.season)) {
-    candidates.push({ color: best.color, rank: rankPriority[best.rank] });
+    const title = (celebrationTitle || "").trim();
+    const temporalPrimary = title && isTemporalPrimaryCelebrationTitle(title);
+    const saintMatchesTitle =
+      !temporalPrimary || celebrationTitlesMatch(title, best.title);
+    if (saintMatchesTitle) {
+      candidates.push({ color: best.color, rank: rankPriority[best.rank] });
+    }
   } else if (best && !date && (best.rank === "solennita" || best.rank === "festa")) {
     // Senza data (casi rari): mantieni comportamento storico solennità/festa.
     candidates.push({ color: best.color, rank: rankPriority[best.rank] });

@@ -8,6 +8,12 @@
       "custom": false
     },
     {
+      "id": "fabiano-sebastiano",
+      "date": "01-20",
+      "title": "Santi Fabiano, papa, e Sebastiano, martiri",
+      "custom": false
+    },
+    {
       "id": "angela-merici",
       "date": "01-27",
       "title": "Sant'Angela Merici, vergine",
@@ -20,9 +26,21 @@
       "custom": true
     },
     {
+      "id": "san-biagio",
+      "date": "02-03",
+      "title": "San Biagio, vescovo e martire",
+      "custom": false
+    },
+    {
       "id": "maria-lourdes",
       "date": "02-11",
       "title": "Beata Vergine Maria di Lourdes",
+      "custom": false
+    },
+    {
+      "id": "pier-damiani",
+      "date": "02-21",
+      "title": "San Pier Damiani, vescovo e dottore della Chiesa",
       "custom": false
     },
     {
@@ -38,9 +56,21 @@
       "custom": false
     },
     {
+      "id": "cirillo-gerusalemme",
+      "date": "03-18",
+      "title": "San Cirillo di Gerusalemme, vescovo e dottore della Chiesa",
+      "custom": false
+    },
+    {
       "id": "francesco-paola",
       "date": "04-02",
       "title": "San Francesco di Paola, eremita",
+      "custom": false
+    },
+    {
+      "id": "anselmo",
+      "date": "04-21",
+      "title": "Sant'Anselmo, vescovo e dottore della Chiesa",
       "custom": false
     },
     {
@@ -68,6 +98,12 @@
       "custom": true
     },
     {
+      "id": "bernardino-siena",
+      "date": "05-20",
+      "title": "San Bernardino da Siena, presbitero",
+      "custom": false
+    },
+    {
       "id": "rita-cascia",
       "date": "05-22",
       "title": "Santa Rita da Cascia, religiosa",
@@ -92,9 +128,27 @@
       "custom": false
     },
     {
+      "id": "camillo-de-lellis",
+      "date": "07-14",
+      "title": "San Camillo de Lellis, presbitero",
+      "custom": false
+    },
+    {
       "id": "monte-carmelo",
       "date": "07-16",
       "title": "Beata Vergine Maria del Monte Carmelo",
+      "custom": false
+    },
+    {
+      "id": "cirillo-alessandria",
+      "date": "06-27",
+      "title": "San Cirillo d'Alessandria, vescovo e dottore della Chiesa",
+      "custom": false
+    },
+    {
+      "id": "rosa-lima",
+      "date": "08-23",
+      "title": "Santa Rosa da Lima, vergine",
       "custom": false
     },
     {
@@ -116,6 +170,18 @@
       "custom": false
     },
     {
+      "id": "san-bruno",
+      "date": "10-06",
+      "title": "San Bruno, presbitero",
+      "custom": false
+    },
+    {
+      "id": "giovanni-xxiii",
+      "date": "10-11",
+      "title": "San Giovanni XXIII, papa",
+      "custom": false
+    },
+    {
       "id": "carlo-acutis",
       "date": "10-12",
       "title": "San Carlo Acutis",
@@ -134,9 +200,33 @@
       "custom": false
     },
     {
+      "id": "giovanni-paolo-ii",
+      "date": "10-22",
+      "title": "San Giovanni Paolo II, papa",
+      "custom": false
+    },
+    {
       "id": "martino-porres",
       "date": "11-03",
       "title": "San Martino de Porres, religioso",
+      "custom": false
+    },
+    {
+      "id": "alberto-magno",
+      "date": "11-15",
+      "title": "Sant'Alberto Magno, vescovo e dottore della Chiesa",
+      "custom": false
+    },
+    {
+      "id": "caterina-alessandria",
+      "date": "11-25",
+      "title": "Santa Caterina di Alessandria, vergine e martire",
+      "custom": false
+    },
+    {
+      "id": "giovanni-damasceno",
+      "date": "12-04",
+      "title": "San Giovanni Damasceno, presbitero e dottore della Chiesa",
       "custom": false
     },
     {
