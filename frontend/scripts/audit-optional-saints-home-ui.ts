@@ -84,8 +84,11 @@ function auditSaintFeastDay(saint: Saint, year: number): Issue[] {
     });
   }
 
-  if (!/\bmemoria\b/i.test(res.optionalBannerTitle) && !/\bmemoria\b/i.test(saint.title)) {
-    issues.push({ code: "OPT_TITLE_SUFFIX", detail: `${saint.id}: manca suffisso MEMORIA nel banner` });
+  if (!/\bmemoria\s+facoltativa\b/i.test(res.optionalBannerTitle)) {
+    issues.push({
+      code: "OPT_TITLE_SUFFIX",
+      detail: `${saint.id}: manca suffisso MEMORIA FACOLTATIVA nel banner`,
+    });
   }
 
   if (saint.id === SAINTS.find((x) => x.date === saint.date)?.id) {

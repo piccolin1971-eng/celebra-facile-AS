@@ -48,8 +48,11 @@ export function getEnabledOptionalSaintForDate(
 
 export function optionalSaintBannerTitle(saint: OptionalSaintEntry): string {
   const base = saint.title.trim();
-  if (/\bmemoria\b/i.test(base)) return base;
-  return `${base} — MEMORIA`;
+  if (/\bmemoria\s+facoltativa\b/i.test(base)) return base;
+  if (/\bmemoria\b/i.test(base)) {
+    return base.replace(/\bmemoria\b/i, "MEMORIA FACOLTATIVA");
+  }
+  return `${base} — MEMORIA FACOLTATIVA`;
 }
 
 export function sortOptionalSaintsForList(

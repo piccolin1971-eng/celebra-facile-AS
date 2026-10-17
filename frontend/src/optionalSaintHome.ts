@@ -58,9 +58,10 @@ export function resolveOptionalSaintHome(
   const conflict = calendarHasStrongCelebration(calendarBannerTitle, args.date);
 
   if (!conflict) {
+    const activeLine: OptionalSaintLinePick = args.savedLinePick ?? "optional";
     return {
       saint,
-      activeLine: "optional",
+      activeLine,
       showLineChoice: false,
       calendarBannerTitle,
       optionalBannerTitle: optTitle,
@@ -107,8 +108,11 @@ function optionalSaintAppliesOnStrip(args: {
   const saint = getEnabledOptionalSaintForDate(args.date, args.selectedByMonthDay);
   if (!saint) return null;
   const conflict = calendarHasStrongCelebration(args.calendarCeiTitle, args.date);
-  if (!conflict) return saint;
-  if (args.isSelectedDate && args.savedLinePick === "optional") return saint;
+  if (!conflict) {
+    if (args.savedLinePick === "calendar") return null;
+    return saint;
+  }
+  if (args.savedLinePick === "optional") return saint;
   return null;
 }
 

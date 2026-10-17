@@ -47,7 +47,7 @@ import {
   ensureQuickCelebrateOptionalSaintSession,
   ensureQuickCelebrateSession,
 } from "../src/defaultMassSession";
-import { OptionalSaintLineChoice } from "../src/components/OptionalSaintLineChoice";
+import { optionalSaintLiturgicalColor } from "../src/optionalSaintLiturgyBundles";
 import {
   emptyOptionalSaintHomeResolution,
   homeBannerTitleFromResolution,
@@ -226,7 +226,9 @@ export default function Home() {
     optionalAwareFallback;
   const calendarBannerTitle =
     preparedBannerLiturgyTitle(calendarSession?.liturgyTitle) ||
-    (vigilEve ? ceiDayTitle || "Messa del giorno di calendario" : bannerTitle);
+    (vigilEve
+      ? ceiDayTitle || "Messa del giorno di calendario"
+      : calendarDayFallbackTitle);
   const calendarBannerColor = homeBannerLiturgicalColor(
     selectedDate,
     "calendar_day",
@@ -839,24 +841,23 @@ export default function Home() {
             liturgicalColor={liturgicalColor}
             celebrationDate={selectedDate}
             optionalSaintId={activeOptionalSaintId}
+            optionalLineSwitch={
+              optionalSaintsUseSelection && optionalSaintHome.saint
+                ? {
+                    activeLine: optionalSaintHome.activeLine,
+                    calendarLiturgicalColor: calendarBannerColor,
+                    optionalLiturgicalColor:
+                      optionalSaintLiturgicalColor(optionalSaintHome.saint.id) ?? "bianco",
+                    onPick: handleOptionalLinePick,
+                  }
+                : undefined
+            }
             colors={colors}
             fontSize={fontSize}
             framed={false}
             testID="home-day-banner"
           />
         )}
-
-        {optionalSaintHome.showLineChoice ? (
-          <OptionalSaintLineChoice
-            calendarTitle={optionalSaintHome.calendarBannerTitle}
-            optionalTitle={optionalSaintHome.optionalBannerTitle}
-            activeLine={optionalSaintHome.activeLine}
-            onPick={handleOptionalLinePick}
-            colors={colors}
-            fontSize={fontSize}
-            scaledFont={scaledFont}
-          />
-        ) : null}
 
         {vigilEve && activeCelebrateMode !== "calendar_day" ? (
           <View style={styles.vigilSelectionBannerWrap} testID="home-vigil-banner-wrap">

@@ -6,6 +6,7 @@ import { localDateStr } from "../dateUtils";
 import { getSaintBioPreview, saintBioButtonLabel } from "../saintBioPreview";
 import { getOptionalSaintBioPreview } from "../optionalSaintBio";
 import { SaintBioModal } from "./SaintBioModal";
+import type { OptionalSaintLinePick } from "../optionalSaintLinePick";
 
 type ThemeColors = {
   surface: string;
@@ -37,6 +38,13 @@ type Props = {
   framed?: boolean;
   /** Memoria facoltativa scelta in impostazioni (scheda bio dedicata). */
   optionalSaintId?: string;
+  /** Feria vs memoria facoltativa (santo attivato in impostazioni per questo giorno). */
+  optionalLineSwitch?: {
+    activeLine: OptionalSaintLinePick;
+    calendarLiturgicalColor: string;
+    optionalLiturgicalColor: string;
+    onPick: (line: OptionalSaintLinePick) => void;
+  };
 };
 
 function colorHex(colors: ThemeColors, liturgicalColor: string): string {
@@ -115,6 +123,7 @@ export function LiturgyDayBanner({
   titleTestID = "celebration-title",
   framed = true,
   optionalSaintId,
+  optionalLineSwitch,
 }: Props) {
   const styles = makeStyles(colors, fontSize, framed);
   const accent = colors.primary ?? "#0056B3";
@@ -171,11 +180,37 @@ export function LiturgyDayBanner({
           </Text>
           <Text style={styles.metaLine} testID="season-label">
             {celebration.seasonLine}
-            {celebration.rankLabel ? " · " : ""}
-            <Text style={styles.metaRank} testID={rankTestID}>
-              {celebration.rankLabel}
-            </Text>
+            {!optionalLineSwitch && celebration.rankLabel ? " · " : ""}
+            {!optionalLineSwitch ? (
+              <Text style={styles.metaRank} testID={rankTestID}>
+                {celebration.rankLabel}
+              </Text>
+            ) : null}
           </Text>
+          {optionalLineSwitch ? (
+            <View style={styles.pillRow}>
+              <OptionalLinePill
+                label="Feria"
+                active={optionalLineSwitch.activeLine === "calendar"}
+                liturgicalColor={optionalLineSwitch.calendarLiturgicalColor}
+                colors={colors}
+                fontSize={fontSize}
+                framed={framed}
+                testID="optional-line-feria"
+                onPress={() => optionalLineSwitch.onPick("calendar")}
+              />
+              <OptionalLinePill
+                label="Memoria facoltativa"
+                active={optionalLineSwitch.activeLine === "optional"}
+                liturgicalColor={optionalLineSwitch.optionalLiturgicalColor}
+                colors={colors}
+                fontSize={fontSize}
+                framed={framed}
+                testID="optional-line-memoria"
+                onPress={() => optionalLineSwitch.onPick("optional")}
+              />
+            </View>
+          ) : null}
           {showCelebrationTitle ? (
             <Text style={styles.title} testID={titleTestID}>
               {celebration.displayTitle}
@@ -220,6 +255,62 @@ export function LiturgyDayBanner({
         onClose={() => setBioOpen(false)}
       />
     </>
+  );
+}
+
+function OptionalLinePill({
+  label,
+  active,
+  liturgicalColor,
+  colors,
+  fontSize,
+  framed,
+  testID,
+  onPress,
+}: {
+  label: string;
+  active: boolean;
+  liturgicalColor: string;
+  colors: ThemeColors;
+  fontSize: number;
+  framed: boolean;
+  testID: string;
+  onPress: () => void;
+}) {
+  const hex = colorHex(colors, liturgicalColor);
+  const webClickable = Platform.OS === "web" ? ({ cursor: "pointer" } as const) : undefined;
+  const pillStyles = StyleSheet.create({
+    pill: {
+      borderRadius: 999,
+      borderWidth: 2,
+      borderColor: active ? hex : colors.border,
+      backgroundColor: framed ? colors.surface : "#1A1A1A",
+      paddingVertical: Math.round(fontSize * 0.12),
+      paddingHorizontal: Math.round(fontSize * 0.38),
+      maxWidth: "100%",
+    },
+    text: {
+      fontSize: Math.round(fontSize * 0.62),
+      fontWeight: "800",
+      textTransform: "uppercase",
+      letterSpacing: 0.35,
+      color: active ? hex : colors.textSecondary,
+    },
+  });
+  return (
+    <TouchableOpacity
+      style={pillStyles.pill}
+      onPress={onPress}
+      testID={testID}
+      accessibilityRole="button"
+      accessibilityState={{ selected: active }}
+      accessibilityLabel={label}
+      {...webClickable}
+    >
+      <Text style={pillStyles.text} numberOfLines={2}>
+        {label}
+      </Text>
+    </TouchableOpacity>
   );
 }
 
@@ -305,5 +396,11 @@ const makeStyles = (colors: ThemeColors, fontSize: number, framed: boolean) =>
       minWidth: 0,
       fontSize: Math.round(fontSize * 0.78),
       fontWeight: "600",
+    },
+    pillRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 6,
+      marginTop: 2,
     },
   });

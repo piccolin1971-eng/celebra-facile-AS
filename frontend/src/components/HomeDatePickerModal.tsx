@@ -99,7 +99,7 @@ export function HomeDatePickerModal({
         ...day,
         title: formatCelebrationTitle(saint.title),
         liturgicalColor: overlay.liturgicalColor,
-        rankLabel: "Memoria",
+        rankLabel: "Memoria facoltativa",
       };
     });
   }, [

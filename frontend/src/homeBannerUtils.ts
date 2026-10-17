@@ -209,6 +209,7 @@ export function parseBannerCelebration(
   let rankLabel = "Feria";
   if (t.includes("solennit") || /\bsolenn\b/i.test(t)) rankLabel = "Solennità";
   else if (/\bfesta\b/.test(t)) rankLabel = "Festa";
+  else if (/\bmemoria\s+facoltativa\b/.test(t)) rankLabel = "Memoria facoltativa";
   else if (/\bmemoria\s+obbligatoria\b/.test(t) || t.includes("memoria")) rankLabel = "Memoria";
   else if (isSunday || t.includes("domenica")) rankLabel = "Domenica";
 
