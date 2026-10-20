@@ -4,7 +4,7 @@
  * Chiave stabile (non cambiare al bump di parser):
  *   ore_day_<YYYY-MM-DD>
  *
- * Prefissi legacy `ore_day_vN_<data>` (v4…v35): in lettura si migrano sulla chiave stabile
+ * Prefissi legacy `ore_day_vN_<data>` (v4…v36): in lettura si migrano sulla chiave stabile
  * e si rimuovono, così un aggiornamento APK non “cancella” i giorni scaricati.
  *
  * `schemaVersion` nel JSON: alza questo numero se cambia il formato dei blocchi;
@@ -17,8 +17,11 @@ import type { DayHoursCache, MediaId, OreHourId } from "./types";
 /** Prefisso fisso. Non bumpare: usare SCHEMA_VERSION nel JSON. */
 const PREFIX = "ore_day_";
 
-/** Schema contenuto attuale (allineato all’ultima generaz. v35 del parse). */
-export const ORE_CACHE_SCHEMA_VERSION = 35;
+/**
+ * Schema contenuto attuale. Alza e migra se il parse CEI cambia (es. strofe cantico Tb
+ * con più righe nello stesso lo_versetto: «benedite il Signore della giustizia», ecc.).
+ */
+export const ORE_CACHE_SCHEMA_VERSION = 36;
 
 const STABLE_KEY_RE = /^ore_day_(\d{4}-\d{2}-\d{2})$/;
 const LEGACY_KEY_RE = /^ore_day_v(\d+)_(\d{4}-\d{2}-\d{2})$/;
@@ -39,6 +42,18 @@ function stamp(data: DayHoursCache): DayHoursCache {
   return {
     ...data,
     invitFetched: !!data.invitFetched,
+    schemaVersion: ORE_CACHE_SCHEMA_VERSION,
+  };
+}
+
+/** Cache con schema vecchio: non riscrivere solo il numero, svuota le ore e riscarica dal CEI. */
+function migrateStaleContent(parsed: DayHoursCache): DayHoursCache {
+  const ver = parsed.schemaVersion ?? 0;
+  if (ver >= ORE_CACHE_SCHEMA_VERSION) return parsed;
+  return {
+    ...parsed,
+    hours: {},
+    invitFetched: false,
     schemaVersion: ORE_CACHE_SCHEMA_VERSION,
   };
 }
@@ -95,10 +110,12 @@ export async function loadDayHours(date: string): Promise<DayHoursCache | null> 
     }
 
     const parsed = JSON.parse(raw) as DayHoursCache;
-    const data = stamp({ ...parsed, date, invitFetched: !!parsed.invitFetched });
+    const migrated = migrateStaleContent({ ...parsed, date, invitFetched: !!parsed.invitFetched });
+    const data = stamp(migrated);
+    const contentMigrated = (parsed.schemaVersion ?? 0) < ORE_CACHE_SCHEMA_VERSION;
 
-    // Migra su chiave stabile (e aggiorna schemaVersion) se serve.
-    if (fromLegacy || parsed.schemaVersion !== ORE_CACHE_SCHEMA_VERSION) {
+    // Migra su chiave stabile; se il parse è cambiato, hours è già vuoto → nuovo download.
+    if (fromLegacy || contentMigrated || parsed.schemaVersion !== ORE_CACHE_SCHEMA_VERSION) {
       await AsyncStorage.setItem(stableKey, JSON.stringify(data));
       if (fromLegacy) await removeLegacyKeysForDate(date);
     }
