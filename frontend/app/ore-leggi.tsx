@@ -15,6 +15,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { DEFAULT_FONT_SIZE, useSettings } from "../src/SettingsContext";
 import { resolveBodyFont } from "../src/fontFamily";
 import { FontSizeButtons, FONT_SIZE_SEG_HEIGHT } from "../src/components/FontSizeButtons";
+import { HomeCircleButton } from "../src/components/HomeCircleButton";
 import { CompactStepperSegment } from "../src/components/CompactStepperSegment";
 import { ReadingBrightnessButton, ReadingBrightnessRoot, ReadingBrightnessRow } from "../src/components/ReadingBrightnessControl";
 import { localDateStr, parseLocalDate } from "../src/dateUtils";
@@ -317,6 +318,11 @@ export default function OreLeggi() {
       <View>
       <View style={[styles.topBar, { borderBottomColor: colors.border }]}>
         <View style={styles.titleRow}>
+          <HomeCircleButton
+            onPress={() => router.replace({ pathname: "/", params: { date: dateISO } })}
+            testID="btn-ore-read-home"
+            accessibilityLabel="Torna alla home"
+          />
           <TouchableOpacity
             onPress={() => router.back()}
             accessibilityRole="button"

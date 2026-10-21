@@ -43,6 +43,8 @@ type Props = {
     activeLine: OptionalSaintLinePick;
     calendarLiturgicalColor: string;
     optionalLiturgicalColor: string;
+    calendarSubtitle: string;
+    optionalSubtitle: string;
     onPick: (line: OptionalSaintLinePick) => void;
   };
 };
@@ -60,6 +62,35 @@ function colorHex(colors: ThemeColors, liturgicalColor: string): string {
     default:
       return colors.liturgicalGreen;
   }
+}
+
+function parseHexRgb(hex: string): [number, number, number] | null {
+  const h = hex.replace("#", "");
+  if (h.length !== 6) return null;
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  if ([r, g, b].some((n) => Number.isNaN(n))) return null;
+  return [r, g, b];
+}
+
+/** Sfondo riga attiva B2b: ~20% colore liturgico su base scura/chiara. */
+function liturgicalRowFill(hex: string, baseHex: string, amount = 0.2): string {
+  const fg = parseHexRgb(hex);
+  const bg = parseHexRgb(baseHex);
+  if (!fg || !bg) return baseHex;
+  const mix = (a: number, b: number) => Math.round(a * amount + b * (1 - amount));
+  return `rgb(${mix(fg[0], bg[0])}, ${mix(fg[1], bg[1])}, ${mix(fg[2], bg[2])})`;
+}
+
+function inactiveRowBorderColor(colors: ThemeColors, framed: boolean): string {
+  if (framed) return colors.border;
+  const fg = parseHexRgb(colors.textPrimary);
+  const bg = parseHexRgb(colors.border);
+  if (!fg || !bg) return "#6B6B6B";
+  const t = 0.55;
+  const mix = (a: number, b: number) => Math.round(a * t + b * (1 - t));
+  return `rgb(${mix(fg[0], bg[0])}, ${mix(fg[1], bg[1])}, ${mix(fg[2], bg[2])})`;
 }
 
 /** Barra a D come nella foto: tonda fuori, piatta verso il testo, alta quanto il box. */
@@ -188,9 +219,11 @@ export function LiturgyDayBanner({
             ) : null}
           </Text>
           {optionalLineSwitch ? (
-            <View style={styles.pillRow}>
-              <OptionalLinePill
+            <View style={styles.lineSwitchBlock}>
+              <Text style={styles.lineSwitchLabel}>Scegli la celebrazione</Text>
+              <OptionalLineRow
                 label="Feria"
+                subtitle={optionalLineSwitch.calendarSubtitle}
                 active={optionalLineSwitch.activeLine === "calendar"}
                 liturgicalColor={optionalLineSwitch.calendarLiturgicalColor}
                 colors={colors}
@@ -199,8 +232,9 @@ export function LiturgyDayBanner({
                 testID="optional-line-feria"
                 onPress={() => optionalLineSwitch.onPick("calendar")}
               />
-              <OptionalLinePill
+              <OptionalLineRow
                 label="Memoria facoltativa"
+                subtitle={optionalLineSwitch.optionalSubtitle}
                 active={optionalLineSwitch.activeLine === "optional"}
                 liturgicalColor={optionalLineSwitch.optionalLiturgicalColor}
                 colors={colors}
@@ -211,7 +245,7 @@ export function LiturgyDayBanner({
               />
             </View>
           ) : null}
-          {showCelebrationTitle ? (
+          {!optionalLineSwitch && showCelebrationTitle ? (
             <Text style={styles.title} testID={titleTestID}>
               {celebration.displayTitle}
             </Text>
@@ -258,8 +292,9 @@ export function LiturgyDayBanner({
   );
 }
 
-function OptionalLinePill({
+function OptionalLineRow({
   label,
+  subtitle,
   active,
   liturgicalColor,
   colors,
@@ -269,6 +304,7 @@ function OptionalLinePill({
   onPress,
 }: {
   label: string;
+  subtitle: string;
   active: boolean;
   liturgicalColor: string;
   colors: ThemeColors;
@@ -279,37 +315,91 @@ function OptionalLinePill({
 }) {
   const hex = colorHex(colors, liturgicalColor);
   const webClickable = Platform.OS === "web" ? ({ cursor: "pointer" } as const) : undefined;
-  const pillStyles = StyleSheet.create({
-    pill: {
-      borderRadius: 999,
+  const inactiveBg = framed ? colors.surface : "#141414";
+  const activeBase = framed ? colors.surface : "#0C0C0C";
+  const rowStyles = StyleSheet.create({
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      width: "100%",
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+      borderRadius: 10,
       borderWidth: 2,
-      borderColor: active ? hex : colors.border,
-      backgroundColor: framed ? colors.surface : "#1A1A1A",
-      paddingVertical: Math.round(fontSize * 0.12),
-      paddingHorizontal: Math.round(fontSize * 0.38),
+      borderColor: active ? hex : inactiveRowBorderColor(colors, framed),
+      backgroundColor: active ? liturgicalRowFill(hex, activeBase, 0.2) : inactiveBg,
       maxWidth: "100%",
+      ...(Platform.OS === "web" && active
+        ? ({ boxShadow: `0 0 0 1px ${hex}80` } as object)
+        : null),
     },
-    text: {
-      fontSize: Math.round(fontSize * 0.62),
+    swatch: {
+      width: 6,
+      alignSelf: "stretch",
+      borderRadius: 3,
+      backgroundColor: hex,
+      opacity: active ? 1 : 0.35,
+      flexShrink: 0,
+    },
+    radio: {
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      borderWidth: 2,
+      borderColor: active ? hex : colors.textPrimary,
+      alignItems: "center",
+      justifyContent: "center",
+      flexShrink: 0,
+      opacity: active ? 1 : 0.85,
+    },
+    radioDot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: hex,
+    },
+    textCol: { flex: 1, minWidth: 0 },
+    title: {
+      fontSize: Math.round(fontSize * 0.76),
       fontWeight: "800",
       textTransform: "uppercase",
       letterSpacing: 0.35,
-      color: active ? hex : colors.textSecondary,
+      color: active ? hex : colors.textPrimary,
+    },
+    sub: {
+      fontSize: Math.round(fontSize * 0.72),
+      fontWeight: "500",
+      marginTop: 3,
+      color: active ? colors.textSecondary : colors.textPrimary,
+      opacity: active ? 1 : 0.92,
     },
   });
+  const a11y = subtitle.trim() ? `${label}. ${subtitle}` : label;
   return (
     <TouchableOpacity
-      style={pillStyles.pill}
+      style={rowStyles.row}
       onPress={onPress}
       testID={testID}
       accessibilityRole="button"
       accessibilityState={{ selected: active }}
-      accessibilityLabel={label}
+      accessibilityLabel={a11y}
       {...webClickable}
     >
-      <Text style={pillStyles.text} numberOfLines={2}>
-        {label}
-      </Text>
+      <View style={rowStyles.swatch} />
+      <View style={rowStyles.radio}>
+        {active ? <View style={rowStyles.radioDot} /> : null}
+      </View>
+      <View style={rowStyles.textCol}>
+        <Text style={rowStyles.title} numberOfLines={2}>
+          {label}
+        </Text>
+        {subtitle.trim() ? (
+          <Text style={rowStyles.sub} numberOfLines={2}>
+            {subtitle}
+          </Text>
+        ) : null}
+      </View>
     </TouchableOpacity>
   );
 }
@@ -397,10 +487,17 @@ const makeStyles = (colors: ThemeColors, fontSize: number, framed: boolean) =>
       fontSize: Math.round(fontSize * 0.78),
       fontWeight: "600",
     },
-    pillRow: {
-      flexDirection: "row",
-      flexWrap: "wrap",
+    lineSwitchBlock: {
+      width: "100%",
       gap: 6,
       marginTop: 2,
+    },
+    lineSwitchLabel: {
+      fontSize: Math.round(fontSize * 0.68),
+      fontWeight: "700",
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+      color: colors.textSecondary,
+      opacity: 0.85,
     },
   });

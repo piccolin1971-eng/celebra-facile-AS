@@ -48,7 +48,7 @@ import {
 import { HomeDatePickerModal } from "../src/components/HomeDatePickerModal";
 import { QuickAccessModal } from "../src/components/QuickAccessModal";
 import { loadLiturgyFavorites } from "../src/liturgyFavorites";
-import { bannerCeiTitleWithRank, calendarCelebrationBannerTitle, formatCelebrationTitle, homeBannerLiturgicalColor, homeStripDayMeta, liturgicalColorHex, preparedBannerLiturgyTitle } from "../src/homeBannerUtils";
+import { bannerCeiTitleWithRank, calendarCelebrationBannerTitle, formatCelebrationTitle, homeBannerLiturgicalColor, homeStripDayMeta, liturgicalColorHex, parseBannerCelebration, preparedBannerLiturgyTitle } from "../src/homeBannerUtils";
 import {
   ensureQuickCelebrateOptionalSaintSession,
   ensureQuickCelebrateSession,
@@ -252,6 +252,26 @@ export default function Home() {
     bannerTitle,
   );
   const optionalSaintColor = optionalSaintHomeLiturgicalColor(optionalSaintHome);
+  const optionalLineSwitchSubtitles = useMemo(() => {
+    if (!optionalSaintHome.saint) return null;
+    const calendarParsed = parseBannerCelebration(
+      calendarBannerTitle,
+      selectedSeasonName,
+      selectedDate,
+    );
+    const calendarSubtitle =
+      calendarParsed.displayTitle.trim() || calendarBannerTitle.trim();
+    const optionalSubtitle =
+      formatCelebrationTitle(optionalSaintHome.optionalBannerTitle) ||
+      optionalSaintHome.optionalBannerTitle.trim();
+    return { calendarSubtitle, optionalSubtitle };
+  }, [
+    optionalSaintHome.saint,
+    optionalSaintHome.optionalBannerTitle,
+    calendarBannerTitle,
+    selectedSeasonName,
+    selectedDate,
+  ]);
   const liturgicalColor = optionalSaintColor ?? calendarLiturgicalColor;
   const hasPreparedSession = sessions.length > 0;
   const canOpenCelebra =
@@ -851,12 +871,16 @@ export default function Home() {
             celebrationDate={selectedDate}
             optionalSaintId={activeOptionalSaintId}
             optionalLineSwitch={
-              optionalSaintsUseSelection && optionalSaintHome.saint
+              optionalSaintsUseSelection &&
+              optionalSaintHome.saint &&
+              optionalLineSwitchSubtitles
                 ? {
                     activeLine: optionalSaintHome.activeLine,
                     calendarLiturgicalColor: calendarBannerColor,
                     optionalLiturgicalColor:
                       optionalSaintLiturgicalColor(optionalSaintHome.saint.id) ?? "bianco",
+                    calendarSubtitle: optionalLineSwitchSubtitles.calendarSubtitle,
+                    optionalSubtitle: optionalLineSwitchSubtitles.optionalSubtitle,
                     onPick: handleOptionalLinePick,
                   }
                 : undefined
