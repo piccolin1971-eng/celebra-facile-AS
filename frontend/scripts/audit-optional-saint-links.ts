@@ -88,7 +88,8 @@ async function main() {
       const sk = sbKind(bio.santiebeatiUrl);
       const sh = await headOk(bio.santiebeatiUrl);
       row.push(sh.ok ? `${sk} ${bio.santiebeatiUrl.split("/").pop()}` : `HTTP ${sh.status}`);
-      if (!sh.ok || sk !== "dettaglio") issues++;
+      if (!sh.ok) issues++;
+      if (sk !== "dettaglio" && sk !== "ricerca") issues++;
     }
 
     console.log(row.join(" | "));

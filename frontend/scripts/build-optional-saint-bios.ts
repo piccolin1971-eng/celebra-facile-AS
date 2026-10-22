@@ -10,6 +10,11 @@ import saintsCalendar from "../src/data/saintsCalendar.json";
 import { saintBioTitlesAlign } from "../src/saintBioPreview";
 import type { SaintBioPreview } from "../src/saintBioPreview";
 import { polishBiography } from "./messaleTextPolish";
+import {
+  extractFabianoSebastianoBio,
+  extractMessaleBio,
+  loadMessaleLines,
+} from "./optionalSaintMessaleExtract";
 
 const MESSALE = path.resolve(__dirname, "../../messale 2020.txt");
 const OUT = path.resolve(__dirname, "../src/data/optionalSaintBios.json");
@@ -36,80 +41,55 @@ function rankLabel(rank: string): string {
   return "Memoria";
 }
 
-function extractMessaleBio(saintTitle: string): string | null {
-  if (!fs.existsSync(MESSALE)) return null;
-  const text = fs.readFileSync(MESSALE, "utf8");
-  const lines = text.split(/\r?\n/);
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].replace(/π/g, "t").replace(/Π/g, "T").replace(/±/g, "N");
-    if (!/^(San|Santa|Sant'|Santi|Beata|Beato|Santissimo)/i.test(line.trim())) continue;
-    if (!saintBioTitlesAlign(line, saintTitle)) continue;
-
-    const bio: string[] = [];
-    for (let j = i + 1; j < lines.length && j < i + 25; j++) {
-      const t = lines[j].trim();
-      if (!t) continue;
-      if (/^Dal Comune|^Colletta|^Ant\.|^Messa /i.test(t)) break;
-      if (/^(Gennaio|Febbraio|Marzo|Aprile|Maggio|Giugno|Luglio|Agosto|Settembre|Ottobre|Novembre|Dicembre)\s+\d/i.test(t))
-        break;
-      bio.push(t);
-      if (bio.join(" ").length > 900) break;
-    }
-    const joined = polishBiography(bio.join(" "));
-    if (joined.length >= 80) return joined;
-  }
-  return null;
+function messaleBioForSaint(
+  lines: string[] | null,
+  s: CatalogSaint,
+): string | null {
+  if (!lines) return null;
+  if (s.id === "fabiano-sebastiano") return extractFabianoSebastianoBio(lines);
+  return extractMessaleBio(lines, s.title);
 }
 
+/** Biografie non nel messale 2020 o scritte a mano. */
 const EXTRA_BIOS: Record<string, Partial<SaintBioPreview>> = {
   "pier-giorgio-frassati": {
     biography:
-      "Nato a Torino nel 1901, laico appassionato di montagna e di amicizia, visse con intensa preghiera e carità verso i poveri. Morì a 24 anni nel 1925; beatificato nel 1990 e canonizzato nel 2025. Giovanni Paolo II lo chiamò «l’uomo delle beatitudini».",
-    wikipediaUrl: "https://it.wikipedia.org/wiki/Pier_Giorgio_Frassati",
-    santiebeatiUrl: "https://www.santiebeati.it/dettaglio/88050",
+      "Nato a Torino nel 1901, laico appassionato di montagna e di amicizia, visse con intensa preghiera e carità verso i poveri. Morì a 24 anni nel 1925; beatificato nel 1990 e canonizzato nel 2025. Giovanni Paolo II lo chiamò «l'uomo delle beatitudini».",
+    sourceNote: "Scheda sintetica per la memoria facoltativa scelta in app.",
   },
   "carlo-acutis": {
     biography:
-      "Nato a Londra nel 1991, cresciuto a Milano. Giovane cattolico appassionato di informatica, promosse l’Eucaristia e l’amore ai poveri anche attraverso il web. Morì nel 2006; beatificato nel 2020 e canonizzato nel 2025.",
-    wikipediaUrl: "https://it.wikipedia.org/wiki/Carlo_Acutis",
-    santiebeatiUrl: "https://www.santiebeati.it/dettaglio/93910",
+      "Nato a Londra nel 1991, cresciuto a Milano. Giovane cattolico appassionato di informatica, promosse l'Eucaristia e l'amore ai poveri anche attraverso il web. Morì nel 2006; beatificato nel 2020 e canonizzato nel 2025.",
+    sourceNote: "Scheda sintetica per la memoria facoltativa scelta in app.",
   },
   faustina: {
     biography:
       "Suor Maria Faustina Kowalska (1905-1938), religiosa polacca delle Suore della Beata Vergine Maria della Misericordia. Mistica e apostola della Divina Misericordia, annotò nel Diario le rivelazioni ricevute. Canonizzata da Giovanni Paolo II nel 2000; memoria facoltativa il 5 ottobre.",
-    wikipediaUrl: "https://it.wikipedia.org/wiki/Maria_Faustina_Kowalska",
-    santiebeatiUrl: "https://www.santiebeati.it/dettaglio/57000",
+    sourceNote: "Scheda sintetica per la memoria facoltativa scelta in app.",
   },
   "gabriele-addolorata": {
     biography:
-      "Francesco Possenti (Assisi, 1838 – Isola del Gran Sasso, 1862), passionista con il nome di Gabriele dell’Addolorata. Giovane innamorato di Maria e della Croce, morì a 24 anni. Santo dal 1920, patrono dell’Abruzzo e della Gioventù cattolica italiana.",
-    wikipediaUrl: "https://it.wikipedia.org/wiki/San_Gabriele_dell%27Addolorata",
-    santiebeatiUrl: "https://www.santiebeati.it/dettaglio/26000",
+      "Francesco Possenti (Assisi, 1838 – Isola del Gran Sasso, 1862), passionista con il nome di Gabriele dell'Addolorata. Giovane innamorato di Maria e della Croce, morì a 24 anni. Santo dal 1920, patrono dell'Abruzzo e della Gioventù cattolica italiana.",
+    sourceNote: "Scheda sintetica per la memoria facoltativa scelta in app.",
   },
   "sant-orso-d-aosta": {
     biography:
-      "Sant’Orso, vescovo di Aosta nel VI secolo, è uno dei santi fondatori della Chiesa valdostana. Tradizione lo ricorda come pastore della comunità cristiana locale, annunciatore della Parola e testimone di carità verso i poveri.",
-    wikipediaUrl: "https://it.wikipedia.org/wiki/Orso_di_Aosta",
-    santiebeatiUrl: "https://www.santiebeati.it/dettaglio/31250",
+      "Sant'Orso, vescovo di Aosta nel VI secolo, è uno dei santi fondatori della Chiesa valdostana. Tradizione lo ricorda come pastore della comunità cristiana locale, annunciatore della Parola e testimone di carità verso i poveri.",
   },
   "san-grato-d-aosta": {
     biography:
-      "San Grato, vescovo di Aosta, è venerato come difensore della città e pastore della Chiesa locale nell’epoca dei primi barbari invasori. La sua memoria è legata al culto diffuso in Valle d’Aosta.",
-    wikipediaUrl:
-      "https://it.wikipedia.org/w/index.php?search=San+Grato+di+Aosta&title=Speciale%3ARicerca",
-    santiebeatiUrl: "https://www.santiebeati.it/dettaglio/34550",
+      "San Grato, vescovo di Aosta, è venerato come difensore della città e pastore della Chiesa locale nell'epoca dei primi barbari invasori. La sua memoria è legata al culto diffuso in Valle d'Aosta.",
   },
   "santi-vittore-e-corona": {
     biography:
-      "Vittore e Corona, martiri venerati nell’antichità cristiana, sono patroni di Feltre e di molte comunità alpine. La loro testimonianza di fede è custodita dalla tradizione liturgica locale del Triveneto.",
-    wikipediaUrl: "https://it.wikipedia.org/wiki/Vittore_e_Corona",
-    santiebeatiUrl: "https://www.santiebeati.it/dettaglio/92614",
+      "Vittore e Corona, martiri venerati nell'antichità cristiana, sono patroni di Feltre e di molte comunità alpine. La loro testimonianza di fede è custodita dalla tradizione liturgica locale del Triveneto.",
   },
 };
 
 function main() {
   const bios = saintBios as Record<string, SaintBioPreview>;
   const calendar = saintsCalendar as CalDay[];
+  const messaleLines = loadMessaleLines(MESSALE);
   const out: Record<string, SaintBioPreview> = {};
 
   for (const s of (catalog as { saints: CatalogSaint[] }).saints) {
@@ -123,9 +103,10 @@ function main() {
       bio = { ...byDate, title: s.title };
     }
 
+    const messale = messaleBioForSaint(messaleLines, s);
+    const extra = EXTRA_BIOS[s.id];
+
     if (!bio) {
-      const messale = extractMessaleBio(s.title);
-      const extra = EXTRA_BIOS[s.id];
       bio = {
         title: s.title,
         rank,
@@ -141,21 +122,25 @@ function main() {
         sourceNote: messale
           ? `Messale Romano, Proprio dei Santi — ${s.date}`
           : "Scheda sintetica per la memoria facoltativa scelta in app.",
-        wikipediaUrl: extra?.wikipediaUrl || wikiSearchUrl(s.title),
-        santiebeatiUrl: extra?.santiebeatiUrl || santiebeatiSearchUrl(s.title),
+        wikipediaUrl: wikiSearchUrl(s.title),
+        santiebeatiUrl: santiebeatiSearchUrl(s.title),
       };
+    } else if (messale) {
+      bio.biography = messale;
+      bio.sourceNote = `Messale Romano, Proprio dei Santi — ${s.date}`;
     }
 
-    if (EXTRA_BIOS[s.id]) {
+    if (extra) {
       bio = {
         ...bio,
-        ...EXTRA_BIOS[s.id],
+        ...extra,
         title: s.title,
         rank: bio.rank,
-        sourceNote: EXTRA_BIOS[s.id].sourceNote || bio.sourceNote,
+        biography: extra.biography ?? bio.biography,
+        sourceNote: extra.sourceNote ?? bio.sourceNote,
       };
     }
-    if (s.custom && !EXTRA_BIOS[s.id]?.sourceNote) {
+    if (s.custom && !extra?.sourceNote && !messale) {
       bio.sourceNote = "Scheda sintetica per la memoria facoltativa scelta in app (santo locale).";
     }
 
@@ -163,17 +148,8 @@ function main() {
     out[s.id] = bio;
   }
 
-  const {
-    OPTIONAL_SAINT_SANTIE_BEATI,
-    OPTIONAL_SAINT_WIKIPEDIA,
-  } = require("../src/data/optionalSaintExternalLinks") as typeof import("../src/data/optionalSaintExternalLinks");
-  for (const id of Object.keys(out)) {
-    if (OPTIONAL_SAINT_WIKIPEDIA[id]) out[id].wikipediaUrl = OPTIONAL_SAINT_WIKIPEDIA[id];
-    if (OPTIONAL_SAINT_SANTIE_BEATI[id]) out[id].santiebeatiUrl = OPTIONAL_SAINT_SANTIE_BEATI[id];
-  }
-
-  fs.writeFileSync(OUT, JSON.stringify(out, null, 2), "utf8");
-  console.log(`Scritto ${OUT} (${Object.keys(out).length} schede)`);
+  fs.writeFileSync(OUT, JSON.stringify(out, null, 2) + "\n", "utf8");
+  console.log(`Scritto ${OUT} (${Object.keys(out).length} schede). Eseguire: npx tsx scripts/fix-optional-saint-links.ts`);
 }
 
 main();

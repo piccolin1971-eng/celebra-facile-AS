@@ -99,6 +99,22 @@ export function SaintBioModal({ visible, bio, colors, fontSize, onClose }: Props
                 <Ionicons name="book-outline" size={Math.round(fontSize * 1.1)} color={primary} />
                 <Text style={[styles.linkBtnText, styles.linkBtnTextSecondary]}>Santi e Beati</Text>
               </TouchableOpacity>
+              {(bio?.extraLinks ?? []).map((link) => (
+                <TouchableOpacity
+                  key={link.url}
+                  style={[styles.linkBtn, styles.linkBtnSecondary, webClickable]}
+                  onPress={() => openUrl(link.url)}
+                  accessibilityRole="link"
+                  accessibilityLabel={link.label}
+                >
+                  <Ionicons
+                    name={link.url.includes("wikipedia") ? "globe-outline" : "book-outline"}
+                    size={Math.round(fontSize * 1.1)}
+                    color={primary}
+                  />
+                  <Text style={[styles.linkBtnText, styles.linkBtnTextSecondary]}>{link.label}</Text>
+                </TouchableOpacity>
+              ))}
             </View>
           </ScrollView>
         </View>

@@ -3,6 +3,7 @@
  * Esegui: npm run test:votive-liturgy
  */
 import votiveMasses from "../src/data/votiveMasses.json";
+import votiveReadings from "../src/data/votiveReadings.json";
 import prefaces from "../src/data/prefaces.json";
 import {
   applyVotiveMassToLiturgy,
@@ -48,6 +49,14 @@ function assert(cond: boolean, msg: string) {
 
 const masses = votiveMasses as VotiveMassFull[];
 assert(masses.length === 14, `attese 14 messe votive, trovate ${masses.length}`);
+
+/** Le 12 voci in Home (esclusi defunti/sposi → rituali dedicati). */
+const UI_VOTIVE_IDS = masses.filter((m) => m.id !== "defunti" && m.id !== "sposi").map((m) => m.id);
+const embedded = votiveReadings as Record<string, unknown>;
+for (const id of UI_VOTIVE_IDS) {
+  const rows = embedded[id];
+  assert(Array.isArray(rows) && rows.length > 0, `votiveReadings.json: manca ${id}`);
+}
 
 const lectionaryChecks: Record<string, (text: string) => boolean> = {
   ss_trinita: (t) => t.includes("mosè") || t.includes("cor 13") || t.includes("giovanni") || t.includes("es 34"),

@@ -52,6 +52,20 @@
       "prefaceIds": ["della_santissima_eucaristia_i_l_eucarist"],
       "kind": "proprio",
       "note": "Messa vespertina Cena del Signore"
+    },
+    {
+      "titlePatterns": [
+        "santa famiglia",
+        "famiglia di gesu",
+        "famiglia di nazaret"
+      ],
+      "prefaceIds": [
+        "di_natale_i_cristo_luc",
+        "di_natale_ii_nell_incar",
+        "di_natale_iii_il_sublime"
+      ],
+      "kind": "proprio",
+      "note": "Domenica Santa Famiglia — Prefazio di Natale (Messale)"
     }
   ],
   "celebrations": [

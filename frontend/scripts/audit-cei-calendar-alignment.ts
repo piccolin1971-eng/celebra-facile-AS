@@ -1,3 +1,5 @@
+(globalThis as { __DEV__?: boolean }).__DEV__ = false;
+
 /**
  * Confronto calendario app (saintsCalendar) vs pagina CEI «Liturgia del giorno».
  * Passo 1: rank/colore/titolo primario CEI per ogni giorno dell'anno.

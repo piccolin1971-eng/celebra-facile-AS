@@ -8,7 +8,7 @@ import {
   isTemporalPrimaryCelebrationTitle,
   liturgicalColorFromMoveableFeastTitle,
 } from "./liturgicalColorUtils";
-import { getLiturgicalSeason } from "./liturgicalDates";
+import { discretionaryRoseSundayColor, getLiturgicalSeason } from "./liturgicalDates";
 
 export type SaintEntry = { title: string; rank: string; color: string; votive_mass?: string };
 
@@ -84,6 +84,11 @@ export function calculateLiturgicalColor(
   const candidates: Array<{ color: string; rank: number }> = [
     { color: season.color, rank: 99 },
   ];
+
+  if (date) {
+    const rose = discretionaryRoseSundayColor(date);
+    if (rose) candidates.push({ color: rose, rank: 8 });
+  }
 
   if (best && date && isCalendarFeastObservedOnDate(best, date, season.season)) {
     const title = (celebrationTitle || "").trim();

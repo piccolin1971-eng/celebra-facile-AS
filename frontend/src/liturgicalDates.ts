@@ -89,6 +89,34 @@ export function firstAdventSunday(year: number): Date {
 }
 
 /**
+ * Domeniche in cui il rito ammette il rosa (Gaudete, Laetare).
+ * In app si mostra rosa; in parrocchia resta lecito il viola se mancano i paramenti.
+ */
+export function discretionaryRoseSundayColor(date: Date): string | null {
+  if (date.getDay() !== 0) return null;
+  const day = startOfDay(date);
+  const y = day.getFullYear();
+  const t = day.getTime();
+
+  const advent = firstAdventSunday(y);
+  const christmas = new Date(y, 11, 25);
+  if (t >= advent.getTime() && t < christmas.getTime()) {
+    const week = daysBetween(advent, day) / 7 + 1;
+    if (week === 3) return "rosa";
+  }
+
+  const easter = computeEasterSunday(y);
+  const lent1 = addDays(easter, -42);
+  const palm = addDays(easter, -7);
+  if (t >= lent1.getTime() && t < palm.getTime()) {
+    const week = daysBetween(lent1, day) / 7 + 1;
+    if (week === 4) return "rosa";
+  }
+
+  return null;
+}
+
+/**
  * Ciclo A/B/C: dalla Prima di Avvento fino al Cristo Re successivo.
  * Advent 2025–Cristo Re 2026 = A; Advent 2026 = B; Advent 2024 = C.
  */

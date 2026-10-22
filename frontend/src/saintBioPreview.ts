@@ -7,6 +7,11 @@ import saintBiosJson from "./data/saintBios.json";
 /** `santo` = persona; `festa` = mistero del Signore / mariana / commemorazione. */
 export type SaintBioKind = "santo" | "festa";
 
+export type SaintBioExtraLink = {
+  label: string;
+  url: string;
+};
+
 export type SaintBioPreview = {
   title: string;
   rank: string;
@@ -15,6 +20,8 @@ export type SaintBioPreview = {
   sourceNote: string;
   wikipediaUrl: string;
   santiebeatiUrl: string;
+  /** Secondo santo nella stessa memoria (es. Fabiano + Sebastiano). */
+  extraLinks?: SaintBioExtraLink[];
 };
 
 /** Contesto del banner: la scheda si mostra solo se coincide con la celebrazione visibile. */

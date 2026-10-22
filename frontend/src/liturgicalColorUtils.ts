@@ -17,6 +17,7 @@ const MOVEABLE_FEAST_COLORS: { keywords: string[]; color: string }[] = [
   { keywords: ["ceneri", "mercoledi delle ceneri"], color: "viola" },
   { keywords: ["palme", "domenica delle palme"], color: "rosso" },
   { keywords: ["passione del signore", "venerdi santo"], color: "rosso" },
+  { keywords: ["iii domenica di avvento", "3 domenica di avvento"], color: "rosa" },
 ];
 
 function normalizeTitle(title: string): string {

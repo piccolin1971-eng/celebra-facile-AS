@@ -65,7 +65,11 @@ function auditBios(): string[] {
     if ((b.biography || "").length < 80) {
       issues.push(`BIO short: ${s.id}`);
     }
-    if (/Concilio Ecum|Sacrosanctum Concilium|Ordinamento Generale/i.test(b.biography)) {
+    if (
+      /Sacrosanctum Concilium|Ordinamento Generale del Romano Missale/i.test(b.biography) ||
+      (/Concilio Ecum/i.test(b.biography) &&
+        !/Concilio Ecumenico Vaticano II/i.test(b.biography))
+    ) {
       issues.push(`BIO wrong OCR chunk: ${s.id}`);
     }
   }

@@ -52,6 +52,10 @@ const MOVEABLE_FEAST_PREFACE_IDS: { keywords: string[]; ids: string[] }[] = [
       "dopo_l_ascensione_nell_attes",
     ],
   },
+  {
+    keywords: ["santa famiglia", "famiglia di gesu", "famiglia di nazaret"],
+    ids: ["di_natale_i_cristo_luc", "di_natale_ii_nell_incar", "di_natale_iii_il_sublime"],
+  },
 ];
 
 /** Mappa il nome stagione liturgica CEI al key usato nei prefazi. */
