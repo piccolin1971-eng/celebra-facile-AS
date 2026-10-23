@@ -64,6 +64,8 @@ function tidyLitText(t: string): string {
       .replace(/\s*(?:div|span)\s+class\s*=\s*"?\s*$/i, "")
       // Refuso ricorrente sul CEI (intercessioni vergini)
       .replace(/\bintatta a sua fede\b/gi, "intatta la sua fede")
+      // Spazio prima del punto (es. Salmo 45 vespri: «la terra .»).
+      .replace(/ +([.!?…])/g, "$1")
       .trim(),
   );
 }
@@ -125,6 +127,59 @@ function indentHang(spaces: number): number {
   if (spaces >= 4) return 2;
   if (spaces >= 2) return 1;
   return 0;
+}
+
+/**
+ * Testo orfano fuori da `lo_versetto`: un solo `<br>` è a capo,
+ * `<br><br>` è una strofa nuova (come in coalesceCeiVerseGroups).
+ */
+function splitOrphanRows(rawRows: string[]): string[][] {
+  const groups: string[][] = [];
+  let cur: string[] = [];
+  let blanks = 0;
+  const flush = () => {
+    if (cur.some((r) => r.trim())) groups.push(cur);
+    cur = [];
+  };
+  for (const row of rawRows) {
+    if (!row.trim()) {
+      blanks += 1;
+      if (blanks >= 2) flush();
+      else cur.push(row);
+      continue;
+    }
+    blanks = 0;
+    cur.push(row);
+  }
+  flush();
+  return groups.length ? groups : [rawRows];
+}
+
+function pushOrphanVerseGroup(blocks: OreBlock[], rawRows: string[]): void {
+  const merged = verseLinesFromRawRows(rawRows);
+  const lines = merged.map((l) => tidyLitText(l.text)).filter(Boolean);
+  if (!lines.length) return;
+  const looseProse =
+    lines.length > 0 &&
+    lines.every(
+      (l) =>
+        l.trim().length >= 45 &&
+        !/[*†]/.test(l) &&
+        !hasJoinCross(l) &&
+        l !== JOIN_CROSS_MARK &&
+        !/\s\/\s/.test(l) &&
+        !/^(V\.|R\.|Ant\.|—)/.test(l.trim()),
+    );
+  if (looseProse) {
+    for (const line of lines) blocks.push({ k: "prose", text: line });
+    return;
+  }
+  if (lines.length === 1 && !/[*†]/.test(lines[0]) && lines[0] !== JOIN_CROSS_MARK && !/^(V\.|R\.)/.test(lines[0])) {
+    blocks.push({ k: "prose", text: lines[0] });
+    return;
+  }
+  const hangs = merged.filter((l) => tidyLitText(l.text)).map((l) => l.hang);
+  blocks.push({ k: "stanza", lines, hang: hangs });
 }
 
 /**
@@ -2086,8 +2141,9 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
         j += 1;
       }
       if (rawRows.length) {
-        const merged = verseLinesFromRawRows(rawRows);
-        const lines = merged.map((l) => tidyLitText(l.text)).filter(Boolean);
+        const lines = verseLinesFromRawRows(rawRows)
+          .map((l) => tidyLitText(l.text))
+          .filter(Boolean);
         // Fonte della lettura (Dalla lettera… / Dai «Discorsi»…) dopo PRIMA/SECONDA LETTURA.
         const prev = lastMeaningful(blocks);
         const joinedSource = lines.join(" ").replace(/\s+/g, " ").trim();
@@ -2098,27 +2154,7 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
           i = j;
           continue;
         }
-        const looseProse =
-          lines.length > 0 &&
-          lines.every(
-            (l) =>
-              l.trim().length >= 45 &&
-              !/[*†]/.test(l) &&
-              !hasJoinCross(l) &&
-              l !== JOIN_CROSS_MARK &&
-              !/\s\/\s/.test(l) &&
-              !/^(V\.|R\.|Ant\.|—)/.test(l.trim()),
-          );
-        if (looseProse) {
-          for (const line of lines) blocks.push({ k: "prose", text: line });
-        } else if (lines.length === 1 && !/[*†]/.test(lines[0]) && lines[0] !== JOIN_CROSS_MARK && !/^(V\.|R\.)/.test(lines[0])) {
-          blocks.push({ k: "prose", text: lines[0] });
-        } else if (lines.length) {
-          const hangs = merged
-            .filter((l) => tidyLitText(l.text))
-            .map((l) => l.hang);
-          blocks.push({ k: "stanza", lines, hang: hangs });
-        }
+        for (const group of splitOrphanRows(rawRows)) pushOrphanVerseGroup(blocks, group);
       }
       i = j;
       continue;
