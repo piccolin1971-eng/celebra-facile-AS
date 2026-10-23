@@ -28,6 +28,7 @@ import { DEFAULT_INVIT_ANT, INVIT_PSALM_IDS } from "../src/ore/bundled";
 import { hourHeadMeta } from "../src/ore/dayHead";
 import { OreBlocksView } from "../src/ore/OreBlocks";
 import { migrateOreBlocks } from "../src/ore/parseHour";
+import { invitPsalmOverlapInLodi } from "../src/ore/invitPsalmInLodi";
 import { ensureHour, invitAntText } from "../src/ore/scraper";
 import { hourTitle } from "../src/ore/titles";
 import type { DayHoursCache } from "../src/ore/types";
@@ -104,6 +105,7 @@ export default function OreLeggi() {
   const [speed, setSpeed] = useState(3);
   const [autoOn, setAutoOn] = useState(false);
   const [prefsReady, setPrefsReady] = useState(false);
+  const [lodiBlocks, setLodiBlocks] = useState<OreBlock[]>([]);
 
   const scrollRef = useRef<ScrollView>(null);
   const yRef = useRef(0);
@@ -284,9 +286,34 @@ export default function OreLeggi() {
   }, [dateISO, hour]);
 
   useEffect(() => {
+    if (hour !== "invitatorio") {
+      setLodiBlocks([]);
+      return;
+    }
+    let live = true;
+    (async () => {
+      try {
+        const next = await ensureHour(dateISO, "lodi");
+        if (!live) return;
+        setLodiBlocks(next.hours.lodi?.blocks ?? []);
+      } catch {
+        if (live) setLodiBlocks([]);
+      }
+    })();
+    return () => {
+      live = false;
+    };
+  }, [dateISO, hour]);
+
+  useEffect(() => {
     if (!day) return;
     applyDay(day, mediaId, psalmId);
   }, [day, mediaId, psalmId, applyDay]);
+
+  const invitLodiOverlap =
+    hour === "invitatorio" && lodiBlocks.length
+      ? invitPsalmOverlapInLodi(lodiBlocks, psalmId)
+      : null;
 
   const changePsalm = (id: InvitPsalmId) => {
     setPsalmId(id);
@@ -451,21 +478,35 @@ export default function OreLeggi() {
             }
             afterFirstAnt={
               hour === "invitatorio" ? (
-                <View style={styles.invNums} accessibilityRole="tablist">
-                  {INVIT_PSALM_IDS.map((id) => (
-                    <TouchableOpacity
-                      key={id}
-                      onPress={() => changePsalm(id)}
-                      style={[styles.invChip, psalmId === id && styles.invChipOn]}
-                      accessibilityRole="tab"
-                      accessibilityState={{ selected: psalmId === id }}
-                      {...webClickable}
+                <View style={styles.invitPsalmPicker}>
+                  <View style={styles.invNums} accessibilityRole="tablist">
+                    {INVIT_PSALM_IDS.map((id) => (
+                      <TouchableOpacity
+                        key={id}
+                        onPress={() => changePsalm(id)}
+                        style={[styles.invChip, psalmId === id && styles.invChipOn]}
+                        accessibilityRole="tab"
+                        accessibilityState={{ selected: psalmId === id }}
+                        {...webClickable}
+                      >
+                        <Text style={[styles.invChipLab, psalmId === id && styles.invChipLabOn]} numberOfLines={1}>
+                          {id}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                  {invitLodiOverlap ? (
+                    <View
+                      style={styles.invitLodiBanner}
+                      accessibilityRole="text"
+                      testID="ore-invit-lodi-banner"
                     >
-                      <Text style={[styles.invChipLab, psalmId === id && styles.invChipLabOn]} numberOfLines={1}>
-                        {id}
+                      <Text style={styles.invitLodiBannerText}>
+                        <Text style={styles.invitLodiBannerStrong}>Salmo {invitLodiOverlap.psalmId}</Text>
+                        {` è già nelle Lodi di oggi (${invitLodiOverlap.positionLabel}).`}
                       </Text>
-                    </TouchableOpacity>
-                  ))}
+                    </View>
+                  ) : null}
                 </View>
               ) : undefined
             }
@@ -572,13 +613,35 @@ const makeStyles = (colors: any, fontSize: number) => {
     autoOn: { backgroundColor: AUTO_ON_BG, borderColor: ORE_BLUE },
     autoLab: { color: ORE_BLUE, fontWeight: "800", fontSize: Math.round(14 * scale) },
     autoLabOn: { color: AUTO_ON_TEXT },
+    invitPsalmPicker: {
+      marginTop: 8,
+      marginBottom: 14,
+    },
     invNums: {
       flexDirection: "row",
       justifyContent: "center",
       flexWrap: "nowrap",
       gap: Math.round(13 * chipScale),
-      marginTop: 8,
-      marginBottom: 14,
+    },
+    invitLodiBanner: {
+      marginTop: Math.round(12 * chipScale),
+      marginHorizontal: 4,
+      borderWidth: 1,
+      borderColor: "rgba(224, 180, 41, 0.45)",
+      backgroundColor: "rgba(224, 180, 41, 0.1)",
+      borderRadius: Math.round(10 * chipScale),
+      paddingVertical: Math.round(14 * chipScale),
+      paddingHorizontal: Math.round(14 * chipScale),
+    },
+    invitLodiBannerText: {
+      textAlign: "center",
+      color: "#e8e0c8",
+      fontSize: Math.round(fontSize * 1.12),
+      lineHeight: Math.round(fontSize * 1.12 * 1.42),
+    },
+    invitLodiBannerStrong: {
+      color: GOLD,
+      fontWeight: "700",
     },
     invChip: {
       width: Math.round(INVIT_CHIP_W * chipScale),
