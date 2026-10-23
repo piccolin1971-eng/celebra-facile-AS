@@ -21,7 +21,7 @@ const PREFIX = "ore_day_";
  * Schema contenuto attuale. Alza e migra se il parse CEI cambia (es. strofe cantico Tb
  * con più righe nello stesso lo_versetto: «benedite il Signore della giustizia», ecc.).
  */
-export const ORE_CACHE_SCHEMA_VERSION = 36;
+export const ORE_CACHE_SCHEMA_VERSION = 37;
 
 const STABLE_KEY_RE = /^ore_day_(\d{4}-\d{2}-\d{2})$/;
 const LEGACY_KEY_RE = /^ore_day_v(\d+)_(\d{4}-\d{2}-\d{2})$/;

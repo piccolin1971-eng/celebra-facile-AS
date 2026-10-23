@@ -31,6 +31,11 @@ function looksLikePsalmTitle(t: string): boolean {
   return /^(SALMO|CANTICO)\b/i.test(t);
 }
 
+/** Nota CEI (`lo_nota`) dopo Gloria d’apertura: rubrica, non testo da recitare. */
+function isIntroOmitNote(t: string): boolean {
+  return /Questa introduzione si omette/i.test(t);
+}
+
 function psalmHeadFromTitle(text: string, sub = "", cite = ""): OreBlock {
   let { num, name } = splitPsalmTitle(text);
   if (
@@ -1473,7 +1478,12 @@ function mergeSplitHemistichStanzas(blocks: OreBlock[]): OreBlock[] {
     let b = blocks[i];
     const next = blocks[i + 1];
 
-    if (b.k === "omit" && !isOrElseRubric(b.text) && !/si può omettere/i.test(b.text)) {
+    if (
+      b.k === "omit" &&
+      !isOrElseRubric(b.text) &&
+      !/si può omettere/i.test(b.text) &&
+      !isIntroOmitNote(b.text)
+    ) {
       const prev = out[out.length - 1];
       if (prev?.k === "stanza" && prev.lines.length && /[*†]\s*$/.test(prev.lines[prev.lines.length - 1]!)) {
         const hangs = [...(prev.hang || [])];
@@ -2157,7 +2167,7 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
           continue;
         }
       }
-      if (isOrElseRubric(t) || /si può omettere/i.test(t)) {
+      if (isOrElseRubric(t) || /si può omettere/i.test(t) || isIntroOmitNote(t)) {
         if (t) blocks.push({ k: "omit", text: isOrElseRubric(t) ? normalizeOrElseText(t) : t });
       } else if (t) {
         for (const p of blocksFromVersetto(node.inner)) {
