@@ -25,6 +25,8 @@ type Props = {
   afterFirstAnt?: React.ReactNode;
   /** Es. scelta Terza/Sesta/Nona subito sotto il box giorno, prima dell’apertura V./R. */
   afterHourHead?: React.ReactNode;
+  /** y nel contenitore OreBlocksView (per scroll mirato, es. salto all’inno). */
+  onBlockLayout?: (blockIndex: number, y: number) => void;
 };
 
 const LAB_RE = /^(V\.|R\.|Ant\.|Ant\. al (?:Ben|Magn)\.|\d+\s*ant\.|—)\s*/i;
@@ -200,8 +202,21 @@ export function OreBlocksView({
   headFontWeight,
   afterFirstAnt,
   afterHourHead,
+  onBlockLayout,
 }: Props) {
   const blocks = React.useMemo(() => enrichPsalmHeads(rawBlocks), [rawBlocks]);
+  const wrapLayout = (index: number, node: React.ReactNode) => {
+    if (!onBlockLayout) return node;
+    return (
+      <View
+        key={index}
+        collapsable={false}
+        onLayout={(e) => onBlockLayout(index, e.nativeEvent.layout.y)}
+      >
+        {node}
+      </View>
+    );
+  };
   const body = {
     fontFamily: FONT,
     fontSize,
@@ -243,14 +258,22 @@ export function OreBlocksView({
         if (inPrecesSection && b.k === "tone") inPreces = true;
         if (b.k === "rubric" && /ant/i.test(b.lab) && !antSeen) {
           antSeen = true;
+          if (!onBlockLayout) {
+            return (
+              <View key={i}>
+                {node}
+                {afterFirstAnt}
+              </View>
+            );
+          }
           return (
-            <View key={i}>
+            <View key={i} collapsable={false} onLayout={(e) => onBlockLayout(i, e.nativeEvent.layout.y)}>
               {node}
               {afterFirstAnt}
             </View>
           );
         }
-        return node;
+        return wrapLayout(i, node);
       })}
     </View>
   );
