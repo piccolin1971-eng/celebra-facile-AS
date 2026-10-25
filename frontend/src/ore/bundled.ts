@@ -134,6 +134,16 @@ function isBundledCanticleBody(b: OreBlock, startRe: RegExp): boolean {
   return false;
 }
 
+/** Riga 0 a colonna, riga dopo *† rientrata, le successive sono il wrap di quell’emistichio. */
+function bundledVerseStanza(lines: string[]): OreBlock {
+  const hang = lines.map((_, i) => {
+    if (i === 0) return 0;
+    if (/[*†]\s*$/.test(lines[i - 1] || "")) return 1;
+    return 2;
+  });
+  return { k: "stanza", lines, hang };
+}
+
 /** Sostituisce il corpo di Magnificat/Benedictus col testo in app; antifone e titoli restano dal CEI. */
 export function applyBundledGospelCanticles(blocks: OreBlock[]): OreBlock[] {
   const out: OreBlock[] = [];
@@ -152,7 +162,7 @@ export function applyBundledGospelCanticles(blocks: OreBlock[]): OreBlock[] {
     while (j < blocks.length && !canticleSectionStop(blocks[j])) {
       if (isBundledCanticleBody(blocks[j], startRe)) {
         if (!inserted) {
-          for (const v of verses) out.push({ k: "stanza", lines: v });
+          for (const v of verses) out.push(bundledVerseStanza(v));
           inserted = true;
         }
         j += 1;
@@ -162,7 +172,7 @@ export function applyBundledGospelCanticles(blocks: OreBlock[]): OreBlock[] {
       j += 1;
     }
     if (!inserted) {
-      for (const v of verses) out.push({ k: "stanza", lines: v });
+      for (const v of verses) out.push(bundledVerseStanza(v));
     }
     i = j - 1;
   }

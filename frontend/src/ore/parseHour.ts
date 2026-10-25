@@ -36,6 +36,11 @@ function isIntroOmitNote(t: string): boolean {
   return /Questa introduzione si omette/i.test(t);
 }
 
+/** Rubrica prima del cantico (es. «Quando il seguente cantico si canta…»): resta in rosso. */
+function isCanticleSingingNote(t: string): boolean {
+  return /quando il seguente cantico si canta/i.test(t);
+}
+
 function psalmHeadFromTitle(text: string, sub = "", cite = ""): OreBlock {
   let { num, name } = splitPsalmTitle(text);
   if (
@@ -190,9 +195,13 @@ function verseLinesFromRawRows(rawLines: string[]): VerseLine[] {
   const merged: VerseLine[] = [];
   for (const raw of rawLines) {
     if (!raw.trim()) continue;
-    const spaces = (raw.match(/^[ \t]+/) || [""])[0].length;
+    // Rientro CEI salvato prima del collapse degli spazi (vedi coalesceCeiVerseGroups).
+    const hangMark = raw.match(/\{\{HANG([12])\}\}/);
+    let hangBoost = hangMark ? Number(hangMark[1]) : 0;
+    const rawBody = raw.replace(/\{\{HANG[12]\}\}/, "");
+    const spaces = (rawBody.match(/^[ \t]+/) || [""])[0].length;
     const indent = spaces >= 2;
-    const t = raw.replace(/\s+/g, " ").trim();
+    const t = rawBody.replace(/\s+/g, " ").trim();
     if (!t) continue;
     const prev = merged[merged.length - 1];
     const joinWrap =
@@ -223,7 +232,10 @@ function verseLinesFromRawRows(rawLines: string[]): VerseLine[] {
       if (/^—/.test(t)) hang = Math.max(hang, 1);
       if (prev && /[*†]\s*$/.test(prev.text)) hang = Math.max(hang, 1);
       // Wrap più profondo del CEI (es. 4–5 &nbsp; dopo un emistichio già rientrato).
-      else if (prev && prev.hang > 0 && spaces >= 4) hang = Math.max(hang, 2);
+      else if (prev && prev.hang > 0 && (spaces >= 4 || hangBoost >= 2)) hang = Math.max(hang, 2);
+      // 4 spazi su una riga nuova (es. «Gloria…» nel responsorio) è un rientro lieve, non un wrap.
+      if (hangBoost >= 2 && !(prev && (prev.hang > 0 || /[*†]\s*$/.test(prev.text)))) hangBoost = 1;
+      hang = Math.max(hang, hangBoost);
       merged.push({ text: t, hang });
   }
   const withRubrics = mergeLoneRubricLines(merged);
@@ -246,8 +258,15 @@ function coalesceCeiVerseGroups(inner: string): VerseLine[][] {
   const marked = inner
     .replace(/<br\s*\/?>\s*<br\s*\/?>/gi, "{{STANZA_BREAK}}")
     .replace(/<br\s*\/?>/gi, "{{LINE_BREAK}}");
-  const text = decodeHtmlEntities(marked.replace(/<[^>]+>/g, ""))
-    .replace(/\u00a0/g, " ")
+  let text = decodeHtmlEntities(marked.replace(/<[^>]+>/g, "")).replace(/\u00a0/g, " ");
+  // Il newline subito dopo <br> è markup, non rientro. Gli &nbsp; che seguono sì.
+  text = text.replace(/\{\{(LINE_BREAK|STANZA_BREAK)\}\}[ \t]*\r?\n/g, "{{$1}}");
+  text = text.replace(/[\r\n]+/g, " ");
+  // Il collapse qui sotto cancellerebbe il rientro. Si marca prima:
+  // 4+ spazi = wrap del secondo emistichio, 2–3 = emistichio ordinario.
+  text = text.replace(/\{\{LINE_BREAK\}\} {4,}/g, "{{LINE_BREAK}}{{HANG2}}");
+  text = text.replace(/\{\{LINE_BREAK\}\} {2,3}/g, "{{LINE_BREAK}}{{HANG1}}");
+  text = text
     .replace(/\s+/g, " ")
     .replace(/ ?\{\{LINE_BREAK\}\} ?/g, "\n")
     .replace(/ ?\{\{STANZA_BREAK\}\} ?/g, "{{STANZA_BREAK}}");
@@ -1537,7 +1556,8 @@ function mergeSplitHemistichStanzas(blocks: OreBlock[]): OreBlock[] {
       b.k === "omit" &&
       !isOrElseRubric(b.text) &&
       !/si può omettere/i.test(b.text) &&
-      !isIntroOmitNote(b.text)
+      !isIntroOmitNote(b.text) &&
+      !isCanticleSingingNote(b.text)
     ) {
       const prev = out[out.length - 1];
       if (prev?.k === "stanza" && prev.lines.length && /[*†]\s*$/.test(prev.lines[prev.lines.length - 1]!)) {
@@ -1730,23 +1750,28 @@ function coalesceResponsory(blocks: OreBlock[]): OreBlock[] {
     out.push(b);
     if (b.k !== "title" || !/RESPONSORIO/i.test(b.text)) continue;
     const lines: string[] = [];
+    const hang: number[] = [];
     let j = i + 1;
     while (j < blocks.length) {
       const n = blocks[j];
       if (n.k === "stanza") {
-        lines.push(...n.lines);
+        n.lines.forEach((line, k) => {
+          lines.push(line);
+          hang.push(n.hang?.[k] ?? 0);
+        });
         j += 1;
         continue;
       }
       if (n.k === "prose" && n.text && !/^Padre nostro/i.test(n.text)) {
         lines.push(n.text);
+        hang.push(0);
         j += 1;
         continue;
       }
       break;
     }
     if (lines.length) {
-      out.push({ k: "stanza", lines });
+      out.push({ k: "stanza", lines, hang });
       i = j - 1;
     }
   }

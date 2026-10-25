@@ -22,8 +22,10 @@ const PREFIX = "ore_day_";
  * con più righe nello stesso lo_versetto: «benedite il Signore della giustizia», ecc.).
  * 38: testo orfano con <br><br> spezza la strofa (Salmo 45, ritornello finale);
  * spazio prima del punto («la terra .»).
+ * 39: rientro CEI del wrap (es. «al modo di Melchisedek», «mi chiameranno beata»).
+ * 40: «Quando il seguente cantico si canta…» resta rubrica rossa.
  */
-export const ORE_CACHE_SCHEMA_VERSION = 38;
+export const ORE_CACHE_SCHEMA_VERSION = 40;
 
 const STABLE_KEY_RE = /^ore_day_(\d{4}-\d{2}-\d{2})$/;
 const LEGACY_KEY_RE = /^ore_day_v(\d+)_(\d{4}-\d{2}-\d{2})$/;
