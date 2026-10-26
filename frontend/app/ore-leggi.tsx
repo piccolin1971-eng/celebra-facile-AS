@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -30,6 +30,7 @@ import { OreBlocksView } from "../src/ore/OreBlocks";
 import { migrateOreBlocks } from "../src/ore/parseHour";
 import { invitPsalmOverlapInLodi } from "../src/ore/invitPsalmInLodi";
 import { oreHymnBlockIndex } from "../src/ore/hymnScrollTarget";
+import { enrichPsalmHeads } from "../src/ore/psalmHeadings";
 import { ensureHour, invitAntText } from "../src/ore/scraper";
 import { hourTitle } from "../src/ore/titles";
 import type { DayHoursCache } from "../src/ore/types";
@@ -77,8 +78,19 @@ function scrollOreReadTo(scrollRef: React.RefObject<ScrollView | null>, y: numbe
   }
 }
 
+function routeParamOne(v: unknown): string {
+  if (typeof v === "string") return v;
+  if (Array.isArray(v)) {
+    const first = v[0];
+    return typeof first === "string" ? first : "";
+  }
+  return "";
+}
+
+const SCROLL_INNER_PAD = 16;
+
 function parseHourParam(raw: unknown): OreHourId {
-  const v = String(raw || "");
+  const v = routeParamOne(raw);
   if (
     v === "invitatorio" ||
     v === "ufficio" ||
@@ -96,13 +108,12 @@ export default function OreLeggi() {
   const router = useRouter();
   const params = useLocalSearchParams<{ date?: string; hour?: string; start?: string }>();
   const { colors, fontSize, lineSpacing, fontFamilyId, isBold } = useSettings();
+  const dateParam = routeParamOne(params.date);
   const dateISO =
-    typeof params.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(params.date)
-      ? params.date
-      : localDateStr(new Date());
+    /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : localDateStr(new Date());
   const hour = parseHourParam(params.hour);
   const startAtHymn =
-    params.start === "hymn" && (hour === "lodi" || hour === "ufficio");
+    routeParamOne(params.start) === "hymn" && (hour === "lodi" || hour === "ufficio");
   const date = parseLocalDate(dateISO);
   const title = hourTitle(hour, date);
   const lineHeight = oreBodyLineHeight(fontSize, lineSpacing);
@@ -280,9 +291,14 @@ export default function OreLeggi() {
     [hour],
   );
 
+  useLayoutEffect(() => {
+    setLoading(true);
+    setBlocks([]);
+    setError("");
+  }, [dateISO, hour]);
+
   useEffect(() => {
     let live = true;
-    setLoading(true);
     (async () => {
       try {
         const next = await ensureHour(dateISO, hour);
@@ -342,8 +358,10 @@ export default function OreLeggi() {
       requestAnimationFrame(() => scrollOreReadTo(scrollRef, 0));
       return;
     }
-    const idx = oreHymnBlockIndex(blocks);
-    if (idx == null || !blocks.length) {
+    const displayBlocks = enrichPsalmHeads(blocks);
+    if (!displayBlocks.length) return;
+    const idx = oreHymnBlockIndex(displayBlocks);
+    if (idx == null) {
       scrollAppliedKeyRef.current = scrollTargetKey;
       yRef.current = 0;
       requestAnimationFrame(() => scrollOreReadTo(scrollRef, 0));
@@ -352,9 +370,12 @@ export default function OreLeggi() {
     const y = blockYRef.current.get(idx);
     if (y == null) return;
     scrollAppliedKeyRef.current = scrollTargetKey;
-    const top = Math.max(0, y - 4);
+    const top = Math.max(0, SCROLL_INNER_PAD + y - 4);
     yRef.current = top;
-    requestAnimationFrame(() => scrollOreReadTo(scrollRef, top));
+    requestAnimationFrame(() => {
+      scrollOreReadTo(scrollRef, top);
+      requestAnimationFrame(() => scrollOreReadTo(scrollRef, top));
+    });
   }, [loading, startAtHymn, blocks, scrollTargetKey]);
 
   useEffect(() => {
@@ -365,7 +386,7 @@ export default function OreLeggi() {
     (index: number, y: number) => {
       blockYRef.current.set(index, y);
       if (!startAtHymn || loading) return;
-      const idx = oreHymnBlockIndex(blocks);
+      const idx = oreHymnBlockIndex(enrichPsalmHeads(blocks));
       if (idx !== index) return;
       applyOreScrollTarget();
     },
