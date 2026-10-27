@@ -105,11 +105,12 @@ function isAntLabel(lab: string): boolean {
 }
 
 function antLabFrom(lab: string): string {
-  if (/^\d+\s*ant\.?$/i.test(lab)) return "Ant.";
-  if (/^Ant\.\s*al\s*Ben/i.test(lab)) return "Ant.";
-  if (/^Ant\.\s*al\s*Magn/i.test(lab)) return "Ant.";
+  const num = lab.match(/^(\d+)\s*ant\.?$/i);
+  if (num) return `${num[1]} ant.`;
+  if (/^Ant\.\s*al\s*Ben/i.test(lab)) return "Ant. al Ben.";
+  if (/^Ant\.\s*al\s*Magn/i.test(lab)) return "Ant. al Magn.";
   if (/^Ant\./i.test(lab)) return "Ant.";
-  return "Ant.";
+  return lab.trim();
 }
 
 function isPsalmLabel(lab: string): boolean {

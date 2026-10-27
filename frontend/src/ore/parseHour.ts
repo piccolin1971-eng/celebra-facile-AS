@@ -770,6 +770,12 @@ function consumeSubAfterPsalm(
 }
 
 /** Lettura con cantico in righe brevi: una strofa sola, la prosa resta a paragrafi. */
+function isWrappedProse(lines: VerseLine[]): boolean {
+  if (lines.length < 2) return false;
+  const cont = lines.slice(1).filter((l) => /^[a-zàèéìòù]/.test(l.text.trim())).length;
+  return cont >= Math.ceil((lines.length - 1) / 2);
+}
+
 function blocksFromReadingLines(lines: VerseLine[]): OreBlock[] {
   const out: OreBlock[] = [];
   const tight = (l: VerseLine) => {
@@ -786,7 +792,8 @@ function blocksFromReadingLines(lines: VerseLine[]): OreBlock[] {
     let j = i + 1;
     while (j < lines.length && tight(lines[j])) j += 1;
     const run = lines.slice(i, j);
-    if (run.length >= 4) out.push(stanzaFromLines(run));
+    if (run.length >= 4 && !isWrappedProse(run)) out.push(stanzaFromLines(run));
+    else if (run.length >= 4) out.push({ k: "prose", text: run.map((l) => l.text).join(" ") });
     else for (const l of run) out.push({ k: "prose", text: l.text });
     i = j;
   }
@@ -921,6 +928,13 @@ function serializeRosso(inner: string): string {
     if (/^V\.?$/i.test(t)) return "{{LINE_BREAK}}V. ";
     if (isAntiphonLabel(t)) return `{{LINE_BREAK}}${t}{{LINE_BREAK}}`;
     if (t === "—" || t === "–" || t === "-") return "{{LINE_BREAK}}— ";
+    // «N.,» e il trattino della risposta nello stesso lo_rosso (vespri feriali).
+    const gluedDash = t.match(/^(.*?)\s*[—–]\s*(.*)$/);
+    if (gluedDash && gluedDash[1].trim()) {
+      const before = gluedDash[1].trim();
+      const after = gluedDash[2].trim();
+      return ` ${before} {{LINE_BREAK}}— ${after}${after ? " " : ""}`;
+    }
     return ` ${t} `;
   });
 }
@@ -1544,6 +1558,33 @@ function mergeRubricPrefixLines(blocks: OreBlock[]): OreBlock[] {
   });
 }
 
+/** A capo di colonna dentro il responsorio («per ricondurci» / «al Padre»). Non tocca i salmi. */
+function mergeResponsoryColumnWraps(blocks: OreBlock[]): OreBlock[] {
+  return blocks.map((b) => {
+    if (b.k !== "stanza" || !b.lines.some((l) => /^(R\.|V\.)\s/i.test(l.trim()))) return b;
+    const lines: string[] = [];
+    const hang: number[] = [];
+    b.lines.forEach((raw, i) => {
+      const t = raw.trim();
+      const prev = lines[lines.length - 1];
+      const lower = /^[a-zàèéìòù]/.test(t);
+      const dangling =
+        !!prev &&
+        !/[.!?…:;]$/.test(prev) &&
+        /\b(?:di|del|della|dello|dei|degli|delle|e|ed|a|al|allo|alla|il|lo|la|che|per|con|in|nel|nello|nella)\s*$/i.test(
+          prev,
+        );
+      if (prev && !/^(R\.|V\.|Gloria\b)/i.test(t) && (lower || dangling)) {
+        lines[lines.length - 1] = `${prev} ${t}`;
+        return;
+      }
+      lines.push(t);
+      hang.push(b.hang?.[i] ?? 0);
+    });
+    return { k: "stanza" as const, lines, hang };
+  });
+}
+
 /** Unisce «3 ant.» vuota / strofa-sola + testo successivo senza *† (testo fuori dal div CEI). */
 /** Secondo emistichio a volte in `lo_nota` (es. Ger 14: «oppure ti sei disgustato di Sion?»). */
 function mergeSplitHemistichStanzas(blocks: OreBlock[]): OreBlock[] {
@@ -2158,6 +2199,18 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
           j += 1;
           continue;
         }
+        // Responsorio «Oppure» lasciato fuori dal versetto: R. / * / V. sono fratelli, non un nuovo blocco.
+        if (n.kind === "el" && hasClass(n.cls, "lo_rosso")) {
+          const marker = stripTags(n.inner).replace(/\s+/g, " ").trim();
+          if (isOrElseRubric(marker)) break;
+          if (/^(R\.?|V\.?|\*|†|—|–|-)$/.test(marker)) {
+            const lab = normalizeLab(marker);
+            rawRows.push(lab === "–" || lab === "-" ? "—" : lab);
+            j += 1;
+            continue;
+          }
+          break;
+        }
         if (n.kind !== "text") break;
         const decoded = decodeHtmlEntities(n.text).replace(/\u00a0/g, " ");
         if (decoded.replace(/\s+/g, " ").trim() && !isChromeText(decoded)) {
@@ -2531,6 +2584,7 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
   const clean = applyTonePhrases(
     coalesceResponsory(
       dropOrphanStarLines(
+        mergeResponsoryColumnWraps(
         mergeRubricPrefixLines(
           attachJoinCrossBeforePsalmHead(
             attachOrphanAntiphonText(
@@ -2551,6 +2605,7 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
               ),
             ),
           ),
+        ),
         ),
       ),
     ),

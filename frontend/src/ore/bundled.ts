@@ -490,7 +490,7 @@ export function splitPsalmTitle(title: string): { num: string; name: string } {
 
   const cant = t.match(
     new RegExp(
-      `^(CANTICO(?:\\s+(?:DI|DEI|DEGLI|DELL[AEIO]'?|DELLE|DEL)\\s+[A-ZÀ-Ù][A-Za-zÀ-ÿ'’ ]*?)?)\\s+(${BIBLE_BOOK}\\s+[\\d.,\\-–ab ]+?)\\s+([A-ZÀ-Ù«].+)$`,
+      `^(CANTICO(?:\\s+Cfr\\.?)?(?:\\s+(?:DI|DEI|DEGLI|DELL[AEIO]'?|DELLE|DEL)\\s+[A-ZÀ-Ù][A-Za-zÀ-ÿ'’ ]*?)?)\\s+(${BIBLE_BOOK}\\s+[\\d.,;\\-–ab ]+?)\\s+([A-ZÀ-Ù«].+)$`,
       "i",
     ),
   );

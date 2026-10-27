@@ -2,6 +2,7 @@ import { getLiturgicalSeason } from "../liturgicalDates";
 import { italianDateLabel, parseLocalDate } from "../dateUtils";
 import { calculateLiturgicalColor, getSaintsForDate, LITURGICAL_COLOR_HEX } from "../saintsCalendar";
 import { oreLiturgicalColorDateISO } from "./liturgicalColorDate";
+import { getVigilEveContext } from "../vigilCatalog";
 import type { DayHoursMeta, OreHourId } from "./types";
 
 const ROMAN: Record<string, number> = {
@@ -109,9 +110,9 @@ export function formatHourHeadLine(s: string): string {
   return t
     .split(" ")
     .map((w, i) => {
-      if (isRomanNumeral(w)) return w.toUpperCase();
       const low = w.toLowerCase();
       if (i > 0 && SMALL.has(low)) return low;
+      if (isRomanNumeral(w)) return w.toUpperCase();
       return capToken(w);
     })
     .join(" ");
@@ -158,7 +159,7 @@ export function hourHeadMeta(
   const dateLabel = italianDateLabel(d);
   const title = (hoursBanner || ceiTitle).trim();
   const feast = feastNameFromBanner(title);
-  const ranked = /memoria|festa|solennit/i.test(title);
+  const ranked = /memoria|festa|solennit|commemorazione/i.test(title);
   const to = ordinaryWeekFromText(title);
   let seasonLine = "";
   let psalterLine = psalterFromText(title);
@@ -181,6 +182,15 @@ export function hourHeadMeta(
   if (!psalterLine && to) {
     const p = to.n % 4 === 0 ? 4 : to.n % 4;
     psalterLine = `${ROMAN_OUT[p]} settimana del salterio`;
+  }
+
+  // Primi vespri: la testata è della solennità che inizia, non della feria di calendario.
+  if (hour === "vespri" || hour === "compieta") {
+    const vigil = getVigilEveContext(d);
+    if (vigil) {
+      seasonLine = vigil.solemnityTitle;
+      psalterLine = "Liturgia propria";
+    }
   }
 
   const season = getLiturgicalSeason(colorD);

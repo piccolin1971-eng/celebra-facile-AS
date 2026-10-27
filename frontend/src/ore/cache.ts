@@ -12,6 +12,7 @@
  */
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { nextDates, loadLiturgy } from "../offlineCache";
+import { stripStalePsalmodiesFromDay } from "./hourCacheHealth";
 import type { DayHoursCache, MediaId, OreHourId } from "./types";
 
 /** Prefisso fisso. Non bumpare: usare SCHEMA_VERSION nel JSON. */
@@ -24,8 +25,13 @@ const PREFIX = "ore_day_";
  * spazio prima del punto («la terra .»).
  * 39: rientro CEI del wrap (es. «al modo di Melchisedek», «mi chiameranno beata»).
  * 40: «Quando il seguente cantico si canta…» resta rubrica rossa.
+ * 41: vespri — «N., —» nella stessa rubrica; titolo del cantico «Cfr.» sulla stessa riga;
+ * a capo di colonna in letture e responsori; responsorio «Oppure» fuori dal versetto.
+ * 42: testata «Commemorazione» (2 novembre) senza ripetere «Liturgia propria».
+ * 43: la sera del 1° novembre non è vigilia dei defunti (restano i Secondi vespri di Tutti i Santi).
+ * 44: vespri/lodi — antifone numerate (non solo «Ant.» da LDO); cache LDO obsoleta svuotata.
  */
-export const ORE_CACHE_SCHEMA_VERSION = 40;
+export const ORE_CACHE_SCHEMA_VERSION = 44;
 
 const STABLE_KEY_RE = /^ore_day_(\d{4}-\d{2}-\d{2})$/;
 const LEGACY_KEY_RE = /^ore_day_v(\d+)_(\d{4}-\d{2}-\d{2})$/;
@@ -53,7 +59,11 @@ function stamp(data: DayHoursCache): DayHoursCache {
 /** Cache con schema vecchio: non riscrivere solo il numero, svuota le ore e riscarica dal CEI. */
 function migrateStaleContent(parsed: DayHoursCache): DayHoursCache {
   const ver = parsed.schemaVersion ?? 0;
-  if (ver >= ORE_CACHE_SCHEMA_VERSION) return parsed;
+  if (ver >= ORE_CACHE_SCHEMA_VERSION) {
+    const hours = stripStalePsalmodiesFromDay(parsed.hours);
+    if (hours === parsed.hours) return parsed;
+    return { ...parsed, hours };
+  }
   return {
     ...parsed,
     hours: {},

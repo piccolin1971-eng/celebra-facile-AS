@@ -56,13 +56,20 @@ function solemnityOnDate(d: Date): { title: string } | null {
   return null;
 }
 
+function takesFirstVespers(solemnityTitle: string): boolean {
+  const t = norm(solemnityTitle);
+  // I defunti non hanno Primi vespri: la sera del 1° novembre restano i Secondi di Tutti i Santi.
+  if (t.includes("fedeli defunti")) return false;
+  return true;
+}
+
 /**
  * True se `dateISO` è la vigilia vespertina della solennità che inizia il giorno dopo.
  */
 export function getVigilEveContext(date: Date): VigilEveContext | null {
   const tomorrow = addDays(date, 1);
   const solemnity = solemnityOnDate(tomorrow);
-  if (!solemnity) return null;
+  if (!solemnity || !takesFirstVespers(solemnity.title)) return null;
 
   return {
     vigilDateISO: localDateStr(date),

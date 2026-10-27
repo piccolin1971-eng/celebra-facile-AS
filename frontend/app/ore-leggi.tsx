@@ -267,9 +267,14 @@ export default function OreLeggi() {
 
   const applyDay = useCallback(
     (day: Awaited<ReturnType<typeof ensureHour>>, media: MediaId, psalm: InvitPsalmId) => {
+      const forHour = hourHeadMeta(dateISO, "", "", hour);
+      const vigilEvening = forHour.psalterLine === "Liturgia propria" && (hour === "vespri" || hour === "compieta");
       setMeta({
         ...day.meta,
-        colorHex: hourHeadMeta(dateISO, "", "", hour).colorHex,
+        ...(vigilEvening
+          ? { seasonLine: forHour.seasonLine, psalterLine: forHour.psalterLine }
+          : {}),
+        colorHex: forHour.colorHex,
       });
       const ant = invitAntText(day);
       setInvitAnt(ant);
@@ -288,7 +293,7 @@ export default function OreLeggi() {
       setBlocks(hour === "ufficio" ? migrateOreBlocks(parsed.blocks) : parsed.blocks);
       setError(parsed.error || "");
     },
-    [hour],
+    [dateISO, hour],
   );
 
   useLayoutEffect(() => {

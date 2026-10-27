@@ -7,6 +7,7 @@ import { fetchLdoDayHtml, ldoHymnForHour } from "./ldo";
 import { extractInvitatoryAntiphon, migrateOreBlocks, parseHourHtml, splitOraMediaHtml } from "./parseHour";
 import { ldoFallbackPatch } from "./parseLdo";
 import { loadDayHours, saveDayHours } from "./cache";
+import { hourParsedLooksLikeStaleLdo } from "./hourCacheHealth";
 import { ceiFetchDateISO, ceiHourSlug } from "./titles";
 import { getBundledCompline } from "./complineBundled";
 import type { DayHoursCache, MediaId, OreHourId, ParsedHour } from "./types";
@@ -221,6 +222,7 @@ function cachedHoursPatch(existing: DayHoursCache, hour: OreHourId): HourPatch |
   }
   const parsed = existing.hours[hour];
   if (!parsed?.blocks?.length) return null;
+  if (hourParsedLooksLikeStaleLdo(hour, parsed)) return null;
   return { [hour]: parsed };
 }
 
