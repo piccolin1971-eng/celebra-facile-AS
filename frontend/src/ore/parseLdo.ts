@@ -6,6 +6,7 @@ import {
   splitPsalmTitle,
 } from "./bundled";
 import { enrichPsalmHeads } from "./psalmHeadings";
+import { ensureBenediciteNoGloriaRubric } from "./benediciteRubric";
 import { JOIN_CROSS_MARK, normalizeJoinCrossBlocks } from "./joinCross";
 import { parseLocalDate } from "../dateUtils";
 import { normalizeHymnStanzas } from "./hymns";
@@ -645,7 +646,7 @@ export function parseLdoHourHtml(
 
   // precipitato: gloria d'inizio senza * (intro) — ok come stanza
   if (!clean.length) return missing;
-  return { hour, blocks: clean };
+  return { hour, blocks: ensureBenediciteNoGloriaRubric(clean) };
 }
 
 /** Patch ore da HTML giorno LDO (solo ore ancora vuote). */

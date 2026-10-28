@@ -20,7 +20,7 @@ export type OreBlock =
   | { k: "readHead"; role: ReadHeadRole; text: string }
   | { k: "sub"; text: string }
   | { k: "rubric"; lab: string; text: string }
-  | { k: "omit"; text: string }
+  | { k: "omit"; text: string; /** Rubrica rossa CEI (es. niente Gloria dopo Benedicite). */ ceiRubric?: boolean }
   | { k: "stanza"; lines: string[]; hang?: number[] }
   | { k: "hymn"; hymns: Hymn[] }
   | { k: "prose"; text: string }

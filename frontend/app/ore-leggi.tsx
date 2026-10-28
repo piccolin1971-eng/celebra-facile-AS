@@ -28,6 +28,7 @@ import { DEFAULT_INVIT_ANT, INVIT_PSALM_IDS } from "../src/ore/bundled";
 import { hourHeadMeta } from "../src/ore/dayHead";
 import { OreBlocksView } from "../src/ore/OreBlocks";
 import { migrateOreBlocks } from "../src/ore/parseHour";
+import { ensureBenediciteNoGloriaRubric } from "../src/ore/benediciteRubric";
 import { invitPsalmOverlapInLodi } from "../src/ore/invitPsalmInLodi";
 import { oreHymnBlockIndex } from "../src/ore/hymnScrollTarget";
 import { enrichPsalmHeads } from "../src/ore/psalmHeadings";
@@ -290,7 +291,8 @@ export default function OreLeggi() {
         setError(parsed?.error || "Testo non disponibile. Connettiti o scarica 10 giorni dalla Home.");
         return;
       }
-      setBlocks(hour === "ufficio" ? migrateOreBlocks(parsed.blocks) : parsed.blocks);
+      const raw = hour === "ufficio" ? migrateOreBlocks(parsed.blocks) : parsed.blocks;
+      setBlocks(ensureBenediciteNoGloriaRubric(raw));
       setError(parsed.error || "");
     },
     [dateISO, hour],

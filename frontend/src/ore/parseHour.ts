@@ -18,6 +18,7 @@ import {
   splitPsalmTitle,
   stripCeiMarianTail,
 } from "./bundled";
+import { ensureBenediciteNoGloriaRubric } from "./benediciteRubric";
 import { enrichPsalmHeads } from "./psalmHeadings";
 import { JOIN_CROSS_MARK, hasJoinCross, normalizeJoinCrossBlocks } from "./joinCross";
 import { parseLocalDate } from "../dateUtils";
@@ -2155,9 +2156,11 @@ function normalizeReadingHeads(blocks: OreBlock[]): OreBlock[] {
 
 /** Riesegue la normalizzazione letture Ufficio (cache salvata prima dei blocchi readHead). */
 export function migrateOreBlocks(blocks: OreBlock[]): OreBlock[] {
-  return reorderReadingHeads(
-    splitEmbeddedReadingRefs(
-      splitEmbeddedReadingEditions(normalizeReadingHeads(repositionPatristicThemeSub(blocks.slice()))),
+  return ensureBenediciteNoGloriaRubric(
+    reorderReadingHeads(
+      splitEmbeddedReadingRefs(
+        splitEmbeddedReadingEditions(normalizeReadingHeads(repositionPatristicThemeSub(blocks.slice()))),
+      ),
     ),
   );
 }

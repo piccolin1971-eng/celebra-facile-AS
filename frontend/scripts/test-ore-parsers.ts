@@ -13,6 +13,10 @@ import {
   placeJoinCrossAfterAntiphonEcho,
 } from "../src/ore/joinCross";
 import { peelGluedCanticleCites } from "../src/ore/parseHour";
+import {
+  BENEDICITE_NO_GLORIA_RUBRIC,
+  ensureBenediciteNoGloriaRubric,
+} from "../src/ore/benediciteRubric";
 import { enrichPsalmHead, enrichPsalmHeads } from "../src/ore/psalmHeadings";
 import type { OreBlock } from "../src/ore/types";
 
@@ -197,6 +201,22 @@ const ant = `Dal profondo a te grido, o Signore! ${JOIN_CROSS_MARK}`;
   assert(blocks.length === 2, "sal147: prose cite rimossa");
   assert(blocks[0].k === "psalmHead" && blocks[0].cite === "(Ap 21, 9).", "sal147: head cite");
   assert(blocks[1].k === "stanza", "sal147: versetti dopo head");
+}
+
+{
+  const sample: OreBlock[] = [
+    { k: "rubric", lab: "2 ant.", text: "Non c'è amore più grande" },
+    { k: "psalmHead", num: "CANTICO Dn 3, 57-88. 56", name: "Ogni creatura lodi il Signore", sub: "", cite: "" },
+    { k: "stanza", lines: ["Lodate il Signore, *", "voi tutti suoi servi."] },
+    { k: "rubric", lab: "2 ant.", text: "Non c'è amore più grande" },
+  ];
+  const out = ensureBenediciteNoGloriaRubric(sample);
+  const idxRub = out.findIndex((b) => b.k === "omit");
+  const idxCloseAnt = out.length - 1;
+  assert(idxRub === idxCloseAnt - 1, "benedicite: rubrica prima dell'antifona di chiusura");
+  const rub = out[idxRub];
+  assert(rub?.k === "omit" && rub.ceiRubric === true, "benedicite: ceiRubric");
+  assert(rub.text === BENEDICITE_NO_GLORIA_RUBRIC, "benedicite: testo completo");
 }
 
 console.log("OK test-ore-parsers");

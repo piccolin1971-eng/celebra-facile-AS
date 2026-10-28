@@ -478,15 +478,17 @@ function renderBlock(
     );
   }
   if (b.k === "omit") {
+    const cei = b.ceiRubric === true;
     return (
       <Text
         key={i}
         style={{
-          fontFamily: FONT_IT,
+          fontFamily: cei ? FONT_IT : FONT,
           fontSize,
           lineHeight,
+          fontStyle: cei ? "italic" : "normal",
           color: RUBRIC,
-          marginVertical: em(0.7),
+          marginVertical: em(cei ? 0.85 : 0.7),
         }}
       >
         {b.text}
