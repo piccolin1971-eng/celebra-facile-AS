@@ -4,7 +4,7 @@ import Constants from "expo-constants";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useSettings, PARCHMENT_TONE_MIN, PARCHMENT_TONE_MAX } from "../src/SettingsContext";
+import { useSettings, PARCHMENT_TONE_MIN, PARCHMENT_TONE_MAX, SLATE_VARIANT_OPTIONS } from "../src/SettingsContext";
 import { LINE_SPACING_MIN, LINE_SPACING_MAX, LINE_SPACING_STEP, formatLineSpacingValue } from "../src/liturgyTypography";
 import { SettingsStepperSlider } from "../src/components/SettingsStepperSlider";
 import { FONT_OPTIONS, FontFamilyId, resolveBodyFont } from "../src/fontFamily";
@@ -19,7 +19,7 @@ import {
 
 export default function Impostazioni() {
   const router = useRouter();
-  const { theme, setTheme, fontSize, highContrast, setHighContrast, isBold, setIsBold, lineSpacing, setLineSpacing, fontFamilyId, setFontFamilyId, parchmentTone, setParchmentTone, celebraSubitoEnabled, setCelebraSubitoEnabled, preparaCelebraEnabled, setPreparaCelebraEnabled, oreEnabled, setOreEnabled, messeRitualiEnabled, setMesseRitualiEnabled, hapticFeedbackEnabled, setHapticFeedbackEnabled, pinchZoomEnabled, setPinchZoomEnabled, colors, scaledFont } = useSettings();
+  const { theme, setTheme, fontSize, highContrast, setHighContrast, isBold, setIsBold, lineSpacing, setLineSpacing, fontFamilyId, setFontFamilyId, parchmentTone, setParchmentTone, slateVariant, setSlateVariant, celebraSubitoEnabled, setCelebraSubitoEnabled, preparaCelebraEnabled, setPreparaCelebraEnabled, oreEnabled, setOreEnabled, messeRitualiEnabled, setMesseRitualiEnabled, hapticFeedbackEnabled, setHapticFeedbackEnabled, pinchZoomEnabled, setPinchZoomEnabled, colors, scaledFont } = useSettings();
   const styles = makeStyles(colors, fontSize);
   const appVersion = Constants.expoConfig?.version ?? "—";
   const apkDate = (Constants.expoConfig?.extra as { apkDate?: string } | undefined)?.apkDate?.trim();
@@ -301,8 +301,18 @@ export default function Impostazioni() {
               <Ionicons name="moon" size={scaledFont(28)} color={theme === "dark" ? colors.primary : colors.textSecondary} />
               <Text style={[styles.themeCardText, theme === "dark" && { color: colors.primary }]}>Scuro</Text>
             </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.themeCard, theme === "slate" && styles.themeCardActive]}
+              onPress={() => setTheme("slate")}
+              testID="btn-theme-slate"
+              accessibilityLabel="Tema ardesia"
+            >
+              <Ionicons name="layers-outline" size={scaledFont(28)} color={theme === "slate" ? colors.primary : colors.textSecondary} />
+              <Text style={[styles.themeCardText, theme === "slate" && { color: colors.primary }]}>Ardesia</Text>
+            </TouchableOpacity>
           </View>
 
+          {theme !== "slate" && (
           <View
             style={[styles.themePreview, { backgroundColor: colors.background, borderColor: colors.border }]}
             testID="theme-accent-preview"
@@ -319,6 +329,7 @@ export default function Impostazioni() {
               Il sacerdote invita i fedeli all'atto penitenziale:
             </Text>
           </View>
+          )}
 
           {theme === "parchment" && (
             <View style={{ marginTop: 16 }} testID="section-parchment-tone">
@@ -349,6 +360,53 @@ export default function Impostazioni() {
                 </Text>
                 <Text style={[styles.parchmentPreviewDesc, { color: colors.textSecondary }]}>
                   Anteprima del tono pergamena su sfondo e testo nero.
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {theme === "slate" && (
+            <View style={{ marginTop: 16 }} testID="section-slate-variant">
+              <Text style={styles.sectionTitle}>Variante ardesia</Text>
+              <Text style={styles.sectionDesc}>
+                Scuro morbido (non nero OLED). Scegli il sottotono che riposa di più gli occhi.
+              </Text>
+              <View style={styles.slateVariantRow}>
+                {SLATE_VARIANT_OPTIONS.map((opt) => {
+                  const active = slateVariant === opt.id;
+                  return (
+                    <TouchableOpacity
+                      key={opt.id}
+                      style={[
+                        styles.slateVariantBtn,
+                        { borderColor: colors.border, backgroundColor: colors.surface },
+                        active && { borderColor: colors.primary, borderWidth: 3 },
+                      ]}
+                      onPress={() => setSlateVariant(opt.id)}
+                      testID={`btn-slate-${opt.id}`}
+                      accessibilityLabel={`Ardesia ${opt.label}`}
+                      accessibilityState={{ selected: active }}
+                    >
+                      <Text style={[styles.slateVariantLab, active && { color: colors.primary }]}>{opt.label}</Text>
+                      <Text style={styles.slateVariantHint}>{opt.hint}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+              <View
+                style={[styles.themePreview, { backgroundColor: colors.background, borderColor: colors.border, marginTop: 14 }]}
+                testID="theme-accent-preview-slate"
+              >
+                <Text style={styles.themePreviewHeading}>Anteprima colori liturgici</Text>
+                <Text style={[styles.themePreviewAntifona, { color: colors.accentAntifona }]}>Antifona d'ingresso</Text>
+                <Text style={[styles.themePreviewOrazione, { color: colors.accentOrazione }]}>Colletta</Text>
+                <Text style={[styles.themePreviewReading, { color: colors.accentReading }]}>Prima Lettura</Text>
+                <Text style={[styles.themePreviewPe, { color: colors.accentPe }]}>Preghiera Eucaristica</Text>
+                <Text style={[styles.themePreviewBody, { color: colors.textPrimary }]}>
+                  Padre nostro che sei nei cieli, sia santificato il tuo nome.
+                </Text>
+                <Text style={[styles.themePreviewRubric, { color: colors.rubrics }]}>
+                  Il sacerdote invita i fedeli all'atto penitenziale:
                 </Text>
               </View>
             </View>
@@ -490,9 +548,11 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
   },
   previewLinkText: { flex: 1, fontSize: Math.round(fontSize * 0.65), fontWeight: "700", color: colors.textPrimary },
   previewText: { fontSize: Math.round(fontSize * 0.85), color: colors.textPrimary, marginTop: 8, fontStyle: "italic", lineHeight: fontSize * 1.2 },
-  themeRow: { flexDirection: "row", gap: 12, marginTop: 8 },
+  themeRow: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: 8 },
   themeCard: {
     flex: 1,
+    flexBasis: "28%",
+    minWidth: 96,
     flexDirection: "row",
     paddingVertical: 10,
     paddingHorizontal: 14,
@@ -576,6 +636,25 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     padding: 14,
     borderWidth: 2,
     borderRadius: 12,
+  },
+  slateVariantRow: { flexDirection: "row", gap: 10, marginTop: 10 },
+  slateVariantBtn: {
+    flex: 1,
+    borderWidth: 2,
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+  },
+  slateVariantLab: {
+    fontSize: Math.round(fontSize * 0.72),
+    fontWeight: "700",
+    color: colors.textPrimary,
+  },
+  slateVariantHint: {
+    fontSize: Math.round(fontSize * 0.58),
+    color: colors.textSecondary,
+    marginTop: 4,
+    lineHeight: Math.round(fontSize * 0.78),
   },
   parchmentPreviewSample: {
     fontSize: Math.round(fontSize * 0.85),

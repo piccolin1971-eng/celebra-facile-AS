@@ -9,8 +9,18 @@ import {
 } from "./liturgyTypography";
 import { setAppHapticEnabled, triggerAppHaptic } from "./appHaptics";
 
-type ThemeMode = "light" | "dark" | "parchment";
+type ThemeMode = "light" | "dark" | "parchment" | "slate";
 type ReadingMode = "scroll" | "tap";
+
+/** Variante tema Ardesia (solo con theme === "slate"). */
+export type SlateVariant = "blu" | "pietra";
+
+export const SLATE_VARIANT_DEFAULT: SlateVariant = "blu";
+
+export const SLATE_VARIANT_OPTIONS: { id: SlateVariant; label: string; hint: string }[] = [
+  { id: "blu", label: "Blu", hint: "Antracite con sottotono freddo" },
+  { id: "pietra", label: "Pietra", hint: "Grigio neutro, senza blu" },
+];
 
 /** Regolazione tono pergamena: 35 (più chiaro) … 65 (più scuro), 50 = default. */
 export const PARCHMENT_TONE_MIN = 35;
@@ -27,6 +37,8 @@ interface SettingsState {
   readingMode: ReadingMode;
   /** Tono sfondo pergamena (solo con theme === "parchment"). */
   parchmentTone: number;
+  /** Variante ardesia (solo con theme === "slate"). */
+  slateVariant: SlateVariant;
   // Famiglia di carattere scelta dall'utente per il testo della celebrazione
   fontFamilyId: FontFamilyId;
   // Stringa fontFamily da passare ai componenti Text (undefined per il sistema)
@@ -55,6 +67,7 @@ interface SettingsState {
   setReadingMode: (m: ReadingMode) => void;
   setFontFamilyId: (id: FontFamilyId) => void;
   setParchmentTone: (n: number) => void;
+  setSlateVariant: (v: SlateVariant) => void;
   setCelebraSubitoEnabled: (v: boolean) => void;
   setPreparaCelebraEnabled: (v: boolean) => void;
   setOreEnabled: (v: boolean) => void;
@@ -192,7 +205,91 @@ function getParchmentColors(tone: number) {
   };
 }
 
-const getColors = (theme: ThemeMode, highContrast: boolean, parchmentTone = PARCHMENT_TONE_DEFAULT) => {
+/** Accenti su sfondo ardesia (pastelli spenti, leggibili senza abbagliare). */
+const ACCENT_SLATE = {
+  accentSection: "#7EB0C8",
+  accentRito: "#E0C48A",
+  accentAntifona: "#D4C08A",
+  accentReading: "#7FB394",
+  accentOrazione: "#C9A8D4",
+  accentTropario: "#D4A574",
+  accentPe: "#7FB394",
+  accentPeConsecration: "#7EC8E0",
+  accentPeSelectorBorder: "#D4C08A",
+  accentPeSelectorLabel: "#D4C08A",
+  accentPeSelectorValue: "#E4E9EE",
+  accentPeModalBorder: "#D4C08A",
+  accentPeModalActiveBg: "#35414C",
+  accentPeModalActiveText: "#E4E9EE",
+  markerCelebrant: "#D4C08A",
+  markerAssembly: "#8BB3C4",
+  onPrimary: "#1B232B",
+};
+
+type SlatePalette = {
+  background: string;
+  surface: string;
+  bgSecondary: string;
+  border: string;
+  textPrimary: string;
+  textSecondary: string;
+  rubrics: string;
+  primary: string;
+  focus: string;
+};
+
+const SLATE_PALETTES: Record<SlateVariant, SlatePalette> = {
+  blu: {
+    background: "#1B232B",
+    surface: "#232C35",
+    bgSecondary: "#2A343F",
+    border: "#3A4654",
+    textPrimary: "#E4E9EE",
+    textSecondary: "#B7C0C8",
+    rubrics: "#E08A7A",
+    primary: "#7EB0C8",
+    focus: "#D4C08A",
+  },
+  pietra: {
+    background: "#22262A",
+    surface: "#2A2F34",
+    bgSecondary: "#32383E",
+    border: "#434A52",
+    textPrimary: "#E8E6E1",
+    textSecondary: "#B8B6B0",
+    rubrics: "#D99284",
+    primary: "#A8B4BE",
+    focus: "#D2C199",
+  },
+};
+
+function getSlateColors(variant: SlateVariant, highContrast: boolean) {
+  const base = SLATE_PALETTES[variant] ?? SLATE_PALETTES.blu;
+  return {
+    ...base,
+    ...(highContrast
+      ? {
+          textPrimary: "#FFFFFF",
+          textSecondary: "#E8EAEE",
+          border: "#C5CDD6",
+        }
+      : {}),
+    liturgicalGreen: "#7FB394",
+    liturgicalRed: "#E08A7A",
+    liturgicalPurple: "#C9A8D4",
+    liturgicalWhite: "#D4C08A",
+    liturgicalRose: "#E08A9A",
+    ...ACCENT_SLATE,
+    ...(highContrast ? { markerCelebrant: "#E8D48A", markerAssembly: "#A8D4F0" } : {}),
+  };
+}
+
+const getColors = (
+  theme: ThemeMode,
+  highContrast: boolean,
+  parchmentTone = PARCHMENT_TONE_DEFAULT,
+  slateVariant: SlateVariant = SLATE_VARIANT_DEFAULT,
+) => {
   if (theme === "dark") {
     return {
       // Sfondo NERO ASSOLUTO per risparmio energia su schermi OLED
@@ -218,6 +315,9 @@ const getColors = (theme: ThemeMode, highContrast: boolean, parchmentTone = PARC
   }
   if (theme === "parchment") {
     return getParchmentColors(parchmentTone);
+  }
+  if (theme === "slate") {
+    return getSlateColors(slateVariant, highContrast);
   }
   return {
     background: highContrast ? "#FFFFFF" : "#FDFBF7",
@@ -248,6 +348,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   const [fontFamilyId, setFontFamilyIdState] = useState<FontFamilyId>("system");
   const [isBold, setIsBoldState] = useState(false);
   const [parchmentTone, setParchmentToneState] = useState(PARCHMENT_TONE_DEFAULT);
+  const [slateVariant, setSlateVariantState] = useState<SlateVariant>(SLATE_VARIANT_DEFAULT);
   const [celebraSubitoEnabled, setCelebraSubitoEnabledState] = useState(true);
   const [preparaCelebraEnabled, setPreparaCelebraEnabledState] = useState(true);
   const [oreEnabled, setOreEnabledState] = useState(true);
@@ -274,7 +375,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         } catch {}
         if (saved) {
           const s = JSON.parse(saved);
-          if (s.theme === "dark" || s.theme === "parchment") {
+          if (s.theme === "dark" || s.theme === "parchment" || s.theme === "slate") {
             setThemeState(s.theme);
           } else if (s.theme === "light") {
             // Tema chiaro rimosso dalle Impostazioni: migra a scuro.
@@ -310,6 +411,11 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
               t = clamp(t, PARCHMENT_TONE_MIN, PARCHMENT_TONE_MAX);
             }
             setParchmentToneState(t);
+          }
+          if (s.slateVariant === "blu" || s.slateVariant === "pietra") {
+            setSlateVariantState(s.slateVariant);
+          } else if (s.slateVariant === "foschia") {
+            setSlateVariantState("blu");
           }
           if (typeof s.celebraSubitoEnabled === "boolean") {
             setCelebraSubitoEnabledState(s.celebraSubitoEnabled);
@@ -379,8 +485,8 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     })();
   }, []);
 
-  const persist = async (patch: Partial<{ theme: ThemeMode; fontSize: number; highContrast: boolean; isBold: boolean; readingMode: ReadingMode; fontFamilyId: FontFamilyId; parchmentTone: number; celebraSubitoEnabled: boolean; preparaCelebraEnabled: boolean; oreEnabled: boolean; messeRitualiEnabled: boolean; optionalSaintsUseSelection: boolean; hapticFeedbackEnabled: boolean; pinchZoomEnabled: boolean; lineSpacing: number }>) => {
-    const next = { theme, fontSize, highContrast, isBold, readingMode, fontFamilyId, parchmentTone, celebraSubitoEnabled, preparaCelebraEnabled, oreEnabled, messeRitualiEnabled, optionalSaintsUseSelection, hapticFeedbackEnabled, pinchZoomEnabled, lineSpacing, ...patch };
+  const persist = async (patch: Partial<{ theme: ThemeMode; fontSize: number; highContrast: boolean; isBold: boolean; readingMode: ReadingMode; fontFamilyId: FontFamilyId; parchmentTone: number; slateVariant: SlateVariant; celebraSubitoEnabled: boolean; preparaCelebraEnabled: boolean; oreEnabled: boolean; messeRitualiEnabled: boolean; optionalSaintsUseSelection: boolean; hapticFeedbackEnabled: boolean; pinchZoomEnabled: boolean; lineSpacing: number }>) => {
+    const next = { theme, fontSize, highContrast, isBold, readingMode, fontFamilyId, parchmentTone, slateVariant, celebraSubitoEnabled, preparaCelebraEnabled, oreEnabled, messeRitualiEnabled, optionalSaintsUseSelection, hapticFeedbackEnabled, pinchZoomEnabled, lineSpacing, ...patch };
     await AsyncStorage.setItem("messale_settings", JSON.stringify(next));
   };
 
@@ -405,6 +511,10 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     const clamped = clamp(Math.round(n), PARCHMENT_TONE_MIN, PARCHMENT_TONE_MAX);
     setParchmentToneState(clamped);
     persist({ parchmentTone: clamped });
+  };
+  const setSlateVariant = (v: SlateVariant) => {
+    setSlateVariantState(v);
+    persist({ slateVariant: v });
   };
   const setCelebraSubitoEnabled = (v: boolean) => {
     if (!v && !preparaCelebraEnabled) return;
@@ -444,7 +554,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     persist({ lineSpacing: clamped });
   };
 
-  const colors = getColors(theme, highContrast, parchmentTone);
+  const colors = getColors(theme, highContrast, parchmentTone, slateVariant);
   const fontFamily = getFontFamilyString(fontFamilyId);
   // scaledFont: UI elements scale proportionally based on reading font
   const scaledFont = (base: number) => {
@@ -455,7 +565,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   if (!loaded) return null;
 
   return (
-    <SettingsContext.Provider value={{ theme, fontSize, highContrast, isBold, readingMode, fontFamilyId, fontFamily, parchmentTone, celebraSubitoEnabled, preparaCelebraEnabled, oreEnabled, messeRitualiEnabled, optionalSaintsUseSelection, hapticFeedbackEnabled, pinchZoomEnabled, lineSpacing, setTheme, setFontSize, setHighContrast, setIsBold, setReadingMode, setFontFamilyId, setParchmentTone, setCelebraSubitoEnabled, setPreparaCelebraEnabled, setOreEnabled, setMesseRitualiEnabled, setOptionalSaintsUseSelection, setHapticFeedbackEnabled, setPinchZoomEnabled, setLineSpacing, colors, scaledFont }}>
+    <SettingsContext.Provider value={{ theme, fontSize, highContrast, isBold, readingMode, fontFamilyId, fontFamily, parchmentTone, slateVariant, celebraSubitoEnabled, preparaCelebraEnabled, oreEnabled, messeRitualiEnabled, optionalSaintsUseSelection, hapticFeedbackEnabled, pinchZoomEnabled, lineSpacing, setTheme, setFontSize, setHighContrast, setIsBold, setReadingMode, setFontFamilyId, setParchmentTone, setSlateVariant, setCelebraSubitoEnabled, setPreparaCelebraEnabled, setOreEnabled, setMesseRitualiEnabled, setOptionalSaintsUseSelection, setHapticFeedbackEnabled, setPinchZoomEnabled, setLineSpacing, colors, scaledFont }}>
       {children}
     </SettingsContext.Provider>
   );

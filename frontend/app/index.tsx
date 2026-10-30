@@ -170,7 +170,7 @@ export default function Home() {
   const [optionalLinePick, setOptionalLinePick] = useState<OptionalSaintLinePick | null>(null);
 
   const muteFill = (hex: string) =>
-    mixHexTowardBlack(hex, theme === "dark" ? 0.32 : theme === "parchment" ? 0.16 : 0.12);
+    mixHexTowardBlack(hex, theme === "dark" ? 0.32 : theme === "parchment" ? 0.16 : theme === "slate" ? 0.22 : 0.12);
 
   const selectedDate = parseLocalDate(selectedDateISO);
   const selectedSeasonName = getLiturgicalSeason(selectedDate).season;
