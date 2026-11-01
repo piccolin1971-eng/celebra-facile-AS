@@ -5,8 +5,8 @@ const KEY = "@cei_mass_formula_v1";
 
 export function parseCeiMassFormula(raw: unknown): CeiMassFormula {
   const n = Number(raw);
-  if (n === 2 || n === 3) return n;
-  return 1;
+  if (!Number.isFinite(n) || n < 1) return 1;
+  return Math.floor(n);
 }
 
 async function readAll(): Promise<Record<string, CeiMassFormula>> {

@@ -24,20 +24,22 @@ import { localDateStr, parseLocalDate } from "./dateUtils";
 import { normalizeTypewriterCapAccents } from "./litTextNormalize";
 import { withRetries } from "./fetchRetry";
 
-/** Messa 1 / 2 / 3 sulla stessa pagina CEI (es. 2 novembre). */
-export type CeiMassFormula = 1 | 2 | 3;
+/** Indice formula «Messa N» sulla pagina CEI (N ≥ 1; default celebrazione = 1). */
+export type CeiMassFormula = number;
+
+export const DEFAULT_CEI_MASS_FORMULA: CeiMassFormula = 1;
 
 export function parseCeiMassFormulaFromTitle(title: string): CeiMassFormula | null {
-  const m = (title || "").match(/\(MESSA\s*([123])\)/i);
+  const m = (title || "").match(/\(MESSA\s*(\d+)\)/i);
   if (!m) return null;
   const n = Number(m[1]);
-  if (n === 1 || n === 2 || n === 3) return n;
-  return null;
+  if (!Number.isFinite(n) || n < 1) return null;
+  return Math.floor(n);
 }
 
 export function stripCeiMassFormulaFromTitle(title: string): string {
   return (title || "")
-    .replace(/\s*\(\s*MESSA\s*[123]\s*\)\s*/gi, " ")
+    .replace(/\s*\(\s*MESSA\s*\d+\s*\)\s*/gi, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -55,10 +57,10 @@ export function entranceAntiphonFromCeiMassChunk(chunkHtml: string): string {
   return (ant.subtitle || ant.body.split("\n")[0] || "").trim();
 }
 
-/** Opzioni Messa 1–3 se presenti sulla pagina; altrimenti []. */
+/** Opzioni Messa N se presenti sulla pagina (stessa festa, formule diverse); altrimenti []. */
 export function listCeiMassFormulaOptionsFromHtml(html: string): CeiMassFormulaOption[] {
   const chunks = extractH3Chunks(html);
-  const byFormula = new Map<CeiMassFormula, CeiMassFormulaOption>();
+  const byFormula = new Map<number, CeiMassFormulaOption>();
   for (const c of chunks) {
     const formula = parseCeiMassFormulaFromTitle(c.title);
     if (!formula || byFormula.has(formula)) continue;

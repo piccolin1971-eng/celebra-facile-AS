@@ -262,7 +262,7 @@ export async function resolveCeiCelebrationStripMeta(
   }
 }
 
-/** Messa 1 / 2 / 3 se la pagina CEI ne offre almeno due. */
+/** Messa N se la pagina CEI ne offre almeno due. */
 export async function getCeiMassFormulaOptions(date: string): Promise<CeiMassFormulaOption[]> {
   try {
     const d = parseLocalDate(date);

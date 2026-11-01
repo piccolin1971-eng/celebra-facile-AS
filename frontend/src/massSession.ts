@@ -14,6 +14,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import type { CeiMassFormula } from "./liturgyScraper";
 import { parseCeiMassFormula } from "./ceiMassFormulaPreference";
+import { listCachedMassFormulaNumbers } from "./offlineCache";
 
 
 
@@ -443,6 +444,18 @@ function sortSessionsByCelebrationMode(sessions: MassSession[]): MassSession[] {
   });
 }
 
+async function listMassFormulaNumbersWithSession(dateISO: string): Promise<number[]> {
+  const prefix = `${KEY_PREFIX}${dateISO}_calendar_day_m`;
+  const keys = await AsyncStorage.getAllKeys();
+  const out: number[] = [];
+  for (const k of keys) {
+    if (!k.startsWith(prefix)) continue;
+    const n = Number(k.slice(prefix.length));
+    if (n >= 2 && Number.isFinite(n)) out.push(Math.floor(n));
+  }
+  return out;
+}
+
 /** Tutte le sessioni preparate per una data (0–2 in pratica). */
 
 export async function loadSessionsForDate(dateISO: string): Promise<MassSession[]> {
@@ -458,7 +471,10 @@ export async function loadSessionsForDate(dateISO: string): Promise<MassSession[
     if (s) found.push(s);
 
     if (mode === "calendar_day") {
-      for (const formula of [2, 3] as const) {
+      const fromIndex = await listCachedMassFormulaNumbers(dateISO);
+      const fromSessions = await listMassFormulaNumbersWithSession(dateISO);
+      const formulas = [...new Set([...fromIndex, ...fromSessions])].sort((a, b) => a - b);
+      for (const formula of formulas) {
         const alt = await loadSession(dateISO, mode, formula);
         if (alt) found.push(alt);
       }

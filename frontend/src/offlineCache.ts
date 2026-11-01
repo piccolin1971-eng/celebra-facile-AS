@@ -71,14 +71,23 @@ export async function loadOptionalSaintLiturgy(
   }
 }
 
+function massFormulaFromIndexTail(tail: string): CeiMassFormula | null {
+  const m = tail.match(/^m(\d+)$/i);
+  if (!m) return null;
+  const n = Number(m[1]);
+  if (!Number.isFinite(n) || n < 2) return null;
+  return Math.floor(n);
+}
+
 /** Indice: `YYYY-MM-DD` oppure `YYYY-MM-DD:vigil_proper` → chiave AsyncStorage. */
 function storageKeyFromIndexId(indexId: string): string {
   const colon = indexId.indexOf(":");
   if (colon < 0) return `${LITURGY_PREFIX}${indexId}`;
   const date = indexId.slice(0, colon);
   const tail = indexId.slice(colon + 1);
-  if (tail === "m2" || tail === "m3") {
-    return liturgyStorageKey(date, "calendar_day", tail === "m2" ? 2 : 3);
+  const formula = massFormulaFromIndexTail(tail);
+  if (formula != null) {
+    return liturgyStorageKey(date, "calendar_day", formula);
   }
   const mode = tail as CelebrationMode;
   return liturgyStorageKey(date, mode || "calendar_day");
@@ -158,6 +167,20 @@ export async function getLiturgyIndex(): Promise<CachedLiturgyIndexEntry[]> {
   } catch {
     return [];
   }
+}
+
+/** Formule Messa N>1 presenti in cache per quella data (es. m2, m4). */
+export async function listCachedMassFormulaNumbers(date: string): Promise<number[]> {
+  const index = await getLiturgyIndex();
+  const prefix = `${date}:m`;
+  const out: number[] = [];
+  for (const e of index) {
+    if (!e.date.startsWith(prefix)) continue;
+    const tail = e.date.slice(prefix.length);
+    const n = Number(tail);
+    if (n >= 2 && Number.isFinite(n)) out.push(Math.floor(n));
+  }
+  return [...new Set(out)].sort((a, b) => a - b);
 }
 
 export async function removeLiturgy(date: string): Promise<void> {

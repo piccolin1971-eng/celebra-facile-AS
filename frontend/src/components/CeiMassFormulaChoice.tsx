@@ -52,7 +52,9 @@ export function CeiMassFormulaChoice({
 
   return (
     <View style={styles.wrap} testID="cei-mass-formula-choice">
-      <Text style={styles.hint}>In questo giorno la CEI propone tre messe: scegli quale celebrare.</Text>
+      <Text style={styles.hint}>
+        In questo giorno la CEI propone più messe: scegli quale celebrare.
+      </Text>
       <View style={styles.stack}>
         {options.map((opt) => {
           const selected = activeFormula === opt.formula;
