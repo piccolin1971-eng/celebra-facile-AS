@@ -19,10 +19,21 @@ import {
   routeParamStr,
   routeSearchParam,
   filterHomeSummarySessions,
+  filterSessionsForMassFormula,
   type MassSession,
   type CelebrationMode,
   parseCelebrationMode,
 } from "../src/massSession";
+import {
+  getPreferredCeiMassFormula,
+  setPreferredCeiMassFormula,
+} from "../src/ceiMassFormulaPreference";
+import { CeiMassFormulaChoice } from "../src/components/CeiMassFormulaChoice";
+import {
+  stripCeiMassFormulaFromTitle,
+  type CeiMassFormula,
+  type CeiMassFormulaOption,
+} from "../src/liturgyScraper";
 import {
   defaultCelebrationModeForDate,
   eveningFestiveDateISO,
@@ -142,6 +153,8 @@ export default function Home() {
   } = useSettings();
   const [selectedDateISO, setSelectedDateISO] = useState(() => localDateStr(new Date()));
   const [sessions, setSessions] = useState<MassSession[]>([]);
+  const [ceiMassFormula, setCeiMassFormula] = useState<CeiMassFormula>(1);
+  const [massFormulaOptions, setMassFormulaOptions] = useState<CeiMassFormulaOption[]>([]);
   const [selectedCelebrateMode, setSelectedCelebrateMode] = useState<CelebrationMode | null>(null);
   const [preparedCounts, setPreparedCounts] = useState<Record<string, number>>({});
   const [celebrateDialogVisible, setCelebrateDialogVisible] = useState(false);
@@ -310,8 +323,9 @@ export default function Home() {
   );
 
   const reloadSessions = useCallback(
-    async (dateStr: string) => {
-      const saved = filterHomeSummarySessions(await loadSessionsForDate(dateStr));
+    async (dateStr: string, formula: CeiMassFormula = 1) => {
+      const all = filterHomeSummarySessions(await loadSessionsForDate(dateStr));
+      const saved = filterSessionsForMassFormula(all, formula);
       setSessions(saved);
       await syncCelebrateSelection(dateStr, saved);
     },
@@ -331,13 +345,16 @@ export default function Home() {
 
   const handleResetSession = useCallback(
     async (mode: CelebrationMode) => {
-      await clearSession(selectedDateStr, mode);
-      const remaining = filterHomeSummarySessions(await loadSessionsForDate(selectedDateStr));
+      const formula =
+        mode === "calendar_day" && massFormulaOptions.length >= 2 ? ceiMassFormula : 1;
+      await clearSession(selectedDateStr, mode, formula);
+      const all = filterHomeSummarySessions(await loadSessionsForDate(selectedDateStr));
+      const remaining = filterSessionsForMassFormula(all, ceiMassFormula);
       setSessions(remaining);
       setPreparedCounts((prev) => ({ ...prev, [selectedDateStr]: remaining.length }));
       await syncCelebrateSelection(selectedDateStr, remaining);
     },
-    [selectedDateStr, syncCelebrateSelection],
+    [selectedDateStr, syncCelebrateSelection, ceiMassFormula, massFormulaOptions.length],
   );
 
   const handleSelectCelebrateMode = useCallback(
@@ -378,15 +395,35 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    void reloadSessions(selectedDateISO);
-  }, [selectedDateISO, reloadSessions]);
+    void reloadSessions(selectedDateISO, ceiMassFormula);
+  }, [selectedDateISO, ceiMassFormula, reloadSessions]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const [formula, opts] = await Promise.all([
+        getPreferredCeiMassFormula(selectedDateISO),
+        api.getCeiMassFormulaOptions(selectedDateISO),
+      ]);
+      if (cancelled) return;
+      setCeiMassFormula(formula);
+      setMassFormulaOptions(opts);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedDateISO]);
 
   useEffect(() => {
     let cancelled = false;
     setCeiDayTitle("");
     void (async () => {
       try {
-        const title = await api.resolveCeiCelebrationTitle(selectedDateISO, "calendar_day");
+        const title = await api.resolveCeiCelebrationTitle(
+          selectedDateISO,
+          "calendar_day",
+          ceiMassFormula,
+        );
         if (!cancelled) setCeiDayTitle(title);
       } catch (e) {
         if (__DEV__) console.log("Home: titolo CEI", e);
@@ -395,7 +432,7 @@ export default function Home() {
     return () => {
       cancelled = true;
     };
-  }, [selectedDateISO]);
+  }, [selectedDateISO, ceiMassFormula]);
 
   useEffect(() => {
     let cancelled = false;
@@ -456,7 +493,7 @@ export default function Home() {
       if (prevCalendarDay !== today && selectedDateStrRef.current === prevCalendarDay) {
         setSelectedDateISO(today);
       }
-      void reloadSessions(selectedDateStrRef.current);
+      void reloadSessions(selectedDateStrRef.current, ceiMassFormula);
       void reloadPreparedFlags();
       void reloadQuickAccessCount();
       void reloadDlDays();
@@ -464,7 +501,7 @@ export default function Home() {
       void loadOptionalSaintLinePick(selectedDateStrRef.current).then(setOptionalLinePick);
       // Giorni di Messa troppo vecchi: libera spazio (le Ore si puliscono al download).
       void pruneOldLiturgies(3);
-    }, [reloadSessions, reloadPreparedFlags, reloadQuickAccessCount, reloadDlDays]),
+    }, [reloadSessions, reloadPreparedFlags, reloadQuickAccessCount, reloadDlDays, ceiMassFormula]),
   );
 
   useEffect(() => {
@@ -483,13 +520,29 @@ export default function Home() {
   const optionalSaintNavParam = (): { optionalSaint?: string } =>
     activeOptionalSaintId ? { optionalSaint: activeOptionalSaintId } : {};
 
+  const massFormulaNavParam = (): { formula?: string } =>
+    !activeOptionalSaintId && massFormulaOptions.length >= 2
+      ? { formula: String(ceiMassFormula) }
+      : {};
+
+  const handleMassFormulaPick = useCallback(
+    async (formula: CeiMassFormula) => {
+      if (formula === ceiMassFormula) return;
+      void triggerAppHaptic("light");
+      await setPreferredCeiMassFormula(selectedDateISO, formula);
+      setCeiMassFormula(formula);
+    },
+    [ceiMassFormula, selectedDateISO],
+  );
+
   const messaMode: CelebrationMode = activeCelebrateMode;
 
   const openMessa = () => {
     void triggerAppHaptic("light");
-    const navParams: { date?: string; mode: string; optionalSaint?: string } = {
+    const navParams: { date?: string; mode: string; optionalSaint?: string; formula?: string } = {
       mode: messaMode,
       ...optionalSaintNavParam(),
+      ...massFormulaNavParam(),
     };
     if (selectedDateISO !== todayISO) navParams.date = selectedDateISO;
     router.push({ pathname: "/messa", params: navParams });
@@ -529,9 +582,10 @@ export default function Home() {
 
   const goCelebra = (mode: CelebrationMode) => {
     void triggerAppHaptic("light");
-    const navParams: { date?: string; mode: string; optionalSaint?: string } = {
+    const navParams: { date?: string; mode: string; optionalSaint?: string; formula?: string } = {
       mode,
       ...optionalSaintNavParam(),
+      ...massFormulaNavParam(),
     };
     if (selectedDateISO !== todayISO) navParams.date = selectedDateISO;
     router.push({ pathname: "/celebra" as any, params: navParams });
@@ -572,7 +626,7 @@ export default function Home() {
       if (activeOptionalSaintId) {
         await ensureQuickCelebrateOptionalSaintSession(selectedDateISO, activeOptionalSaintId);
       } else {
-        await ensureQuickCelebrateSession(selectedDateISO, mode);
+        await ensureQuickCelebrateSession(selectedDateISO, mode, ceiMassFormula);
       }
       const navParams: {
         date?: string;
@@ -580,11 +634,13 @@ export default function Home() {
         from: string;
         index: string;
         optionalSaint?: string;
+        formula?: string;
       } = {
         mode,
         from: "indice",
         index: "1",
         ...optionalSaintNavParam(),
+        ...massFormulaNavParam(),
       };
       if (selectedDateISO !== todayISO) navParams.date = selectedDateISO;
       // Un solo caricamento: indice come overlay su /celebra (niente schermata intermedia).
@@ -829,7 +885,9 @@ export default function Home() {
                     </>
                   )}
                   {stripMeta.subtitle ? (
-                    <Text style={styles.dayButtonCelebration}>{stripMeta.subtitle}</Text>
+                    <Text style={styles.dayButtonCelebration}>
+                      {stripCeiMassFormulaFromTitle(stripMeta.subtitle)}
+                    </Text>
                   ) : null}
                 </TouchableOpacity>
                 </DayChipWrap>
@@ -964,6 +1022,18 @@ export default function Home() {
             <Ionicons name="moon-outline" size={scaledFont(24)} color={colors.primary} />
             <Text style={styles.vigilEveText}>{eveningChoiceBannerMessage(eveningCtx)}</Text>
           </View>
+        ) : null}
+
+        {!eveningCtx &&
+        !activeOptionalSaintId &&
+        massFormulaOptions.length >= 2 ? (
+          <CeiMassFormulaChoice
+            options={massFormulaOptions}
+            activeFormula={ceiMassFormula}
+            onPick={(f) => void handleMassFormulaPick(f)}
+            colors={colors}
+            fontSize={fontSize}
+          />
         ) : null}
 
         {preparaCelebraEnabled && sessions.length > 0 ? (

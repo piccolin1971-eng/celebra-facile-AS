@@ -247,14 +247,17 @@ export type Liturgy = {
   celebrationMode?: CelebrationMode;
   /** Memoria facoltativa scelta in impostazioni (liturgia in cache dedicata). */
   optionalSaintId?: string;
+  /** Messa 1 / 2 / 3 quando la CEI ne propone più di una (es. defunti). */
+  ceiMassFormula?: import("./liturgyScraper").CeiMassFormula;
 };
 
 export async function getFullLiturgy(
   d: Date,
   mode: CelebrationMode = "calendar_day",
+  massFormula?: import("./liturgyScraper").CeiMassFormula,
 ): Promise<Liturgy> {
   const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  const scraped = await scrapeLiturgy(d, mode);
+  const scraped = await scrapeLiturgy(d, mode, massFormula);
   const meta = liturgyMetadataForMode(d, mode, scraped);
 
   return fillMissingFeastSecondReading({
@@ -268,14 +271,16 @@ export async function getFullLiturgy(
     source_url: scraped.source_url,
     error: scraped.error || null,
     celebrationMode: mode,
+    ...(massFormula && massFormula !== 1 ? { ceiMassFormula: massFormula } : {}),
   });
 }
 
 export async function getFullLiturgyByDateStr(
   dateStr: string,
   mode: CelebrationMode = "calendar_day",
+  massFormula?: import("./liturgyScraper").CeiMassFormula,
 ): Promise<Liturgy> {
-  return getFullLiturgy(parseDateStr(dateStr), mode);
+  return getFullLiturgy(parseDateStr(dateStr), mode, massFormula);
 }
 
 // ===== Dati statici (ritornano subito, nessuna rete) =====

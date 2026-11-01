@@ -111,7 +111,9 @@ import { HomeCircleButton } from "../src/components/HomeCircleButton";
 import { FontSizeButtons } from "../src/components/FontSizeButtons";
 import { PinchFontZoom } from "../src/components/PinchFontZoom";
 import { triggerAppHaptic } from "../src/appHaptics";
-import { loadSession, saveSession, loadVotiveSession, saveVotiveSession, loadOptionalSaintSession, loadSessionForTarget, saveSessionForTarget, type MassSession, parseCelebrationMode, messaRouteDateParam, messaRouteModeParam, messaRouteVotiveParam, messaRouteOptionalSaintParam, routeParamStr, type CelebrationMode, type SessionTarget } from "../src/massSession";
+import { loadSession, saveSession, loadVotiveSession, saveVotiveSession, loadOptionalSaintSession, loadSessionForTarget, saveSessionForTarget, type MassSession, parseCelebrationMode, messaRouteDateParam, messaRouteModeParam, messaRouteVotiveParam, messaRouteOptionalSaintParam, messaRouteFormulaParam, routeParamStr, type CelebrationMode, type SessionTarget } from "../src/massSession";
+import { getPreferredCeiMassFormula } from "../src/ceiMassFormulaPreference";
+import type { CeiMassFormula } from "../src/liturgyScraper";
 import { coerceCelebrationMode } from "../src/celebrationModeLabels";
 import { getMassEveningChoiceContextForISO } from "../src/massEveningContext";
 import { reconcileLiturgyColors } from "../src/localLiturgy";
@@ -181,6 +183,7 @@ function CelebraScreenInner() {
     mode?: string;
     votive?: string;
     optionalSaint?: string;
+    formula?: string;
     section?: string;
     from?: string;
     index?: string;
@@ -202,6 +205,7 @@ function CelebraScreenInner() {
   const [session, setSession] = useState<MassSession | null>(null);
   const [sessionDate, setSessionDate] = useState<string | null>(null);
   const [celebrationMode, setCelebrationMode] = useState<CelebrationMode>("calendar_day");
+  const [ceiMassFormula, setCeiMassFormula] = useState<CeiMassFormula>(1);
   const [activeVotiveId, setActiveVotiveId] = useState<string | null>(null);
   const [activeOptionalSaintId, setActiveOptionalSaintId] = useState<string | null>(null);
   const [hasSession, setHasSession] = useState<boolean | null>(null);
@@ -217,6 +221,7 @@ function CelebraScreenInner() {
   const routeModeParam = messaRouteModeParam(params);
   const routeVotiveParam = messaRouteVotiveParam(params);
   const routeOptionalSaintParam = messaRouteOptionalSaintParam(params);
+  const routeFormulaParam = messaRouteFormulaParam(params);
   const routeSectionId = parseCelebraSectionId(params.section);
   /** Flusso Celebra subito: indice overlay, a fine sezione si torna all'indice. */
   const fromIndice = routeParamStr(params.from) === "indice";
@@ -260,8 +265,11 @@ function CelebraScreenInner() {
         parseCelebrationMode(routeModeParam),
         getMassEveningChoiceContextForISO(dateKey),
       );
-      const saved = await loadSession(dateKey, mode);
+      const preferredFormula = await getPreferredCeiMassFormula(dateKey);
+      const formula = routeFormulaParam !== 1 ? routeFormulaParam : preferredFormula;
+      const saved = await loadSession(dateKey, mode, formula);
       if (cancelled || !saved) return;
+      setCeiMassFormula(formula);
       setSession((prev) => prev ?? saved);
       setSessionDate((prev) => prev ?? dateKey);
       setCelebrationMode(mode);
@@ -270,16 +278,23 @@ function CelebraScreenInner() {
     return () => {
       cancelled = true;
     };
-  }, [fromIndice, routeDateParam, routeModeParam, routeVotiveParam, routeOptionalSaintParam]);
+  }, [fromIndice, routeDateParam, routeModeParam, routeVotiveParam, routeOptionalSaintParam, routeFormulaParam]);
 
   const currentSessionTarget = useMemo((): SessionTarget | null => {
     if (activeVotiveId) return { kind: "votive", votiveId: activeVotiveId };
     if (activeOptionalSaintId && sessionDate) {
       return { kind: "optionalSaint", dateISO: sessionDate, saintId: activeOptionalSaintId };
     }
-    if (sessionDate) return { kind: "calendar", dateISO: sessionDate, mode: celebrationMode };
+    if (sessionDate) {
+      return {
+        kind: "calendar",
+        dateISO: sessionDate,
+        mode: celebrationMode,
+        ...(ceiMassFormula !== 1 ? { massFormula: ceiMassFormula } : {}),
+      };
+    }
     return null;
-  }, [activeVotiveId, activeOptionalSaintId, sessionDate, celebrationMode]);
+  }, [activeVotiveId, activeOptionalSaintId, sessionDate, celebrationMode, ceiMassFormula]);
 
   const applyLiturgyForSession = useCallback(
     (base: Liturgy | null, saved: MassSession | null, mode: CelebrationMode) => {
@@ -363,7 +378,12 @@ function CelebraScreenInner() {
       applyLiturgyForSession(reconciled, saved, "calendar_day");
       return;
     }
-    const lit = await api.liturgyForDate(currentSessionTarget.dateISO, currentSessionTarget.mode);
+    const formula = currentSessionTarget.massFormula ?? 1;
+    const lit = await api.liturgyForDate(
+      currentSessionTarget.dateISO,
+      currentSessionTarget.mode,
+      formula,
+    );
     const reconciled = reconcileLiturgyColors({
       ...lit,
       celebrationMode: currentSessionTarget.mode,
@@ -372,6 +392,7 @@ function CelebraScreenInner() {
     const saved = await loadSession(
       currentSessionTarget.dateISO,
       currentSessionTarget.mode,
+      formula,
     );
     if (saved) {
       setSession(saved);
@@ -552,12 +573,17 @@ function CelebraScreenInner() {
         setActiveOptionalSaintId(null);
         const dateParam = routeDateParam;
         const provisionalKey = dateParam || todayStr();
+        const preferredFormula = await getPreferredCeiMassFormula(provisionalKey);
+        const massFormula =
+          routeFormulaParam !== 1 ? routeFormulaParam : preferredFormula;
         const mode = coerceCelebrationMode(
           parseCelebrationMode(routeModeParam),
           getMassEveningChoiceContextForISO(provisionalKey),
         );
         const [lit, parts, pr, pe, acc, bless] = await Promise.all([
-          dateParam ? api.liturgyForDate(dateParam, mode) : api.liturgyToday(mode),
+          dateParam
+            ? api.liturgyForDate(dateParam, mode, massFormula)
+            : api.liturgyToday(mode, massFormula),
           api.fixedParts(),
           api.prefaces(),
           api.eucharisticPrayers(),
@@ -569,7 +595,8 @@ function CelebraScreenInner() {
         const reconciled = reconcileLiturgyColors({ ...lit, celebrationMode: mode });
         setSessionDate(dateKey);
         setCelebrationMode(mode);
-        const saved = await loadSession(dateKey, mode);
+        setCeiMassFormula(massFormula);
+        const saved = await loadSession(dateKey, mode, massFormula);
         if (cancelled) return;
         baseLiturgyRef.current = reconciled;
         applyLiturgyForSession(reconciled, saved, mode);
@@ -600,7 +627,7 @@ function CelebraScreenInner() {
     return () => {
       cancelled = true;
     };
-  }, [routeDateParam, routeModeParam, routeVotiveParam, routeOptionalSaintParam, applyLiturgyForSession]);
+  }, [routeDateParam, routeModeParam, routeVotiveParam, routeOptionalSaintParam, routeFormulaParam, applyLiturgyForSession]);
 
   useFocusEffect(
     useCallback(() => {

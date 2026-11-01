@@ -24,6 +24,53 @@ import { localDateStr, parseLocalDate } from "./dateUtils";
 import { normalizeTypewriterCapAccents } from "./litTextNormalize";
 import { withRetries } from "./fetchRetry";
 
+/** Messa 1 / 2 / 3 sulla stessa pagina CEI (es. 2 novembre). */
+export type CeiMassFormula = 1 | 2 | 3;
+
+export function parseCeiMassFormulaFromTitle(title: string): CeiMassFormula | null {
+  const m = (title || "").match(/\(MESSA\s*([123])\)/i);
+  if (!m) return null;
+  const n = Number(m[1]);
+  if (n === 1 || n === 2 || n === 3) return n;
+  return null;
+}
+
+export function stripCeiMassFormulaFromTitle(title: string): string {
+  return (title || "")
+    .replace(/\s*\(\s*MESSA\s*[123]\s*\)\s*/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export type CeiMassFormulaOption = {
+  formula: CeiMassFormula;
+  title: string;
+  entranceAntiphon: string;
+};
+
+export function entranceAntiphonFromCeiMassChunk(chunkHtml: string): string {
+  const sections = extractSections(chunkHtml);
+  const ant = sections.find((s) => /^antifona$/i.test(s.title.trim()));
+  if (!ant) return "";
+  return (ant.subtitle || ant.body.split("\n")[0] || "").trim();
+}
+
+/** Opzioni Messa 1–3 se presenti sulla pagina; altrimenti []. */
+export function listCeiMassFormulaOptionsFromHtml(html: string): CeiMassFormulaOption[] {
+  const chunks = extractH3Chunks(html);
+  const byFormula = new Map<CeiMassFormula, CeiMassFormulaOption>();
+  for (const c of chunks) {
+    const formula = parseCeiMassFormulaFromTitle(c.title);
+    if (!formula || byFormula.has(formula)) continue;
+    byFormula.set(formula, {
+      formula,
+      title: c.title,
+      entranceAntiphon: entranceAntiphonFromCeiMassChunk(c.chunk),
+    });
+  }
+  return [...byFormula.values()].sort((a, b) => a.formula - b.formula);
+}
+
 export type Reading = {
   type: string;
   reference: string;
@@ -266,8 +313,16 @@ function pickChunkForMode(
   colorBlock: { title: string } | null,
   mode: CelebrationMode,
   eveningCtx: MassEveningChoiceContext | null,
+  massFormula?: CeiMassFormula,
 ): { title: string; chunk: string } | null {
   if (chunks.length === 0) return null;
+
+  if (massFormula) {
+    const byFormula = chunks.find(
+      (c) => parseCeiMassFormulaFromTitle(c.title) === massFormula,
+    );
+    if (byFormula) return byFormula;
+  }
 
   if (colorBlock) {
     const matched = chunks.find((c) => celebrationTitlesMatch(c.title, colorBlock.title));
@@ -316,6 +371,7 @@ function resolveLiturgyFromCeiHtmlInternal(
   html: string,
   targetDate: Date,
   mode: CelebrationMode,
+  massFormula?: CeiMassFormula,
 ): { title: string; liturgical_color: string; readings: Reading[] } | null {
   const chunks = extractH3Chunks(html);
   if (chunks.length === 0) return null;
@@ -323,7 +379,7 @@ function resolveLiturgyFromCeiHtmlInternal(
   const colorBlocks = extractCelebrationColorBlocksFromHtml(html);
   const eveningCtx = getMassEveningChoiceContext(targetDate);
   const colorBlock = pickCeiMassBlockForMode(colorBlocks, mode, eveningCtx);
-  const primaryChunk = pickChunkForMode(chunks, colorBlock, mode, eveningCtx);
+  const primaryChunk = pickChunkForMode(chunks, colorBlock, mode, eveningCtx, massFormula);
   if (!primaryChunk) return null;
 
   const readings = readingsFromHtmlChunk(primaryChunk.chunk);
@@ -389,8 +445,9 @@ export function resolveLiturgyFromCeiHtml(
   html: string,
   targetDate: Date,
   mode: CelebrationMode = "calendar_day",
+  massFormula?: CeiMassFormula,
 ): { title: string; liturgical_color: string; readings: Reading[] } {
-  const fromBlocks = resolveLiturgyFromCeiHtmlInternal(html, targetDate, mode);
+  const fromBlocks = resolveLiturgyFromCeiHtmlInternal(html, targetDate, mode, massFormula);
 
   if (fromBlocks && fromBlocks.readings.length > 0) {
     return fromBlocks;
@@ -644,6 +701,7 @@ export async function fetchCeiHtml(targetDate: Date): Promise<string | null> {
 export async function scrapeLiturgy(
   targetDate: Date,
   mode: CelebrationMode = "calendar_day",
+  massFormula?: CeiMassFormula,
 ): Promise<{
   date: string;
   title: string;
@@ -674,7 +732,7 @@ export async function scrapeLiturgy(
     };
   }
 
-  let resolved = resolveLiturgyFromCeiHtml(html, targetDate, mode);
+  let resolved = resolveLiturgyFromCeiHtml(html, targetDate, mode, massFormula);
 
   if (
     (mode === "solemnity_day" || mode === "sunday_day") &&

@@ -11,13 +11,21 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { localDateStr } from "./dateUtils";
 import type { CelebrationMode } from "./massSession";
+import type { CeiMassFormula } from "./liturgyScraper";
 
 const LITURGY_PREFIX = "messale_liturgy_v4_";
 const INDEX_KEY = "messale_liturgy_index";
 const STATIC_KEY = "messale_static_cache";
 
-function liturgyStorageKey(date: string, mode: CelebrationMode = "calendar_day"): string {
-  if (mode === "calendar_day") return `${LITURGY_PREFIX}${date}`;
+function liturgyStorageKey(
+  date: string,
+  mode: CelebrationMode = "calendar_day",
+  formula?: CeiMassFormula,
+): string {
+  if (mode === "calendar_day") {
+    if (formula && formula !== 1) return `${LITURGY_PREFIX}${date}_m${formula}`;
+    return `${LITURGY_PREFIX}${date}`;
+  }
   return `${LITURGY_PREFIX}${date}_${mode}`;
 }
 
@@ -68,7 +76,11 @@ function storageKeyFromIndexId(indexId: string): string {
   const colon = indexId.indexOf(":");
   if (colon < 0) return `${LITURGY_PREFIX}${indexId}`;
   const date = indexId.slice(0, colon);
-  const mode = indexId.slice(colon + 1) as CelebrationMode;
+  const tail = indexId.slice(colon + 1);
+  if (tail === "m2" || tail === "m3") {
+    return liturgyStorageKey(date, "calendar_day", tail === "m2" ? 2 : 3);
+  }
+  const mode = tail as CelebrationMode;
   return liturgyStorageKey(date, mode || "calendar_day");
 }
 
@@ -88,12 +100,24 @@ export async function saveLiturgy(
   date: string,
   data: any,
   mode: CelebrationMode = "calendar_day",
+  formula?: CeiMassFormula,
 ): Promise<void> {
   try {
-    const key = liturgyStorageKey(date, mode);
-    await AsyncStorage.setItem(key, JSON.stringify({ ...data, celebrationMode: mode }));
+    const key = liturgyStorageKey(date, mode, formula);
+    const massFormula = formula && formula !== 1 ? formula : data?.ceiMassFormula;
+    await AsyncStorage.setItem(
+      key,
+      JSON.stringify({
+        ...data,
+        celebrationMode: mode,
+        ...(massFormula && massFormula !== 1 ? { ceiMassFormula: massFormula } : {}),
+      }),
+    );
     const index = await getLiturgyIndex();
-    const indexId = mode === "calendar_day" ? date : `${date}:${mode}`;
+    let indexId = mode === "calendar_day" ? date : `${date}:${mode}`;
+    if (mode === "calendar_day" && formula && formula !== 1) {
+      indexId = `${date}:m${formula}`;
+    }
     const next = index.filter((e) => e.date !== indexId);
     next.push({
       date: indexId,
@@ -111,10 +135,11 @@ export async function saveLiturgy(
 export async function loadLiturgy(
   date: string,
   mode: CelebrationMode = "calendar_day",
+  formula?: CeiMassFormula,
 ): Promise<any | null> {
   try {
-    let raw = await AsyncStorage.getItem(liturgyStorageKey(date, mode));
-    if (!raw && mode === "calendar_day") {
+    let raw = await AsyncStorage.getItem(liturgyStorageKey(date, mode, formula));
+    if (!raw && mode === "calendar_day" && (!formula || formula === 1)) {
       raw = await AsyncStorage.getItem(`${LITURGY_PREFIX}${date}`);
     }
     if (!raw) return null;

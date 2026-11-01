@@ -22,7 +22,7 @@ import {
   Liturgy as LocalLiturgy,
 } from "./localLiturgy";
 
-import { fetchCeiHtml, resolveLiturgyFromCeiHtml } from "./liturgyScraper";
+import { fetchCeiHtml, resolveLiturgyFromCeiHtml, listCeiMassFormulaOptionsFromHtml, stripCeiMassFormulaFromTitle, type CeiMassFormula, type CeiMassFormulaOption } from "./liturgyScraper";
 
 import {
   saveLiturgy,
@@ -109,25 +109,30 @@ function liturgyFromStorage(
 async function liturgyForDateCached(
   date: string,
   mode: CelebrationMode = "calendar_day",
+  massFormula: CeiMassFormula = 1,
 ): Promise<Liturgy> {
   try {
-    const raw = await loadLiturgy(date, mode);
+    const raw = await loadLiturgy(date, mode, massFormula);
     if (raw && vigilCacheLooksValid(raw, mode, date)) {
       const cached = liturgyFromStorage(raw, mode);
       if (cached) return cached;
     }
 
-    const data = await getFullLiturgyByDateStr(date, mode);
+    const data = await getFullLiturgyByDateStr(date, mode, massFormula);
     if (data && Array.isArray(data.readings) && data.readings.length > 0) {
-      const reconciled = reconcileLiturgyColors({ ...data, celebrationMode: mode });
-      await saveLiturgy(date, reconciled, mode);
+      const reconciled = reconcileLiturgyColors({
+        ...data,
+        celebrationMode: mode,
+        ...(massFormula !== 1 ? { ceiMassFormula: massFormula } : {}),
+      });
+      await saveLiturgy(date, reconciled, mode, massFormula);
       return { ...reconciled, fromLocalCache: false, celebrationMode: mode };
     }
-    const fallback = liturgyFromStorage(await loadLiturgy(date, mode), mode);
+    const fallback = liturgyFromStorage(await loadLiturgy(date, mode, massFormula), mode);
     if (fallback) return fallback;
     return { ...data, fromLocalCache: false, celebrationMode: mode };
   } catch (err) {
-    const fallback = liturgyFromStorage(await loadLiturgy(date, mode), mode);
+    const fallback = liturgyFromStorage(await loadLiturgy(date, mode, massFormula), mode);
     if (fallback) return fallback;
     throw err;
   }
@@ -175,12 +180,13 @@ async function scrapeAndCacheCeiTitle(
   date: string,
   mode: CelebrationMode,
   existing: Awaited<ReturnType<typeof loadLiturgy>>,
+  massFormula: CeiMassFormula = 1,
 ): Promise<string> {
   const d = parseLocalDate(date);
   const html = await fetchCeiHtml(d);
   if (!html) return reconciledCeiTitle(existing, date, mode);
 
-  const resolved = resolveLiturgyFromCeiHtml(html, d, mode);
+  const resolved = resolveLiturgyFromCeiHtml(html, d, mode, massFormula);
   const stub: LocalLiturgy = {
     date,
     date_label: (existing?.date_label as string) || italianDateLabel(d),
@@ -190,18 +196,20 @@ async function scrapeAndCacheCeiTitle(
     title: resolved.title,
     liturgical_color: resolved.liturgical_color,
     celebrationMode: mode,
+    ...(massFormula !== 1 ? { ceiMassFormula: massFormula } : {}),
   };
   const reconciled = reconcileLiturgyColors({ ...stub, celebrationMode: mode });
   const title = (reconciled.title || "").trim();
-  void saveLiturgy(date, reconciled, mode);
+  void saveLiturgy(date, reconciled, mode, massFormula);
   return title;
 }
 
 export async function resolveCeiCelebrationTitle(
   date: string,
   mode: CelebrationMode = "calendar_day",
+  massFormula: CeiMassFormula = 1,
 ): Promise<string> {
-  const meta = await resolveCeiCelebrationStripMeta(date, mode);
+  const meta = await resolveCeiCelebrationStripMeta(date, mode, massFormula);
   return meta.title;
 }
 
@@ -209,23 +217,24 @@ export async function resolveCeiCelebrationTitle(
 export async function resolveCeiCelebrationStripMeta(
   date: string,
   mode: CelebrationMode = "calendar_day",
+  massFormula: CeiMassFormula = 1,
 ): Promise<{ title: string; liturgicalColor: string }> {
   try {
-    const raw = await loadLiturgy(date, mode);
+    const raw = await loadLiturgy(date, mode, massFormula);
     if (raw && vigilCacheLooksValid(raw, mode, date)) {
       const reconciled = reconcileLiturgyColors({
         ...(raw as LocalLiturgy),
         date,
         celebrationMode: mode,
       });
-      const title = (reconciled.title || "").trim();
+      const title = stripCeiMassFormulaFromTitle((reconciled.title || "").trim());
       if (title) {
         return { title, liturgicalColor: (reconciled.liturgical_color || "").trim() };
       }
     }
 
-    await scrapeAndCacheCeiTitle(date, mode, raw);
-    const cached = await loadLiturgy(date, mode);
+    await scrapeAndCacheCeiTitle(date, mode, raw, massFormula);
+    const cached = await loadLiturgy(date, mode, massFormula);
     const reconciled = cached
       ? reconcileLiturgyColors({
           ...(cached as LocalLiturgy),
@@ -234,11 +243,11 @@ export async function resolveCeiCelebrationStripMeta(
         })
       : null;
     return {
-      title: reconciledCeiTitle(cached, date, mode),
+      title: stripCeiMassFormulaFromTitle(reconciledCeiTitle(cached, date, mode)),
       liturgicalColor: (reconciled?.liturgical_color || "").trim(),
     };
   } catch {
-    const raw = await loadLiturgy(date, mode);
+    const raw = await loadLiturgy(date, mode, massFormula);
     const reconciled = raw
       ? reconcileLiturgyColors({
           ...(raw as LocalLiturgy),
@@ -247,22 +256,60 @@ export async function resolveCeiCelebrationStripMeta(
         })
       : null;
     return {
-      title: reconciledCeiTitle(raw, date, mode),
+      title: stripCeiMassFormulaFromTitle(reconciledCeiTitle(raw, date, mode)),
       liturgicalColor: (reconciled?.liturgical_color || "").trim(),
     };
   }
 }
 
+/** Messa 1 / 2 / 3 se la pagina CEI ne offre almeno due. */
+export async function getCeiMassFormulaOptions(date: string): Promise<CeiMassFormulaOption[]> {
+  try {
+    const d = parseLocalDate(date);
+    const html = await fetchCeiHtml(d);
+    if (!html) return [];
+    const opts = listCeiMassFormulaOptionsFromHtml(html);
+    return opts.length >= 2 ? opts : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Salva in cache tutte le formule presenti sulla pagina CEI del giorno. */
+export async function cacheAllCeiMassFormulasForDate(date: string): Promise<void> {
+  const d = parseLocalDate(date);
+  const html = await fetchCeiHtml(d);
+  if (!html) return;
+  const opts = listCeiMassFormulaOptionsFromHtml(html);
+  if (opts.length < 2) return;
+  await Promise.all(
+    opts.map(async (o) => {
+      const existing = await loadLiturgy(date, "calendar_day", o.formula);
+      if (existing?.readings?.length) return;
+      const data = await getFullLiturgyByDateStr(date, "calendar_day", o.formula);
+      if (data?.readings?.length) {
+        await saveLiturgy(date, data, "calendar_day", o.formula);
+      }
+    }),
+  );
+}
+
 // ===== API pubblica (stesse signature della versione precedente) =====
 
 export const api = {
-  liturgyToday: (mode?: CelebrationMode) => liturgyForDateCached(todayStr(), mode ?? "calendar_day"),
-  liturgyForDate: (date: string, mode: CelebrationMode = "calendar_day") =>
-    liturgyForDateCached(date, mode),
+  liturgyToday: (mode?: CelebrationMode, massFormula?: CeiMassFormula) =>
+    liturgyForDateCached(todayStr(), mode ?? "calendar_day", massFormula ?? 1),
+  liturgyForDate: (
+    date: string,
+    mode: CelebrationMode = "calendar_day",
+    massFormula: CeiMassFormula = 1,
+  ) => liturgyForDateCached(date, mode, massFormula),
   liturgyForOptionalSaint: (date: string, saintId: string) =>
     getOptionalSaintFullLiturgy(date, saintId),
   resolveCeiCelebrationTitle,
   resolveCeiCelebrationStripMeta,
+  getCeiMassFormulaOptions,
+  cacheAllCeiMassFormulasForDate,
   warmLiturgyModes,
   refreshLiturgy: async (date: string) => {
     // Forza nuovo scraping ignorando cache

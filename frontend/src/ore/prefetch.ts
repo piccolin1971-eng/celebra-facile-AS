@@ -1,6 +1,7 @@
 import { getFullLiturgyByDateStr } from "../localLiturgy";
 import { nextDates, pruneOldLiturgies, saveLiturgy } from "../offlineCache";
 import type { PrefetchProgress } from "../api";
+import { cacheAllCeiMassFormulasForDate } from "../api";
 import { sleepMs } from "../fetchRetry";
 import { fetchDayHours } from "./scraper";
 import { hoursLookComplete, pruneOldHours } from "./cache";
@@ -40,6 +41,7 @@ export async function prefetchMassAndHours(
       }
       if (data) {
         await saveLiturgy(d, data);
+        await cacheAllCeiMassFormulasForDate(d);
         massOk = true;
       }
       if (includeHours) {

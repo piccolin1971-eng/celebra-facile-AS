@@ -9,7 +9,10 @@ import { api, Liturgy, Preface, EucharisticPrayer, MysteryAcclamation, SolemnBle
 import { PrefaceSelectorModal } from "../src/components/PrefaceSelectorModal";
 import { getOrazionaleSections, getPrayerById, suggestPrayerForLiturgy, OrazionalePrayer } from "../src/orazionale";
 import { splitFedeliTextIntoChunks } from "../src/orazionaleChunking";
-import { loadSession, saveSession, loadVotiveSession, saveVotiveSession, loadOptionalSaintSession, saveOptionalSaintSession, saveSessionForTarget, loadSessionForTarget, cleanupOldSessions, MassSession, parseCelebrationMode, messaRouteDateParam, messaRouteModeParam, messaRouteVotiveParam, messaRouteOptionalSaintParam, type CelebrationMode, type SessionTarget, DEFAULT_CONGEDO_ID } from "../src/massSession";
+import { loadSession, saveSession, loadVotiveSession, saveVotiveSession, loadOptionalSaintSession, saveOptionalSaintSession, saveSessionForTarget, loadSessionForTarget, cleanupOldSessions, MassSession, parseCelebrationMode, messaRouteDateParam, messaRouteModeParam, messaRouteVotiveParam, messaRouteOptionalSaintParam, messaRouteFormulaParam, type CelebrationMode, type SessionTarget, DEFAULT_CONGEDO_ID } from "../src/massSession";
+import { getPreferredCeiMassFormula, setPreferredCeiMassFormula } from "../src/ceiMassFormulaPreference";
+import { CeiMassFormulaChoice } from "../src/components/CeiMassFormulaChoice";
+import type { CeiMassFormula, CeiMassFormulaOption } from "../src/liturgyScraper";
 import { getOptionalSaintById } from "../src/optionalSaints";
 import { todayStr, parseLocalDate, italianDateLabel } from "../src/dateUtils";
 import { LiturgyDayBanner } from "../src/components/LiturgyDayBanner";
@@ -106,7 +109,7 @@ export default function MessaScreen() {
   }, []);
 
   const router = useRouter();
-  const params = useLocalSearchParams<{ date?: string; preface?: string; votive?: string; optionalSaint?: string; mode?: string }>();
+  const params = useLocalSearchParams<{ date?: string; preface?: string; votive?: string; optionalSaint?: string; mode?: string; formula?: string }>();
   const {
     colors,
     fontSize,
@@ -178,6 +181,10 @@ export default function MessaScreen() {
   );
   const [activeOptionalSaintId, setActiveOptionalSaintId] = useState<string | null>(null);
   const [celebrationMode, setCelebrationMode] = useState<CelebrationMode>("calendar_day");
+  const [ceiMassFormula, setCeiMassFormula] = useState<CeiMassFormula>(1);
+  const [massFormulaOptions, setMassFormulaOptions] = useState<CeiMassFormulaOption[]>([]);
+  const ceiMassFormulaRef = React.useRef<CeiMassFormula>(1);
+  ceiMassFormulaRef.current = ceiMassFormula;
 
   useEffect(() => {
     setPageKey("intro");
@@ -225,9 +232,16 @@ export default function MessaScreen() {
     if (activeOptionalSaintId && sessionDate) {
       return { kind: "optionalSaint", dateISO: sessionDate, saintId: activeOptionalSaintId };
     }
-    if (sessionDate) return { kind: "calendar", dateISO: sessionDate, mode: celebrationMode };
+    if (sessionDate) {
+      return {
+        kind: "calendar",
+        dateISO: sessionDate,
+        mode: celebrationMode,
+        ...(ceiMassFormula !== 1 ? { massFormula: ceiMassFormula } : {}),
+      };
+    }
     return null;
-  }, [activeVotiveId, activeOptionalSaintId, sessionDate, celebrationMode]);
+  }, [activeVotiveId, activeOptionalSaintId, sessionDate, celebrationMode, ceiMassFormula]);
 
   const styles = makeStyles(colors, fontSize, fontFamilyId, isBold, lineSpacing);
 
@@ -358,8 +372,8 @@ export default function MessaScreen() {
       }
       try {
         const [saved, lit] = await Promise.all([
-          loadSession(sessionDate, newMode),
-          api.liturgyForDate(sessionDate, newMode),
+          loadSession(sessionDate, newMode, ceiMassFormulaRef.current),
+          api.liturgyForDate(sessionDate, newMode, ceiMassFormulaRef.current),
         ]);
         const reconciled = reconcileLiturgyColors({ ...lit, celebrationMode: newMode });
         if (newMode === "calendar_day") {
@@ -394,10 +408,46 @@ export default function MessaScreen() {
     [sessionDate, switchCelebrationMode],
   );
 
+  const handleSelectMassFormula = useCallback(
+    async (formula: CeiMassFormula) => {
+      if (!sessionDate || formula === ceiMassFormulaRef.current) return;
+      suppressSessionSaveRef.current = true;
+      setCeiMassFormula(formula);
+      await setPreferredCeiMassFormula(sessionDate, formula);
+      try {
+        const mode = celebrationModeRef.current;
+        const [saved, lit] = await Promise.all([
+          loadSession(sessionDate, mode, formula),
+          api.liturgyForDate(sessionDate, mode, formula),
+        ]);
+        const reconciled = reconcileLiturgyColors({ ...lit, celebrationMode: mode });
+        setLiturgy(reconciled);
+        if (mode === "calendar_day") {
+          setCalendarDayLiturgy(reconciled);
+        }
+        if (saved) {
+          applySessionFromStorageRef.current(saved);
+          applyLiturgyChoicesFor(reconciled);
+        } else {
+          resetMassSessionChoicesRef.current();
+          applyLiturgyChoicesFor(reconciled);
+        }
+      } catch (e) {
+        if (__DEV__) console.log("handleSelectMassFormula err:", e);
+      } finally {
+        setTimeout(() => {
+          suppressSessionSaveRef.current = false;
+        }, 0);
+      }
+    },
+    [sessionDate, applyLiturgyChoicesFor],
+  );
+
   const routeDateParam = messaRouteDateParam(params);
   const routeModeParam = messaRouteModeParam(params);
   const routeVotiveParam = messaRouteVotiveParam(params);
   const routeOptionalSaintParam = messaRouteOptionalSaintParam(params);
+  const routeFormulaParam = messaRouteFormulaParam(params);
   const routePrefaceParam = typeof params.preface === "string" ? params.preface : "";
 
   useEffect(() => {
@@ -584,14 +634,23 @@ export default function MessaScreen() {
         setActiveOptionalSaintId(null);
         const dateParam = routeDateParam;
         const dateKey = dateParam || todayStr();
+        const preferredFormula = await getPreferredCeiMassFormula(dateKey);
+        const massFormula =
+          routeFormulaParam !== 1 ? routeFormulaParam : preferredFormula;
+        if (cancelled || gen !== liturgyLoadGenRef.current) return;
+        setCeiMassFormula(massFormula);
+        await setPreferredCeiMassFormula(dateKey, massFormula);
+        const formulaOpts = await api.getCeiMassFormulaOptions(dateKey);
+        if (cancelled || gen !== liturgyLoadGenRef.current) return;
+        setMassFormulaOptions(formulaOpts);
         const eveningForDate = getMassEveningChoiceContextForISO(dateKey);
         const initialMode = routeModeParam
           ? coerceCelebrationMode(parseCelebrationMode(routeModeParam), eveningForDate)
           : defaultCelebrationModeForDate(parseLocalDate(dateKey), eveningForDate);
         const [lit, parts, pr, pe, acc, bless] = await Promise.all([
           dateParam
-            ? api.liturgyForDate(dateParam, initialMode)
-            : api.liturgyToday(initialMode),
+            ? api.liturgyForDate(dateParam, initialMode, massFormula)
+            : api.liturgyToday(initialMode, massFormula),
           api.fixedParts(),
           api.prefaces(),
           api.eucharisticPrayers(),
@@ -656,14 +715,14 @@ export default function MessaScreen() {
         if (!userPickedCelebrationModeRef.current) {
           setCelebrationMode(modeToApply);
         }
-        const saved = await loadSession(resolvedDateKey, modeToApply);
+        const saved = await loadSession(resolvedDateKey, modeToApply, massFormula);
         if (cancelled || gen !== liturgyLoadGenRef.current) return;
         const vigilCtx = eveningCtxForMode;
         if (vigilCtx) {
           const calLit =
             modeToApply === "calendar_day"
               ? reconciledInitial
-              : await api.liturgyForDate(resolvedDateKey, "calendar_day");
+              : await api.liturgyForDate(resolvedDateKey, "calendar_day", massFormula);
           if (cancelled || gen !== liturgyLoadGenRef.current) return;
           setCalendarDayLiturgy(
             reconcileLiturgyColors({ ...calLit, celebrationMode: "calendar_day" }),
@@ -683,7 +742,7 @@ export default function MessaScreen() {
           setCalendarDayLiturgy(null);
         }
         if (modeToApply !== initialMode) {
-          const modeLit = await api.liturgyForDate(resolvedDateKey, modeToApply);
+          const modeLit = await api.liturgyForDate(resolvedDateKey, modeToApply, massFormula);
           if (cancelled || gen !== liturgyLoadGenRef.current) return;
           activeReconciled = reconcileLiturgyColors({
             ...modeLit,
@@ -2037,6 +2096,15 @@ export default function MessaScreen() {
                     dateTestID="mass-date"
                     titleTestID="mass-celebration-title"
                   />
+                  {massFormulaOptions.length >= 2 ? (
+                    <CeiMassFormulaChoice
+                      options={massFormulaOptions}
+                      activeFormula={ceiMassFormula}
+                      onPick={(f) => void handleSelectMassFormula(f)}
+                      colors={colors}
+                      fontSize={fontSize}
+                    />
+                  ) : null}
                 </View>
               )}
               <View

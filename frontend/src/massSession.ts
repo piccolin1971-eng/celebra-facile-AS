@@ -12,6 +12,9 @@
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+import type { CeiMassFormula } from "./liturgyScraper";
+import { parseCeiMassFormula } from "./ceiMassFormulaPreference";
+
 
 
 /** Modalità liturgica per la preparazione / celebrazione. */
@@ -89,6 +92,11 @@ export function messaRouteOptionalSaintParam(params: {
   return routeParamStr(params.optionalSaint) ?? routeSearchParam("optionalSaint");
 }
 
+export function messaRouteFormulaParam(params: { formula?: string | string[] }): CeiMassFormula {
+  const raw = routeParamStr(params.formula) ?? routeSearchParam("formula");
+  return parseCeiMassFormula(raw);
+}
+
 
 
 export type MassSession = {
@@ -158,17 +166,21 @@ export type MassSession = {
    */
   prepSource?: "prepara" | "subito";
 
+  /** Messa 1 / 2 / 3 (solo calendar_day, es. defunti). */
+  ceiMassFormula?: CeiMassFormula;
+
 };
 
 export type SessionTarget =
-  | { kind: "calendar"; dateISO: string; mode: CelebrationMode }
+  | { kind: "calendar"; dateISO: string; mode: CelebrationMode; massFormula?: CeiMassFormula }
   | { kind: "votive"; votiveId: string }
   | { kind: "optionalSaint"; dateISO: string; saintId: string };
 
 export function sessionTargetKey(target: SessionTarget): string {
   if (target.kind === "votive") return `v:${target.votiveId}`;
   if (target.kind === "optionalSaint") return `o:${target.dateISO}:${target.saintId}`;
-  return `d:${target.dateISO}:${target.mode}`;
+  const f = target.massFormula && target.massFormula !== 1 ? `:m${target.massFormula}` : "";
+  return `d:${target.dateISO}:${target.mode}${f}`;
 }
 
 
@@ -181,9 +193,11 @@ const MAX_KEPT_SESSIONS = 21;
 
 
 
-const sessionKey = (dateISO: string, mode: CelebrationMode) =>
-
-  `${KEY_PREFIX}${dateISO}_${mode}`;
+const sessionKey = (dateISO: string, mode: CelebrationMode, massFormula: CeiMassFormula = 1) => {
+  const base = `${KEY_PREFIX}${dateISO}_${mode}`;
+  if (mode === "calendar_day" && massFormula !== 1) return `${base}_m${massFormula}`;
+  return base;
+};
 
 const votiveSessionKey = (votiveId: string) => `${KEY_PREFIX}votive_${votiveId}`;
 
@@ -252,13 +266,15 @@ export async function loadSession(
 
   mode: CelebrationMode = "calendar_day",
 
+  massFormula: CeiMassFormula = 1,
+
 ): Promise<MassSession | null> {
 
   try {
 
     await migrateLegacySession(dateISO);
 
-    const raw = await AsyncStorage.getItem(sessionKey(dateISO, mode));
+    const raw = await AsyncStorage.getItem(sessionKey(dateISO, mode, massFormula));
 
     if (!raw) return null;
 
@@ -271,6 +287,8 @@ export async function loadSession(
       celebrationMode: parseCelebrationMode(parsed.celebrationMode ?? mode),
 
       liturgyKind: parsed.liturgyKind ?? "calendar",
+
+      ceiMassFormula: parseCeiMassFormula(parsed.ceiMassFormula ?? massFormula),
 
     };
 
@@ -306,7 +324,7 @@ export async function loadSessionForTarget(target: SessionTarget): Promise<MassS
   if (target.kind === "optionalSaint") {
     return loadOptionalSaintSession(target.dateISO, target.saintId);
   }
-  return loadSession(target.dateISO, target.mode);
+  return loadSession(target.dateISO, target.mode, target.massFormula ?? 1);
 }
 
 export async function saveVotiveSession(votiveId: string, session: MassSession): Promise<void> {
@@ -336,7 +354,7 @@ export async function saveSessionForTarget(
     await saveOptionalSaintSession(target.dateISO, target.saintId, session);
     return;
   }
-  await saveSession(target.dateISO, target.mode, session);
+  await saveSession(target.dateISO, target.mode, session, target.massFormula ?? 1);
 }
 
 export async function loadOptionalSaintSession(
@@ -397,6 +415,18 @@ export function filterHomeSummarySessions(sessions: MassSession[]): MassSession[
   return sessions.filter(isHomeSummarySession);
 }
 
+/** In giorni con Messa 1–3, mostra solo la preparazione della formula scelta. */
+export function filterSessionsForMassFormula(
+  sessions: MassSession[],
+  formula: CeiMassFormula,
+): MassSession[] {
+  return sessions.filter((s) => {
+    const mode = s.celebrationMode ?? "calendar_day";
+    if (mode !== "calendar_day") return true;
+    return (s.ceiMassFormula ?? 1) === formula;
+  });
+}
+
 function celebrationModeSortIndex(mode: CelebrationMode): number {
   if (mode === "calendar_day") return 0;
   return 1;
@@ -426,6 +456,13 @@ export async function loadSessionsForDate(dateISO: string): Promise<MassSession[
     const s = await loadSession(dateISO, mode);
 
     if (s) found.push(s);
+
+    if (mode === "calendar_day") {
+      for (const formula of [2, 3] as const) {
+        const alt = await loadSession(dateISO, mode, formula);
+        if (alt) found.push(alt);
+      }
+    }
 
   }
 
@@ -483,6 +520,8 @@ export async function saveSession(
 
   session: MassSession,
 
+  massFormula: CeiMassFormula = 1,
+
 ): Promise<void> {
 
   try {
@@ -493,11 +532,15 @@ export async function saveSession(
 
       celebrationMode: mode,
 
+      ...(mode === "calendar_day" && massFormula !== 1
+        ? { ceiMassFormula: massFormula }
+        : {}),
+
       preparedAt: session.preparedAt ?? Date.now(),
 
     };
 
-    await AsyncStorage.setItem(sessionKey(dateISO, mode), JSON.stringify(payload));
+    await AsyncStorage.setItem(sessionKey(dateISO, mode, massFormula), JSON.stringify(payload));
 
   } catch (e) {
 
@@ -517,11 +560,13 @@ export async function clearSession(
 
   mode: CelebrationMode = "calendar_day",
 
+  massFormula: CeiMassFormula = 1,
+
 ): Promise<void> {
 
   try {
 
-    await AsyncStorage.removeItem(sessionKey(dateISO, mode));
+    await AsyncStorage.removeItem(sessionKey(dateISO, mode, massFormula));
 
     const remaining = await loadSessionsForDate(dateISO);
 

@@ -74,12 +74,13 @@ export function buildDefaultMassSession(args: {
 export async function ensureQuickCelebrateSession(
   dateISO: string,
   mode: CelebrationMode,
+  massFormula: import("./liturgyScraper").CeiMassFormula = 1,
 ): Promise<MassSession> {
-  const existing = await loadSession(dateISO, mode);
+  const existing = await loadSession(dateISO, mode, massFormula);
   if (existing) return existing;
 
   const [lit, pr, bless] = await Promise.all([
-    api.liturgyForDate(dateISO, mode),
+    api.liturgyForDate(dateISO, mode, massFormula),
     api.prefaces(),
     api.solemnBlessings(),
   ]);
@@ -90,8 +91,12 @@ export async function ensureQuickCelebrateSession(
     solemnBlessings: bless.blessings || [],
     eveningCtx: getMassEveningChoiceContextForISO(dateISO),
   });
-  await saveSession(dateISO, mode, session);
-  return session;
+  const withFormula: MassSession =
+    mode === "calendar_day" && massFormula !== 1
+      ? { ...session, ceiMassFormula: massFormula }
+      : session;
+  await saveSession(dateISO, mode, withFormula, massFormula);
+  return withFormula;
 }
 
 export async function ensureQuickCelebrateOptionalSaintSession(
