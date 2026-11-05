@@ -544,6 +544,8 @@ export default function OreLeggi() {
             fontSize={fontSize}
             lineHeight={lineHeight}
             textColor={colors.textPrimary}
+            rubricColor={colors.rubrics}
+            goldColor={colors.liturgicalWhite}
             headFontFamily={headFont.fontFamily}
             headFontWeight={headFont.fontWeight}
             onBlockLayout={startAtHymn ? onBlockLayout : undefined}

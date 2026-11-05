@@ -9,8 +9,62 @@ import {
 } from "./liturgyTypography";
 import { setAppHapticEnabled, triggerAppHaptic } from "./appHaptics";
 
-type ThemeMode = "light" | "dark" | "parchment" | "slate";
+export type ThemeMode =
+  | "light"
+  | "dark"
+  | "parchment"
+  | "slate"
+  | "pesca"
+  | "bluNotte"
+  | "notteMorbida";
 type ReadingMode = "scroll" | "tap";
+
+export const THEME_CHOICES: {
+  id: ThemeMode;
+  label: string;
+  hint: string;
+  icon: "document-text" | "moon" | "layers-outline" | "sunny-outline" | "water-outline" | "contrast-outline";
+}[] = [
+  { id: "parchment", label: "Pergamena", hint: "Avorio, lettura di giorno", icon: "document-text" },
+  { id: "pesca", label: "Pesca", hint: "Fondo caldo, testo marrone", icon: "sunny-outline" },
+  { id: "dark", label: "Scuro", hint: "Nero OLED, contrasto netto", icon: "moon" },
+  { id: "slate", label: "Ardesia", hint: "Grigio scuro morbido", icon: "layers-outline" },
+  { id: "bluNotte", label: "Blu notte", hint: "Blu profondo, testo crema", icon: "water-outline" },
+  { id: "notteMorbida", label: "Notte morbida", hint: "Quasi-nero, bianco sporco", icon: "contrast-outline" },
+];
+
+const PERSISTED_THEMES: ThemeMode[] = [
+  "dark",
+  "parchment",
+  "slate",
+  "pesca",
+  "bluNotte",
+  "notteMorbida",
+];
+
+/** Temi scuri morbidi: anteprima accenti liturgici nascosta (come ardesia). */
+export function themeHidesLiturgicalPreview(theme: ThemeMode): boolean {
+  return theme === "slate" || theme === "bluNotte" || theme === "notteMorbida";
+}
+
+export function themeMuteFillRatio(theme: ThemeMode): number {
+  switch (theme) {
+    case "dark":
+      return 0.32;
+    case "parchment":
+      return 0.16;
+    case "pesca":
+      return 0.14;
+    case "slate":
+      return 0.22;
+    case "bluNotte":
+      return 0.24;
+    case "notteMorbida":
+      return 0.28;
+    default:
+      return 0.12;
+  }
+}
 
 /** Variante tema Ardesia (solo con theme === "slate"). */
 export type SlateVariant = "blu" | "pietra";
@@ -319,6 +373,79 @@ const getColors = (
   if (theme === "slate") {
     return getSlateColors(slateVariant, highContrast);
   }
+  if (theme === "pesca") {
+    return {
+      background: "#F6E2D2",
+      surface: "#FAEBE0",
+      bgSecondary: "#EDD4C4",
+      border: "#D4B8A4",
+      textPrimary: highContrast ? "#241408" : "#3A2418",
+      textSecondary: "#6B5144",
+      rubrics: "#A33B2E",
+      primary: "#8A5A12",
+      focus: "#8A5A12",
+      liturgicalGreen: "#1B5E20",
+      liturgicalRed: "#A33B2E",
+      liturgicalPurple: "#4A148C",
+      liturgicalWhite: "#8A5A12",
+      liturgicalRose: "#AD1457",
+      ...ACCENT_PARCHMENT,
+    };
+  }
+  if (theme === "bluNotte") {
+    return {
+      background: "#152033",
+      surface: "#1A2840",
+      bgSecondary: "#1E3050",
+      border: "#2A4060",
+      textPrimary: highContrast ? "#F5F0E4" : "#E7E2D4",
+      textSecondary: "#B4C0CE",
+      rubrics: "#E0A398",
+      primary: "#7EB0C8",
+      focus: "#D4C48A",
+      ...(highContrast
+        ? {
+            textPrimary: "#F8F4E8",
+            textSecondary: "#D8E0EA",
+            border: "#B4C0CE",
+          }
+        : {}),
+      liturgicalGreen: "#7FB394",
+      liturgicalRed: "#E08A7A",
+      liturgicalPurple: "#C9A8D4",
+      liturgicalWhite: "#D4C48A",
+      liturgicalRose: "#E08A9A",
+      ...ACCENT_SLATE,
+      ...(highContrast ? { markerCelebrant: "#E8D48A", markerAssembly: "#A8D4F0" } : {}),
+    };
+  }
+  if (theme === "notteMorbida") {
+    return {
+      background: "#141414",
+      surface: "#1A1A1A",
+      bgSecondary: "#222222",
+      border: "#3A3832",
+      textPrimary: highContrast ? "#F5F2EA" : "#E6E2DA",
+      textSecondary: "#B7B3AA",
+      rubrics: "#E09A90",
+      primary: "#A8B0A0",
+      focus: "#CDB87A",
+      ...(highContrast
+        ? {
+            textPrimary: "#F8F6F0",
+            textSecondary: "#DDD8CF",
+            border: "#C5C0B6",
+          }
+        : {}),
+      liturgicalGreen: "#8FA892",
+      liturgicalRed: "#E09A90",
+      liturgicalPurple: "#C9A8D4",
+      liturgicalWhite: "#CDB87A",
+      liturgicalRose: "#E08A9A",
+      ...ACCENT_SLATE,
+      ...(highContrast ? { markerCelebrant: "#E8D48A", markerAssembly: "#B8C8B0" } : {}),
+    };
+  }
   return {
     background: highContrast ? "#FFFFFF" : "#FDFBF7",
     surface: "#FFFFFF",
@@ -375,8 +502,8 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         } catch {}
         if (saved) {
           const s = JSON.parse(saved);
-          if (s.theme === "dark" || s.theme === "parchment" || s.theme === "slate") {
-            setThemeState(s.theme);
+          if (PERSISTED_THEMES.includes(s.theme as ThemeMode)) {
+            setThemeState(s.theme as ThemeMode);
           } else if (s.theme === "light") {
             // Tema chiaro rimosso dalle Impostazioni: migra a scuro.
             setThemeState("dark");

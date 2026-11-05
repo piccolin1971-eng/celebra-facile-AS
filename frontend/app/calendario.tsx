@@ -136,9 +136,9 @@ function dayCardBorderColor(
   colors: ReturnType<typeof useSettings>["colors"],
 ): string {
   if (highContrast) return colors.border;
-  if (theme === "dark") return "#666666";
-  if (theme === "slate") return colors.border;
-  if (theme === "parchment") return colors.textSecondary;
+  if (theme === "dark" || theme === "notteMorbida") return "#666666";
+  if (theme === "slate" || theme === "bluNotte") return colors.border;
+  if (theme === "parchment" || theme === "pesca") return colors.textSecondary;
   return "#B8B3A8";
 }
 

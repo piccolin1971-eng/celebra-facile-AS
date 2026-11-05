@@ -7,9 +7,11 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Platform,
+  ScrollView,
 } from "react-native";
 import type { AppUpdateInfo } from "../appUpdate";
 import { currentAppVersionName } from "../appUpdate";
+import { getReleaseHighlights } from "../releaseHighlights";
 
 type Props = {
   visible: boolean;
@@ -32,6 +34,7 @@ const GOLD = "#E0B429";
 export function AppUpdateModal({ visible, info, busy, onUpdate, onLater, colors }: Props) {
   if (!info) return null;
   const styles = makeStyles(colors);
+  const highlights = getReleaseHighlights(info.versionCode);
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onLater}>
@@ -42,8 +45,22 @@ export function AppUpdateModal({ visible, info, busy, onUpdate, onLater, colors 
           <Text style={styles.versions}>
             {currentAppVersionName()} → {info.versionName}
           </Text>
-          {info.body ? (
-            <Text style={styles.body} numberOfLines={5}>
+          {highlights.length > 0 ? (
+            <View style={styles.highlightsWrap} testID="app-update-highlights">
+              <Text style={styles.highlightsTitle}>Novità in questa versione</Text>
+              <ScrollView style={styles.highlightsScroll} nestedScrollEnabled>
+                {highlights.map((line, i) => (
+                  <View key={`${i}-${line}`} style={styles.highlightRow}>
+                    <Text style={styles.bullet} accessibilityElementsHidden importantForAccessibility="no">
+                      •
+                    </Text>
+                    <Text style={styles.highlightText}>{line}</Text>
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
+          ) : info.body ? (
+            <Text style={styles.body} numberOfLines={8}>
               {info.body}
             </Text>
           ) : (
@@ -132,6 +149,42 @@ function makeStyles(colors: Props["colors"]) {
       lineHeight: 24,
       marginBottom: 10,
       opacity: 0.95,
+    },
+    highlightsWrap: {
+      marginBottom: 12,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+      borderRadius: 10,
+      backgroundColor: "rgba(255,255,255,0.06)",
+      borderWidth: 1,
+      borderColor: colors.border || "#2a3140",
+    },
+    highlightsTitle: {
+      color: GOLD,
+      fontSize: 13,
+      fontWeight: "800",
+      letterSpacing: 0.3,
+      marginBottom: 8,
+    },
+    highlightsScroll: {
+      maxHeight: 160,
+    },
+    highlightRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      marginBottom: 6,
+    },
+    bullet: {
+      color: colors.textSecondary,
+      fontSize: 16,
+      lineHeight: 22,
+      width: 18,
+    },
+    highlightText: {
+      flex: 1,
+      color: colors.textPrimary,
+      fontSize: 16,
+      lineHeight: 22,
     },
     hintLabel: {
       color: colors.textSecondary,

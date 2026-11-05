@@ -20,6 +20,10 @@ type Props = {
   fontSize: number;
   lineHeight: number;
   textColor: string;
+  /** Rubriche e segni *† in Ore; default rosso fisso legacy. */
+  rubricColor?: string;
+  /** Titoli salmo, croce di congiunzione; default oro fisso legacy. */
+  goldColor?: string;
   headFontFamily?: string;
   headFontWeight?: AppFontWeight;
   afterFirstAnt?: React.ReactNode;
@@ -108,11 +112,15 @@ function LitLine({
   body,
   hang,
   responseBullet,
+  rubricColor,
+  goldColor,
 }: {
   text: string;
   body: { fontFamily: string; fontSize: number; lineHeight: number; color: string };
   hang?: number;
   responseBullet?: boolean;
+  rubricColor: string;
+  goldColor: string;
 }) {
   const ant = /\s*\(Ant\.\)\.?\s*$/i.test(text);
   const core = text.replace(/\s*\(Ant\.\)\.?\s*$/i, "");
@@ -126,7 +134,7 @@ function LitLine({
       <Text style={[body, pad]}>
         <Text
           style={[
-            rubricStyle(body.fontSize),
+            rubricStyle(body.fontSize, rubricColor),
             {
               fontFamily: FONT,
               fontSize: bulletSize,
@@ -136,34 +144,37 @@ function LitLine({
         >
           ●{" "}
         </Text>
-        {colorStars(rest, body)}
-        {ant ? <Text style={rubricStyle(body.fontSize)}> (Ant.).</Text> : null}
+        {colorStars(rest, body, rubricColor, goldColor)}
+        {ant ? <Text style={rubricStyle(body.fontSize, rubricColor)}> (Ant.).</Text> : null}
       </Text>
     );
   }
   return (
     <Text style={[body, pad]}>
       {lab ? (
-        <Text style={rubricStyle(body.fontSize)}>{lab[1].replace(/\s+$/, "")} </Text>
+        <Text style={rubricStyle(body.fontSize, rubricColor)}>{lab[1].replace(/\s+$/, "")} </Text>
       ) : null}
-      {colorStars(rest, body)}
-      {ant ? <Text style={rubricStyle(body.fontSize)}> (Ant.).</Text> : null}
+      {colorStars(rest, body, rubricColor, goldColor)}
+      {ant ? <Text style={rubricStyle(body.fontSize, rubricColor)}> (Ant.).</Text> : null}
     </Text>
   );
 }
 
-function rubricStyle(fontSize: number) {
+function rubricStyle(fontSize: number, rubricColor: string) {
   return {
-    color: RUBRIC,
+    color: rubricColor,
     fontFamily: FONT_IT,
     fontSize,
     fontWeight: "700" as const,
   };
 }
 
-function colorStars(text: string, body: { fontFamily: string; fontSize: number; color: string }) {
-  // Lo spazio unificatore tiene *† attaccato all’ultima parola: a capo non resta un segno solo.
-  // Il pezzo vuoto dopo lo split, su schermo stretto, diventava una riga bianca sotto l’asterisco.
+function colorStars(
+  text: string,
+  body: { fontFamily: string; fontSize: number; color: string },
+  rubricColor: string,
+  goldColor: string,
+) {
   const glued = text
     .replace(/ ([*†])/g, "\u00A0$1")
     .replace(new RegExp(` (${JOIN_CROSS_MARK})`, "g"), `\u00A0${JOIN_CROSS_MARK}`);
@@ -172,14 +183,14 @@ function colorStars(text: string, body: { fontFamily: string; fontSize: number; 
   return parts.map((p, i) => {
     if (p === JOIN_CROSS_MARK) {
       return (
-        <Text key={i} style={{ color: GOLD_TITLE, fontFamily: body.fontFamily, fontSize: body.fontSize, fontWeight: "700" }}>
+        <Text key={i} style={{ color: goldColor, fontFamily: body.fontFamily, fontSize: body.fontSize, fontWeight: "700" }}>
           †
         </Text>
       );
     }
     if (p === "*" || p === "†") {
       return (
-        <Text key={i} style={rubricStyle(body.fontSize)}>
+        <Text key={i} style={rubricStyle(body.fontSize, rubricColor)}>
           {p}
         </Text>
       );
@@ -198,6 +209,8 @@ export function OreBlocksView({
   fontSize,
   lineHeight,
   textColor,
+  rubricColor = RUBRIC,
+  goldColor = GOLD_TITLE,
   headFontFamily,
   headFontWeight,
   afterFirstAnt,
@@ -254,6 +267,8 @@ export function OreBlocksView({
           titleLh,
           textColor,
           inPreces,
+          rubricColor,
+          goldColor,
         );
         if (inPrecesSection && b.k === "tone") inPreces = true;
         if (b.k === "rubric" && /ant/i.test(b.lab) && !antSeen) {
@@ -288,6 +303,8 @@ function renderBlock(
   titleLh: number,
   textColor: string,
   inPreces: boolean,
+  rubricColor: string,
+  goldColor: string,
 ) {
   const em = (n: number) => Math.round(fontSize * n);
 
@@ -299,7 +316,7 @@ function renderBlock(
           fontFamily: FONT,
           fontSize: Math.round(fontSize * 0.88),
           lineHeight: titleLh,
-          color: GOLD_TITLE,
+          color: goldColor,
           textAlign: "left",
           marginTop: em(0.85),
           marginBottom: em(0.35),
@@ -318,7 +335,7 @@ function renderBlock(
             fontFamily: FONT,
             fontSize: Math.round(fontSize * 0.95),
             lineHeight: titleLh,
-            color: GOLD_TITLE,
+            color: goldColor,
             textAlign: "center",
             marginBottom: 2,
           }}
@@ -331,7 +348,7 @@ function renderBlock(
               fontFamily: FONT,
               fontSize: Math.round(fontSize * 0.88),
               lineHeight: titleLh,
-              color: GOLD_TITLE,
+              color: goldColor,
               textAlign: "center",
               marginBottom: em(0.28),
             }}
@@ -404,7 +421,7 @@ function renderBlock(
             fontFamily: FONT,
             fontSize: Math.round(fontSize * 0.92),
             lineHeight: Math.round(fontSize * 1.25),
-            color: RUBRIC,
+            color: rubricColor,
             textAlign: "center",
             marginBottom: emRh(0.2),
           }}
@@ -421,7 +438,7 @@ function renderBlock(
             fontFamily: FONT,
             fontSize: Math.round(fontSize * 0.95),
             lineHeight: titleLh,
-            color: RUBRIC,
+            color: rubricColor,
             textAlign: "center",
             marginTop: emRh(0.25),
             marginBottom: emRh(0.55),
@@ -439,7 +456,7 @@ function renderBlock(
           fontFamily: FONT_IT,
           fontSize: Math.round(fontSize * 0.78),
           lineHeight: Math.round(fontSize * 1.4 * 1.1),
-          color: RUBRIC,
+          color: rubricColor,
           textAlign: "center",
           marginBottom: emRh(0.45),
         }}
@@ -460,7 +477,7 @@ function renderBlock(
           fontFamily: FONT_IT,
           fontSize: Math.round(fontSize * 0.78),
           lineHeight: Math.round(fontSize * 1.4 * 1.1),
-          color: editionRef ? RUBRIC : SUB,
+          color: editionRef ? rubricColor : SUB,
           textAlign: "center",
           marginBottom: em(0.5),
         }}
@@ -472,8 +489,8 @@ function renderBlock(
   if (b.k === "rubric") {
     return (
       <Text key={i} style={[body, { marginTop: em(0.45), marginBottom: em(0.35) }]}>
-        {b.lab ? <Text style={rubricStyle(fontSize)}>{b.lab} </Text> : null}
-        <Text style={body}>{colorStars(b.text, body)}</Text>
+        {b.lab ? <Text style={rubricStyle(fontSize, rubricColor)}>{b.lab} </Text> : null}
+        <Text style={body}>{colorStars(b.text, body, rubricColor, goldColor)}</Text>
       </Text>
     );
   }
@@ -487,7 +504,7 @@ function renderBlock(
           fontSize,
           lineHeight,
           fontStyle: cei ? "italic" : "normal",
-          color: RUBRIC,
+          color: rubricColor,
           marginVertical: em(cei ? 0.85 : 0.7),
         }}
       >
@@ -505,6 +522,8 @@ function renderBlock(
             body={body}
             hang={lineHang(b, j)}
             responseBullet={inPreces}
+            rubricColor={rubricColor}
+            goldColor={goldColor}
           />
         ))}
       </View>
@@ -518,7 +537,7 @@ function renderBlock(
             fontFamily: FONT,
             fontSize: Math.round(fontSize * 0.88),
             lineHeight: titleLh,
-            color: GOLD_TITLE,
+            color: goldColor,
             textAlign: "left",
             marginTop: em(0.85),
             marginBottom: em(0.35),
@@ -534,7 +553,7 @@ function renderBlock(
                   fontFamily: FONT_IT,
                   fontSize,
                   lineHeight,
-                  color: RUBRIC,
+                  color: rubricColor,
                   marginVertical: em(0.7),
                 }}
               >
@@ -566,7 +585,7 @@ function renderBlock(
                   fontFamily: FONT_IT,
                   fontSize,
                   lineHeight,
-                  color: RUBRIC,
+                  color: rubricColor,
                   marginVertical: em(0.7),
                 }}
               >
@@ -609,7 +628,7 @@ function renderBlock(
               fontFamily: FONT_IT,
               fontSize: Math.round(fontSize * 1.2),
               lineHeight: Math.round(lineHeight * 1.2),
-              color: TONE_REFRAIN,
+              color: goldColor,
               marginTop: em(0.4),
             }}
           >

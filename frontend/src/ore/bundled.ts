@@ -225,7 +225,7 @@ il gregge che egli conduce.
 
 Ascoltate oggi la sua voce: †
 «Non indurite il cuore, *
-† come a Merìba, come nel giorno di Massa
+come a Merìba, come nel giorno di Massa
 nel deserto,
 dove mi tentarono i vostri padri: †
 mi misero alla prova, *

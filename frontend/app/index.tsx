@@ -3,7 +3,7 @@ import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, Platform, 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useSettings } from "../src/SettingsContext";
+import { useSettings, themeMuteFillRatio } from "../src/SettingsContext";
 import { api, Preface, EucharisticPrayer, PrefetchProgress } from "../src/api";
 import { localDateStr, italianDateLabel, italianMonthName, italianWeekdayName, addDays, dayOffsetFromToday, parseLocalDate } from "../src/dateUtils";
 import { LiturgyDayBanner } from "../src/components/LiturgyDayBanner";
@@ -182,8 +182,7 @@ export default function Home() {
   });
   const [optionalLinePick, setOptionalLinePick] = useState<OptionalSaintLinePick | null>(null);
 
-  const muteFill = (hex: string) =>
-    mixHexTowardBlack(hex, theme === "dark" ? 0.32 : theme === "parchment" ? 0.16 : theme === "slate" ? 0.22 : 0.12);
+  const muteFill = (hex: string) => mixHexTowardBlack(hex, themeMuteFillRatio(theme));
 
   const selectedDate = parseLocalDate(selectedDateISO);
   const selectedSeasonName = getLiturgicalSeason(selectedDate).season;

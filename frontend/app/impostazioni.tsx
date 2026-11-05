@@ -4,7 +4,7 @@ import Constants from "expo-constants";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useSettings, PARCHMENT_TONE_MIN, PARCHMENT_TONE_MAX, SLATE_VARIANT_OPTIONS } from "../src/SettingsContext";
+import { useSettings, PARCHMENT_TONE_MIN, PARCHMENT_TONE_MAX, SLATE_VARIANT_OPTIONS, THEME_CHOICES, themeHidesLiturgicalPreview } from "../src/SettingsContext";
 import { LINE_SPACING_MIN, LINE_SPACING_MAX, LINE_SPACING_STEP, formatLineSpacingValue } from "../src/liturgyTypography";
 import { SettingsStepperSlider } from "../src/components/SettingsStepperSlider";
 import { FONT_OPTIONS, FontFamilyId, resolveBodyFont } from "../src/fontFamily";
@@ -282,37 +282,36 @@ export default function Impostazioni() {
 
         <View style={styles.section} testID="section-theme">
           <Text style={styles.sectionTitle}>Tema</Text>
+          <Text style={styles.sectionDesc}>
+            Pergamena e Pesca per il giorno; Scuro per OLED; Ardesia, Blu notte e Notte morbida per leggere senza abbagliamento.
+          </Text>
           <View style={styles.themeRow}>
-            <TouchableOpacity
-              style={[styles.themeCard, theme === "parchment" && styles.themeCardActive]}
-              onPress={() => setTheme("parchment")}
-              testID="btn-theme-parchment"
-              accessibilityLabel="Tema pergamena"
-            >
-              <Ionicons name="document-text" size={scaledFont(28)} color={theme === "parchment" ? colors.primary : colors.textSecondary} />
-              <Text style={[styles.themeCardText, theme === "parchment" && { color: colors.primary }]}>Pergamena</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.themeCard, theme === "dark" && styles.themeCardActive]}
-              onPress={() => setTheme("dark")}
-              testID="btn-theme-dark"
-              accessibilityLabel="Tema scuro"
-            >
-              <Ionicons name="moon" size={scaledFont(28)} color={theme === "dark" ? colors.primary : colors.textSecondary} />
-              <Text style={[styles.themeCardText, theme === "dark" && { color: colors.primary }]}>Scuro</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.themeCard, theme === "slate" && styles.themeCardActive]}
-              onPress={() => setTheme("slate")}
-              testID="btn-theme-slate"
-              accessibilityLabel="Tema ardesia"
-            >
-              <Ionicons name="layers-outline" size={scaledFont(28)} color={theme === "slate" ? colors.primary : colors.textSecondary} />
-              <Text style={[styles.themeCardText, theme === "slate" && { color: colors.primary }]}>Ardesia</Text>
-            </TouchableOpacity>
+            {THEME_CHOICES.map((opt) => {
+              const active = theme === opt.id;
+              return (
+                <TouchableOpacity
+                  key={opt.id}
+                  style={[styles.themeCard, active && styles.themeCardActive]}
+                  onPress={() => setTheme(opt.id)}
+                  testID={`btn-theme-${opt.id}`}
+                  accessibilityLabel={`Tema ${opt.label}`}
+                  accessibilityState={{ selected: active }}
+                >
+                  <Ionicons
+                    name={opt.icon}
+                    size={scaledFont(28)}
+                    color={active ? colors.primary : colors.textSecondary}
+                  />
+                  <Text style={[styles.themeCardText, active && { color: colors.primary }]}>{opt.label}</Text>
+                  <Text style={styles.themeCardHint} numberOfLines={2}>
+                    {opt.hint}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
 
-          {theme !== "slate" && (
+          {!themeHidesLiturgicalPreview(theme) && (
           <View
             style={[styles.themePreview, { backgroundColor: colors.background, borderColor: colors.border }]}
             testID="theme-accent-preview"
@@ -551,21 +550,29 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
   themeRow: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: 8 },
   themeCard: {
     flex: 1,
-    flexBasis: "28%",
-    minWidth: 96,
-    flexDirection: "row",
-    paddingVertical: 10,
-    paddingHorizontal: 14,
+    flexBasis: "30%",
+    minWidth: 104,
+    flexDirection: "column",
+    paddingVertical: 12,
+    paddingHorizontal: 10,
     borderWidth: 2,
     borderColor: colors.border,
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-    minHeight: 56,
+    gap: 2,
+    minHeight: 112,
+    backgroundColor: colors.surface,
   },
   themeCardActive: { borderColor: colors.primary, borderWidth: 3 },
-  themeCardText: { fontSize: Math.round(fontSize * 0.7), fontWeight: "600", color: colors.textPrimary },
+  themeCardText: { fontSize: Math.round(fontSize * 0.68), fontWeight: "700", color: colors.textPrimary, textAlign: "center" },
+  themeCardHint: {
+    fontSize: Math.round(fontSize * 0.48),
+    color: colors.textSecondary,
+    textAlign: "center",
+    lineHeight: Math.round(fontSize * 0.62),
+    paddingHorizontal: 2,
+  },
   themePreview: {
     marginTop: 16,
     padding: 16,

@@ -1089,6 +1089,61 @@ function mergeLoneJoinCrossBlocks(blocks: OreBlock[]): OreBlock[] {
 }
 
 /**
+ * CEI digitale (Salmo 94, invitatorio / Lodi): † spuria dopo «Non indurite il cuore, *»;
+ * * al posto di † prima di «mi misero…». Forma libri / latino: come a Merìba… senza †; † su «dove mi tentarono…».
+ */
+function repairPsalm94FlexLine(line: string): string {
+  let t = line;
+  t = t.replace(/,\s*\*\s*†\s+(come a Mer)/i, ", * $1");
+  t = t.replace(/^†\s+(come a Mer)/i, "$1");
+  t = t.replace(
+    /dove mi tentarono i vostri padri:\s*\*\s*(mi misero)/i,
+    "dove mi tentarono i vostri padri: † $1",
+  );
+  return t;
+}
+
+function repairCeiPsalm94FlexAnomaly(blocks: OreBlock[]): OreBlock[] {
+  const out: OreBlock[] = [];
+  let inPsalm94 = false;
+
+  for (const b of blocks) {
+    if (b.k === "psalmHead" && /^SALMO\s*94\b/i.test(b.num)) {
+      inPsalm94 = true;
+      out.push(b);
+      continue;
+    }
+    if (inPsalm94 && b.k === "psalmHead" && !/^SALMO\s*94\b/i.test(b.num)) {
+      inPsalm94 = false;
+    }
+
+    if (!inPsalm94) {
+      out.push(b);
+      continue;
+    }
+
+    if (b.k === "stanza") {
+      out.push({
+        ...b,
+        lines: b.lines.map(repairPsalm94FlexLine),
+      });
+      continue;
+    }
+
+    if (b.k === "rubric" && b.text) {
+      const text = repairPsalm94FlexLine(b.text);
+      if (text !== b.text) {
+        out.push({ ...b, text });
+        continue;
+      }
+    }
+
+    out.push(b);
+  }
+  return out;
+}
+
+/**
  * Anomalia CEI ricorrente (Sabato II salterio, Salmo 8 / Lodi):
  * - manca `*` dopo «su tutta la terra:» prima della croce di congiunzione;
  * - † spurio prima della ripresa finale («O Signore, nostro Dio, *»).
@@ -2626,7 +2681,8 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
     blocks: normalizeGospelCanticleAntLabels(
       peelGluedCanticleCites(
         capitalizePsalmOpenings(
-          repairCeiPsalm8JoinAnomaly(
+          repairCeiPsalm94FlexAnomaly(
+            repairCeiPsalm8JoinAnomaly(
             stripAntiphonEchoFromPsalmVerses(
               mergeLoneJoinCrossBlocks(
                 applyBundledGospelCanticles(
@@ -2642,6 +2698,7 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
         ),
       ),
     ),
+  ),
   };
 }
 
