@@ -1561,6 +1561,46 @@ function petitionsFromBlocks(grabbed: OreBlock[]): OreBlock[] {
   return splitDashStanzas(joined);
 }
 
+/**
+ * CEI mette spesso «fiducia:» all’inizio della riga dopo «…e diciamo con»;
+ * `rebuildPreces` può lasciarlo come prefisso della prima petizione
+ * («fiducia:. Benedetto…»). Lo riattacca all’intro del tono.
+ */
+/** Vedi commento sopra; esportato per dati già in cache (ensureHour non rifetcha se il giorno è completo). */
+export function repairInvocationsFiduciaLead(blocks: OreBlock[]): OreBlock[] {
+  const toneIdx = blocks.findIndex((b) => b.k === "tone");
+  if (toneIdx < 0) return blocks;
+  const firstStanzaIdx = blocks.findIndex((b, i) => i > toneIdx && b.k === "stanza");
+  if (firstStanzaIdx < 0) return blocks;
+  const tone = blocks[toneIdx];
+  const stanza = blocks[firstStanzaIdx];
+  if (tone.k !== "tone" || stanza.k !== "stanza" || !stanza.lines.length) return blocks;
+
+  const firstLine = stanza.lines[0].replace(/\s+/g, " ").trim();
+  const m = firstLine.match(/^(fiducia\s*:\.?)\s+(.+)$/i);
+  if (!m || !m[2].trim()) return blocks;
+
+  const suffix = m[1].trim();
+  const restPetition = m[2].trim();
+  const introSep = /\n/.test(tone.intro) ? "\n" : " ";
+  const newIntro = `${tone.intro.replace(/\s+$/, "")}${introSep}${suffix}`;
+
+  const newLines = [restPetition, ...stanza.lines.slice(1)];
+  const newHang =
+    stanza.hang && stanza.hang.length === stanza.lines.length
+      ? stanza.hang.slice(1)
+      : stanza.hang;
+
+  const out = [...blocks];
+  out[toneIdx] = { ...tone, intro: newIntro };
+  out[firstStanzaIdx] = {
+    ...stanza,
+    lines: newLines,
+    hang: newHang && newHang.length === newLines.length ? newHang : stanza.hang,
+  };
+  return out;
+}
+
 function applyTonePhrases(blocks: OreBlock[]): OreBlock[] {
   const src = explodeOrElse(blocks);
   const out: OreBlock[] = [];
@@ -1581,7 +1621,7 @@ function applyTonePhrases(blocks: OreBlock[]): OreBlock[] {
       }
       const rebuilt = rebuildPreces(grabbed);
       if (rebuilt && rebuilt.some((x) => x.k === "tone" && x.intro.length > 8)) {
-        rebuiltAll.push(...rebuilt);
+        rebuiltAll.push(...repairInvocationsFiduciaLead(rebuilt));
         rebuiltTone = true;
       } else if (grabbed.length) {
         rebuiltAll.push(...(hadOrElse ? petitionsFromBlocks(grabbed) : grabbed));
