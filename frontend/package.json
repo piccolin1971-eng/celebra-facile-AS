@@ -13,6 +13,7 @@
     "test:vigil-modes": "npx tsx scripts/test-vigil-modes.ts",
     "test:votive-liturgy": "npx tsx scripts/test-votive-liturgy.ts",
     "test:ore-parsers": "npx tsx scripts/test-ore-parsers.ts",
+    "audit:dn3-lodi": "npx tsx scripts/audit-dn3-lodi-cei.ts",
     "test:parsers": "npx tsx scripts/test-ore-parsers.ts"
   },
   "dependencies": {

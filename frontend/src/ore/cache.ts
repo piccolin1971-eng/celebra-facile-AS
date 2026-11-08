@@ -31,8 +31,9 @@ const PREFIX = "ore_day_";
  * 43: la sera del 1° novembre non è vigilia dei defunti (restano i Secondi vespri di Tutti i Santi).
  * 44: vespri/lodi — antifone numerate (non solo «Ant.» da LDO); cache LDO obsoleta svuotata.
  * 45: invocazioni — «fiducia:.» del CEI non resta sulla prima petizione (riattacco all’intro del tono).
+ * 46: Benedicite — rubrica Gloria solo su Dn 3, 57-88 (lungo); corto 52-57 senza rubrica né Gloria scritto.
  */
-export const ORE_CACHE_SCHEMA_VERSION = 45;
+export const ORE_CACHE_SCHEMA_VERSION = 46;
 
 const STABLE_KEY_RE = /^ore_day_(\d{4}-\d{2}-\d{2})$/;
 const LEGACY_KEY_RE = /^ore_day_v(\d+)_(\d{4}-\d{2}-\d{2})$/;

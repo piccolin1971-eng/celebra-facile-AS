@@ -7,6 +7,8 @@ alwaysApply: true
 
 Non reimplementare. App Android-only.
 
+- **Testo del giorno:** fonte LDO/CEI (`liturgiadelleore.it` Solo testo + pagine ore). L’app non inventa antifone/cantici; normalizza solo impaginazione (Gloria non stampato dopo salmodia, croce congiunzione, ecc.). Verifica: confronto data per data col LDO.
+- **Benedicite Lodi (Dn 3):** variante dal riferimento nel testo CEI — **52-57** corto (niente rubrica Gloria), **57-88** lungo (rubrica «non si dice il Gloria»). Logica in `benediciteRubric.ts`; audit rete `yarn audit:dn3-lodi`.
 - **Vespri feste:** se il CEI omette titolo e frase-tono del salmo, si completano da `src/ore/data/psalmHeadings.json`.
 - **Primi vespri CEI:** sabato/vigilia → slug `primi-vespri` ma fetch sulla data del giorno dopo (domenica/solennità); domenica → `secondi-vespri` sulla stessa data. Vedi `ceiFetchDateISO` in `titles.ts`.
 - **Toggle Home:** `oreEnabled` in Impostazioni, default acceso. Disattivo: nasconde il tasto Ore e il download 10 giorni è solo Messa.

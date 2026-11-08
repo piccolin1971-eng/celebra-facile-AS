@@ -219,4 +219,42 @@ const ant = `Dal profondo a te grido, o Signore! ${JOIN_CROSS_MARK}`;
   assert(rub.text === BENEDICITE_NO_GLORIA_RUBRIC, "benedicite: testo completo");
 }
 
+{
+  const sample: OreBlock[] = [
+    { k: "psalmHead", num: "CANTICO Dn 3, 52-57", name: "Ogni creatura lodi il Signore", sub: "", cite: "" },
+    { k: "stanza", lines: ["Benedite, opere tutte del Signore, il Signore, *", "lodatelo ed esaltatelo nei secoli."] },
+    {
+      k: "stanza",
+      lines: [
+        "Gloria al Padre e al Figlio *",
+        "e allo Spirito Santo.",
+        "Come era nel principio, e ora e sempre *",
+        "nei secoli dei secoli. Amen.",
+      ],
+    },
+    { k: "rubric", lab: "2 ant.", text: "Alleluia, opere del Signore, benedite il Signore, alleluia." },
+  ];
+  const out = ensureBenediciteNoGloriaRubric(sample);
+  assert(!out.some((b) => b.k === "omit"), "benedicite corto: niente rubrica");
+  assert(
+    !out.some((b) => b.k === "stanza" && b.lines.some((l) => /^Gloria al Padre/i.test(l))),
+    "benedicite corto: niente Gloria scritta",
+  );
+  assert(out.some((b) => b.k === "rubric" && b.lab === "2 ant."), "benedicite corto: antifona chiusura");
+}
+
+{
+  const sample: OreBlock[] = [
+    { k: "psalmHead", num: "CANTICO Dn 3, 57-88. 56", name: "Ogni creatura lodi il Signore", sub: "", cite: "" },
+    { k: "stanza", lines: ["Benedite, angeli del Signore, il Signore, *", "benedite, cieli, il Signore."] },
+    { k: "omit", text: BENEDICITE_NO_GLORIA_RUBRIC, ceiRubric: true },
+    { k: "rubric", lab: "2 ant.", text: "Alleluia" },
+  ];
+  const out = ensureBenediciteNoGloriaRubric(sample);
+  assert(
+    out.filter((b) => b.k === "omit" && b.text === BENEDICITE_NO_GLORIA_RUBRIC).length === 1,
+    "benedicite lungo: una sola rubrica CEI",
+  );
+}
+
 console.log("OK test-ore-parsers");
