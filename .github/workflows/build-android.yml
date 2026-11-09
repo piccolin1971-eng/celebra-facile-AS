@@ -101,6 +101,23 @@ jobs:
           j.expo.extra.githubRepo = j.expo.extra.githubRepo || "piccolin1971-eng/celebra-facile-AS";
           fs.writeFileSync(path, JSON.stringify(j, null, 2) + "\n");
           console.log(`APK version 1.0.${n} · ${date}`);
+          function loadHighlights(versionCode) {
+            const mapPath = "src/data/release-highlights.json";
+            if (!fs.existsSync(mapPath)) return [];
+            const map = JSON.parse(fs.readFileSync(mapPath, "utf8"));
+            const list = map[String(versionCode)] ?? map[versionCode];
+            return Array.isArray(list)
+              ? list.filter((s) => typeof s === "string" && s.trim())
+              : [];
+          }
+          const highlights = loadHighlights(n);
+          if (highlights.length) {
+            console.log(`Novità in version.json (${highlights.length} punti)`);
+          } else {
+            console.warn(
+              `::warning::Nessun elenco novità per versionCode ${n} — aggiungi src/data/release-highlights.json prima del publish.`,
+            );
+          }
           fs.writeFileSync(
             "version.json",
             JSON.stringify(
@@ -108,6 +125,7 @@ jobs:
                 versionCode: n,
                 versionName: `1.0.${n}`,
                 apkDate: date,
+                highlights,
               },
               null,
               2,

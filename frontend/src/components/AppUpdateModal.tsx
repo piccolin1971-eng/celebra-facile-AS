@@ -34,7 +34,10 @@ const GOLD = "#E0B429";
 export function AppUpdateModal({ visible, info, busy, onUpdate, onLater, colors }: Props) {
   if (!info) return null;
   const styles = makeStyles(colors);
-  const highlights = getReleaseHighlights(info.versionCode);
+  const highlights =
+    info.highlights && info.highlights.length > 0
+      ? info.highlights
+      : getReleaseHighlights(info.versionCode);
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onLater}>

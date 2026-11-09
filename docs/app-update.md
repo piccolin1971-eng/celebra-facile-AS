@@ -3,6 +3,7 @@
 ## Cosa fa l’app
 - All’avvio (Android): controlla `GitHub Releases/latest` (repo pubblico).
 - Se `versionCode` remoto > locale: dialogo Aggiorna ora / Più tardi.
+- L’elenco **Novità in questa versione** viene da `highlights` in `version.json` (stesso testo di `frontend/src/data/release-highlights.json`). Così anche un APK vecchio mostra le novità della release che stai per installare.
 - «Aggiorna ora» **scarica l’APK in app** e apre l’installer Android (niente browser GitHub).
 - In Impostazioni → «Controlla aggiornamenti».
 - Serve il permesso `REQUEST_INSTALL_PACKAGES` (e, su alcuni telefoni, «Consenti installazione da questa app»).
@@ -15,6 +16,11 @@
    - `ANDROID_KEY_ALIAS`
    - `ANDROID_KEY_PASSWORD`
 3. I push su `main` pubblicano una Release `v1.0.N` con APK + `version.json`.
+
+## Novità per release (obbligatorio prima del push)
+1. Apri `frontend/src/data/release-highlights.json`.
+2. Aggiungi la chiave `"N"` (=`GITHUB_RUN_NUMBER` del prossimo build) con 3–6 frasi in italiano.
+3. Commit + push: la CI copia lo stesso array in `version.json` allegato alla Release.
 
 Senza secrets il workflow firma ancora in debug (build ok) ma gli aggiornamenti in-place non sono affidabili tra build diverse.
 

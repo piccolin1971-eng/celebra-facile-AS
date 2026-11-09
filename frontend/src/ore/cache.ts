@@ -32,8 +32,9 @@ const PREFIX = "ore_day_";
  * 44: vespri/lodi — antifone numerate (non solo «Ant.» da LDO); cache LDO obsoleta svuotata.
  * 45: invocazioni — «fiducia:.» del CEI non resta sulla prima petizione (riattacco all’intro del tono).
  * 46: Benedicite — rubrica Gloria solo su Dn 3, 57-88 (lungo); corto 52-57 senza rubrica né Gloria scritto.
+ * 47: invocazioni — intro+sub+versetto unico → tono con refrain e petizioni a coppie.
  */
-export const ORE_CACHE_SCHEMA_VERSION = 46;
+export const ORE_CACHE_SCHEMA_VERSION = 47;
 
 const STABLE_KEY_RE = /^ore_day_(\d{4}-\d{2}-\d{2})$/;
 const LEGACY_KEY_RE = /^ore_day_v(\d+)_(\d{4}-\d{2}-\d{2})$/;

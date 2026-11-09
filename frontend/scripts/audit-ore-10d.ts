@@ -390,6 +390,41 @@ trasformaci in tempio vivo del tuo Spirito.</div>
     fails.push(`fixture invocazioni coppie=${firstPetitions.length} attese 4`);
   }
 
+  const lateranPreces = wrap(`
+    <div class="lo_titolo">INVOCAZIONI</div>
+    <div class="lo_versetto">Fratelli carissimi, noi siamo pietre vive edificate in</div>
+    <div class="lo_versetto">tempio spirituale sulla pietra eletta che è Cristo.</div>
+    <div class="lo_sottotitolo">Diciamo insieme: Santifica la tua Chiesa, Signore.</div>
+    <div class="lo_versetto">Padre santo, mistico agricoltore, purifica, custodisci<br />
+e rendi feconda la tua vigna,<br />
+<div class="lo_rosso"><br />&mdash;</div>
+perché con la tua benedizione si estenda su tutta<br />
+la terra.<br />
+Pastore eterno, proteggi e moltiplica il tuo gregge,<br />
+che è la Chiesa,<br />
+<div class="lo_rosso"><br />&mdash;</div>
+fa' che tutti i popoli si raccolgano in un solo ovile<br />
+e sotto un solo pastore.</div>
+    <div class="lo_versetto">Padre nostro.</div>
+    <div class="lo_rosso">ORAZIONE</div>
+    <div class="lo_versetto">O Dio, ascolta la preghiera del tuo popolo.</div>
+  `);
+  const lateran = parseHourHtml(lateranPreces, "lodi");
+  const lateranTone = lateran.blocks.find((b) => b.k === "tone");
+  if (!lateranTone || lateranTone.k !== "tone" || !/Santifica la tua Chiesa/i.test(lateranTone.refrain)) {
+    fails.push("fixture lateran invocazioni senza tono/refrain");
+  }
+  if (lateranTone && lateranTone.k === "tone" && !/pietra eletta che è Cristo/i.test(lateranTone.intro)) {
+    fails.push("fixture lateran invocazioni intro troncata");
+  }
+  const lateranPairs = lateran.blocks.filter((b) => b.k === "stanza" && b.lines.some((l) => /^—/.test(l)));
+  if (lateranPairs.length < 2) {
+    fails.push(`fixture lateran invocazioni coppie=${lateranPairs.length} attese >=2`);
+  }
+  if (lateran.blocks.some((b) => b.k === "sub")) {
+    fails.push("fixture lateran invocazioni sub non assorbito nel tono");
+  }
+
   const nestHtml = wrap(`
     <div class="lo_titolo">INNO</div>
     <div class="lo_versetto">O sole di giustizia,<br>Verbo del Dio vivente,</div>

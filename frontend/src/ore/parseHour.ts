@@ -1388,9 +1388,53 @@ function responseFromSub(text: string, fallback: string): string {
   return t || fallback;
 }
 
+/** Intro su più `prose` + un `sub` (risposta comune) + petizioni in un solo versetto CEI. */
+function rebuildPrecesFromSingleSub(grabbed: OreBlock[], subIdx: number): OreBlock[] | null {
+  const introParts = grabbed
+    .slice(0, subIdx)
+    .map(blockPlain)
+    .map((t) => t.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+  const subBlock = grabbed[subIdx];
+  if (subBlock.k !== "sub") return null;
+  const subRaw = subBlock.text.replace(/\s+/g, " ").trim();
+  const split = splitIntroRefrain(subRaw);
+  let intro = introParts.join("\n");
+  const lead = split.intro.replace(/\s+/g, " ").trim();
+  if (lead && lead !== subRaw) {
+    intro = intro ? `${intro}\n${lead}` : lead;
+  } else if (!intro && lead) intro = lead;
+  let refrain = split.refrain.replace(/\s+/g, " ").trim();
+  if (!refrain) refrain = responseFromSub(subRaw, "");
+  if (!intro || intro.length < 8 || !refrain) return null;
+
+  const tail: string[] = [];
+  for (let i = subIdx + 1; i < grabbed.length; i++) {
+    const b = grabbed[i];
+    if (b.k === "prose" && /^Padre nostro\b/i.test(b.text.trim())) break;
+    if (b.k === "stanza") tail.push(...b.lines);
+    else if (b.k === "prose") tail.push(b.text);
+  }
+  const stanzas = splitDashStanzas(joinPrecesWrap(tail));
+  if (!stanzas.length) return null;
+  return [{ k: "tone", intro, refrain }, ...stanzas];
+}
+
+function precesGrabNeedsRebuild(grabbed: OreBlock[]): boolean {
+  if (grabbed.some((b) => b.k === "sub")) return true;
+  if (!grabbed.some((b) => b.k === "tone")) return true;
+  const dashStanzas = grabbed.filter(
+    (b) => b.k === "stanza" && b.lines.some((l) => /^—/.test(l)),
+  );
+  if (!dashStanzas.length) return true;
+  if (dashStanzas.length === 1 && dashStanzas[0].lines.length > 4) return true;
+  return false;
+}
+
 /** Petizioni CEI con un lo_sottotitolo (risposta) dopo ciascuna. */
 function rebuildPrecesFromSubs(grabbed: OreBlock[]): OreBlock[] | null {
   const subIdxs = grabbed.map((b, i) => (b.k === "sub" ? i : -1)).filter((i) => i >= 0);
+  if (subIdxs.length === 1) return rebuildPrecesFromSingleSub(grabbed, subIdxs[0]);
   if (subIdxs.length < 2) return null;
   const firstSub = subIdxs[0];
   const intro = grabbed
@@ -1619,9 +1663,13 @@ function applyTonePhrases(blocks: OreBlock[]): OreBlock[] {
         grabbed.push(src[j]);
         j += 1;
       }
-      const rebuilt = rebuildPreces(grabbed);
+      const rebuilt =
+        precesGrabNeedsRebuild(grabbed) ? rebuildPreces(grabbed) : null;
       if (rebuilt && rebuilt.some((x) => x.k === "tone" && x.intro.length > 8)) {
         rebuiltAll.push(...repairInvocationsFiduciaLead(rebuilt));
+        rebuiltTone = true;
+      } else if (!rebuilt && !precesGrabNeedsRebuild(grabbed)) {
+        rebuiltAll.push(...grabbed);
         rebuiltTone = true;
       } else if (grabbed.length) {
         rebuiltAll.push(...(hadOrElse ? petitionsFromBlocks(grabbed) : grabbed));
@@ -2254,7 +2302,11 @@ export function migrateOreBlocks(blocks: OreBlock[]): OreBlock[] {
   return ensureBenediciteNoGloriaRubric(
     reorderReadingHeads(
       splitEmbeddedReadingRefs(
-        splitEmbeddedReadingEditions(normalizeReadingHeads(repositionPatristicThemeSub(blocks.slice()))),
+        splitEmbeddedReadingEditions(
+          normalizeReadingHeads(
+            applyTonePhrases(repositionPatristicThemeSub(blocks.slice())),
+          ),
+        ),
       ),
     ),
   );

@@ -14,6 +14,7 @@
     "test:votive-liturgy": "npx tsx scripts/test-votive-liturgy.ts",
     "test:ore-parsers": "npx tsx scripts/test-ore-parsers.ts",
     "audit:dn3-lodi": "npx tsx scripts/audit-dn3-lodi-cei.ts",
+    "audit:ore-nov-natale": "npx tsx scripts/audit-ore-advent-natale.ts",
     "test:parsers": "npx tsx scripts/test-ore-parsers.ts"
   },
   "dependencies": {

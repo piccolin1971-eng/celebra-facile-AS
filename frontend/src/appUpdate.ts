@@ -24,6 +24,8 @@ export type AppUpdateInfo = {
   apkUrl: string;
   releaseUrl: string;
   body?: string;
+  /** Novità da version.json remoto (leggibili anche da APK vecchi). */
+  highlights?: string[];
 };
 
 function githubRepo(): string {
@@ -86,13 +88,22 @@ async function enrichFromManifest(info: ParsedRelease): Promise<AppUpdateInfo> {
     const res = await fetch(manifestUrl, { signal: ctrl.signal });
     clearTimeout(t);
     if (!res.ok) return base;
-    const j = (await res.json()) as { versionCode?: number; versionName?: string; apkUrl?: string };
+    const j = (await res.json()) as {
+      versionCode?: number;
+      versionName?: string;
+      apkUrl?: string;
+      highlights?: unknown;
+    };
+    const highlights = Array.isArray(j.highlights)
+      ? j.highlights.filter((s): s is string => typeof s === "string" && s.trim().length > 0)
+      : undefined;
     return {
       versionCode: Number(j.versionCode) || base.versionCode,
       versionName: String(j.versionName || base.versionName),
       apkUrl: String(j.apkUrl || base.apkUrl),
       releaseUrl: base.releaseUrl,
       body: base.body,
+      highlights: highlights?.length ? highlights : undefined,
     };
   } catch {
     return base;
