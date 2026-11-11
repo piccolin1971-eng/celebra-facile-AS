@@ -843,6 +843,7 @@ function expandIfNestedLiturgy(node: HtmlNode): HtmlNode[] | null {
   // lo_versetto con titoli/sottotitoli annidati, oppure wrapper neutri (es. class=center
   // intorno a lo_sottotitolorosso della lettura dell'Ufficio).
   if (hasClass(node.cls, "lo_versetto") || hasClass(node.cls, "lo_strofa") || !isLo(node.cls)) {
+    if (isInnoMarkerNode(node)) return null;
     return flattenKeepText(inner);
   }
   return null;

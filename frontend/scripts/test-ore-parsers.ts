@@ -19,6 +19,7 @@ import {
 } from "../src/ore/benediciteRubric";
 import { enrichPsalmHead, enrichPsalmHeads } from "../src/ore/psalmHeadings";
 import type { OreBlock } from "../src/ore/types";
+import { parseHourHtml } from "../src/ore/parseHour";
 
 const show = (s: string) => s.replaceAll(JOIN_CROSS_MARK, "†");
 
@@ -255,6 +256,29 @@ const ant = `Dal profondo a te grido, o Signore! ${JOIN_CROSS_MARK}`;
     out.filter((b) => b.k === "omit" && b.text === BENEDICITE_NO_GLORIA_RUBRIC).length === 1,
     "benedicite lungo: una sola rubrica CEI",
   );
+}
+
+{
+  const html = `
+<div class="lo_versetto">
+<div class="lo_titolo">INNO</div>
+<br />
+Uniamoci, o fratelli,<br />
+con cuore puro e ardente<br />
+alla lode festosa<br />
+della Chiesa di Cristo.</div>
+<div class="lo_versetto">In questo giorno santo<br />
+la carità divina<br />
+congiunge san Martino<br />
+al regno dei beati.</div>
+<div class="lo_rosso">Oppure</div>
+<div class="lo_versetto">Iste conféssor</div>
+<div class="lo_versetto"><div class="lo_antifona">1 ant.</div>Test.</div>
+`;
+  const hymns = parseHourHtml(html, "lodi").blocks.filter((b) => b.k === "hymn");
+  assert(hymns.length === 1, "inno: un blocco hymn");
+  const st0 = hymns[0].hymns[0]?.stanzas[0] ?? [];
+  assert(st0.length === 4, `inno: prima strofa 4 versi (got ${st0.length})`);
 }
 
 console.log("OK test-ore-parsers");

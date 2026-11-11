@@ -461,6 +461,10 @@ export default function Impostazioni() {
           <Text style={styles.versionInfo} testID="app-version">
             {versionLabel}
           </Text>
+          <Text style={styles.info} testID="hint-home-long-press-settings">
+            Da qualsiasi schermata con la casetta in alto: tienila premuta circa un secondo e mezzo per
+            aprire queste Impostazioni senza passare dalla Home. Indietro riporta alla pagina in cui eri.
+          </Text>
           {isAppUpdateSupported() ? (
             <TouchableOpacity
               style={styles.previewLinkBtn}

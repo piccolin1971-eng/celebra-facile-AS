@@ -85,16 +85,23 @@ export function normalizeHymnStanzas(stanzas: string[][]): string[][] {
   return out;
 }
 
-/** INNO come titolo, come lo_rosso, o come primo lo_rosso dentro un lo_versetto. */
+function innoTitleChild(inner: HtmlNode[]): HtmlNode | undefined {
+  return inner.find(
+    (n) =>
+      n.kind === "el" &&
+      (hasClass(n.cls, "lo_titolo") || hasClass(n.cls, "lo_rosso")) &&
+      isExactInnoTitle(stripTags(n.inner)),
+  );
+}
+
+/** INNO come titolo, come lo_rosso, o come primo titolo/rosso dentro un lo_versetto. */
 export function isInnoMarkerNode(node: HtmlNode): boolean {
   if (node.kind !== "el") return false;
   if ((hasClass(node.cls, "lo_titolo") || hasClass(node.cls, "lo_rosso")) && isExactInnoTitle(stripTags(node.inner))) {
     return true;
   }
   if (!hasClass(node.cls, "lo_versetto")) return false;
-  const inner = topLevelNodes(node.inner);
-  const rosso = inner.find((n) => n.kind === "el" && hasClass(n.cls, "lo_rosso"));
-  return !!(rosso && rosso.kind === "el" && isExactInnoTitle(stripTags(rosso.inner)));
+  return !!innoTitleChild(topLevelNodes(node.inner));
 }
 
 function isHymnBoundaryNode(n: HtmlNode): boolean {
@@ -266,6 +273,22 @@ export function parseCeiHymnsHtml(html: string): Hymn[] {
       }
       const split = splitHymnPrefix(node.inner);
       if (split.hasBoundary && !stripTags(split.prefix).trim()) {
+        const kids = topLevelNodes(node.inner);
+        const innoAt = kids.findIndex(
+          (n) =>
+            n.kind === "el" &&
+            hasClass(n.cls, "lo_titolo") &&
+            isExactInnoTitle(stripTags(n.inner)),
+        );
+        const opensInno =
+          innoAt >= 0 &&
+          kids.slice(0, innoAt).every((n) => n.kind === "br" || (n.kind === "text" && !n.text.trim()));
+        if (opensInno) {
+          flushLoose();
+          emitVersetto(nodesToHtml(kids.slice(innoAt + 1)));
+          if (stop) break;
+          continue;
+        }
         flushLoose();
         break;
       }

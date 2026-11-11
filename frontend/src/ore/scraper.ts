@@ -7,7 +7,7 @@ import { fetchLdoDayHtml, ldoHymnForHour } from "./ldo";
 import { extractInvitatoryAntiphon, migrateOreBlocks, parseHourHtml, splitOraMediaHtml } from "./parseHour";
 import { ldoFallbackPatch } from "./parseLdo";
 import { loadDayHours, saveDayHours } from "./cache";
-import { hourParsedLooksLikeStaleLdo } from "./hourCacheHealth";
+import { hourParsedHymnLooksCollapsed, hourParsedLooksLikeStaleLdo } from "./hourCacheHealth";
 import { ceiFetchDateISO, ceiHourSlug } from "./titles";
 import { getBundledCompline } from "./complineBundled";
 import type { DayHoursCache, MediaId, OreHourId, ParsedHour } from "./types";
@@ -370,7 +370,9 @@ export async function ensureHour(
         hour === "ufficio" &&
         migrated.ufficio &&
         JSON.stringify(migrated.ufficio.blocks) !== JSON.stringify(existing.hours.ufficio?.blocks);
-      if (!hourPatchNeedsItalian(migrated)) {
+      const hymnCollapsed =
+        hour !== "ora-media" && hourParsedHymnLooksCollapsed(hour, migrated[hour] as ParsedHour | undefined);
+      if (!hymnCollapsed && !hourPatchNeedsItalian(migrated)) {
         if (ufficioMigrated) {
           return mergeDayHours(dateISO, { hours: { ufficio: migrated.ufficio } }, ceiTitle);
         }

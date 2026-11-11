@@ -6,5 +6,11 @@
   ],
   "64": [
     "Correzione bug minori."
+  ],
+  "66": [
+    "Lodi e feste: inno a strofe leggibili (niente più la prima strofa tutta su una riga).",
+    "Liturgia delle Ore: se l'inno era salvato male in cache, il giorno si aggiorna da solo.",
+    "Casetta Home: tienila premuta circa un secondo e mezzo per aprire le Impostazioni da qualsiasi schermata.",
+    "Impostazioni: in Informazioni, nota sul gesto della casetta."
   ]
 }
