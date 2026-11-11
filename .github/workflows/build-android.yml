@@ -49,6 +49,10 @@ jobs:
         working-directory: ./frontend
         run: yarn install --network-timeout 600000
 
+      - name: Controllo impaginazione Ore (campione CEI)
+        working-directory: ./frontend
+        run: yarn test:ore-parsers && yarn check:ore-publish
+
       - name: Prepare signing keystore
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
