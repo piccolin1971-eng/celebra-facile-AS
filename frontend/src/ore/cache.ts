@@ -34,8 +34,10 @@ const PREFIX = "ore_day_";
  * 46: Benedicite — rubrica Gloria solo su Dn 3, 57-88 (lungo); corto 52-57 senza rubrica né Gloria scritto.
  * 47: invocazioni — intro+sub+versetto unico → tono con refrain e petizioni a coppie.
  * 48: inno — «INNO» nel primo lo_versetto (feste): strofe a 4 versi, non prima strofa su una riga.
+ * 49: Benedictus «liberati» (non «liberàti»); «così» nel cantico Is 66;
+ * Ufficio — la citazione di edizione non è ripetuta anche come fonte.
  */
-export const ORE_CACHE_SCHEMA_VERSION = 48;
+export const ORE_CACHE_SCHEMA_VERSION = 49;
 
 const STABLE_KEY_RE = /^ore_day_(\d{4}-\d{2}-\d{2})$/;
 const LEGACY_KEY_RE = /^ore_day_v(\d+)_(\d{4}-\d{2}-\d{2})$/;

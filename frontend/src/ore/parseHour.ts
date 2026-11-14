@@ -68,8 +68,12 @@ function tidyLitText(t: string): string {
       .replace(/\s+/g, " ")
       .replace(/\s*\bbr\s*$/i, "")
       .replace(/\s*(?:div|span)\s+class\s*=\s*"?\s*$/i, "")
-      // Refuso ricorrente sul CEI (intercessioni vergini)
+      // Refusi ricorrenti sul CEI
       .replace(/\bintatta a sua fede\b/gi, "intatta la sua fede")
+      // Benedictus: il sito scrive «liberàti»; CEI 2008 è «liberati» (Lc 1, 74).
+      .replace(/\bliberàti\b/g, "liberati")
+      // Cantico Is 66: «cosi» senza accento.
+      .replace(/\bcosi\b/gi, (m) => (m[0] === "C" ? "Così" : "così"))
       // Spazio prima del punto (es. Salmo 45 vespri: «la terra .»).
       .replace(/ +([.!?…])/g, "$1")
       .trim(),
@@ -375,10 +379,19 @@ function stripDecorativeRosso(inner: string): string {
     );
 }
 
-/**
- * Il CEI a volte mette la R. dentro il titolo («RESPONSORIO BREVE<br>R.»).
- * La stacca e la antepone alla risposta, come quando è un lo_rosso a parte.
- */
+/** Il nodo contiene solo la citazione di edizione, non la fonte. */
+function editionCiteOnly(text: string, editionEarly: string): boolean {
+  const t = text.replace(/\s+/g, " ").trim();
+  if (!t) return !!editionEarly;
+  if (isEditionCiteTitle(t)) return true;
+  return !!editionEarly && t === editionEarly;
+}
+
+function withoutEditionCite(text: string, editionEarly: string): string {
+  if (!editionEarly) return text;
+  return text.replace(editionEarly, "").replace(/\s+/g, " ").trim();
+}
+
 function isEditionCiteTitle(t: string): boolean {
   const s = t.replace(/\s+/g, " ").trim();
   // Citazioni di edizione CEI spesso in lo_titolo centrato: (Disc. …), (Nn. …; CCL …)
@@ -625,8 +638,13 @@ function pushReadingSubtitoloFromNode(blocks: OreBlock[], node: HtmlNode) {
     return;
   }
   if (hasClass(node.cls, "lo_sottotitolonoi")) {
+    const editionEarly = editionCiteFromHtmlInner(node.inner);
     const { title, rif } = extractRif(node.inner);
     const t = tidyLitText(title || stripTags(node.inner));
+    if (isInUfficioReadingHead(blocks) && editionCiteOnly(t, editionEarly)) {
+      pushReadHead(blocks, "edition", editionEarly || t);
+      return;
+    }
     if (!t) return;
     if (isReadingSourceLine(t) || isInUfficioReadingHead(blocks)) {
       const { source, ref } = splitReadingSourceAndRef(t);
@@ -2530,10 +2548,15 @@ export function parseHourHtml(html: string, hour: OreHourId | MediaId, dateISO?:
         !isEditionCiteTitle(text)
       ) {
         prev.name = text;
+      } else if (isInUfficioReadingHead(blocks) && editionCiteOnly(text, editionEarly)) {
+        pushReadHead(blocks, "edition", editionEarly || text);
       } else if (text && (isReadingSourceLine(text) || isInUfficioReadingHead(blocks))) {
-        pushReadHead(blocks, "source", text);
-        if (rif.trim()) pushReadHead(blocks, "ref", rif.trim());
-        if (editionEarly) pushReadHead(blocks, "edition", editionEarly);
+        const sourceText = withoutEditionCite(text, editionEarly);
+        if (sourceText && !isEditionCiteTitle(sourceText)) {
+          pushReadHead(blocks, "source", sourceText);
+          if (rif.trim()) pushReadHead(blocks, "ref", rif.trim());
+        }
+        if (editionEarly && editionEarly !== sourceText) pushReadHead(blocks, "edition", editionEarly);
       } else if (!text && editionEarly && isInUfficioReadingHead(blocks)) {
         pushReadHead(blocks, "edition", editionEarly);
       } else if (text) {

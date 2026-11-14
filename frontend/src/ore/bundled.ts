@@ -76,7 +76,7 @@ Così egli ha concesso misericordia ai nostri padri *
 e si è ricordato della sua santa alleanza,
 
 del giuramento fatto ad Abramo, nostro padre, *
-di concederci, liberàti dalle mani dei nemici,
+di concederci, liberati dalle mani dei nemici,
 
 di servirlo senza timore, in santità e giustizia *
 al suo cospetto, per tutti i nostri giorni.

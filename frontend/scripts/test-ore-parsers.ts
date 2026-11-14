@@ -281,4 +281,33 @@ al regno dei beati.</div>
   assert(st0.length === 4, `inno: prima strofa 4 versi (got ${st0.length})`);
 }
 
+{
+  const html = `
+<div class="lo_titolo">SECONDA LETTURA</div>
+Dall’«Omelia» di un autore del secondo secolo
+<div class="lo_sottotitolonoi">
+<div class="lo_rosso">&nbsp;</div>
+<div class="center"><div class="lo_rosso">(Capp. 18, 1 – 20, 5; Funk, 1, 167-171)</div></div>
+</div>
+<div class="lo_versetto">Come una madre consola un figlio, cosi io vi darò consolazione.</div>
+<div class="lo_titolo">CANTICO DI ZACCARIA</div>
+<div class="lo_versetto">di concederci, liberàti dalle mani dei nemici,</div>
+`;
+  const blocks = parseHourHtml(html, "ufficio").blocks;
+  const heads = blocks.filter((b) => b.k === "readHead");
+  const editions = heads.filter((b) => b.role === "edition");
+  assert(editions.length === 1, `edizione una sola volta (got ${editions.length})`);
+  assert(
+    !heads.some((b) => b.role === "source" && /Capp\. 18/.test(b.text)),
+    "la citazione di edizione non è anche fonte",
+  );
+  const blob = blocks
+    .map((b) => (b.k === "stanza" ? b.lines.join(" ") : b.k === "prose" ? b.text : ""))
+    .join("\n");
+  assert(!/liberàti/.test(blob), "Benedictus: liberati, senza accento in mezzo");
+  assert(/liberati dalle mani/.test(blob), "Benedictus: testo presente");
+  assert(/così io vi darò/.test(blob), "cantico: così con l’accento");
+  assert(!/\bcosi\b/.test(blob), "cantico: niente cosi senza accento");
+}
+
 console.log("OK test-ore-parsers");
