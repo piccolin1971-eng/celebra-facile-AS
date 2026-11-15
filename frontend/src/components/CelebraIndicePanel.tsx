@@ -37,6 +37,14 @@ import {
   ACTION_TITLE_WEIGHT,
 } from "../uiActionTokens";
 import { italianDateLabel, italianDateLabelFromISO, parseLocalDate } from "../dateUtils";
+import { useSettings } from "../SettingsContext";
+import {
+  getUiChrome,
+  UI_ACTIVE_BG,
+  UI_ACTIVE_BORDER,
+  uiAccentButtonStyle,
+  uiDayFrameStyle,
+} from "../uiStyleChrome";
 import { getLiturgicalSeason, getSaintsForDate } from "../localLiturgy";
 import { shouldSuppressFacultativeMemory } from "../liturgicalCelebrationUtils";
 import {
@@ -69,9 +77,6 @@ const PENITENTIAL_FORMULAS =
     ) as { options?: { id: string; label: string; season_variants?: Record<string, { label: string }> }[] }
   )?.options ?? [];
 
-/** Ultima sezione aperta: bordo giallo 4px (proposta B). */
-const INDEX_ACTIVE_BORDER = "#FFE566";
-const INDEX_ACTIVE_BG = "#121200";
 const INDEX_BTN_BG = "#000000";
 const INDEX_BTN_BG_ALT = "#080808";
 const INDEX_CHANGE_TEXT = "#7EC8F0";
@@ -134,7 +139,9 @@ export function CelebraIndicePanel({
   listVisible = true,
 }: Props) {
   const router = useRouter();
-  const styles = makeStyles(colors, fontSize);
+  const { uiStyle } = useSettings();
+  const chrome = getUiChrome(uiStyle);
+  const styles = makeStyles(colors, fontSize, chrome);
   const [showPrefaces, setShowPrefaces] = useState(false);
   const [showPrayers, setShowPrayers] = useState(false);
   const [showPenitential, setShowPenitential] = useState(false);
@@ -294,7 +301,7 @@ export function CelebraIndicePanel({
       </View>
 
       <View
-        style={[styles.dayFrame, { borderColor: dayFrame.colorHex }]}
+        style={[styles.dayFrame, { borderColor: dayFrame.colorHex }, uiDayFrameStyle(chrome, dayFrame.colorHex)]}
         testID="indice-day-frame"
       >
         <Text style={styles.dayFrameLine} numberOfLines={3}>
@@ -363,11 +370,12 @@ export function CelebraIndicePanel({
                 <TouchableOpacity
                   style={[
                     styles.mainBtn,
-                    {
+                    (chrome.mode === "classic" || chrome.mode === "aria") && {
                       borderColor: accent,
-                      backgroundColor: isLast ? INDEX_ACTIVE_BG : INDEX_BTN_BG,
+                      backgroundColor: isLast ? UI_ACTIVE_BG : INDEX_BTN_BG,
                     },
-                    isLast && styles.mainBtnActive,
+                    uiAccentButtonStyle(chrome, accent, isLast, UI_ACTIVE_BORDER),
+                    isLast && chrome.mode !== "fascia" && chrome.mode !== "libro" && chrome.mode !== "pieni" && styles.mainBtnActive,
                     webClickable,
                   ]}
                   onPress={() => {
@@ -490,11 +498,17 @@ export function CelebraIndicePanel({
                   key={opt.id}
                   style={[
                     styles.mainBtn,
-                    {
+                    (chrome.mode === "classic" || chrome.mode === "aria") && {
                       borderColor: celebraIndexAccentBySectionId("atto_penitenziale"),
-                      backgroundColor: active ? INDEX_ACTIVE_BG : INDEX_BTN_BG,
+                      backgroundColor: active ? UI_ACTIVE_BG : INDEX_BTN_BG,
                     },
-                    active && styles.mainBtnActive,
+                    uiAccentButtonStyle(
+                      chrome,
+                      celebraIndexAccentBySectionId("atto_penitenziale"),
+                      active,
+                      UI_ACTIVE_BORDER,
+                    ),
+                    active && chrome.mode !== "fascia" && chrome.mode !== "libro" && chrome.mode !== "pieni" && styles.mainBtnActive,
                     webClickable,
                   ]}
                   onPress={() => {
@@ -521,11 +535,17 @@ export function CelebraIndicePanel({
                       key={key}
                       style={[
                         styles.mainBtn,
-                        {
+                        (chrome.mode === "classic" || chrome.mode === "aria") && {
                           borderColor: celebraIndexAccentBySectionId("atto_penitenziale"),
-                          backgroundColor: active ? INDEX_ACTIVE_BG : INDEX_BTN_BG,
+                          backgroundColor: active ? UI_ACTIVE_BG : INDEX_BTN_BG,
                         },
-                        active && styles.mainBtnActive,
+                        uiAccentButtonStyle(
+                          chrome,
+                          celebraIndexAccentBySectionId("atto_penitenziale"),
+                          active,
+                          UI_ACTIVE_BORDER,
+                        ),
+                        active && chrome.mode !== "fascia" && chrome.mode !== "libro" && chrome.mode !== "pieni" && styles.mainBtnActive,
                         webClickable,
                       ]}
                       onPress={() => {
@@ -571,11 +591,12 @@ export function CelebraIndicePanel({
                   key={p.id}
                   style={[
                     styles.mainBtn,
-                    {
+                    (chrome.mode === "classic" || chrome.mode === "aria") && {
                       borderColor: accent,
-                      backgroundColor: active ? INDEX_ACTIVE_BG : INDEX_BTN_BG,
+                      backgroundColor: active ? UI_ACTIVE_BG : INDEX_BTN_BG,
                     },
-                    active && styles.mainBtnActive,
+                    uiAccentButtonStyle(chrome, accent, active, UI_ACTIVE_BORDER),
+                    active && chrome.mode !== "fascia" && chrome.mode !== "libro" && chrome.mode !== "pieni" && styles.mainBtnActive,
                     webClickable,
                   ]}
                   onPress={() => {
@@ -601,7 +622,7 @@ export function CelebraIndicePanel({
   );
 }
 
-const makeStyles = (colors: ThemeColors, fontSize: number) =>
+const makeStyles = (colors: ThemeColors, fontSize: number, chrome: ReturnType<typeof getUiChrome>) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
     topBar: {
@@ -651,8 +672,8 @@ const makeStyles = (colors: ThemeColors, fontSize: number) =>
       marginHorizontal: 16,
       marginTop: 12,
       marginBottom: 4,
-      borderWidth: 3,
-      borderRadius: 14,
+      borderWidth: chrome.dayFrameBorder,
+      borderRadius: chrome.dayFrameRadius,
       paddingVertical: 12,
       paddingHorizontal: 14,
       backgroundColor: INDEX_BTN_BG_ALT,
@@ -667,7 +688,7 @@ const makeStyles = (colors: ThemeColors, fontSize: number) =>
     list: {
       padding: 16,
       paddingBottom: 40,
-      gap: 12,
+      gap: chrome.listGap,
     },
     row: {
       flexDirection: "row",
@@ -677,17 +698,17 @@ const makeStyles = (colors: ThemeColors, fontSize: number) =>
     },
     mainBtn: {
       flex: 1,
-      borderRadius: 14,
-      paddingVertical: 15,
+      borderRadius: chrome.indexRadius,
+      paddingVertical: chrome.mode === "aria" ? 17 : 15,
       paddingHorizontal: 14,
       minHeight: ACTION_MIN_HEIGHT,
       justifyContent: "center",
-      borderWidth: 5,
+      borderWidth: chrome.indexBorder,
       overflow: "hidden",
     },
     mainBtnActive: {
-      borderWidth: 6,
-      borderColor: INDEX_ACTIVE_BORDER,
+      borderWidth: chrome.indexActiveBorder,
+      borderColor: UI_ACTIVE_BORDER,
     },
     mainBtnText: {
       fontSize: Math.round(fontSize * 1.12),

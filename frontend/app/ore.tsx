@@ -14,6 +14,12 @@ import { hourHeadMeta } from "../src/ore/dayHead";
 import { OreHourHead } from "../src/ore/OreBlocks";
 import { ensureHour } from "../src/ore/scraper";
 import { INDEX_HOURS, hourTitle } from "../src/ore/titles";
+import {
+  getUiChrome,
+  UI_ACTIVE_BORDER,
+  uiAccentButtonStyle,
+  uiFilledLabelStyle,
+} from "../src/uiStyleChrome";
 import { ACTION_MIN_HEIGHT, ACTION_TITLE_WEIGHT } from "../src/uiActionTokens";
 import { SECTION_TOP_BAR_PAD_H } from "../src/components/SectionScreenTopBar";
 import type { OreHourId } from "../src/ore/types";
@@ -27,7 +33,7 @@ const LAST_KEY = "ore_last_hour";
 export default function OreIndex() {
   const router = useRouter();
   const params = useLocalSearchParams<{ date?: string }>();
-  const { colors, fontSize, fontFamilyId, isBold } = useSettings();
+  const { colors, fontSize, fontFamilyId, isBold, uiStyle } = useSettings();
   const headFont = resolveBodyFont(fontFamilyId, isBold);
   const dateISO =
     typeof params.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(params.date)
@@ -62,7 +68,8 @@ export default function OreIndex() {
     }, [dateISO]),
   );
 
-  const styles = makeStyles(colors, fontSize);
+  const chrome = getUiChrome(uiStyle);
+  const styles = makeStyles(colors, fontSize, chrome);
   const openHour = (hour: OreHourId) => {
     void AsyncStorage.setItem(LAST_KEY, hour);
     setLastHour(hour);
@@ -111,7 +118,13 @@ export default function OreIndex() {
               style={[
                 styles.item,
                 idx % 2 === 1 && styles.itemAlt,
-                last && styles.itemLast,
+                last && chrome.mode !== "pieni" && styles.itemLast,
+                uiAccentButtonStyle(
+                  chrome,
+                  idx % 2 === 1 ? ORE_BLUE_ALT : ORE_BLUE,
+                  last,
+                  UI_ACTIVE_BORDER,
+                ),
               ]}
               onPress={() => openHour(hour)}
               testID={`btn-ore-${hour}`}
@@ -119,7 +132,15 @@ export default function OreIndex() {
               accessibilityLabel={hourTitle(hour, date)}
               {...webClickable}
             >
-              <Text style={[styles.itemLab, last && styles.itemLabLast]}>{hourTitle(hour, date)}</Text>
+              <Text
+                style={[
+                  styles.itemLab,
+                  last && chrome.mode !== "pieni" && styles.itemLabLast,
+                  uiFilledLabelStyle(chrome, last),
+                ]}
+              >
+                {hourTitle(hour, date)}
+              </Text>
             </TouchableOpacity>
           );
         })}
@@ -128,7 +149,7 @@ export default function OreIndex() {
   );
 }
 
-const makeStyles = (colors: any, fontSize: number) =>
+const makeStyles = (colors: any, fontSize: number, chrome: ReturnType<typeof getUiChrome>) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
     topBar: {
@@ -144,11 +165,11 @@ const makeStyles = (colors: any, fontSize: number) =>
       fontWeight: ACTION_TITLE_WEIGHT,
       fontSize: Math.round(fontSize * 0.72),
     },
-    body: { padding: 16, gap: 12, paddingBottom: 40 },
+    body: { padding: 16, gap: chrome.listGap, paddingBottom: 40 },
     item: {
       minHeight: ACTION_MIN_HEIGHT,
-      borderRadius: 14,
-      borderWidth: 5,
+      borderRadius: chrome.indexRadius,
+      borderWidth: chrome.indexBorder,
       borderColor: ORE_BLUE,
       alignItems: "flex-start",
       justifyContent: "center",
@@ -160,7 +181,7 @@ const makeStyles = (colors: any, fontSize: number) =>
       borderColor: ORE_BLUE_ALT,
     },
     itemLast: {
-      borderWidth: 6,
+      borderWidth: chrome.indexActiveBorder,
       borderColor: GOLD,
       backgroundColor: "#121200",
     },

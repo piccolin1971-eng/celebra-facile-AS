@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSettings, PARCHMENT_TONE_MIN, PARCHMENT_TONE_MAX, SLATE_VARIANT_OPTIONS, THEME_CHOICES, themeHidesLiturgicalPreview } from "../src/SettingsContext";
+import { UI_STYLE_CHOICES } from "../src/uiStyleChrome";
 import { LINE_SPACING_MIN, LINE_SPACING_MAX, LINE_SPACING_STEP, formatLineSpacingValue } from "../src/liturgyTypography";
 import { SettingsStepperSlider } from "../src/components/SettingsStepperSlider";
 import { FONT_OPTIONS, FontFamilyId, resolveBodyFont } from "../src/fontFamily";
@@ -19,7 +20,7 @@ import {
 
 export default function Impostazioni() {
   const router = useRouter();
-  const { theme, setTheme, fontSize, highContrast, setHighContrast, isBold, setIsBold, lineSpacing, setLineSpacing, fontFamilyId, setFontFamilyId, parchmentTone, setParchmentTone, slateVariant, setSlateVariant, celebraSubitoEnabled, setCelebraSubitoEnabled, preparaCelebraEnabled, setPreparaCelebraEnabled, oreEnabled, setOreEnabled, messeRitualiEnabled, setMesseRitualiEnabled, hapticFeedbackEnabled, setHapticFeedbackEnabled, pinchZoomEnabled, setPinchZoomEnabled, colors, scaledFont } = useSettings();
+  const { theme, setTheme, fontSize, highContrast, setHighContrast, isBold, setIsBold, lineSpacing, setLineSpacing, fontFamilyId, setFontFamilyId, parchmentTone, setParchmentTone, slateVariant, setSlateVariant, celebraSubitoEnabled, setCelebraSubitoEnabled, preparaCelebraEnabled, setPreparaCelebraEnabled, oreEnabled, setOreEnabled, messeRitualiEnabled, setMesseRitualiEnabled, hapticFeedbackEnabled, setHapticFeedbackEnabled, pinchZoomEnabled, setPinchZoomEnabled, uiStyle, setUiStyle, colors, scaledFont } = useSettings();
   const styles = makeStyles(colors, fontSize);
   const appVersion = Constants.expoConfig?.version ?? "—";
   const apkDate = (Constants.expoConfig?.extra as { apkDate?: string } | undefined)?.apkDate?.trim();
@@ -280,10 +281,35 @@ export default function Impostazioni() {
           </View>
         </View>
 
+        <View style={styles.section} testID="section-ui-style">
+          <Text style={styles.sectionTitle}>Aspetto dei tasti</Text>
+          <Text style={styles.sectionDesc}>
+            Come ora è già selezionato. Gli altri cambiano solo Home e i menu (Messa, Ore, Messe votive e rituali), non le pagine di lettura. Il tema colore resta quello scelto sotto.
+          </Text>
+          <View style={styles.themeRow}>
+            {UI_STYLE_CHOICES.map((opt) => {
+              const active = uiStyle === opt.id;
+              return (
+                <TouchableOpacity
+                  key={opt.id}
+                  style={[styles.themeCard, active && styles.themeCardActive]}
+                  onPress={() => setUiStyle(opt.id)}
+                  testID={`btn-ui-style-${opt.id}`}
+                  accessibilityLabel={`Aspetto ${opt.label}`}
+                  accessibilityState={{ selected: active }}
+                >
+                  <Text style={[styles.themeCardText, active && { color: colors.primary }]}>{opt.label}</Text>
+                  <Text style={styles.themeCardHint}>{opt.hint}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
         <View style={styles.section} testID="section-theme">
           <Text style={styles.sectionTitle}>Tema</Text>
           <Text style={styles.sectionDesc}>
-            Pergamena e Pesca per il giorno; Scuro per OLED; Ardesia, Blu notte e Notte morbida per leggere senza abbagliamento.
+            Pergamena per il giorno; Scuro per OLED; Ardesia, Blu notte e Notte morbida per leggere senza abbagliamento.
           </Text>
           <View style={styles.themeRow}>
             {THEME_CHOICES.map((opt) => {

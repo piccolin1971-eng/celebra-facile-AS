@@ -20,7 +20,12 @@ import {
   type RitualMass,
 } from "../src/ritualMasses";
 import { triggerAppHaptic } from "../src/appHaptics";
-import { ACTION_MIN_HEIGHT, ACTION_RADIUS, ACTION_TITLE_WEIGHT } from "../src/uiActionTokens";
+import { ACTION_MIN_HEIGHT, ACTION_TITLE_WEIGHT } from "../src/uiActionTokens";
+import {
+  getUiChrome,
+  uiAccentButtonStyle,
+  uiFilledLabelStyle,
+} from "../src/uiStyleChrome";
 
 const webClickable = Platform.OS === "web" ? ({ cursor: "pointer" } as const) : undefined;
 
@@ -57,11 +62,15 @@ function familyFrameColor(
 
 export default function MesseRitualiScreen() {
   const router = useRouter();
-  const { colors, fontSize, scaledFont } = useSettings();
-  const styles = makeStyles(colors, fontSize);
+  const { colors, fontSize, scaledFont, uiStyle } = useSettings();
+  const chrome = getUiChrome(uiStyle);
+  const styles = makeStyles(colors, fontSize, chrome);
   const families = useMemo(() => listRitualFamilies(), []);
   const [familyId, setFamilyId] = useState<string | null>(null);
   const [startingId, setStartingId] = useState<string | null>(null);
+  const pieniText = uiFilledLabelStyle(chrome);
+  const pieniMuted = chrome.mode === "pieni" ? ({ color: "#E0E0E0" } as const) : false;
+  const pieniIcon = chrome.mode === "pieni";
 
   const selectedFamily = families.find((f) => f.id === familyId) || null;
 
@@ -109,20 +118,22 @@ export default function MesseRitualiScreen() {
               return (
                 <TouchableOpacity
                   key={f.id}
-                  style={[styles.card, { borderColor: frame }, webClickable]}
+                  style={[styles.card, uiAccentButtonStyle(chrome, frame), webClickable]}
                   onPress={() => setFamilyId(f.id)}
                   testID={`rituali-family-${f.id}`}
                   accessibilityRole="button"
                 >
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.cardTitle}>{f.title}</Text>
-                    <Text style={styles.cardSub}>
-                      {f.id === "votive"
-                        ? `${f.masses.length} formulari`
-                        : `${f.masses.length} formulari · ${f.masses.map((m) => m.formula).filter(Boolean).join(" · ")}`}
-                    </Text>
+                    <Text style={[styles.cardTitle, pieniText]}>{f.title}</Text>
+                    <Text style={[styles.cardSub, pieniMuted]}>{f.id === "votive"
+                      ? `${f.masses.length} formulari`
+                      : `${f.masses.length} formulari · ${f.masses.map((m) => m.formula).filter(Boolean).join(" · ")}`}</Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={scaledFont(28)} color={frame} />
+                  <Ionicons
+                    name="chevron-forward"
+                    size={scaledFont(28)}
+                    color={pieniIcon ? "#FFFFFF" : frame}
+                  />
                 </TouchableOpacity>
               );
             })}
@@ -135,7 +146,7 @@ export default function MesseRitualiScreen() {
               return (
                 <TouchableOpacity
                   key={m.id}
-                  style={[styles.card, { borderColor: frame }, webClickable]}
+                  style={[styles.card, uiAccentButtonStyle(chrome, frame), webClickable]}
                   onPress={() => void startRitual(m)}
                   disabled={!!startingId}
                   testID={`rituali-mass-${m.id}`}
@@ -152,17 +163,21 @@ export default function MesseRitualiScreen() {
                     ]}
                   />
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.cardTitle}>
+                    <Text style={[styles.cardTitle, pieniText]}>
                       {m.family === "votive" ? m.title : m.shortLabel}
                     </Text>
-                    <Text style={styles.cardSub}>
+                    <Text style={[styles.cardSub, pieniMuted]}>
                       {m.family === "votive" ? `Colore: ${m.color}` : m.title}
                     </Text>
                   </View>
                   {startingId === m.id ? (
-                    <ActivityIndicator color={frame} />
+                    <ActivityIndicator color={pieniIcon ? "#FFFFFF" : frame} />
                   ) : (
-                    <Ionicons name="play-circle" size={scaledFont(34)} color={frame} />
+                    <Ionicons
+                      name="play-circle"
+                      size={scaledFont(34)}
+                      color={pieniIcon ? "#FFFFFF" : frame}
+                    />
                   )}
                 </TouchableOpacity>
               );
@@ -174,7 +189,7 @@ export default function MesseRitualiScreen() {
   );
 }
 
-const makeStyles = (colors: any, fontSize: number) =>
+const makeStyles = (colors: any, fontSize: number, chrome: ReturnType<typeof getUiChrome>) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
     title: {
@@ -182,7 +197,7 @@ const makeStyles = (colors: any, fontSize: number) =>
       fontWeight: "800",
       color: colors.textPrimary,
     },
-    content: { padding: 16, gap: 12, paddingBottom: 40 },
+    content: { padding: 16, gap: chrome.listGap, paddingBottom: 40 },
     lead: {
       fontSize: Math.round(fontSize * 0.7),
       color: colors.textSecondary,
@@ -191,14 +206,17 @@ const makeStyles = (colors: any, fontSize: number) =>
     },
     card: {
       minHeight: ACTION_MIN_HEIGHT,
-      borderRadius: ACTION_RADIUS,
-      borderWidth: 3,
-      backgroundColor: colors.surface,
+      borderRadius: chrome.indexRadius,
+      borderWidth: chrome.indexBorder,
+      borderColor: colors.border,
+      backgroundColor:
+        chrome.mode === "pieni" || chrome.mode === "fascia" ? undefined : colors.surface,
       paddingHorizontal: 16,
       paddingVertical: 14,
       flexDirection: "row",
       alignItems: "center",
       gap: 12,
+      overflow: "hidden",
     },
     colorPill: {
       width: 14,

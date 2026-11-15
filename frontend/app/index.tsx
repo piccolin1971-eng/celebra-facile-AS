@@ -4,6 +4,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSettings, themeMuteFillRatio } from "../src/SettingsContext";
+import {
+  getUiChrome,
+  uiDayChipStyle,
+  uiFilledLabelStyle,
+  uiFlagButtonStyle,
+  uiOutlineActionStyle,
+  type UiChrome,
+} from "../src/uiStyleChrome";
 import { api, Preface, EucharisticPrayer, PrefetchProgress } from "../src/api";
 import { localDateStr, italianDateLabel, italianMonthName, italianWeekdayName, addDays, dayOffsetFromToday, parseLocalDate } from "../src/dateUtils";
 import { LiturgyDayBanner } from "../src/components/LiturgyDayBanner";
@@ -150,6 +158,7 @@ export default function Home() {
     messeRitualiEnabled,
     optionalSaintsUseSelection,
     theme,
+    uiStyle,
   } = useSettings();
   const [selectedDateISO, setSelectedDateISO] = useState(() => localDateStr(new Date()));
   const [sessions, setSessions] = useState<MassSession[]>([]);
@@ -681,7 +690,8 @@ export default function Home() {
   const { width: windowWidth } = useWindowDimensions();
   const topBarIconSize = topBarGlyphSize(fontSize, windowWidth < 380 ? 36 : 40);
   const topBarIconBtnSize = topBarGlyphBox(topBarIconSize);
-  const styles = makeStyles(colors, fontSize, topBarIconBtnSize);
+  const chrome = getUiChrome(uiStyle);
+  const styles = makeStyles(colors, fontSize, topBarIconBtnSize, chrome);
   const heroIconSize = Math.round(scaledFont(40) * 1.45);
   const compactIconSlot = Math.round(heroIconSize * 0.78);
   /** Stessa colonna icona per «Celebra subito» e «Liturgia delle Ore». */
@@ -830,6 +840,7 @@ export default function Home() {
                   style={[
                     styles.dayButton,
                     { borderColor: borderHex },
+                    uiDayChipStyle(chrome, borderHex, isToday),
                     isToday && styles.dayButtonToday,
                     webClickable,
                   ]}
@@ -1071,6 +1082,7 @@ export default function Home() {
               style={[
                 styles.flagBtn,
                 styles.flagBtnGold,
+                uiFlagButtonStyle(chrome, QUICK_CELEBRA_GOLD),
                 webClickable,
                 quickStarting && { opacity: 0.7 },
               ]}
@@ -1093,7 +1105,7 @@ export default function Home() {
                     />
                   </View>
                 )}
-                <Text style={[styles.flagTitle, styles.flagTitleGold]} numberOfLines={2}>
+                <Text style={[styles.flagTitle, styles.flagTitleGold, uiFilledLabelStyle(chrome)]} numberOfLines={2}>
                   {quickStarting ? "Avvio…" : "Celebra subito la Messa"}
                 </Text>
               </View>
@@ -1106,7 +1118,7 @@ export default function Home() {
             </TouchableOpacity>
             {oreEnabled ? (
               <TouchableOpacity
-                style={[styles.flagBtn, styles.flagBtnOre, webClickable]}
+                style={[styles.flagBtn, styles.flagBtnOre, uiFlagButtonStyle(chrome, ORE_BLUE), webClickable]}
                 onPress={openOre}
                 testID="btn-ore"
                 accessibilityRole="button"
@@ -1116,7 +1128,7 @@ export default function Home() {
                   <View style={[styles.actionIconSlot, { width: actionIconSlot, height: actionIconSlot }]}>
                     <Ionicons name="book" size={Math.round(actionIconSlot * 0.88)} color={ORE_BLUE} />
                   </View>
-                  <Text style={[styles.flagTitle, styles.flagTitleOre]} numberOfLines={2}>
+                  <Text style={[styles.flagTitle, styles.flagTitleOre, uiFilledLabelStyle(chrome)]} numberOfLines={2}>
                     Liturgia delle Ore
                   </Text>
                 </View>
@@ -1130,7 +1142,7 @@ export default function Home() {
             ) : null}
             {messeRitualiEnabled ? (
               <TouchableOpacity
-                style={[styles.flagBtn, styles.flagBtnRitual, webClickable]}
+                style={[styles.flagBtn, styles.flagBtnRitual, uiFlagButtonStyle(chrome, RITUALI_ORANGE), webClickable]}
                 onPress={() => {
                   void triggerAppHaptic("light");
                   router.push("/messe-rituali" as any);
@@ -1147,7 +1159,7 @@ export default function Home() {
                       color={RITUALI_ORANGE}
                     />
                   </View>
-                  <Text style={[styles.flagTitle, styles.flagTitleRitual]} numberOfLines={2}>
+                  <Text style={[styles.flagTitle, styles.flagTitleRitual, uiFilledLabelStyle(chrome)]} numberOfLines={2}>
                     Messe votive e rituali
                   </Text>
                 </View>
@@ -1167,6 +1179,7 @@ export default function Home() {
                 style={[
                   styles.quickCelebraBtn,
                   styles.quickCelebraBtnOutline,
+                  uiOutlineActionStyle(chrome, QUICK_CELEBRA_GOLD),
                   webClickable,
                   quickStarting && { opacity: 0.7 },
                 ]}
@@ -1189,7 +1202,7 @@ export default function Home() {
                   </View>
                 )}
                 <Text
-                  style={[styles.heroTitle, styles.heroTitleGoldOutline]}
+                  style={[styles.heroTitle, styles.heroTitleGoldOutline, uiFilledLabelStyle(chrome)]}
                   numberOfLines={1}
                 >
                   {quickStarting ? "Avvio…" : "Celebra subito la Messa"}
@@ -1271,7 +1284,7 @@ export default function Home() {
 
             {oreEnabled ? (
             <TouchableOpacity
-              style={[styles.quickCelebraBtn, styles.oreBtnOutline, webClickable]}
+              style={[styles.quickCelebraBtn, styles.oreBtnOutline, uiOutlineActionStyle(chrome, ORE_BLUE), webClickable]}
               onPress={openOre}
               testID="btn-ore"
               accessibilityRole="button"
@@ -1280,7 +1293,7 @@ export default function Home() {
               <View style={[styles.actionIconSlot, { width: actionIconSlot, height: actionIconSlot }]}>
                 <Ionicons name="book" size={Math.round(actionIconSlot * 0.88)} color={ORE_BLUE} />
               </View>
-              <Text style={[styles.heroTitle, styles.heroTitleBlueOutline]} numberOfLines={1}>
+              <Text style={[styles.heroTitle, styles.heroTitleBlueOutline, uiFilledLabelStyle(chrome)]} numberOfLines={1}>
                 Liturgia delle Ore
               </Text>
             </TouchableOpacity>
@@ -1288,7 +1301,7 @@ export default function Home() {
 
             {messeRitualiEnabled ? (
               <TouchableOpacity
-                style={[styles.quickCelebraBtn, styles.ritualiBtnOutline, webClickable]}
+                style={[styles.quickCelebraBtn, styles.ritualiBtnOutline, uiOutlineActionStyle(chrome, RITUALI_ORANGE), webClickable]}
                 onPress={() => {
                   void triggerAppHaptic("light");
                   router.push("/messe-rituali" as any);
@@ -1304,7 +1317,7 @@ export default function Home() {
                     color={RITUALI_ORANGE}
                   />
                 </View>
-                <Text style={[styles.heroTitle, styles.heroTitleRitualOutline]} numberOfLines={1}>
+                <Text style={[styles.heroTitle, styles.heroTitleRitualOutline, uiFilledLabelStyle(chrome)]} numberOfLines={1}>
                   Messe votive e rituali
                 </Text>
               </TouchableOpacity>
@@ -1313,7 +1326,12 @@ export default function Home() {
         )}
 
         <TouchableOpacity
-          style={[styles.dlCard, dlRunning && { opacity: 0.75 }, webClickable]}
+          style={[
+            styles.dlCard,
+            uiOutlineActionStyle(chrome, ORE_BLUE),
+            dlRunning && { opacity: 0.75 },
+            webClickable,
+          ]}
           onPress={() => void startUnifiedDownload()}
           disabled={dlRunning}
           testID="btn-download-ore"
@@ -1326,15 +1344,15 @@ export default function Home() {
           accessibilityState={{ disabled: dlRunning, busy: dlRunning }}
         >
           <View style={styles.dlMain}>
-            <Text style={styles.dlMainLine} numberOfLines={1}>
+            <Text style={[styles.dlMainLine, uiFilledLabelStyle(chrome)]} numberOfLines={1}>
               Scarica letture
             </Text>
             {oreEnabled ? (
-            <Text style={styles.dlMainLine} numberOfLines={1}>
+            <Text style={[styles.dlMainLine, uiFilledLabelStyle(chrome)]} numberOfLines={1}>
               e liturgia delle ore
             </Text>
             ) : (
-            <Text style={styles.dlMainLine} numberOfLines={1}>
+            <Text style={[styles.dlMainLine, uiFilledLabelStyle(chrome)]} numberOfLines={1}>
               della Messa
             </Text>
             )}
@@ -1342,7 +1360,7 @@ export default function Home() {
           <View style={styles.dlSide}>
             {dlRunning ? (
               <>
-                <ActivityIndicator color={QUICK_CELEBRA_GOLD} />
+                <ActivityIndicator color={chrome.mode === "pieni" ? "#FFFFFF" : QUICK_CELEBRA_GOLD} />
                 <Text style={styles.dlLabel}>Scaricando</Text>
                 <Text style={styles.dlCount}>
                   {dlProgress ? `${dlProgress.done}/${dlProgress.total}` : "…"}
@@ -1504,7 +1522,7 @@ export default function Home() {
   );
 }
 
-const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
+const makeStyles = (colors: any, fontSize: number, iconBtnSize: number, chrome: UiChrome) => {
   const heroTextOutline = {
     textShadowColor: "#000000",
     textShadowOffset: { width: 1, height: 1 },
@@ -1691,7 +1709,7 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
     },
     dayButtonsRow: {
       flexDirection: "row",
-      gap: 10,
+      gap: chrome.dayRowGap,
       paddingLeft: 8,
       paddingRight: 10,
       paddingTop: 8,
@@ -1701,7 +1719,7 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
     dayButtonOuter: {
       position: "relative",
       alignSelf: "stretch",
-      borderRadius: ACTION_RADIUS + 6,
+      borderRadius: chrome.dayOuterRadius,
       padding: 5,
     },
     dayButtonOuterActive: Platform.select({
@@ -1724,8 +1742,8 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
       right: 0,
       bottom: 0,
       left: 0,
-      borderRadius: ACTION_RADIUS + 6,
-      borderWidth: 3,
+      borderRadius: chrome.dayOuterRadius,
+      borderWidth: chrome.dayHaloBorder,
       borderColor: ORE_BLUE,
     },
     dayButton: {
@@ -1735,11 +1753,11 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
       // misura del contenuto e poi porta tutti i chip all'altezza del più alto.
       flexGrow: 1,
       width: Math.round(fontSize * 8.4),
-      paddingVertical: 10,
+      paddingVertical: chrome.mode === "aria" ? 12 : 10,
       paddingHorizontal: 10,
-      borderWidth: 3,
+      borderWidth: chrome.dayBorder,
       borderColor: colors.border,
-      borderRadius: ACTION_RADIUS,
+      borderRadius: chrome.dayRadius,
       backgroundColor: "#000000",
       alignItems: "center",
       justifyContent: "flex-start",
@@ -1873,7 +1891,7 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
     },
     flagStack: {
       width: "100%",
-      gap: 12,
+      gap: chrome.listGap,
     },
     flagBtn: {
       width: "100%",
@@ -1882,14 +1900,21 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
       justifyContent: "space-between",
       gap: 12,
       minHeight: Math.round(ACTION_MIN_HEIGHT * 1.05),
-      paddingVertical: 16,
+      paddingVertical: chrome.flagPaddingV,
       paddingRight: 14,
       paddingLeft: 14,
-      borderRadius: 14,
-      borderWidth: 1.5,
+      borderRadius: chrome.flagRadius,
+      borderWidth: chrome.mode === "classic" || chrome.mode === "aria" ? (chrome.mode === "aria" ? 1.5 : 1.5) : 0,
       borderColor: colors.border,
-      backgroundColor: colors.surface,
-      borderLeftWidth: 5,
+      backgroundColor: chrome.mode === "pieni" || chrome.mode === "fascia" ? undefined : colors.surface,
+      borderLeftWidth:
+        chrome.mode === "classic"
+          ? 5
+          : chrome.flagLeftAsFull
+            ? chrome.mode === "aria"
+              ? 1.5
+              : 5
+            : 0,
     },
     flagBtnGold: {
       borderLeftColor: QUICK_CELEBRA_GOLD,
@@ -1920,11 +1945,6 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
       letterSpacing: Math.round(fontSize * 0.108375),
       fontVariant: ["small-caps"],
       includeFontPadding: false,
-      ...(Platform.OS === "web"
-        ? ({
-            fontVariant: "small-caps",
-          } as const)
-        : {}),
     },
     flagTitleGold: {
       color: QUICK_CELEBRA_GOLD,
@@ -1947,7 +1967,7 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
       gap: 12,
       paddingVertical: 10,
       paddingHorizontal: 14,
-      borderRadius: ACTION_RADIUS,
+      borderRadius: chrome.actionRadius,
       minHeight: Math.round(ACTION_MIN_HEIGHT * 0.82 * 1.2),
     },
     actionIconSlot: {
@@ -1958,17 +1978,17 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
     },
     quickCelebraBtnOutline: {
       backgroundColor: "transparent",
-      borderWidth: 4,
+      borderWidth: chrome.outlineBorder,
       borderColor: QUICK_CELEBRA_GOLD,
     },
     oreBtnOutline: {
       backgroundColor: "transparent",
-      borderWidth: 4,
+      borderWidth: chrome.outlineBorder,
       borderColor: ORE_BLUE,
     },
     ritualiBtnOutline: {
       backgroundColor: "transparent",
-      borderWidth: 4,
+      borderWidth: chrome.outlineBorder,
       borderColor: RITUALI_ORANGE,
     },
     heroCard: {
@@ -2010,11 +2030,6 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
       letterSpacing: Math.round(fontSize * 0.15),
       fontVariant: ["small-caps"],
       ...heroTextOutline,
-      ...(Platform.OS === "web"
-        ? ({
-            fontVariant: "small-caps",
-          } as const)
-        : {}),
     },
     heroTitleGhost: {
       color: colors.textSecondary,
@@ -2036,7 +2051,6 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
       ...(Platform.OS === "web"
         ? ({
             textShadow: "none",
-            fontVariant: "small-caps",
           } as const)
         : {}),
     },
@@ -2055,7 +2069,6 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
       ...(Platform.OS === "web"
         ? ({
             textShadow: "none",
-            fontVariant: "small-caps",
           } as const)
         : {}),
     },
@@ -2074,7 +2087,6 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
       ...(Platform.OS === "web"
         ? ({
             textShadow: "none",
-            fontVariant: "small-caps",
           } as const)
         : {}),
     },
@@ -2099,9 +2111,9 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number) => {
     dlCard: {
       flexDirection: "row",
       alignItems: "stretch",
-      borderWidth: 3,
+      borderWidth: chrome.dlBorder,
       borderColor: ORE_BLUE,
-      borderRadius: ACTION_RADIUS,
+      borderRadius: chrome.dlRadius,
       minHeight: ACTION_MIN_HEIGHT,
       overflow: "hidden",
       backgroundColor: "transparent",

@@ -14,7 +14,6 @@ export type ThemeMode =
   | "dark"
   | "parchment"
   | "slate"
-  | "pesca"
   | "bluNotte"
   | "notteMorbida";
 type ReadingMode = "scroll" | "tap";
@@ -23,10 +22,9 @@ export const THEME_CHOICES: {
   id: ThemeMode;
   label: string;
   hint: string;
-  icon: "document-text" | "moon" | "layers-outline" | "sunny-outline" | "water-outline" | "contrast-outline";
+  icon: "document-text" | "moon" | "layers-outline" | "water-outline" | "contrast-outline";
 }[] = [
   { id: "parchment", label: "Pergamena", hint: "Avorio, lettura di giorno", icon: "document-text" },
-  { id: "pesca", label: "Pesca", hint: "Fondo caldo, testo marrone", icon: "sunny-outline" },
   { id: "dark", label: "Scuro", hint: "Nero OLED, contrasto netto", icon: "moon" },
   { id: "slate", label: "Ardesia", hint: "Grigio scuro morbido", icon: "layers-outline" },
   { id: "bluNotte", label: "Blu notte", hint: "Blu profondo, testo crema", icon: "water-outline" },
@@ -37,7 +35,6 @@ const PERSISTED_THEMES: ThemeMode[] = [
   "dark",
   "parchment",
   "slate",
-  "pesca",
   "bluNotte",
   "notteMorbida",
 ];
@@ -53,8 +50,6 @@ export function themeMuteFillRatio(theme: ThemeMode): number {
       return 0.32;
     case "parchment":
       return 0.16;
-    case "pesca":
-      return 0.14;
     case "slate":
       return 0.22;
     case "bluNotte":
@@ -68,6 +63,11 @@ export function themeMuteFillRatio(theme: ThemeMode): number {
 
 /** Variante tema Ardesia (solo con theme === "slate"). */
 export type SlateVariant = "blu" | "pietra";
+
+/** Aspetto dei tasti. «classic» è l’app attuale. */
+export type UiStyle = "classic" | "aria" | "libro" | "pieni" | "fascia";
+
+const UI_STYLE_IDS: UiStyle[] = ["classic", "aria", "libro", "pieni", "fascia"];
 
 export const SLATE_VARIANT_DEFAULT: SlateVariant = "blu";
 
@@ -114,6 +114,8 @@ interface SettingsState {
   pinchZoomEnabled: boolean;
   /** Fattore interlinea testo liturgico (0.85 compatto … 1.25 ampio). */
   lineSpacing: number;
+  /** Disegno dei tasti. Default: aspetto attuale. */
+  uiStyle: UiStyle;
   setTheme: (t: ThemeMode) => void;
   setFontSize: (n: number, persistNow?: boolean) => void;
   setHighContrast: (v: boolean) => void;
@@ -130,6 +132,7 @@ interface SettingsState {
   setHapticFeedbackEnabled: (v: boolean) => void;
   setPinchZoomEnabled: (v: boolean) => void;
   setLineSpacing: (n: number) => void;
+  setUiStyle: (v: UiStyle) => void;
   colors: ReturnType<typeof getColors>;
   scaledFont: (base: number) => number;
 }
@@ -373,25 +376,6 @@ const getColors = (
   if (theme === "slate") {
     return getSlateColors(slateVariant, highContrast);
   }
-  if (theme === "pesca") {
-    return {
-      background: "#F6E2D2",
-      surface: "#FAEBE0",
-      bgSecondary: "#EDD4C4",
-      border: "#D4B8A4",
-      textPrimary: highContrast ? "#241408" : "#3A2418",
-      textSecondary: "#6B5144",
-      rubrics: "#A33B2E",
-      primary: "#8A5A12",
-      focus: "#8A5A12",
-      liturgicalGreen: "#1B5E20",
-      liturgicalRed: "#A33B2E",
-      liturgicalPurple: "#4A148C",
-      liturgicalWhite: "#8A5A12",
-      liturgicalRose: "#AD1457",
-      ...ACCENT_PARCHMENT,
-    };
-  }
   if (theme === "bluNotte") {
     return {
       background: "#152033",
@@ -484,6 +468,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   const [hapticFeedbackEnabled, setHapticFeedbackEnabledState] = useState(false);
   const [pinchZoomEnabled, setPinchZoomEnabledState] = useState(false);
   const [lineSpacing, setLineSpacingState] = useState(LINE_SPACING_DEFAULT);
+  const [uiStyle, setUiStyleState] = useState<UiStyle>("classic");
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -504,11 +489,11 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
           const s = JSON.parse(saved);
           if (PERSISTED_THEMES.includes(s.theme as ThemeMode)) {
             setThemeState(s.theme as ThemeMode);
-          } else if (s.theme === "light") {
-            // Tema chiaro rimosso dalle Impostazioni: migra a scuro.
-            setThemeState("dark");
+          } else if (s.theme === "light" || s.theme === "pesca") {
+            const nextTheme = s.theme === "pesca" ? "parchment" : "dark";
+            setThemeState(nextTheme);
             try {
-              const next = { ...s, theme: "dark" };
+              const next = { ...s, theme: nextTheme };
               await AsyncStorage.setItem("messale_settings", JSON.stringify(next));
             } catch {}
           }
@@ -574,6 +559,9 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
           if (typeof s.lineSpacing === "number") {
             setLineSpacingState(clampLineSpacing(s.lineSpacing));
           }
+          if (UI_STYLE_IDS.includes(s.uiStyle as UiStyle)) {
+            setUiStyleState(s.uiStyle as UiStyle);
+          }
         }
         if (!migrationDoneV6) {
           try {
@@ -612,8 +600,8 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     })();
   }, []);
 
-  const persist = async (patch: Partial<{ theme: ThemeMode; fontSize: number; highContrast: boolean; isBold: boolean; readingMode: ReadingMode; fontFamilyId: FontFamilyId; parchmentTone: number; slateVariant: SlateVariant; celebraSubitoEnabled: boolean; preparaCelebraEnabled: boolean; oreEnabled: boolean; messeRitualiEnabled: boolean; optionalSaintsUseSelection: boolean; hapticFeedbackEnabled: boolean; pinchZoomEnabled: boolean; lineSpacing: number }>) => {
-    const next = { theme, fontSize, highContrast, isBold, readingMode, fontFamilyId, parchmentTone, slateVariant, celebraSubitoEnabled, preparaCelebraEnabled, oreEnabled, messeRitualiEnabled, optionalSaintsUseSelection, hapticFeedbackEnabled, pinchZoomEnabled, lineSpacing, ...patch };
+  const persist = async (patch: Partial<{ theme: ThemeMode; fontSize: number; highContrast: boolean; isBold: boolean; readingMode: ReadingMode; fontFamilyId: FontFamilyId; parchmentTone: number; slateVariant: SlateVariant; celebraSubitoEnabled: boolean; preparaCelebraEnabled: boolean; oreEnabled: boolean; messeRitualiEnabled: boolean; optionalSaintsUseSelection: boolean; hapticFeedbackEnabled: boolean; pinchZoomEnabled: boolean; lineSpacing: number; uiStyle: UiStyle }>) => {
+    const next = { theme, fontSize, highContrast, isBold, readingMode, fontFamilyId, parchmentTone, slateVariant, celebraSubitoEnabled, preparaCelebraEnabled, oreEnabled, messeRitualiEnabled, optionalSaintsUseSelection, hapticFeedbackEnabled, pinchZoomEnabled, lineSpacing, uiStyle, ...patch };
     await AsyncStorage.setItem("messale_settings", JSON.stringify(next));
   };
 
@@ -680,6 +668,10 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     setLineSpacingState(clamped);
     persist({ lineSpacing: clamped });
   };
+  const setUiStyle = (v: UiStyle) => {
+    setUiStyleState(v);
+    persist({ uiStyle: v });
+  };
 
   const colors = getColors(theme, highContrast, parchmentTone, slateVariant);
   const fontFamily = getFontFamilyString(fontFamilyId);
@@ -692,7 +684,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   if (!loaded) return null;
 
   return (
-    <SettingsContext.Provider value={{ theme, fontSize, highContrast, isBold, readingMode, fontFamilyId, fontFamily, parchmentTone, slateVariant, celebraSubitoEnabled, preparaCelebraEnabled, oreEnabled, messeRitualiEnabled, optionalSaintsUseSelection, hapticFeedbackEnabled, pinchZoomEnabled, lineSpacing, setTheme, setFontSize, setHighContrast, setIsBold, setReadingMode, setFontFamilyId, setParchmentTone, setSlateVariant, setCelebraSubitoEnabled, setPreparaCelebraEnabled, setOreEnabled, setMesseRitualiEnabled, setOptionalSaintsUseSelection, setHapticFeedbackEnabled, setPinchZoomEnabled, setLineSpacing, colors, scaledFont }}>
+    <SettingsContext.Provider value={{ theme, fontSize, highContrast, isBold, readingMode, fontFamilyId, fontFamily, parchmentTone, slateVariant, celebraSubitoEnabled, preparaCelebraEnabled, oreEnabled, messeRitualiEnabled, optionalSaintsUseSelection, hapticFeedbackEnabled, pinchZoomEnabled, lineSpacing, uiStyle, setTheme, setFontSize, setHighContrast, setIsBold, setReadingMode, setFontFamilyId, setParchmentTone, setSlateVariant, setCelebraSubitoEnabled, setPreparaCelebraEnabled, setOreEnabled, setMesseRitualiEnabled, setOptionalSaintsUseSelection, setHapticFeedbackEnabled, setPinchZoomEnabled, setLineSpacing, setUiStyle, colors, scaledFont }}>
       {children}
     </SettingsContext.Provider>
   );

@@ -34,6 +34,7 @@ import { oreFirstAntiphonBlockIndex, oreHymnBlockIndex } from "../src/ore/hymnSc
 import { enrichPsalmHeads } from "../src/ore/psalmHeadings";
 import { ensureHour, invitAntText } from "../src/ore/scraper";
 import { hourTitle } from "../src/ore/titles";
+import { getUiChrome, uiNavLinkLabelStyle, uiNavLinkStyle } from "../src/uiStyleChrome";
 import type { DayHoursCache } from "../src/ore/types";
 import type { InvitPsalmId, MediaId, OreBlock, OreHourId } from "../src/ore/types";
 
@@ -108,7 +109,7 @@ function parseHourParam(raw: unknown): OreHourId {
 export default function OreLeggi() {
   const router = useRouter();
   const params = useLocalSearchParams<{ date?: string; hour?: string; start?: string }>();
-  const { colors, fontSize, lineSpacing, fontFamilyId, isBold } = useSettings();
+  const { colors, fontSize, lineSpacing, fontFamilyId, isBold, uiStyle } = useSettings();
   const dateParam = routeParamOne(params.date);
   const dateISO =
     /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : localDateStr(new Date());
@@ -448,6 +449,9 @@ export default function OreLeggi() {
     } as any);
   };
 
+  const chrome = getUiChrome(uiStyle);
+  const nextLinkExtra = uiNavLinkStyle(chrome, NEXT_GOLD);
+  const nextLinkLabelExtra = uiNavLinkLabelStyle(chrome);
   const styles = makeStyles(colors, fontSize);
 
   return (
@@ -631,23 +635,23 @@ export default function OreLeggi() {
               <View style={styles.nextRow}>
                 <TouchableOpacity
                   onPress={() => goToHour("lodi", "hymn")}
-                  style={styles.nextBtn}
+                  style={[styles.nextBtn, nextLinkExtra]}
                   accessibilityRole="button"
                   accessibilityLabel="Vai alle Lodi, dall'inno"
                   testID="btn-ore-next-lodi"
                   {...webClickable}
                 >
-                  <Text style={styles.nextLab}>Lodi</Text>
+                  <Text style={[styles.nextLab, nextLinkLabelExtra]}>Lodi</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => goToHour("ufficio", "hymn")}
-                  style={styles.nextBtn}
+                  style={[styles.nextBtn, nextLinkExtra]}
                   accessibilityRole="button"
                   accessibilityLabel="Vai all'Ufficio delle letture, dall'inno"
                   testID="btn-ore-next-ufficio"
                   {...webClickable}
                 >
-                  <Text style={styles.nextLab}>Ufficio</Text>
+                  <Text style={[styles.nextLab, nextLinkLabelExtra]}>Ufficio</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -657,13 +661,13 @@ export default function OreLeggi() {
               <View style={styles.nextRow}>
                 <TouchableOpacity
                   onPress={() => goToHour("lodi", "firstAnt")}
-                  style={styles.nextBtn}
+                  style={[styles.nextBtn, nextLinkExtra]}
                   accessibilityRole="button"
                   accessibilityLabel="Vai alle Lodi, dalla prima antifona"
                   testID="btn-ore-next-lodi"
                   {...webClickable}
                 >
-                  <Text style={styles.nextLab}>Lodi</Text>
+                  <Text style={[styles.nextLab, nextLinkLabelExtra]}>Lodi</Text>
                 </TouchableOpacity>
               </View>
             </View>
