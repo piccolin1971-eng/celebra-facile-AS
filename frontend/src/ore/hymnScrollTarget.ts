@@ -19,6 +19,15 @@ function isTeDeumHymnBlock(b: Extract<OreBlock, { k: "hymn" }>): boolean {
   return /^Te\s+Deum\b/i.test(blob) || /\bTe\s+Deum\s+laudamus\b/i.test(blob);
 }
 
+/** Prima antifona del salmodia (es. «1 ant.»), dopo l’inno nelle Lodi. */
+export function oreFirstAntiphonBlockIndex(blocks: OreBlock[]): number | null {
+  for (let i = 0; i < blocks.length; i++) {
+    const b = blocks[i];
+    if (b.k === "rubric" && /ant/i.test(b.lab)) return i;
+  }
+  return null;
+}
+
 /** Indice del blocco da mostrare in cima (titolo INNO o primo inno d’apertura, non il Te Deum). */
 export function oreHymnBlockIndex(blocks: OreBlock[]): number | null {
   for (let i = 0; i < blocks.length; i++) {

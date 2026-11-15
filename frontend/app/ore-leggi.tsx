@@ -30,7 +30,7 @@ import { OreBlocksView } from "../src/ore/OreBlocks";
 import { migrateOreBlocks, repairInvocationsFiduciaLead } from "../src/ore/parseHour";
 import { ensureBenediciteNoGloriaRubric } from "../src/ore/benediciteRubric";
 import { invitPsalmOverlapInLodi } from "../src/ore/invitPsalmInLodi";
-import { oreHymnBlockIndex } from "../src/ore/hymnScrollTarget";
+import { oreFirstAntiphonBlockIndex, oreHymnBlockIndex } from "../src/ore/hymnScrollTarget";
 import { enrichPsalmHeads } from "../src/ore/psalmHeadings";
 import { ensureHour, invitAntText } from "../src/ore/scraper";
 import { hourTitle } from "../src/ore/titles";
@@ -113,8 +113,11 @@ export default function OreLeggi() {
   const dateISO =
     /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : localDateStr(new Date());
   const hour = parseHourParam(params.hour);
-  const startAtHymn =
-    routeParamOne(params.start) === "hymn" && (hour === "lodi" || hour === "ufficio");
+  const startParam = routeParamOne(params.start);
+  const startAtHymn = startParam === "hymn" && (hour === "lodi" || hour === "ufficio");
+  const startAtFirstAnt = startParam === "firstAnt" && hour === "lodi";
+  const startScrollTarget = startAtHymn || startAtFirstAnt;
+  const scrollStartKey = startAtHymn ? "hymn" : startAtFirstAnt ? "firstAnt" : "top";
   const date = parseLocalDate(dateISO);
   const title = hourTitle(hour, date);
   const lineHeight = oreBodyLineHeight(fontSize, lineSpacing);
@@ -357,12 +360,12 @@ export default function OreLeggi() {
     scrollAppliedKeyRef.current = "";
   }, [dateISO, hour, blocks]);
 
-  const scrollTargetKey = `${dateISO}|${hour}|${startAtHymn ? "hymn" : "top"}`;
+  const scrollTargetKey = `${dateISO}|${hour}|${scrollStartKey}`;
 
   const applyOreScrollTarget = useCallback(() => {
     if (loading) return;
     if (scrollAppliedKeyRef.current === scrollTargetKey) return;
-    if (!startAtHymn) {
+    if (!startScrollTarget) {
       scrollAppliedKeyRef.current = scrollTargetKey;
       yRef.current = 0;
       requestAnimationFrame(() => scrollOreReadTo(scrollRef, 0));
@@ -370,7 +373,9 @@ export default function OreLeggi() {
     }
     const displayBlocks = enrichPsalmHeads(blocks);
     if (!displayBlocks.length) return;
-    const idx = oreHymnBlockIndex(displayBlocks);
+    const idx = startAtFirstAnt
+      ? oreFirstAntiphonBlockIndex(displayBlocks)
+      : oreHymnBlockIndex(displayBlocks);
     if (idx == null) {
       scrollAppliedKeyRef.current = scrollTargetKey;
       yRef.current = 0;
@@ -386,21 +391,31 @@ export default function OreLeggi() {
       scrollOreReadTo(scrollRef, top);
       requestAnimationFrame(() => scrollOreReadTo(scrollRef, top));
     });
-  }, [loading, startAtHymn, blocks, scrollTargetKey]);
+  }, [loading, startScrollTarget, startAtFirstAnt, blocks, scrollTargetKey]);
 
   useEffect(() => {
     applyOreScrollTarget();
   }, [applyOreScrollTarget]);
 
+  const scrollTargetBlockIndex = useCallback(
+    (raw: OreBlock[]) => {
+      const displayBlocks = enrichPsalmHeads(raw);
+      return startAtFirstAnt
+        ? oreFirstAntiphonBlockIndex(displayBlocks)
+        : oreHymnBlockIndex(displayBlocks);
+    },
+    [startAtFirstAnt],
+  );
+
   const onBlockLayout = useCallback(
     (index: number, y: number) => {
       blockYRef.current.set(index, y);
-      if (!startAtHymn || loading) return;
-      const idx = oreHymnBlockIndex(enrichPsalmHeads(blocks));
+      if (!startScrollTarget || loading) return;
+      const idx = scrollTargetBlockIndex(blocks);
       if (idx !== index) return;
       applyOreScrollTarget();
     },
-    [startAtHymn, loading, blocks, applyOreScrollTarget],
+    [startScrollTarget, loading, blocks, scrollTargetBlockIndex, applyOreScrollTarget],
   );
 
   const invitLodiOverlap =
@@ -425,12 +440,11 @@ export default function OreLeggi() {
     void AsyncStorage.setItem(SPD_KEY, String(next));
   };
 
-  /** Scorciatoie Invitatorio / Ufficio → Lodi (o Ufficio): apre dall’inno. */
-  const goToHourAtHymn = (next: OreHourId) => {
+  const goToHour = (next: OreHourId, start?: "hymn" | "firstAnt") => {
     void AsyncStorage.setItem(LAST_KEY, next);
     router.push({
       pathname: "/ore-leggi",
-      params: { date: dateISO, hour: next, start: "hymn" },
+      params: { date: dateISO, hour: next, ...(start ? { start } : {}) },
     } as any);
   };
 
@@ -513,7 +527,7 @@ export default function OreLeggi() {
           onContentSizeChange={(_w, h) => {
             contentHRef.current = h;
             updateMax();
-            if (startAtHymn) applyOreScrollTarget();
+            if (startScrollTarget) applyOreScrollTarget();
           }}
           onScroll={(e) => {
             const { contentSize, layoutMeasurement, contentOffset } = e.nativeEvent;
@@ -551,7 +565,7 @@ export default function OreLeggi() {
             goldColor={colors.liturgicalWhite}
             headFontFamily={headFont.fontFamily}
             headFontWeight={headFont.fontWeight}
-            onBlockLayout={startAtHymn ? onBlockLayout : undefined}
+            onBlockLayout={startScrollTarget ? onBlockLayout : undefined}
             afterHourHead={
               hour === "ora-media" ? (
                 <View style={styles.invNums} accessibilityRole="tablist">
@@ -616,7 +630,7 @@ export default function OreLeggi() {
             <View style={styles.nextWrap}>
               <View style={styles.nextRow}>
                 <TouchableOpacity
-                  onPress={() => goToHourAtHymn("lodi")}
+                  onPress={() => goToHour("lodi", "hymn")}
                   style={styles.nextBtn}
                   accessibilityRole="button"
                   accessibilityLabel="Vai alle Lodi, dall'inno"
@@ -626,7 +640,7 @@ export default function OreLeggi() {
                   <Text style={styles.nextLab}>Lodi</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  onPress={() => goToHourAtHymn("ufficio")}
+                  onPress={() => goToHour("ufficio", "hymn")}
                   style={styles.nextBtn}
                   accessibilityRole="button"
                   accessibilityLabel="Vai all'Ufficio delle letture, dall'inno"
@@ -642,10 +656,10 @@ export default function OreLeggi() {
             <View style={styles.nextWrap}>
               <View style={styles.nextRow}>
                 <TouchableOpacity
-                  onPress={() => goToHourAtHymn("lodi")}
+                  onPress={() => goToHour("lodi", "firstAnt")}
                   style={styles.nextBtn}
                   accessibilityRole="button"
-                  accessibilityLabel="Vai alle Lodi, dall'inno"
+                  accessibilityLabel="Vai alle Lodi, dalla prima antifona"
                   testID="btn-ore-next-lodi"
                   {...webClickable}
                 >
