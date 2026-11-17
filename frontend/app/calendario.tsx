@@ -138,7 +138,6 @@ function dayCardBorderColor(
   if (highContrast) return colors.border;
   if (theme === "dark" || theme === "notteMorbida") return "#666666";
   if (theme === "slate" || theme === "bluNotte") return colors.border;
-  if (theme === "parchment") return colors.textSecondary;
   return "#B8B3A8";
 }
 

@@ -3,7 +3,7 @@ import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, Platform, 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useSettings, themeMuteFillRatio } from "../src/SettingsContext";
+import { useSettings, themeMuteFillRatio, type ThemeMode } from "../src/SettingsContext";
 import {
   getUiChrome,
   uiDayChipStyle,
@@ -128,6 +128,12 @@ const QUICK_CELEBRA_GOLD = "#E0B429";
 const ORE_BLUE = "#4DA8DA";
 const RITUALI_ORANGE = "#E2A16A";
 const DL_CHECK_GREEN = "#4CAF50";
+
+/** Scritte crema sui tasti pieni di Ardesia, Blu notte e Notte morbida. Su Scuro resta il bianco. */
+function heroFillLabelColor(theme: ThemeMode, onPrimary: string): string {
+  if (theme === "slate" || theme === "bluNotte" || theme === "notteMorbida") return "#F7F4EC";
+  return onPrimary;
+}
 
 /** Scurisce un riempimento restando sullo stesso colore, così il testo resta più leggibile. */
 function mixHexTowardBlack(hex: string, amount: number): string {
@@ -691,7 +697,7 @@ export default function Home() {
   const topBarIconSize = topBarGlyphSize(fontSize, windowWidth < 380 ? 36 : 40);
   const topBarIconBtnSize = topBarGlyphBox(topBarIconSize);
   const chrome = getUiChrome(uiStyle);
-  const styles = makeStyles(colors, fontSize, topBarIconBtnSize, chrome);
+  const styles = makeStyles(colors, fontSize, topBarIconBtnSize, chrome, theme);
   const heroIconSize = Math.round(scaledFont(40) * 1.45);
   const compactIconSlot = Math.round(heroIconSize * 0.78);
   /** Stessa colonna icona per «Celebra subito» e «Liturgia delle Ore». */
@@ -1522,7 +1528,8 @@ export default function Home() {
   );
 }
 
-const makeStyles = (colors: any, fontSize: number, iconBtnSize: number, chrome: UiChrome) => {
+const makeStyles = (colors: any, fontSize: number, iconBtnSize: number, chrome: UiChrome, theme: ThemeMode) => {
+  const heroFillInk = heroFillLabelColor(theme, colors.onPrimary);
   const heroTextOutline = {
     textShadowColor: "#000000",
     textShadowOffset: { width: 1, height: 1 },
@@ -2021,7 +2028,7 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number, chrome: 
       fontSize: Math.round(fontSize * 1.05),
       lineHeight: Math.round(fontSize * 1.18),
       fontWeight: ACTION_TITLE_WEIGHT,
-      color: colors.onPrimary,
+      color: heroFillInk,
       textAlign: "center",
       width: "100%",
       flexShrink: 1,
@@ -2095,7 +2102,7 @@ const makeStyles = (colors: any, fontSize: number, iconBtnSize: number, chrome: 
       fontSize: Math.round(fontSize * 0.62),
       lineHeight: Math.round(fontSize * 0.82),
       fontWeight: "600",
-      color: colors.onPrimary,
+      color: heroFillInk,
       textAlign: "center",
       marginTop: 2,
       flexShrink: 0,

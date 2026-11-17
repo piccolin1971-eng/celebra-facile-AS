@@ -4,7 +4,7 @@ import Constants from "expo-constants";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useSettings, PARCHMENT_TONE_MIN, PARCHMENT_TONE_MAX, SLATE_VARIANT_OPTIONS, THEME_CHOICES, themeHidesLiturgicalPreview } from "../src/SettingsContext";
+import { useSettings, SLATE_VARIANT_OPTIONS, THEME_CHOICES, themeHidesLiturgicalPreview } from "../src/SettingsContext";
 import { UI_STYLE_CHOICES } from "../src/uiStyleChrome";
 import { LINE_SPACING_MIN, LINE_SPACING_MAX, LINE_SPACING_STEP, formatLineSpacingValue } from "../src/liturgyTypography";
 import { SettingsStepperSlider } from "../src/components/SettingsStepperSlider";
@@ -20,7 +20,7 @@ import {
 
 export default function Impostazioni() {
   const router = useRouter();
-  const { theme, setTheme, fontSize, highContrast, setHighContrast, isBold, setIsBold, lineSpacing, setLineSpacing, fontFamilyId, setFontFamilyId, parchmentTone, setParchmentTone, slateVariant, setSlateVariant, celebraSubitoEnabled, setCelebraSubitoEnabled, preparaCelebraEnabled, setPreparaCelebraEnabled, oreEnabled, setOreEnabled, messeRitualiEnabled, setMesseRitualiEnabled, hapticFeedbackEnabled, setHapticFeedbackEnabled, pinchZoomEnabled, setPinchZoomEnabled, uiStyle, setUiStyle, colors, scaledFont } = useSettings();
+  const { theme, setTheme, fontSize, highContrast, setHighContrast, isBold, setIsBold, lineSpacing, setLineSpacing, fontFamilyId, setFontFamilyId, slateVariant, setSlateVariant, celebraSubitoEnabled, setCelebraSubitoEnabled, preparaCelebraEnabled, setPreparaCelebraEnabled, oreEnabled, setOreEnabled, messeRitualiEnabled, setMesseRitualiEnabled, hapticFeedbackEnabled, setHapticFeedbackEnabled, pinchZoomEnabled, setPinchZoomEnabled, uiStyle, setUiStyle, colors, scaledFont } = useSettings();
   const styles = makeStyles(colors, fontSize);
   const appVersion = Constants.expoConfig?.version ?? "—";
   const apkDate = (Constants.expoConfig?.extra as { apkDate?: string } | undefined)?.apkDate?.trim();
@@ -309,7 +309,7 @@ export default function Impostazioni() {
         <View style={styles.section} testID="section-theme">
           <Text style={styles.sectionTitle}>Tema</Text>
           <Text style={styles.sectionDesc}>
-            Pergamena per il giorno; Scuro per OLED; Ardesia, Blu notte e Notte morbida per leggere senza abbagliamento.
+            Scuro per OLED; Ardesia, Blu notte e Notte morbida per leggere senza abbagliamento.
           </Text>
           <View style={styles.themeRow}>
             {THEME_CHOICES.map((opt) => {
@@ -354,40 +354,6 @@ export default function Impostazioni() {
               Il sacerdote invita i fedeli all'atto penitenziale:
             </Text>
           </View>
-          )}
-
-          {theme === "parchment" && (
-            <View style={{ marginTop: 16 }} testID="section-parchment-tone">
-              <Text style={styles.sectionTitle}>Tono pergamena</Text>
-              <Text style={styles.sectionDesc}>
-                Regola la tonalità dello sfondo seppia ({parchmentTone}).
-                Il range è limitato per mantenere il testo nero sempre leggibile.
-              </Text>
-              <SettingsStepperSlider
-                value={parchmentTone}
-                minimumValue={PARCHMENT_TONE_MIN}
-                maximumValue={PARCHMENT_TONE_MAX}
-                step={1}
-                onValueChange={setParchmentTone}
-                colors={colors}
-                scaledFont={scaledFont}
-                testID="slider-parchment-tone"
-              />
-              <View
-                style={[
-                  styles.parchmentPreview,
-                  { backgroundColor: colors.background, borderColor: colors.border },
-                ]}
-                testID="parchment-tone-preview"
-              >
-                <Text style={[styles.parchmentPreviewSample, { color: colors.textPrimary }]}>
-                  Padre nostro che sei nei cieli, sia santificato il tuo nome.
-                </Text>
-                <Text style={[styles.parchmentPreviewDesc, { color: colors.textSecondary }]}>
-                  Anteprima del tono pergamena su sfondo e testo nero.
-                </Text>
-              </View>
-            </View>
           )}
 
           {theme === "slate" && (
@@ -668,12 +634,6 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     fontStyle: "italic",
     lineHeight: fontSize * 0.8,
   },
-  parchmentPreview: {
-    marginTop: 12,
-    padding: 14,
-    borderWidth: 2,
-    borderRadius: 12,
-  },
   slateVariantRow: { flexDirection: "row", gap: 10, marginTop: 10 },
   slateVariantBtn: {
     flex: 1,
@@ -692,16 +652,5 @@ const makeStyles = (colors: any, fontSize: number) => StyleSheet.create({
     color: colors.textSecondary,
     marginTop: 4,
     lineHeight: Math.round(fontSize * 0.78),
-  },
-  parchmentPreviewSample: {
-    fontSize: Math.round(fontSize * 0.85),
-    lineHeight: fontSize * 1.2,
-    fontWeight: "600",
-  },
-  parchmentPreviewDesc: {
-    fontSize: Math.round(fontSize * 0.55),
-    marginTop: 8,
-    fontStyle: "italic",
-    lineHeight: fontSize * 0.8,
   },
 });
