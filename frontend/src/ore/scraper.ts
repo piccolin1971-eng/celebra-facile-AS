@@ -7,7 +7,7 @@ import { fetchLdoDayHtml, ldoHymnForHour } from "./ldo";
 import { extractInvitatoryAntiphon, migrateOreBlocks, parseHourHtml, splitOraMediaHtml } from "./parseHour";
 import { ldoFallbackPatch } from "./parseLdo";
 import { loadDayHours, saveDayHours } from "./cache";
-import { hourParsedHymnLooksCollapsed, hourParsedLooksLikeStaleLdo } from "./hourCacheHealth";
+import { hourNeedsCeiRetry, hourParsedHymnLooksCollapsed, hourParsedLooksLikeStaleLdo } from "./hourCacheHealth";
 import { ceiFetchDateISO, ceiHourSlug } from "./titles";
 import { getBundledCompline } from "./complineBundled";
 import type { DayHoursCache, MediaId, OreHourId, ParsedHour } from "./types";
@@ -157,6 +157,12 @@ async function fetchHourPatch(dateISO: string, hour: OreHourId): Promise<HourPat
   return patch;
 }
 
+/** Ora CEI con testo: non va più confusa con un riempimento LDO. */
+function stampCei(parsed: ParsedHour): ParsedHour {
+  if (!parsed.blocks.length || parsed.error || parsed.origin) return parsed;
+  return { ...parsed, origin: "cei" };
+}
+
 async function ingestHtml(
   hour: OreHourId,
   html: string | null,
@@ -175,12 +181,15 @@ async function ingestHtml(
     const parts = splitOraMediaHtml(html);
     const out: Partial<Record<MediaId, ParsedHour>> = {};
     (["terza", "sesta", "nona"] as MediaId[]).forEach((id) => {
-      out[id] = parseHourHtml(parts[id], id, dateISO);
+      out[id] = stampCei(parseHourHtml(parts[id], id, dateISO));
     });
     return { ...out, hoursBanner };
   }
   const parsed = parseHourHtml(html, hour, dateISO);
-  return { [hour]: hour === "ufficio" ? { ...parsed, blocks: migrateOreBlocks(parsed.blocks) } : parsed, hoursBanner };
+  const stamped = stampCei(
+    hour === "ufficio" ? { ...parsed, blocks: migrateOreBlocks(parsed.blocks) } : parsed,
+  );
+  return { [hour]: stamped, hoursBanner };
 }
 
 function migrateCachedParsed(hour: OreHourId, parsed: ParsedHour): ParsedHour {
@@ -210,10 +219,18 @@ function hourPatchNeedsItalian(patch: HourPatch): boolean {
   });
 }
 
+function cachedHourUsable(hour: OreHourId | MediaId, parsed: ParsedHour | undefined): boolean {
+  if (!parsed?.blocks?.length) return false;
+  if (hourParsedLooksLikeStaleLdo(hour, parsed)) return false;
+  // LDO in cache (memoria vista come festa): si ritenta il CEI. L’ora resta finché il CEI non risponde.
+  if (hourNeedsCeiRetry(parsed)) return false;
+  return true;
+}
+
 function cachedHoursPatch(existing: DayHoursCache, hour: OreHourId): HourPatch | null {
   if (hour === "ora-media") {
     const ids: MediaId[] = ["terza", "sesta", "nona"];
-    if (!ids.every((id) => existing.hours[id]?.blocks?.length)) return null;
+    if (!ids.every((id) => cachedHourUsable(id, existing.hours[id]))) return null;
     return {
       terza: existing.hours.terza,
       sesta: existing.hours.sesta,
@@ -221,8 +238,7 @@ function cachedHoursPatch(existing: DayHoursCache, hour: OreHourId): HourPatch |
     };
   }
   const parsed = existing.hours[hour];
-  if (!parsed?.blocks?.length) return null;
-  if (hourParsedLooksLikeStaleLdo(hour, parsed)) return null;
+  if (!cachedHourUsable(hour, parsed)) return null;
   return { [hour]: parsed };
 }
 

@@ -20,6 +20,7 @@ import {
 import { enrichPsalmHead, enrichPsalmHeads } from "../src/ore/psalmHeadings";
 import type { OreBlock } from "../src/ore/types";
 import { parseHourHtml } from "../src/ore/parseHour";
+import { hourNeedsCeiRetry } from "../src/ore/hourCacheHealth";
 
 const show = (s: string) => s.replaceAll(JOIN_CROSS_MARK, "†");
 
@@ -308,6 +309,39 @@ Dall’«Omelia» di un autore del secondo secolo
   assert(/liberati dalle mani/.test(blob), "Benedictus: testo presente");
   assert(/così io vi darò/.test(blob), "cantico: così con l’accento");
   assert(!/\bcosi\b/.test(blob), "cantico: niente cosi senza accento");
+}
+
+{
+  const cei: OreBlock[] = [
+    { k: "rubric", lab: "1 ant.", text: "Chi salirà il monte del Signore?" },
+    { k: "psalmHead", num: "SALMO 23", name: "Il Signore entra nel suo tempio", sub: "", cite: "" },
+    { k: "prose", text: "Padre nostro." },
+  ];
+  const ldo: OreBlock[] = [
+    { k: "rubric", lab: "1 ant.", text: "A te si stringe l'anima mia" },
+    { k: "psalmHead", num: "SALMO 62, 2-9", name: "L'anima assetata del Signore", sub: "", cite: "" },
+    { k: "title", text: "PADRE NOSTRO" },
+  ];
+  assert(
+    !hourNeedsCeiRetry({ hour: "lodi", blocks: cei, origin: "cei" }),
+    "ora CEI segnata: non si riscarica",
+  );
+  assert(
+    !hourNeedsCeiRetry({ hour: "lodi", blocks: cei }),
+    "salterio feriale CEI (Padre nostro in prosa): non è LDO",
+  );
+  assert(
+    hourNeedsCeiRetry({ hour: "lodi", blocks: ldo }),
+    "cache LDO con titolo PADRE NOSTRO: si ritenta il CEI",
+  );
+  assert(
+    hourNeedsCeiRetry({ hour: "lodi", blocks: cei, origin: "ldo" }),
+    "origine ldo: si ritenta il CEI anche se i salmi sembrano a posto",
+  );
+  assert(
+    !hourNeedsCeiRetry({ hour: "lodi", blocks: ldo, origin: "cei" }),
+    "ora già confermata dal CEI: non si butta",
+  );
 }
 
 console.log("OK test-ore-parsers");

@@ -49,6 +49,20 @@ export function hourParsedLooksLikeStaleLdo(
   return genericAnt;
 }
 
+/**
+ * Ora da liturgiadelleore.it tenuta come se fosse CEI.
+ * Il parse LDO mette il titolo di sezione «PADRE NOSTRO» e il testo intero;
+ * il CEI lascia solo la prosa «Padre nostro.».
+ * Non guarda l’antifona numerata: anche il CEI usa «1 ant.».
+ * Un’ora già segnata `cei` non si riscarica.
+ */
+export function hourNeedsCeiRetry(parsed: ParsedHour | undefined): boolean {
+  if (!parsed?.blocks?.length || parsed.error) return false;
+  if (parsed.origin === "cei") return false;
+  if (parsed.origin === "ldo") return true;
+  return parsed.blocks.some((b) => b.k === "title" && b.text.trim().toUpperCase() === "PADRE NOSTRO");
+}
+
 export function stripStalePsalmodiesFromDay(
   hours: Partial<Record<OreHourId | MediaId, ParsedHour>>,
 ): Partial<Record<OreHourId | MediaId, ParsedHour>> {

@@ -31,6 +31,12 @@ export type ParsedHour = {
   hour: OreHourId | MediaId;
   blocks: OreBlock[];
   error?: string;
+  /**
+   * `ldo`: ora riempita da liturgiadelleore.it perché il CEI non c’era.
+   * In una memoria quel testo usa il comune (salmi da festa). Si ritenta il CEI
+   * senza buttare l’ora già in cache se il nuovo fetch non ha contenuto.
+   */
+  origin?: "cei" | "ldo";
 };
 
 export type DayHoursMeta = {

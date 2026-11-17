@@ -682,7 +682,7 @@ export function ldoFallbackPatch(
     for (const id of ["terza", "sesta", "nona"] as MediaId[]) {
       if (existing[id]?.blocks?.length) continue;
       const parsed = parseLdoHourHtml(extractLdoHourHtml(dayHtml, id), id, dateISO);
-      if (parsed.blocks.length) out[id] = parsed;
+      if (parsed.blocks.length) out[id] = { ...parsed, origin: "ldo" };
     }
     return out;
   }
@@ -690,6 +690,6 @@ export function ldoFallbackPatch(
   const cur = existing[hour];
   if (cur?.blocks?.length) return out;
   const parsed = parseLdoHourHtml(extractLdoHourHtml(dayHtml, hour), hour, dateISO);
-  if (parsed.blocks.length) out[hour] = parsed;
+  if (parsed.blocks.length) out[hour] = { ...parsed, origin: "ldo" };
   return out;
 }

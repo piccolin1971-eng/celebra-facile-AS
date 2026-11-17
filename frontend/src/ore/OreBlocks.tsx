@@ -128,10 +128,12 @@ function LitLine({
   const rest = lab ? core.slice(lab[0].length) : core;
   const pad = hangPad(body.fontSize, hang || 0);
   const useResponseBullet = responseBullet && lab?.[1] === "—";
+  // Android, con *† in un Text annidato, taglia l’ultima parola della riga («della» | «giustizia»).
+  const breakStrategy = "simple" as const;
   if (useResponseBullet) {
     const bulletSize = Math.round(body.fontSize * 1.24 * 0.85);
     return (
-      <Text style={[body, pad]}>
+      <Text style={[body, pad]} textBreakStrategy={breakStrategy}>
         <Text
           style={[
             rubricStyle(body.fontSize, rubricColor),
@@ -150,7 +152,7 @@ function LitLine({
     );
   }
   return (
-    <Text style={[body, pad]}>
+    <Text style={[body, pad]} textBreakStrategy={breakStrategy}>
       {lab ? (
         <Text style={rubricStyle(body.fontSize, rubricColor)}>{lab[1].replace(/\s+$/, "")} </Text>
       ) : null}
@@ -171,7 +173,7 @@ function rubricStyle(fontSize: number, rubricColor: string) {
 
 function colorStars(
   text: string,
-  body: { fontFamily: string; fontSize: number; color: string },
+  body: { fontFamily: string; fontSize: number; lineHeight?: number; color: string },
   rubricColor: string,
   goldColor: string,
 ) {
@@ -180,23 +182,29 @@ function colorStars(
     .replace(new RegExp(` (${JOIN_CROSS_MARK})`, "g"), `\u00A0${JOIN_CROSS_MARK}`);
   const parts = glued.split(new RegExp(`(${JOIN_CROSS_MARK}|[*†])`)).filter((p) => p.length > 0);
   if (parts.length === 1) return glued;
+  const wordStyle = {
+    color: body.color,
+    fontFamily: body.fontFamily,
+    fontSize: body.fontSize,
+    lineHeight: body.lineHeight,
+  };
   return parts.map((p, i) => {
     if (p === JOIN_CROSS_MARK) {
       return (
-        <Text key={i} style={{ color: goldColor, fontFamily: body.fontFamily, fontSize: body.fontSize, fontWeight: "700" }}>
+        <Text key={i} style={{ color: goldColor, fontFamily: body.fontFamily, fontSize: body.fontSize, lineHeight: body.lineHeight, fontWeight: "700" }}>
           †
         </Text>
       );
     }
     if (p === "*" || p === "†") {
       return (
-        <Text key={i} style={rubricStyle(body.fontSize, rubricColor)}>
+        <Text key={i} style={[rubricStyle(body.fontSize, rubricColor), body.lineHeight ? { lineHeight: body.lineHeight } : null]}>
           {p}
         </Text>
       );
     }
     return (
-      <Text key={i} style={{ color: body.color, fontFamily: body.fontFamily }}>
+      <Text key={i} style={wordStyle}>
         {p}
       </Text>
     );
@@ -488,9 +496,9 @@ function renderBlock(
   }
   if (b.k === "rubric") {
     return (
-      <Text key={i} style={[body, { marginTop: em(0.45), marginBottom: em(0.35) }]}>
+      <Text key={i} style={[body, { marginTop: em(0.45), marginBottom: em(0.35) }]} textBreakStrategy="simple">
         {b.lab ? <Text style={rubricStyle(fontSize, rubricColor)}>{b.lab} </Text> : null}
-        <Text style={body}>{colorStars(b.text, body, rubricColor, goldColor)}</Text>
+        <Text style={body} textBreakStrategy="simple">{colorStars(b.text, body, rubricColor, goldColor)}</Text>
       </Text>
     );
   }
