@@ -238,8 +238,15 @@ function verseLinesFromRawRows(rawLines: string[]): VerseLine[] {
       if (prev && /[*†]\s*$/.test(prev.text)) hang = Math.max(hang, 1);
       // Wrap più profondo del CEI (es. 4–5 &nbsp; dopo un emistichio già rientrato).
       else if (prev && prev.hang > 0 && (spaces >= 4 || hangBoost >= 2)) hang = Math.max(hang, 2);
-      // 4 spazi su una riga nuova (es. «Gloria…» nel responsorio) è un rientro lieve, non un wrap.
-      if (hangBoost >= 2 && !(prev && (prev.hang > 0 || /[*†]\s*$/.test(prev.text)))) hangBoost = 1;
+      // 4 spazi su una riga nuova (es. «Gloria…» nel responsorio) è un rientro lieve.
+      // Se la riga chiude con *† è il primo emistichio spezzato (Dn 3: «il Signore, *»): resta profondo.
+      if (
+        hangBoost >= 2 &&
+        !/[*†]\s*$/.test(t) &&
+        !(prev && (prev.hang > 0 || /[*†]\s*$/.test(prev.text)))
+      ) {
+        hangBoost = 1;
+      }
       hang = Math.max(hang, hangBoost);
       merged.push({ text: t, hang });
   }
@@ -1721,7 +1728,9 @@ function mergeRubricPrefixLines(blocks: OreBlock[]): OreBlock[] {
   });
 }
 
-/** A capo di colonna dentro il responsorio («per ricondurci» / «al Padre»). Non tocca i salmi. */
+/** A capo di colonna dentro il responsorio, a metà frase. Non tocca i salmi.
+ *  Il versetto che chiude con virgola o due punti resta su due righe, come sul CEI
+ *  («Dicono le tue imprese,» / «la gloria del tuo regno.»). */
 function mergeResponsoryColumnWraps(blocks: OreBlock[]): OreBlock[] {
   return blocks.map((b) => {
     if (b.k !== "stanza" || !b.lines.some((l) => /^(R\.|V\.)\s/i.test(l.trim()))) return b;
@@ -1731,13 +1740,15 @@ function mergeResponsoryColumnWraps(blocks: OreBlock[]): OreBlock[] {
       const t = raw.trim();
       const prev = lines[lines.length - 1];
       const lower = /^[a-zàèéìòù]/.test(t);
+      const verseBreak = !!prev && /[,:;]$/.test(prev.trim());
       const dangling =
         !!prev &&
-        !/[.!?…:;]$/.test(prev) &&
+        !verseBreak &&
+        !/[.!?…]$/.test(prev) &&
         /\b(?:di|del|della|dello|dei|degli|delle|e|ed|a|al|allo|alla|il|lo|la|che|per|con|in|nel|nello|nella)\s*$/i.test(
           prev,
         );
-      if (prev && !/^(R\.|V\.|Gloria\b)/i.test(t) && (lower || dangling)) {
+      if (prev && !verseBreak && !/^(R\.|V\.|Gloria\b)/i.test(t) && (lower || dangling)) {
         lines[lines.length - 1] = `${prev} ${t}`;
         return;
       }

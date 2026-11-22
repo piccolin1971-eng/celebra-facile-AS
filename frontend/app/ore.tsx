@@ -57,9 +57,10 @@ export default function OreIndex() {
         }
         const last = (await AsyncStorage.getItem(LAST_KEY)) || "";
         if (!live) return;
+        const colored = hourHeadMeta(dateISO, "", meta.seasonLine || "", "lodi");
         setSeasonLine(meta.seasonLine);
         setPsalterLine(meta.psalterLine);
-        setColorHex(meta.colorHex || "#1b5e20");
+        setColorHex(colored.colorHex || meta.colorHex || "#1b5e20");
         setLastHour(last);
       })();
       return () => {

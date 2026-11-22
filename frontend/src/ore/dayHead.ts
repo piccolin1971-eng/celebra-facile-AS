@@ -184,20 +184,19 @@ export function hourHeadMeta(
     psalterLine = `${ROMAN_OUT[p]} settimana del salterio`;
   }
 
-  // Primi vespri: la testata è della solennità che inizia, non della feria di calendario.
-  if (hour === "vespri" || hour === "compieta") {
-    const vigil = getVigilEveContext(d);
-    if (vigil) {
-      seasonLine = vigil.solemnityTitle;
-      psalterLine = "Liturgia propria";
-    }
+  // Primi vespri: la testata e il colore sono della solennità che inizia.
+  const vigil =
+    hour === "vespri" || hour === "compieta" ? getVigilEveContext(d) : null;
+  if (vigil) {
+    seasonLine = vigil.solemnityTitle;
+    psalterLine = "Liturgia propria";
   }
 
   const season = getLiturgicalSeason(colorD);
   const color = calculateLiturgicalColor(
     season,
     getSaintsForDate(colorD),
-    title || seasonLine,
+    vigil ? vigil.solemnityTitle : title || seasonLine,
     colorD,
   );
   const colorHex = color.color_hex || LITURGICAL_COLOR_HEX[season.color] || season.color_hex;

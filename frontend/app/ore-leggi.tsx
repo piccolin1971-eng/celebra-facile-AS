@@ -272,7 +272,7 @@ export default function OreLeggi() {
 
   const applyDay = useCallback(
     (day: Awaited<ReturnType<typeof ensureHour>>, media: MediaId, psalm: InvitPsalmId) => {
-      const forHour = hourHeadMeta(dateISO, "", "", hour);
+      const forHour = hourHeadMeta(dateISO, "", day.meta.seasonLine || "", hour);
       const vigilEvening = forHour.psalterLine === "Liturgia propria" && (hour === "vespri" || hour === "compieta");
       setMeta({
         ...day.meta,

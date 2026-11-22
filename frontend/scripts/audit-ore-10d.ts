@@ -610,6 +610,58 @@ e sotto un solo pastore.</div>
   if (!/R\.\s*Noi ti adoriamo/i.test(lodiBlob) || !/V\.\s*Con la tua croce/i.test(lodiBlob)) {
     fails.push("fixture responsorio senza R./V.");
   }
+  const resp = lodiParsed.blocks.find(
+    (b) => b.k === "stanza" && b.lines.some((l) => /^V\.\s*Con la tua croce/i.test(l)),
+  );
+  if (!resp || resp.k !== "stanza") fails.push("fixture responsorio senza versetto");
+  else {
+    const v = resp.lines.findIndex((l) => /^V\./i.test(l));
+    if (!/mondo:\s*$/.test(resp.lines[v] || "")) fails.push(`fixture V. fuso: ${resp.lines[v]}`);
+    if (!/^ti benediciamo/i.test(resp.lines[v + 1] || "")) {
+      fails.push(`fixture risposta V. assente: ${resp.lines[v + 1] || ""}`);
+    }
+  }
+  const dn3 = parseHourHtml(
+    wrap(`
+    <div class="lo_versetto">Benedite, acque tutte, che siete sopra i cieli,&nbsp;<br />
+&nbsp;&nbsp; &nbsp;&nbsp;il Signore, *<br />
+&nbsp;&nbsp;&nbsp;benedite, potenze tutte del Signore, il Signore.<br />
+Benedite, mostri marini<br />
+&nbsp;&nbsp; &nbsp;&nbsp;e quanto si muove nell'acqua, il Signore, *<br />
+&nbsp; &nbsp;benedite, uccelli tutti dell'aria, il Signore.<br />
+Benedite, animali tutti, selvaggi e domestici,<br />
+&nbsp;&nbsp; &nbsp;&nbsp;il Signore, *<br />
+&nbsp; &nbsp;benedite, figli dell'uomo, il Signore.<br />
+Benedite, monti e colline, il Signore, *<br />
+&nbsp; &nbsp;benedite, creature tutte che germinate sulla terra,<br />
+&nbsp;&nbsp; &nbsp;&nbsp;il Signore.</div>
+  `),
+    "lodi",
+  );
+  const dnSt = dn3.blocks.find((b) => b.k === "stanza");
+  if (!dnSt || dnSt.k !== "stanza") fails.push("fixture Dn3 senza strofa");
+  else {
+    const hangOf = (re: RegExp, nth = 0) => {
+      let seen = 0;
+      for (let i = 0; i < dnSt.lines.length; i++) {
+        if (!re.test(dnSt.lines[i])) continue;
+        if (seen === nth) return dnSt.hang?.[i] ?? 0;
+        seen += 1;
+      }
+      return -1;
+    };
+    const expectHang = (re: RegExp, want: number, label: string, nth = 0) => {
+      const got = hangOf(re, nth);
+      if (got !== want) fails.push(`fixture Dn3 ${label} hang=${got} atteso ${want}`);
+    };
+    expectHang(/^il Signore, \*$/, 2, "acque");
+    expectHang(/^benedite, potenze/, 1, "potenze");
+    expectHang(/^e quanto si muove/, 2, "mostri");
+    expectHang(/^benedite, uccelli/, 1, "uccelli");
+    expectHang(/^il Signore, \*$/, 2, "animali", 1);
+    expectHang(/^benedite, figli/, 1, "figli");
+    expectHang(/^il Signore\.$/, 2, "monti");
+  }
   const preces = lodiParsed.blocks.filter((b) => b.k === "stanza" && b.lines.some((l) => /^—/.test(l)));
   if (preces.length < 2) fails.push(`fixture invocazioni coppie=${preces.length}`);
   else {

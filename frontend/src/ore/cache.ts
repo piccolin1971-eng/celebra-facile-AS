@@ -36,8 +36,10 @@ const PREFIX = "ore_day_";
  * 48: inno — «INNO» nel primo lo_versetto (feste): strofe a 4 versi, non prima strofa su una riga.
  * 49: Benedictus «liberati» (non «liberàti»); «così» nel cantico Is 66;
  * Ufficio — la citazione di edizione non è ripetuta anche come fonte.
+ * 50: Benedicite — il wrap del primo emistichio resta più rientrato della risposta;
+ * responsorio breve — il versetto che chiude con virgola o due punti resta su due righe.
  */
-export const ORE_CACHE_SCHEMA_VERSION = 49;
+export const ORE_CACHE_SCHEMA_VERSION = 50;
 
 const STABLE_KEY_RE = /^ore_day_(\d{4}-\d{2}-\d{2})$/;
 const LEGACY_KEY_RE = /^ore_day_v(\d+)_(\d{4}-\d{2}-\d{2})$/;
